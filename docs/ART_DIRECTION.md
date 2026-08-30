@@ -31,10 +31,12 @@ The environment should feel functional, worn, and dangerous rather than sleek or
 ### Player
 
 - Side-view humanoid
-- Target visible footprint: approximately **24×32 to 32×32 px**
+- Canonical production cell: **48×64 px**
+- Target visible character height: approximately **42–48 px**
 - Weapon rendered as a separate object from the body
 - Body animation must remain readable when horizontally flipped
 - Stable weapon-hand / weapon-pivot location is more important than ornamental detail
+- Initial canonical pose: neutral, unarmed, facing right
 
 ### Enemies
 
@@ -54,32 +56,26 @@ Initial weapon family:
 - Rifle
 - Shotgun
 
-## Working palette
+## Canonical palette
 
-Do **not** copy a third-party palette file directly.
+Rustline uses a **fixed 24-color production palette** documented in [`PALETTE.md`](PALETTE.md) and provided as a GIMP palette at [`Assets/Art/Palette/rustline.gpl`](../Assets/Art/Palette/rustline.gpl).
 
-Rustline will establish its own compact palette. Desired color families:
+**Hard rule:** final production pixel art may use only those 24 colors plus full transparency where applicable.
 
-- Near-black / blue-black structural shadows
-- Cool dark steel
-- Neutral mid steel
-- Oxidized copper / rust orange
-- Dirty off-white / ceramic armor
-- Hazard yellow
-- Warning red
-- Cold cyan / blue electronic accents
-- A small number of skin / fabric colors if required by the player design
+Generated candidates should always be prompted with the canonical palette, but prompt compliance alone is not considered sufficient. Exact hexadecimal compliance must be verified before an image becomes a production asset; remap/quantize colors when necessary.
 
-Target roughly **16–24 core colors** before optional FX colors.
+Do not introduce near-duplicate shades, anti-aliased edge colors, or one-off colors outside the canonical palette.
 
 ## Asset-generation workflow
 
 1. Generate an original Rustline canonical asset from the written brief.
-2. Select and clean it manually where necessary.
-3. Treat the approved Rustline asset as the visual reference for subsequent Rustline generations.
-4. Keep silhouettes, proportions, light direction, pixel density, and palette consistent.
-5. Use GIMP/manual pixel editing for alignment, frame cleanup, palette correction, and sprite-sheet packing.
-6. Commit only assets whose redistribution rights are clear.
+2. Include the fixed Rustline 24-color palette in every production-oriented generation request.
+3. Select and clean the candidate manually where necessary.
+4. Validate/remap the candidate so all opaque pixels use only canonical palette colors.
+5. Treat the approved Rustline asset as the visual reference for subsequent Rustline generations.
+6. Keep silhouettes, proportions, light direction, pixel density, and palette consistent.
+7. Use GIMP/manual pixel editing for alignment, frame cleanup, palette correction, and sprite-sheet packing.
+8. Commit only assets whose redistribution rights are clear.
 
 ### Reference rule
 
