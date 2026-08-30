@@ -58,9 +58,9 @@ Initial weapon family:
 
 ## Canonical palette
 
-Rustline uses a **fixed 24-color production palette** documented in [`PALETTE.md`](PALETTE.md) and provided as a GIMP palette at [`Assets/Art/Palette/rustline.gpl`](../Assets/Art/Palette/rustline.gpl).
+Rustline uses a **fixed 28-color production palette** documented in [`PALETTE.md`](PALETTE.md) and provided as a GIMP palette at [`Assets/Art/Palette/rustline.gpl`](../Assets/Art/Palette/rustline.gpl).
 
-**Hard rule:** final production pixel art may use only those 24 colors plus full transparency where applicable.
+**Hard rule:** final production pixel art may use only those 28 colors plus full transparency where applicable.
 
 Generated candidates should always be prompted with the canonical palette, but prompt compliance alone is not considered sufficient. Exact hexadecimal compliance must be verified before an image becomes a production asset; remap/quantize colors when necessary.
 
@@ -69,7 +69,7 @@ Do not introduce near-duplicate shades, anti-aliased edge colors, or one-off col
 ## Asset-generation workflow
 
 1. Generate an original Rustline canonical asset from the written brief.
-2. Include the fixed Rustline 24-color palette in every production-oriented generation request.
+2. Include the fixed Rustline 28-color palette in every production-oriented generation request.
 3. Select and clean the candidate manually where necessary.
 4. Validate/remap the candidate so all opaque pixels use only canonical palette colors.
 5. Treat the approved Rustline asset as the visual reference for subsequent Rustline generations.
