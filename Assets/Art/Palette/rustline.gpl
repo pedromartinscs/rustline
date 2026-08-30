@@ -1,13 +1,17 @@
 GIMP Palette
-Name: Rustline Canonical 24
-Columns: 6
+Name: Rustline Canonical 28
+Columns: 7
 # Rustline canonical production palette
   1   2  11 Deep Space
+ 13  23  44 Deep Navy
  34  55  77 Shadow
+ 53  64  90 Steel Shadow
  66  89 112 Dark Metal
 104 124 144 Steel
 201 187 177 Light Metal
 190 153 126 Concrete
+ 70  36  30 Warm Shadow
+124  51  18 Rust Mid
 176  70  28 Rust Dark
 237 117  39 Rust Orange
 253 208  69 Hazard Yellow
