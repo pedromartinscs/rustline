@@ -2,26 +2,34 @@
 
 Rustline is developed as a sequence of proof points. Each milestone should be playable and evaluable before the next layer is added.
 
+Rustline is currently a **single-player project**. Multiplayer, networking, server authority, prediction/reconciliation, matchmaking, network persistence, and multiplayer backend architecture are outside the project scope unless the project direction is explicitly changed in the future.
+
 ## M0 — Visual foundation
 
-**Goal:** establish a redistributable visual baseline before production gameplay work begins.
+**Goal:** establish a redistributable visual baseline and integrate it correctly into Unity before production gameplay work begins.
 
 - [x] Approve canonical player design
 - [x] Establish original Rustline palette
-- [x] Produce first player idle/run test
-- [ ] Produce first modular environment tile family
-- [ ] Define sprite import conventions
+- [x] Produce player idle/run/jump/fall/land sheets
+- [x] Author the first 16 canonical structural tile connectivity cases
+- [x] Bootstrap Unity 6 Universal 2D project
+- [ ] Correct and standardize pixel-art sprite import conventions
+- [ ] Build an art showcase scene using the current player and environment assets
+- [ ] Complete the first modular environment tile family beyond the canonical 16 cases
 - [ ] Decide art-source licensing for original Rustline assets
 
 Current M0 art work:
 
-- Canonical 48×64 player sprite is versioned.
-- Idle and run sprite sheets are versioned and use the canonical Rustline palette.
+- Canonical player cell is 48×64.
+- Idle, run, jump, fall, and land sprite sheets are versioned.
 - Rustline Canonical 28 is the production palette.
 - The structural tile atlas contract is fixed at 128×96 with 48 slots of 16×16; canonical N/E/S/W connectivity occupies slots 00–15.
-- Environment tile production is currently in progress. See [`TILESET_SPEC.md`](TILESET_SPEC.md).
+- Unity is bootstrapped with the Universal 2D template, URP 2D Renderer, Input System, Tilemap Extras, and Test Framework.
+- The current Unity-generated texture imports are not yet canonical for Rustline pixel art and must be corrected before visual evaluation.
 
-**Exit criterion:** the player and one small environment mockup clearly look like the same game and can be redistributed with the repository.
+See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract.
+
+**Exit criterion:** the current player animation set and structural tiles render in Unity at native pixel-art quality, with stable frame alignment and a small visual showcase demonstrating that the character and environment belong to the same game.
 
 ## M1 — Movement prototype
 
@@ -39,7 +47,7 @@ Current M0 art work:
 - [ ] Pixel-perfect camera and presentation
 - [ ] Controller tuning exposed as data/configuration
 
-**Exit criterion:** traversing a small graybox room is fun without enemies or weapons.
+**Exit criterion:** traversing a small room is fun without enemies or weapons.
 
 ## M2 — Gunplay prototype
 
@@ -61,7 +69,7 @@ Current M0 art work:
 
 ## M3 — Combat slice
 
-**Goal:** create the first repeatable combat encounter.
+**Goal:** create the first repeatable PvE combat encounter.
 
 - [ ] Health/damage model
 - [ ] Ground enemy
@@ -75,7 +83,7 @@ Current M0 art work:
 
 ## M4 — Loot & extraction loop
 
-**Goal:** turn the combat prototype into a tiny game loop.
+**Goal:** turn the combat prototype into a tiny single-player game loop.
 
 - [ ] Loot drops
 - [ ] Pickup interaction
@@ -88,40 +96,7 @@ Current M0 art work:
 
 **Exit criterion:** Deploy → Traverse → Fight → Loot → Extract works end-to-end locally.
 
-## M5 — Multiplayer architecture
-
-**Goal:** make the core loop network-capable without compromising gameplay feel.
-
-Networking technology is intentionally not selected during pre-production. Choose it only after M1–M4 clarify the simulation requirements.
-
-- [ ] Networking stack evaluation / ADR
-- [ ] Server-authoritative player state
-- [ ] Authoritative damage/combat validation
-- [ ] Authoritative projectile strategy
-- [ ] Client prediction for movement where required
-- [ ] Reconciliation/correction strategy
-- [ ] Remote interpolation
-- [ ] Latency/loss simulation
-- [ ] Disconnect and reconnect behavior
-- [ ] 2–4 player playable session
-
-**Exit criterion:** multiple players can complete the extraction loop under simulated non-ideal network conditions.
-
-## M6 — Persistence & scale demonstration
-
-**Goal:** demonstrate the architecture expected of a larger persistent shooter without attempting to build a full MMO.
-
-- [ ] Persistent player profile/inventory
-- [ ] Session/shard lifecycle
-- [ ] Server-side persistence boundaries
-- [ ] Idempotent extraction/reward handling
-- [ ] Load/simulation harness
-- [ ] Profiling and bottleneck documentation
-- [ ] Scale findings and proposed 40–48-player architecture documented
-
-**Exit criterion:** portfolio documentation can clearly explain what is implemented, what was load-tested, and how the architecture would scale beyond the small playable demo.
-
-## M7 — Portfolio polish
+## M5 — Portfolio polish
 
 - [ ] Stable Windows build
 - [ ] Screenshots / short gameplay capture
@@ -140,4 +115,4 @@ Networking technology is intentionally not selected during pre-production. Choos
 
 Rustline is a **technical vertical slice**, not a production content project.
 
-Whenever there is a choice between more content and higher-quality movement, combat, networking, testing, or documentation, prefer the latter.
+Whenever there is a choice between more content and higher-quality movement, combat, game feel, testing, presentation, or documentation, prefer the latter.
