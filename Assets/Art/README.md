@@ -40,7 +40,7 @@ The canonical GIMP palette lives in `Palette/rustline.gpl`.
 
 ## Environment tiles
 
-The first structural environment atlas is defined in [`../../../docs/TILESET_SPEC.md`](../../../docs/TILESET_SPEC.md). The tile workspace contains its own README at [`Environment/Tiles/README.md`](Environment/Tiles/README.md).
+The first structural environment atlas is defined in [`../../docs/TILESET_SPEC.md`](../../docs/TILESET_SPEC.md). The tile workspace contains its own README at [`Environment/Tiles/README.md`](Environment/Tiles/README.md).
 
 The canonical structural atlas uses:
 
