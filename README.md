@@ -1,8 +1,8 @@
 # Rustline
 
-**Rustline** is a Unity 6 2D multiplayer extraction-shooter prototype focused on responsive platforming, 360° gunplay, loot, extraction, and server-authoritative networking.
+**Rustline** is a Unity 6 2D single-player extraction-shooter prototype focused on responsive platforming, 360° gunplay, PvE combat, loot, and extraction.
 
-The project is being built as a compact technical showcase: prove that movement and combat feel good first, then layer multiplayer, persistence, and extraction systems on top of a clean gameplay architecture.
+The project is being built as a compact technical showcase: prove that movement and combat feel good first, then build a small, polished extraction loop on top of a clean gameplay architecture.
 
 ## Core loop
 
@@ -15,18 +15,22 @@ The project is being built as a compact technical showcase: prove that movement 
 - Satisfying projectile and weapon systems
 - PvE combat and lightweight enemy AI
 - Loot, inventory, and extraction mechanics
-- Multiplayer with server-authoritative gameplay
-- Prediction/reconciliation where latency-sensitive systems require it
-- Clean separation between gameplay simulation, presentation, networking, and persistence
+- Clean separation between gameplay simulation, presentation, input, and content/configuration
 - A small, polished vertical slice rather than a content-heavy game
+
+## Scope
+
+Rustline is currently a **single-player project**.
+
+Multiplayer, networking, server-authoritative simulation, prediction/reconciliation, matchmaking, network persistence, and multiplayer backend architecture are intentionally outside the project scope unless this document is explicitly changed in the future.
 
 ## Technology
 
 - Unity 6
 - C#
+- Universal Render Pipeline with the 2D Renderer
 - Unity 2D / Tilemaps
-- Multiplayer stack: to be selected after the local movement/combat prototype is proven
-- Backend/persistence: to be selected when the multiplayer milestone begins
+- Unity Input System
 
 ## Art direction
 
@@ -48,20 +52,20 @@ See:
 
 The prototype is intentionally milestone-driven:
 
-1. **Movement** — responsive controller, jump feel, coyote time, buffering, acceleration, air control
-2. **Gunplay** — 360° aim, weapon pivot, projectiles/hitscan, recoil, hit feedback
-3. **Combat** — health, damage, enemies, death/restart
-4. **Extraction loop** — loot, inventory, extraction objective
-5. **Multiplayer** — authoritative combat/state, prediction/reconciliation, reconnect/error handling
+1. **Visual foundation** — import conventions, player animation integration, structural tiles, visual showcase
+2. **Movement** — responsive controller, jump feel, coyote time, buffering, acceleration, air control
+3. **Gunplay** — 360° aim, weapon pivot, projectiles/hitscan, recoil, hit feedback
+4. **Combat** — health, damage, enemies, death/restart
+5. **Extraction loop** — loot, inventory, extraction objective
 6. **Polish** — presentation, audio, performance, automated tests, portfolio build
 
 See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**M0 — Visual foundation in progress.**
+**M0 — Visual foundation / Unity integration in progress.**
 
-The canonical player sprite and initial idle/run animation sheets are versioned, the Rustline Canonical 28 palette is locked, and the first modular industrial structural tile family is currently being authored before the Unity project is generated.
+The Unity 6 Universal 2D project is bootstrapped. The canonical player and movement animation sheets are versioned, the Rustline Canonical 28 palette is locked, and the first 16 canonical structural tile cases are authored. The current integration task is to configure Unity's pixel-art imports correctly and build a visual showcase scene before gameplay implementation begins.
 
 ## License
 
