@@ -6,12 +6,20 @@ Rustline is developed as a sequence of proof points. Each milestone should be pl
 
 **Goal:** establish a redistributable visual baseline before production gameplay work begins.
 
-- [ ] Approve canonical player design
-- [ ] Establish original Rustline palette
-- [ ] Produce first player idle/run test
+- [x] Approve canonical player design
+- [x] Establish original Rustline palette
+- [x] Produce first player idle/run test
 - [ ] Produce first modular environment tile family
 - [ ] Define sprite import conventions
 - [ ] Decide art-source licensing for original Rustline assets
+
+Current M0 art work:
+
+- Canonical 48×64 player sprite is versioned.
+- Idle and run sprite sheets are versioned and use the canonical Rustline palette.
+- Rustline Canonical 28 is the production palette.
+- The structural tile atlas contract is fixed at 128×96 with 48 slots of 16×16; canonical N/E/S/W connectivity occupies slots 00–15.
+- Environment tile production is currently in progress. See [`TILESET_SPEC.md`](TILESET_SPEC.md).
 
 **Exit criterion:** the player and one small environment mockup clearly look like the same game and can be redistributed with the repository.
 
