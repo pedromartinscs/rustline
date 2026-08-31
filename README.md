@@ -32,11 +32,17 @@ The project is being built as a compact technical showcase: prove that movement 
 
 Rustline uses an original pixel-art visual identity centered on a derelict orbital salvage facility: dark industrial metals, corrosion, exposed machinery, warning markings, and cold electronic accents.
 
-Environment art is planned around a 16×16 modular tile grid, with larger character and enemy sprites where readability benefits from the extra resolution.
+Environment art uses a **16×16 modular tile grid**. The first structural atlas is specified as **128×96 px** with an 8×6 grid of 48 fixed slots; the first 16 slots cover the canonical N/E/S/W structural connectivity cases for Rule Tile-style selection.
+
+All final pixel art uses the fixed **Rustline Canonical 28** palette plus transparency, nearest-neighbor sampling, and binary alpha.
 
 All redistributable game artwork committed to this repository will be created specifically for Rustline or come from dependencies whose licenses explicitly permit repository redistribution. Third-party reference packs are not included.
 
-See [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md) for the working visual specification.
+See:
+
+- [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md) — visual specification and asset workflow
+- [`docs/PALETTE.md`](docs/PALETTE.md) — canonical production palette
+- [`docs/TILESET_SPEC.md`](docs/TILESET_SPEC.md) — structural atlas layout and connectivity contract
 
 ## Development approach
 
@@ -53,9 +59,9 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**Pre-production / visual foundation.**
+**M0 — Visual foundation in progress.**
 
-The repository is being established before the Unity project itself so art direction, architecture decisions, and generated original assets can be versioned from the beginning.
+The canonical player sprite and initial idle/run animation sheets are versioned, the Rustline Canonical 28 palette is locked, and the first modular industrial structural tile family is currently being authored before the Unity project is generated.
 
 ## License
 
