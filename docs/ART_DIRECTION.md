@@ -20,13 +20,25 @@ The environment should feel functional, worn, and dangerous rather than sleek or
 
 ## Pixel-art constraints
 
+### Global production rules
+
+- Nearest-neighbor / point filtering only
+- No anti-aliasing in final pixel art
+- Final transparency is binary: alpha must be either `0` or `255`
+- Final production pixels must use Rustline Canonical 28 plus transparency only
+- Judge assets at native gameplay scale, not only while zoomed in
+
 ### Environment
 
 - Base tile grid: **16×16 px**
 - Modular construction preferred over large baked room illustrations
-- Nearest-neighbor filtering only
-- No anti-aliasing in final sprites
 - Avoid noisy single-pixel detail that disappears during gameplay
+- Primary structural atlas: **128×96 px**, 8×6 cells, 48 fixed 16×16 slots
+- Slots `00–15` implement the canonical cardinal N/E/S/W connectivity cases
+- Structural adjacency controls sprite selection; collision remains a separate Tilemap/collider concern
+- Connected edges must remain visually compatible across canonical tiles and their visual variants
+
+The complete structural atlas contract and slot mapping are documented in [`TILESET_SPEC.md`](TILESET_SPEC.md).
 
 ### Player
 
@@ -72,10 +84,13 @@ Do not introduce near-duplicate shades, anti-aliased edge colors, or one-off col
 2. Include the fixed Rustline 28-color palette in every production-oriented generation request.
 3. Select and clean the candidate manually where necessary.
 4. Validate/remap the candidate so all opaque pixels use only canonical palette colors.
-5. Treat the approved Rustline asset as the visual reference for subsequent Rustline generations.
-6. Keep silhouettes, proportions, light direction, pixel density, and palette consistent.
-7. Use GIMP/manual pixel editing for alignment, frame cleanup, palette correction, and sprite-sheet packing.
-8. Commit only assets whose redistribution rights are clear.
+5. Remove partial-alpha edge pixels before approving production assets.
+6. Treat the approved Rustline asset as the visual reference for subsequent Rustline generations.
+7. Keep silhouettes, proportions, light direction, pixel density, and palette consistent.
+8. Use GIMP/manual pixel editing for alignment, frame cleanup, palette correction, and sprite-sheet packing.
+9. Commit only assets whose redistribution rights are clear.
+
+For highly constrained modular assets such as structural tiles, generative output is primarily a visual/reference source. Final 16×16 geometry should be reconstructed or cleaned deterministically when needed so connectivity is not dependent on generative precision.
 
 ### Reference rule
 
@@ -92,21 +107,25 @@ Once an original Rustline visual baseline exists, prefer Rustline's own artwork 
 - Run
 - Jump
 - Fall
+- Land
 - Roll / dodge
 - Hit
 - Death
 
 ### Environment
 
+- Canonical structural Rule Tile family
 - Floor/platform center + edges
 - Walls
 - Inside/outside corners
 - Structural beams
+- Thin / one-way platforms
 - Pipes/conduits
 - Vents
 - Background panels/machinery
 - Warning-stripe variants
 - Damaged/corroded variants
+- Parallax background layers
 
 ### Gameplay props
 
