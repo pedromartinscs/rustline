@@ -28,6 +28,22 @@ The environment should feel functional, worn, and dangerous rather than sleek or
 - Final production pixels must use Rustline Canonical 28 plus transparency only
 - Judge assets at native gameplay scale, not only while zoomed in
 
+### Unity import contract
+
+Production PNGs under `Assets/Art/` (excluding editable/reference files under `Assets/Art/Source/`) use these Unity settings:
+
+- Sprite texture type at **16 Pixels Per Unit**
+- Point filtering, clamp wrapping, mipmaps off
+- Texture compression and crunch compression off
+- Full Rect sprite meshes; transparent pixels remain part of fixed cells
+- Source alpha imported as transparency
+- No importer rescaling of the production source pixels
+- No generated fallback physics shape; visual adjacency and collision remain separate concerns
+
+The baseline is enforced by `Assets/Editor/RustlinePixelArtPostprocessor.cs`. Known fixed sheets and the M0 showcase are rebuilt with **Tools → Rustline → Rebuild M0 Art Showcase**.
+
+Player sheets are always sliced left-to-right into complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. The industrial structural atlas is always sliced into all **48** fixed **16×16** cells. Its documented logical rows run top-to-bottom, so the editor setup deliberately converts them to Unity's bottom-origin sprite coordinates without changing slot names or semantics.
+
 ### Environment
 
 - Base tile grid: **16×16 px**

@@ -63,9 +63,9 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**M0 — Visual foundation / Unity integration in progress.**
+**M0 — Visual foundation / Unity integration ready for visual review.**
 
-The Unity 6 Universal 2D project is bootstrapped. The canonical player and movement animation sheets are versioned, the Rustline Canonical 28 palette is locked, and the first 16 canonical structural tile cases are authored. The current integration task is to configure Unity's pixel-art imports correctly and build a visual showcase scene before gameplay implementation begins.
+The Unity 6 Universal 2D project is bootstrapped. The canonical player and movement animation sheets are versioned, the Rustline Canonical 28 palette is locked, and the first 16 canonical structural tile cases are authored. Production pixel-art import conventions, fixed-grid slicing, preview animation clips, the canonical structural Rule Tile, and `Assets/Scenes/ArtShowcase.unity` are now integrated. Automated Unity Editor validation is complete; final M0 visual acceptance is performed by opening the showcase and previewing the animations in Play mode.
 
 ## License
 

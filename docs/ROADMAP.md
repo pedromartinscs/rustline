@@ -13,8 +13,8 @@ Rustline is currently a **single-player project**. Multiplayer, networking, serv
 - [x] Produce player idle/run/jump/fall/land sheets
 - [x] Author the first 16 canonical structural tile connectivity cases
 - [x] Bootstrap Unity 6 Universal 2D project
-- [ ] Correct and standardize pixel-art sprite import conventions
-- [ ] Build an art showcase scene using the current player and environment assets
+- [x] Correct and standardize pixel-art sprite import conventions
+- [x] Build an art showcase scene using the current player and environment assets
 - [ ] Complete the first modular environment tile family beyond the canonical 16 cases
 - [ ] Decide art-source licensing for original Rustline assets
 
@@ -25,7 +25,8 @@ Current M0 art work:
 - Rustline Canonical 28 is the production palette.
 - The structural tile atlas contract is fixed at 128×96 with 48 slots of 16×16; canonical N/E/S/W connectivity occupies slots 00–15.
 - Unity is bootstrapped with the Universal 2D template, URP 2D Renderer, Input System, Tilemap Extras, and Test Framework.
-- The current Unity-generated texture imports are not yet canonical for Rustline pixel art and must be corrected before visual evaluation.
+- Production PNG imports now use 16 PPU, Point filtering, no mipmaps or compression, Full Rect meshes, and deterministic fixed-cell slicing.
+- `Assets/Scenes/ArtShowcase.unity` presents the five current player states, all 16 canonical tiles, and Rule Tile adjacency structures for visual acceptance.
 
 See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract.
 

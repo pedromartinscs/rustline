@@ -35,8 +35,16 @@ The canonical GIMP palette lives in `Palette/rustline.gpl`.
 - Final pixel art uses Rustline Canonical 28 plus transparency only.
 - Final alpha is binary (`0` or `255`); remove partially transparent edge pixels.
 - Use nearest-neighbor / point filtering and no anti-aliasing.
-- Keep sprite dimensions, pivots, cell sizes, and naming predictable so gameplay/network code never depends on arbitrary art offsets.
+- Keep sprite dimensions, pivots, cell sizes, and naming predictable so gameplay code never depends on arbitrary art offsets.
 - Prefer a small coherent asset library over many inconsistent generated assets.
+
+## Unity import contract
+
+Production PNGs under `Assets/Art/` use 16 Pixels Per Unit, Point filtering, no mipmaps, no texture/crunch compression, Full Rect sprite meshes, clamp wrapping, and source alpha as transparency. Unity must preserve the source pixels and complete fixed cells without content-based trimming.
+
+`Assets/Editor/RustlinePixelArtPostprocessor.cs` applies the common baseline automatically. Use **Tools → Rustline → Rebuild M0 Art Showcase** to reapply the known fixed-grid player/industrial-atlas slices and regenerate the M0 preview assets safely.
+
+Player animation sheets use complete 48×64 cells with a consistent normalized `(0.5, 0.0)` pivot. `industrial_surface.png` uses all 48 fixed 16×16 cells; its logical top-to-bottom rows are mapped explicitly to Unity's bottom-origin coordinates.
 
 ## Environment tiles
 
