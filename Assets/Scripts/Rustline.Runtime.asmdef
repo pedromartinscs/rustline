@@ -1,7 +1,10 @@
 {
     "name": "Rustline.Runtime",
     "rootNamespace": "Rustline",
-    "references": ["Unity.InputSystem"],
+    "references": [
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
