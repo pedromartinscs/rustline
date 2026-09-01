@@ -80,7 +80,7 @@ The apparent improvement is encouraging but not large enough to claim as a prove
 
 ## Diagnostic isolation 1 — camera follow contribution
 
-Status: **testing**.
+Status: **complete — no meaningful camera-follow bottleneck identified**.
 
 Question:
 
@@ -88,16 +88,44 @@ Does the movement-associated frame-time increase primarily come from moving the 
 
 Instrumentation:
 
-- Left-clicking the performance HUD still copies the last completed sample.
+- Left-clicking the performance HUD copies the last completed sample.
 - Right-clicking the HUD toggles only `PixelCameraFollow2D.enabled` at runtime.
 - The HUD reports `Camera ON` or `Camera FROZEN` in copied output.
 - Toggling resets the current sample window so the transition frame does not contaminate the next completed 2.0-second sample.
 - The toggle is diagnostic only, is not saved into the scene, and disappears when Play Mode ends.
 
-Test discipline:
+Same-session active-movement samples with camera follow enabled:
 
-1. Keep the Depth/Stencil Buffer disabled as established by Experiment 1.
-2. With `Camera ON`, collect 3 active-movement samples as a same-session control.
-3. Right-click the HUD once so it reports `Camera FROZEN`.
-4. Move/jump repeatedly within the area that remains visible while the camera is frozen and collect 3 samples.
-5. Compare the two movement sets. Do not compare a frozen-camera movement sample against an idle sample; the purpose is to isolate camera-follow contribution while player gameplay remains active.
+| Sample | FPS | AVG ms | WORST ms | Frames |
+|---:|---:|---:|---:|---:|
+| 1 | 104.1 | 9.61 | 23.38 | 209 |
+| 2 | 83.3 | 12.01 | 22.17 | 167 |
+| 3 | 95.9 | 10.43 | 16.10 | 192 |
+
+Simple mean: approximately **94.4 FPS / 10.68 ms AVG**.
+
+Same-session active-movement samples with camera follow frozen:
+
+| Sample | FPS | AVG ms | WORST ms | Frames |
+|---:|---:|---:|---:|---:|
+| 1 | 97.8 | 10.22 | 19.50 | 196 |
+| 2 | 90.4 | 11.06 | 16.55 | 181 |
+| 3 | 92.4 | 10.82 | 19.50 | 185 |
+
+Simple mean: approximately **93.5 FPS / 10.70 ms AVG**.
+
+Conclusion:
+
+- Average frame time was effectively unchanged: approximately `10.68 ms` with camera follow versus `10.70 ms` frozen.
+- The small FPS difference is inside normal Unity Editor noise and does not support a causal performance claim.
+- Worst-frame values were somewhat lower in the frozen samples, but the average did not improve and worst-frame is highly sensitive to isolated Editor scheduling spikes.
+- **Do not optimize or simplify `PixelCameraFollow2D` based on these measurements.** Preserve the accepted camera-follow behavior unless later profiling in a representative standalone build identifies a real issue.
+- The session-to-session variation also reinforces that sub-millisecond optimization claims should not be accepted from Editor Game View FPS alone.
+
+## Method decision after early diagnostics
+
+The Pedro ↔ Echo micro-measurement loop remains useful for large regressions and focused A/B checks, but serious frame-time optimization will increasingly use **standalone Development Builds and Unity Profiler captures** as Rustline gains representative rendering/gameplay load.
+
+Obvious unused features may still be removed incrementally when the change is functionally safe and structurally justified. Claims of small speedups, however, should be treated as provisional until measured outside the Editor.
+
+The next major performance-relevant system is the native-pixel viewport + palette-constrained penumbra. It should ship with a development-only runtime toggle so its incremental cost can be measured directly with the same scene and later in a standalone Development Build.
