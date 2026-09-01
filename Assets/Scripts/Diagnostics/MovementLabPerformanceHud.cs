@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using Rustline.Presentation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -13,18 +14,20 @@ namespace Rustline.Diagnostics
     {
         private const string MovementLabSceneName = "MovementLab";
         private const float SampleWindowSeconds = 2f;
-        private const float CopiedFeedbackSeconds = 1f;
+        private const float FeedbackSeconds = 1f;
 
-        private static readonly Rect ShadowRect = new Rect(11f, 11f, 520f, 96f);
-        private static readonly Rect TextRect = new Rect(10f, 10f, 520f, 96f);
-        private static readonly Rect HintShadowRect = new Rect(11f, 81f, 520f, 24f);
-        private static readonly Rect HintTextRect = new Rect(10f, 80f, 520f, 24f);
+        private static readonly Rect ShadowRect = new Rect(11f, 11f, 620f, 96f);
+        private static readonly Rect TextRect = new Rect(10f, 10f, 620f, 96f);
+        private static readonly Rect HintShadowRect = new Rect(11f, 81f, 620f, 24f);
+        private static readonly Rect HintTextRect = new Rect(10f, 80f, 620f, 24f);
 
         private float elapsedSeconds;
         private float worstFrameSeconds;
-        private float copiedFeedbackUntil;
+        private float feedbackUntil;
         private int frameCount;
         private string displayText = "PERF 2.0s\nMeasuring...";
+        private string feedbackText;
+        private PixelCameraFollow2D cameraFollow;
         private GUIStyle foregroundStyle;
         private GUIStyle shadowStyle;
         private GUIStyle hintStyle;
@@ -50,6 +53,11 @@ namespace Rustline.Diagnostics
             hudObject.AddComponent<MovementLabPerformanceHud>();
         }
 
+        private void Awake()
+        {
+            cameraFollow = UnityEngine.Object.FindFirstObjectByType<PixelCameraFollow2D>();
+        }
+
         private void Update()
         {
             float deltaTime = Time.unscaledDeltaTime;
@@ -72,39 +80,86 @@ namespace Rustline.Diagnostics
             displayText =
                 $"PERF {SampleWindowSeconds:0.0}s  {Screen.width}x{Screen.height}  |  FRAMES {frameCount}\n" +
                 $"FPS {framesPerSecond:0.0}  |  AVG {averageFrameSeconds * 1000f:0.00} ms  |  WORST {worstFrameSeconds * 1000f:0.00} ms\n" +
-                $"VSync {QualitySettings.vSyncCount}  |  Target {Application.targetFrameRate}";
+                $"VSync {QualitySettings.vSyncCount}  |  Target {Application.targetFrameRate}  |  Camera {GetCameraFollowState()}";
 
-            elapsedSeconds = 0f;
-            worstFrameSeconds = 0f;
-            frameCount = 0;
+            ResetSample();
         }
 
         private void OnGUI()
         {
             EnsureStyles();
-            HandleCopyClick();
+            HandleHudClick();
 
             GUI.Label(ShadowRect, displayText, shadowStyle);
             GUI.Label(TextRect, displayText, foregroundStyle);
 
-            string hint = Time.realtimeSinceStartup < copiedFeedbackUntil
-                ? "COPIED TO CLIPBOARD"
-                : "CLICK PERF INFO TO COPY";
+            string hint = Time.realtimeSinceStartup < feedbackUntil
+                ? feedbackText
+                : "LEFT CLICK COPY  |  RIGHT CLICK TOGGLE CAMERA FOLLOW";
             GUI.Label(HintShadowRect, hint, hintShadowStyle);
             GUI.Label(HintTextRect, hint, hintStyle);
         }
 
-        private void HandleCopyClick()
+        private void HandleHudClick()
         {
             Event current = Event.current;
-            if (current.type != EventType.MouseDown || current.button != 0 || !TextRect.Contains(current.mousePosition))
+            if (current.type != EventType.MouseDown || !TextRect.Contains(current.mousePosition))
             {
                 return;
             }
 
-            GUIUtility.systemCopyBuffer = displayText;
-            copiedFeedbackUntil = Time.realtimeSinceStartup + CopiedFeedbackSeconds;
+            if (current.button == 0)
+            {
+                GUIUtility.systemCopyBuffer = displayText;
+                ShowFeedback("COPIED TO CLIPBOARD");
+                current.Use();
+                return;
+            }
+
+            if (current.button != 1)
+            {
+                return;
+            }
+
+            if (cameraFollow == null)
+            {
+                cameraFollow = UnityEngine.Object.FindFirstObjectByType<PixelCameraFollow2D>();
+            }
+
+            if (cameraFollow == null)
+            {
+                ShowFeedback("CAMERA FOLLOW NOT FOUND");
+                current.Use();
+                return;
+            }
+
+            cameraFollow.enabled = !cameraFollow.enabled;
+            ResetSample();
+            ShowFeedback(cameraFollow.enabled ? "CAMERA FOLLOW ON" : "CAMERA FOLLOW FROZEN");
             current.Use();
+        }
+
+        private string GetCameraFollowState()
+        {
+            if (cameraFollow == null)
+            {
+                return "MISSING";
+            }
+
+            return cameraFollow.enabled ? "ON" : "FROZEN";
+        }
+
+        private void ResetSample()
+        {
+            elapsedSeconds = 0f;
+            worstFrameSeconds = 0f;
+            frameCount = 0;
+        }
+
+        private void ShowFeedback(string text)
+        {
+            feedbackText = text;
+            feedbackUntil = Time.realtimeSinceStartup + FeedbackSeconds;
         }
 
         private void EnsureStyles()
