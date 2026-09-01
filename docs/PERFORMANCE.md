@@ -1,0 +1,105 @@
+# Rustline Performance Strategy
+
+Performance is a first-class design constraint for Rustline. The target is not merely to make the game run acceptably on the developer machine; the project should remain easy to run on a wide range of devices while preserving deterministic pixel-art presentation.
+
+## Performance goals
+
+- **60 FPS is the minimum acceptable gameplay target on weak supported hardware.**
+- **120 FPS should be comfortable on reasonable modern hardware** when the display/runtime is allowed to run that fast.
+- On stronger hardware, prefer low frame time, low power use, and stable pacing over consuming all available GPU/CPU budget unnecessarily.
+- Gameplay feel and visual correctness must not be sacrificed for theoretical micro-optimizations.
+
+These are design goals, not claims about current measured performance. Device tiers and concrete minimum specifications will be established later from real profiling.
+
+## Optimization method
+
+Rustline uses a measured, incremental optimization workflow:
+
+1. Establish a repeatable baseline.
+2. Change **one meaningful variable at a time** where practical.
+3. Re-run the same test.
+4. Keep a change only when it improves the intended metric without damaging gameplay, visual quality, maintainability, or correctness.
+5. Revert or defer changes whose benefit is not measurable or whose complexity is not justified.
+
+Avoid optimization by superstition. Unity/URP settings that look expensive are candidates for measurement, not automatically proven bottlenecks.
+
+## Current baseline instrumentation
+
+`MovementLab` has a development-only diagnostic HUD implemented by `MovementLabPerformanceHud`.
+
+It samples in 0.5-second windows and displays:
+
+- frames per second;
+- average frame time in milliseconds;
+- worst frame time inside the current sample window;
+- current screen resolution;
+- current VSync count;
+- `Application.targetFrameRate`.
+
+The HUD is created only when `MovementLab` starts and is compiled only for the Unity Editor or Development Builds. It is not intended to ship in normal release builds.
+
+Editor FPS is useful for quick comparisons but is not a final benchmark because Editor overhead can distort results. Later milestone/performance gates should also use standalone Development Builds and Unity Profiler captures on representative hardware.
+
+## Rendering budget and native-pixel presentation
+
+The approved camera prototype starts from a canonical maximum viewport of **1072×1072 production pixels**, or **67×67 16 px tiles**. That is approximately **1.15 million logical pixels**.
+
+The performance intent is to render gameplay at the logical/native-pixel presentation size and use nearest-neighbor **integer upscaling** when a larger physical display permits 2×, 3×, 4×, etc. A 4K monitor should not force Rustline to shade the gameplay world at full 3840×2160 merely because those physical pixels exist.
+
+Smaller displays crop the native-pixel world rather than shrinking production art below 1×. Larger displays do not reveal additional gameplay world beyond the canonical viewport solely because they have more pixels; unused presentation area resolves to canonical Deep Space `#01020B`.
+
+## Runtime architecture principles
+
+The following principles are approved directions for future systems:
+
+- Keep distant/inactive gameplay entities asleep when they do not need simulation.
+- Treat visual range, simulation range, and audible range as independently tunable distances.
+- Use Tilemap/chunk-oriented world construction so large facilities do not require every region to remain active simultaneously.
+- Prefer object pooling for high-churn combat objects such as projectiles, impact FX, and other repeated transient entities.
+- Avoid repeated `Instantiate`/`Destroy` churn during active combat when pooling is appropriate.
+- Avoid hundreds of independent `Update()` loops when a simpler centralized/ticked architecture can provide the same behavior clearly.
+- Keep 2D lighting selective and purposeful rather than filling scenes with overlapping lights by default.
+- Minimize unnecessary materials, shader variants, renderer features, and full-screen passes.
+- Avoid very large transparent sprites/layers when a smaller bounded representation can produce the same result.
+- Keep pixel-art textures small, point-filtered, uncompressed where required for exact production pixels, and free of unnecessary mipmaps.
+- Preserve the existing separation between visual Tilemaps and collision Tilemaps.
+- Profile before replacing clear code with lower-level or more complex alternatives.
+
+## Penumbra performance direction
+
+The player-centered penumbra should be implemented as a small number of cheap presentation operations, ideally a single bounded screen-space/presentation pass rather than many overlapping lights or scene objects.
+
+The approved visual geometry for the initial prototype is documented in `ART_DIRECTION.md`:
+
+- fully visible circle: 57 tiles / 912 px diameter;
+- penumbra thickness: 4 tiles / 64 px radially;
+- full darkness reached at 65 tiles / 1040 px diameter;
+- canonical viewport: 67×67 tiles / 1072×1072 px;
+- full darkness color: Deep Space `#01020B`.
+
+### Palette lookup-table idea
+
+Rustline has only 28 legal production colors. The penumbra therefore has a promising optimization/design path based on small palette lookup tables rather than arbitrary RGB interpolation.
+
+For a small number of discrete shadow levels, a lookup can map each canonical source color to another canonical darker color. Pixel-pattern dithering can then transition spatially between those palette-safe levels and ultimately Deep Space.
+
+This is an **approved prototype direction, not yet a mandated implementation**. The exact GPU representation must be chosen after measuring the first penumbra prototype. Do not prematurely convert the whole art pipeline to indexed textures or add complexity merely because a 28-color LUT is possible.
+
+## Known audit candidates — not yet optimizations
+
+The current Unity project inherited several generic URP/quality capabilities that Rustline may not need. These include candidates such as HDR support, shadow capabilities, additional-light features, light cookies, lens-flare support, reflection/3D-oriented quality settings, and the default Standalone quality profile.
+
+They should be tested incrementally. Do not disable a large group of settings at once: doing so would make regressions difficult to attribute and would prevent meaningful before/after measurement.
+
+## Baseline test discipline
+
+For quick Pedro ↔ Echo iteration in `MovementLab`:
+
+1. Use the same Unity version and the same MovementLab scene.
+2. Let the scene run for several seconds before reading values.
+3. Record whether VSync or a target frame-rate cap is active.
+4. Compare idle/standing measurements under the same conditions first.
+5. When useful, repeat while continuously traversing the course to include animation, Rigidbody2D movement, camera following, and Tilemap rendering.
+6. Change one thing, repeat the same measurement, then decide whether to keep it.
+
+As the game grows, synthetic stress scenes and standalone profiling will replace subjective FPS checks for serious performance decisions.
