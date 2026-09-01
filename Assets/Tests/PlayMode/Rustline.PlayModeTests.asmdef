@@ -1,7 +1,12 @@
 {
     "name": "Rustline.PlayModeTests",
     "rootNamespace": "Rustline.Tests",
-    "references": ["Rustline.Runtime", "Unity.InputSystem", "Unity.InputSystem.TestFramework"],
+    "references": [
+        "Rustline.Runtime",
+        "Unity.InputSystem",
+        "Unity.InputSystem.TestFramework",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
