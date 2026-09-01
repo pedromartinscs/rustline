@@ -4,12 +4,9 @@ using UnityEngine.Rendering.Universal;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// MovementLab-only native pixel compositor. The gameplay camera renders the logical
-    /// world target; a lightweight utility camera drives RenderGraph passes for optional
+    /// Native-pixel compositor for MovementLab. The gameplay camera renders the logical
+    /// world target; one lightweight utility camera drives RenderGraph passes for optional
     /// logical penumbra resolve and final point-sampled physical presentation.
-    ///
-    /// The old physical presentation camera/quad remain serialized during Experiment 2
-    /// for trivial rollback, but are disabled at runtime and do not participate in rendering.
     /// </summary>
     [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
@@ -33,10 +30,7 @@ namespace Rustline.Presentation
 
         [SerializeField] private Camera worldCamera;
         [SerializeField] private Camera processingCamera;
-        [SerializeField] private Camera presentationCamera;
         [SerializeField] private Transform playerTarget;
-        [SerializeField] private MeshRenderer processingRenderer;
-        [SerializeField] private MeshRenderer presentationRenderer;
         [SerializeField] private Shader penumbraShader;
         [SerializeField] private Shader presentationShader;
         [SerializeField] private bool penumbraEnabled = true;
@@ -58,10 +52,7 @@ namespace Rustline.Presentation
         public RenderTexture ResolvedTarget => _penumbraTarget;
         public Camera WorldCamera => worldCamera;
         public Camera ProcessingCamera => processingCamera;
-        public Camera PresentationCamera => presentationCamera;
         public Transform PlayerTarget => playerTarget;
-        public MeshRenderer ProcessingRenderer => processingRenderer;
-        public MeshRenderer PresentationRenderer => presentationRenderer;
         public Shader PenumbraShader => penumbraShader;
         public Shader PresentationShader => presentationShader;
         public Texture PresentedSource => _presentationMaterial != null
@@ -76,7 +67,7 @@ namespace Rustline.Presentation
             }
 
             ApplyCanonicalCameraClearColors();
-            ConfigureUtilityRenderers();
+            ConfigureDriverCamera();
 
             RustlinePalette.CopyLinearShaderData(_palette, _darknessLut);
             _penumbraMaterial = CreateRuntimeMaterial(
@@ -92,12 +83,6 @@ namespace Rustline.Presentation
             _penumbraMaterial.SetFloat(FullDarknessRadiusId, FullDarknessRadiusPixels);
             _penumbraMaterial.SetFloat(PenumbraEnabledId, 1f);
 
-            // Keep the old quad materials wired during the experiment so rollback remains
-            // mechanical. The renderers themselves are disabled by ApplyPenumbraState().
-            processingRenderer.sharedMaterial = _penumbraMaterial;
-            presentationRenderer.sharedMaterial = _presentationMaterial;
-
-            ConfigureLayerIsolation();
             RefreshViewportAndTargets();
             UpdatePenumbraParameters();
             ApplyPenumbraState();
@@ -116,23 +101,6 @@ namespace Rustline.Presentation
             {
                 processingCamera.targetTexture = null;
                 processingCamera.enabled = false;
-            }
-
-            if (presentationCamera != null)
-            {
-                presentationCamera.enabled = false;
-            }
-
-            if (processingRenderer != null)
-            {
-                processingRenderer.enabled = false;
-                processingRenderer.sharedMaterial = null;
-            }
-
-            if (presentationRenderer != null)
-            {
-                presentationRenderer.enabled = false;
-                presentationRenderer.sharedMaterial = null;
             }
 
             ReleaseTarget(ref _worldTarget);
@@ -159,8 +127,8 @@ namespace Rustline.Presentation
 
         private void ApplyCanonicalCameraClearColors()
         {
-            // Camera clear colors are presentation values here. Feeding the gamma-authored
-            // canonical color through Color.linear made #01020B effectively collapse to black.
+            // Camera clear colors are authored display values here. Feeding #01020B through
+            // Color.linear before Camera.backgroundColor made the camera surround too dark.
             Color deepSpace = (Color)RustlinePalette.DeepSpace;
 
             if (worldCamera != null)
@@ -172,41 +140,15 @@ namespace Rustline.Presentation
             {
                 processingCamera.backgroundColor = deepSpace;
             }
-
-            if (presentationCamera != null)
-            {
-                presentationCamera.backgroundColor = deepSpace;
-            }
         }
 
-        private void ConfigureUtilityRenderers()
+        private void ConfigureDriverCamera()
         {
-            // Experiment 2 needs only the processing/driver camera. Keep the disabled
-            // presentation camera assigned to the utility renderer so rollback is trivial.
-            SelectUtilityRenderer(processingCamera);
-            SelectUtilityRenderer(presentationCamera);
-        }
+            processingCamera.GetUniversalAdditionalCameraData().SetRenderer(UtilityRendererIndex);
 
-        private static void SelectUtilityRenderer(Camera camera)
-        {
-            if (camera == null)
-            {
-                return;
-            }
-
-            camera.GetUniversalAdditionalCameraData().SetRenderer(UtilityRendererIndex);
-        }
-
-        private void ConfigureLayerIsolation()
-        {
-            int processingMask = 1 << processingRenderer.gameObject.layer;
-            int presentationMask = 1 << presentationRenderer.gameObject.layer;
-            worldCamera.cullingMask &= ~(processingMask | presentationMask);
-
-            // The utility camera is now only a RenderGraph driver. It intentionally culls
-            // no scene geometry; both old fullscreen quads are disabled at runtime.
+            // The utility camera only drives the custom RenderGraph feature. It intentionally
+            // performs no scene-object rendering or culling work.
             processingCamera.cullingMask = 0;
-            presentationCamera.cullingMask = presentationMask;
         }
 
         private void RefreshViewportAndTargets()
@@ -227,29 +169,11 @@ namespace Rustline.Presentation
             worldCamera.targetTexture = _worldTarget;
             worldCamera.orthographicSize = nextViewport.LogicalHeight / (2f * PixelsPerUnit);
 
-            // With no target texture this camera's URP backbuffer is the physical display.
-            // It does not clear through the Camera path: the final RenderGraph pass owns one
-            // deterministic Deep Space clear before drawing the centered output rectangle.
+            // With no target texture this camera's URP target is the physical display. The
+            // final RenderGraph pass owns the Deep Space clear and centered integer output.
             processingCamera.targetTexture = null;
             processingCamera.clearFlags = CameraClearFlags.Nothing;
             processingCamera.orthographicSize = nextViewport.PhysicalHeight * 0.5f;
-
-            // Retain deterministic fallback geometry during the reversible experiment.
-            processingRenderer.transform.localPosition = Vector3.zero;
-            processingRenderer.transform.localScale = new Vector3(
-                nextViewport.LogicalWidth,
-                nextViewport.LogicalHeight,
-                1f);
-
-            presentationCamera.orthographicSize = nextViewport.PhysicalHeight * 0.5f;
-            presentationRenderer.transform.localPosition = new Vector3(
-                nextViewport.OutputOffsetX + nextViewport.OutputWidth * 0.5f - nextViewport.PhysicalWidth * 0.5f,
-                nextViewport.OutputOffsetY + nextViewport.OutputHeight * 0.5f - nextViewport.PhysicalHeight * 0.5f,
-                0f);
-            presentationRenderer.transform.localScale = new Vector3(
-                nextViewport.OutputWidth,
-                nextViewport.OutputHeight,
-                1f);
 
             ApplyPenumbraState();
         }
@@ -264,10 +188,9 @@ namespace Rustline.Presentation
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
 
-            // Keep both target descriptors identical during the experiment so the measured
-            // variable is the camera/presentation path. If Experiment 2 is accepted, the
-            // resolved target can be reconsidered separately because it is no longer a
-            // camera output and therefore no longer inherently needs a depth attachment.
+            // Keep descriptors unchanged while Experiment 2 is being measured so camera
+            // elimination remains the isolated performance variable. The resolved target is
+            // no longer a camera output and can be made depthless in a later focused change.
             _worldTarget = CreateTarget(width, height, "Rustline World - Logical");
             _penumbraTarget = CreateTarget(width, height, "Rustline Penumbra - Logical");
             _penumbraMaterial.SetTexture(MainTexId, _worldTarget);
@@ -310,14 +233,9 @@ namespace Rustline.Presentation
 
             bool usePenumbra = penumbraEnabled && _penumbraTarget != null;
 
-            // The Processing Camera must remain enabled even when the penumbra is OFF: it
-            // now drives the final RenderGraph presentation pass. The expensive logical
-            // penumbra pass itself is skipped by the renderer feature when OFF.
+            // The driver camera remains active in both modes. Penumbra OFF skips only the
+            // logical effect pass and presents the raw world target directly.
             processingCamera.enabled = true;
-            processingRenderer.enabled = false;
-            presentationCamera.enabled = false;
-            presentationRenderer.enabled = false;
-
             _presentationMaterial.SetTexture(
                 MainTexId,
                 usePenumbra ? _penumbraTarget : _worldTarget);
