@@ -38,17 +38,21 @@ namespace Rustline.Tests
                 presentation.ProcessingCamera.GetUniversalAdditionalCameraData();
             UniversalAdditionalCameraData presentationCameraData =
                 presentation.PresentationCamera.GetUniversalAdditionalCameraData();
+            ScriptableRenderer utilityRenderer = UniversalRenderPipeline.asset.GetRenderer(
+                NativePixelPresentation.UtilityRendererIndex);
+            Assert.That(utilityRenderer, Is.Not.Null,
+                "The lightweight utility renderer must remain registered in the active URP asset.");
             Assert.That(
-                worldCameraData.rendererIndex,
-                Is.Not.EqualTo(NativePixelPresentation.UtilityRendererIndex),
+                worldCameraData.scriptableRenderer,
+                Is.Not.SameAs(utilityRenderer),
                 "The gameplay/world camera must remain on the default 2D Renderer.");
             Assert.That(
-                processingCameraData.rendererIndex,
-                Is.EqualTo(NativePixelPresentation.UtilityRendererIndex),
+                processingCameraData.scriptableRenderer,
+                Is.SameAs(utilityRenderer),
                 "The logical penumbra camera must use the lightweight utility renderer.");
             Assert.That(
-                presentationCameraData.rendererIndex,
-                Is.EqualTo(NativePixelPresentation.UtilityRendererIndex),
+                presentationCameraData.scriptableRenderer,
+                Is.SameAs(utilityRenderer),
                 "The physical presentation camera must use the lightweight utility renderer.");
 
             RenderTexture originalWorldTarget = presentation.WorldTarget;
