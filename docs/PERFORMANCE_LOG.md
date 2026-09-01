@@ -128,36 +128,36 @@ The Pedro ↔ Echo micro-measurement loop remains useful for large regressions a
 
 Obvious unused features may still be removed incrementally when the change is functionally safe and structurally justified. Claims of small speedups, however, should be treated as provisional until measured outside the Editor.
 
-The next major performance-relevant system is the native-pixel viewport + palette-constrained penumbra. It should ship with a development-only runtime toggle so its incremental cost can be measured directly with the same scene and later in a standalone Development Build.
-
 ## M1B — native-pixel viewport and palette penumbra prototype
 
-Status: **implemented and instrumented; first presentation-path recovery experiment accepted**.
+Status: **implemented, consolidated, and instrumented**.
 
-Implementation boundary:
+Current implementation boundary:
 
-- MovementLab world rendering is bounded to the computed logical size, never larger than 1072×1072.
-- One logical-resolution GPU pass performs the palette lookup and ordered dithering before physical integer upscaling.
-- The source and resolved RenderTextures persist across steady-state frames and are recreated only when logical dimensions change.
-- Logical targets use 8-bit sRGB color, Point filtering, no mipmaps, no MSAA, and no HDR. Both camera-output targets have the minimal depth attachment required by Unity 6 URP RenderGraph; the accepted 2D Renderer setting remains `m_UseDepthStencilBuffer: 0`.
-- A dedicated logical processing camera/quad replaces the legacy end-of-camera command-buffer blit. A separate physical presentation camera/quad renders the selected logical target into a centered integer rectangle over a Deep Space clear; the HUD is drawn afterward and is not processed by the penumbra.
+- MovementLab world rendering is bounded to the computed logical size, never larger than `1072×1072`.
+- The gameplay/world camera keeps Renderer2D and renders into a persistent logical world target.
+- One lightweight utility/driver camera uses the minimal utility renderer with `cullingMask = 0`; it exists only to drive the custom URP RenderGraph feature and performs no scene-object rendering.
+- With Penumbra ON, one logical-resolution RenderGraph pass performs the palette remap and ordered dithering into a persistent resolved target.
+- The final RenderGraph pass point-presents either the resolved target or raw world target directly into the physical backbuffer, centered at integer scale over a Deep Space clear.
+- The former physical Presentation Camera and both presentation quads were removed from the accepted runtime/setup architecture.
+- Source and resolved RenderTextures persist across steady-state frames and are recreated only when logical dimensions change.
+- Logical targets use 8-bit sRGB color, Point filtering, no mipmaps, no MSAA, and no HDR. The current target descriptors remain intentionally unchanged while performance variables are isolated.
 - `P` toggles Penumbra `ON/OFF` in Editor and Development Builds without target reallocation and resets the 2.0-second sample window.
-- Penumbra OFF disables the processing camera and point-presents the raw world target directly.
+- Penumbra OFF skips only the logical effect pass and presents the raw world target directly through the same final RenderGraph presentation path.
 - HUD/copy output includes physical resolution, logical resolution, integer scale, penumbra state, camera-follow state, FPS, AVG, WORST, frames, VSync, and target frame rate.
 
 ### M1B performance recovery 1 — dedicated utility renderer
 
 Status: **accepted, consolidated, and closed**.
 
-Static audit found that the logical penumbra camera and physical presentation camera were both running through Rustline's full `Renderer2D`, even though each renders only one isolated unlit quad. The world camera must keep the 2D Renderer, but the two presentation-only cameras do not need 2D lighting/sprite-renderer machinery.
+Static audit found that the logical penumbra camera and physical presentation camera were both running through Rustline's full `Renderer2D`, even though each rendered only isolated unlit presentation geometry. The world camera must keep the 2D Renderer, but presentation-only work does not need 2D lighting/sprite-renderer machinery.
 
 Change:
 
 - Added `Assets/Settings/RustlineUtilityRenderer.asset`, a minimal Universal Renderer registered at renderer index `1` in `UniversalRP.asset`.
-- The utility renderer has no Renderer Features, no opaque-layer work, and only sees the dedicated `RustlinePenumbra` / `RustlinePresentation` layers.
-- `NativePixelPresentation` now owns the routing contract directly: on enable, the processing and presentation cameras select renderer index `1`; the gameplay/world camera remains on the default Renderer2D.
-- The temporary `AfterSceneLoad` bootstrap used for the reversible experiment was removed after acceptance.
-- PlayMode coverage validates the effective renderer used by both utility cameras and confirms that the world camera does not use the utility renderer.
+- The utility renderer has no Renderer Features other than the accepted native-pixel RenderGraph presentation feature and performs no normal scene rendering for the driver camera.
+- The world camera remains on the default Renderer2D.
+- Runtime and PlayMode coverage enforce the renderer split.
 
 Observed Editor samples with **Penumbra ON**, `VSync 0`, `Target -1`, and camera follow ON:
 
@@ -199,6 +199,54 @@ Conclusion:
 
 - **Experiment closed: keep the dedicated utility renderer as part of the accepted M1B presentation architecture.**
 - Do not move the world camera away from Renderer2D; it renders the actual 2D scene and lighting.
-- The next structural optimization target is the remaining physical presentation-camera stage.
-- Penumbra shader micro-optimization remains secondary because the large regression persisted with Penumbra OFF before this recovery.
 - A clean standalone Development Build comparison is still required before claiming hardware-tier performance targets.
+
+### M1B performance experiment 2 — direct RenderGraph presentation
+
+Status: **accepted and closed — performance-neutral in Editor measurements; architectural simplification kept**.
+
+Question:
+
+Can Rustline remove the dedicated physical Presentation Camera and its presentation quad, replacing that final camera stage with a supported URP 17 RenderGraph pass that writes the selected logical texture directly to the backbuffer, without changing the accepted visual output?
+
+Change:
+
+- Removed the former Presentation Camera from the accepted runtime architecture.
+- Removed the former logical/presentation quads from the accepted runtime/setup architecture.
+- The utility Processing Camera was consolidated into a lightweight Native Pixel Driver Camera with `cullingMask = 0`; it drives RenderGraph but renders no scene geometry.
+- The custom `RustlineNativePixelPresentFeature` now imports the persistent logical targets with explicit `RenderTargetInfo`, performs the optional logical penumbra resolve, and point-presents the selected source directly to `UniversalResourceData.backBufferColor`.
+- The final pass explicitly clears the physical target to canonical Deep Space and uses the computed centered integer viewport.
+- No legacy `CommandBuffer.Blit` or `endCameraRendering` callback is used.
+- Texture orientation is explicit per transition: the camera-target → logical-resolve transition performs the required platform Y normalization; final presentation performs no extra flip. Repeated Penumbra toggles were manually validated after this correction.
+
+Final Editor measurements at `PHYSICAL 1920×1080 / LOGICAL 1072×1072 / SCALE 1×`, `VSync 0`, `Target -1`, camera follow ON:
+
+Penumbra ON:
+
+| Sample | FPS | AVG ms | WORST ms | Frames |
+|---:|---:|---:|---:|---:|
+| 1 | 72.1 | 13.87 | 22.63 | 145 |
+| 2 | 71.0 | 14.08 | 20.47 | 143 |
+
+Simple mean: approximately **71.6 FPS / 13.98 ms AVG**.
+
+Penumbra OFF:
+
+| Sample | FPS | AVG ms | WORST ms | Frames |
+|---:|---:|---:|---:|---:|
+| 1 | 75.5 | 13.25 | 17.54 | 151 |
+| 2 | 74.0 | 13.51 | 20.76 | 149 |
+
+Simple mean: approximately **74.8 FPS / 13.38 ms AVG**.
+
+The observed same-session Penumbra delta is therefore approximately **0.60 ms/frame** at the maximum logical viewport in this Editor workflow.
+
+Compared with the Experiment 1 final Penumbra-ON mean (`13.51 ms`), Experiment 2's Penumbra-ON mean (`13.98 ms`) does not demonstrate a speedup, but the approximately `0.47 ms` difference is also too small relative to the already-observed Editor variance to establish a meaningful regression.
+
+Conclusion:
+
+- **Keep Experiment 2.** The measurable Editor result is best classified as performance-neutral, not as a demonstrated speedup.
+- The accepted architecture is simpler: one gameplay World Camera plus one no-culling Driver Camera and explicit RenderGraph passes, with no physical Presentation Camera or presentation quads.
+- The new structure provides direct control over the logical effect and final presentation stages and removes unnecessary scene presentation objects without sacrificing visual correctness.
+- The next focused performance experiment is the palette-penumbra shader itself. Its current same-session incremental cost is approximately `0.60 ms/frame` in this Editor measurement, providing a concrete ON-vs-OFF comparison for the next experiment.
+- Do not claim sub-millisecond gains from Editor Game View alone; use the immediate ON/OFF comparison as a directional experiment and validate serious claims later in a standalone Development Build / Unity Profiler.
