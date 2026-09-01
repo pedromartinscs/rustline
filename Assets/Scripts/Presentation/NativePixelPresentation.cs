@@ -1,13 +1,12 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// MovementLab-only native pixel compositor. The world is rendered once at logical
-    /// resolution, palette-darkened there, then point-presented into an integral screen rect.
+    /// MovementLab-only native pixel compositor. Three ordered URP cameras render the
+    /// world, optional logical penumbra quad, and point-sampled physical presentation.
     /// </summary>
-    [DefaultExecutionOrder(-1000)]
+    [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
     public sealed class NativePixelPresentation : MonoBehaviour
     {
@@ -16,6 +15,7 @@ namespace Rustline.Presentation
         public const int PenumbraThicknessPixels = 64;
         public const int FullDarknessRadiusPixels = 520;
 
+        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int LogicalSizeId = Shader.PropertyToID("_LogicalSize");
         private static readonly int PlayerPixelCenterId = Shader.PropertyToID("_PlayerPixelCenter");
         private static readonly int WorldPixelOriginId = Shader.PropertyToID("_WorldPixelOrigin");
@@ -26,9 +26,13 @@ namespace Rustline.Presentation
         private static readonly int DarknessLutId = Shader.PropertyToID("_DarknessLut");
 
         [SerializeField] private Camera worldCamera;
+        [SerializeField] private Camera processingCamera;
         [SerializeField] private Camera presentationCamera;
         [SerializeField] private Transform playerTarget;
+        [SerializeField] private MeshRenderer processingRenderer;
+        [SerializeField] private MeshRenderer presentationRenderer;
         [SerializeField] private Shader penumbraShader;
+        [SerializeField] private Shader presentationShader;
         [SerializeField] private bool penumbraEnabled = true;
 
         private readonly Vector4[] _palette = new Vector4[RustlinePalette.ColorCount];
@@ -39,8 +43,7 @@ namespace Rustline.Presentation
         private RenderTexture _worldTarget;
         private RenderTexture _penumbraTarget;
         private Material _penumbraMaterial;
-        private CommandBuffer _penumbraCommands;
-        private bool _subscribed;
+        private Material _presentationMaterial;
 
         public NativePixelViewport Viewport => _viewport;
         public bool PenumbraEnabled => penumbraEnabled;
@@ -48,9 +51,16 @@ namespace Rustline.Presentation
         public RenderTexture WorldTarget => _worldTarget;
         public RenderTexture ResolvedTarget => _penumbraTarget;
         public Camera WorldCamera => worldCamera;
+        public Camera ProcessingCamera => processingCamera;
         public Camera PresentationCamera => presentationCamera;
         public Transform PlayerTarget => playerTarget;
+        public MeshRenderer ProcessingRenderer => processingRenderer;
+        public MeshRenderer PresentationRenderer => presentationRenderer;
         public Shader PenumbraShader => penumbraShader;
+        public Shader PresentationShader => presentationShader;
+        public Texture PresentedSource => _presentationMaterial != null
+            ? _presentationMaterial.GetTexture(MainTexId)
+            : null;
 
         private void OnEnable()
         {
@@ -60,83 +70,91 @@ namespace Rustline.Presentation
             }
 
             RustlinePalette.CopyLinearShaderData(_palette, _darknessLut);
-            _penumbraMaterial = new Material(penumbraShader)
-            {
-                name = "Rustline Palette Penumbra - Runtime",
-                hideFlags = HideFlags.HideAndDontSave
-            };
+            _penumbraMaterial = CreateRuntimeMaterial(
+                penumbraShader,
+                "Rustline Palette Penumbra - Runtime");
+            _presentationMaterial = CreateRuntimeMaterial(
+                presentationShader,
+                "Rustline Native Pixel Present - Runtime");
+
             _penumbraMaterial.SetVectorArray(PaletteId, _palette);
             _penumbraMaterial.SetVectorArray(DarknessLutId, _darknessLut);
             _penumbraMaterial.SetFloat(FullVisibleRadiusId, FullyVisibleRadiusPixels);
             _penumbraMaterial.SetFloat(FullDarknessRadiusId, FullDarknessRadiusPixels);
+            _penumbraMaterial.SetFloat(PenumbraEnabledId, 1f);
 
-            _penumbraCommands = new CommandBuffer { name = "Rustline Logical Penumbra" };
-            RenderPipelineManager.endCameraRendering += HandleEndCameraRendering;
-            _subscribed = true;
+            processingRenderer.sharedMaterial = _penumbraMaterial;
+            presentationRenderer.sharedMaterial = _presentationMaterial;
+            ConfigureLayerIsolation();
             RefreshViewportAndTargets();
+            UpdatePenumbraParameters();
+            ApplyPenumbraState();
+            presentationCamera.enabled = true;
         }
 
         private void OnDisable()
         {
-            if (_subscribed)
-            {
-                RenderPipelineManager.endCameraRendering -= HandleEndCameraRendering;
-                _subscribed = false;
-            }
-
             if (worldCamera != null && worldCamera.targetTexture == _worldTarget)
             {
                 worldCamera.targetTexture = null;
             }
 
+            if (processingCamera != null && processingCamera.targetTexture == _penumbraTarget)
+            {
+                processingCamera.targetTexture = null;
+            }
+
+            if (processingCamera != null)
+            {
+                processingCamera.enabled = false;
+            }
+
+            if (presentationCamera != null)
+            {
+                presentationCamera.enabled = false;
+            }
+
+            if (processingRenderer != null)
+            {
+                processingRenderer.enabled = false;
+                processingRenderer.sharedMaterial = null;
+            }
+
+            if (presentationRenderer != null)
+            {
+                presentationRenderer.enabled = false;
+                presentationRenderer.sharedMaterial = null;
+            }
+
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
-
-            if (_penumbraCommands != null)
-            {
-                _penumbraCommands.Release();
-                _penumbraCommands = null;
-            }
-
-            if (_penumbraMaterial != null)
-            {
-                Destroy(_penumbraMaterial);
-                _penumbraMaterial = null;
-            }
+            DestroyRuntimeObject(ref _penumbraMaterial);
+            DestroyRuntimeObject(ref _presentationMaterial);
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (_viewport.PhysicalWidth != Screen.width || _viewport.PhysicalHeight != Screen.height)
             {
                 RefreshViewportAndTargets();
             }
-        }
 
-        private void OnGUI()
-        {
-            if (Event.current.type != EventType.Repaint || _penumbraTarget == null)
-            {
-                return;
-            }
-
-            Color previousColor = GUI.color;
-            GUI.color = Color.white;
-            GUI.DrawTexture(
-                new Rect(
-                    _viewport.OutputOffsetX,
-                    _viewport.OutputOffsetY,
-                    _viewport.OutputWidth,
-                    _viewport.OutputHeight),
-                _penumbraTarget,
-                ScaleMode.StretchToFill,
-                false);
-            GUI.color = previousColor;
+            UpdatePenumbraParameters();
         }
 
         public void TogglePenumbra()
         {
             penumbraEnabled = !penumbraEnabled;
+            ApplyPenumbraState();
+        }
+
+        private void ConfigureLayerIsolation()
+        {
+            int processingMask = 1 << processingRenderer.gameObject.layer;
+            int presentationMask = 1 << presentationRenderer.gameObject.layer;
+            worldCamera.cullingMask &= ~(processingMask | presentationMask);
+            processingCamera.cullingMask = processingMask;
+            presentationCamera.cullingMask = presentationMask;
         }
 
         private void RefreshViewportAndTargets()
@@ -154,54 +172,54 @@ namespace Rustline.Presentation
                 RecreateTargets(nextViewport.LogicalWidth, nextViewport.LogicalHeight);
             }
 
-            if (worldCamera != null)
-            {
-                worldCamera.targetTexture = _worldTarget;
-                worldCamera.orthographicSize = nextViewport.LogicalHeight / (2f * PixelsPerUnit);
-            }
+            worldCamera.targetTexture = _worldTarget;
+            worldCamera.orthographicSize = nextViewport.LogicalHeight / (2f * PixelsPerUnit);
+
+            processingCamera.targetTexture = _penumbraTarget;
+            processingCamera.orthographicSize = nextViewport.LogicalHeight * 0.5f;
+            processingRenderer.transform.localPosition = Vector3.zero;
+            processingRenderer.transform.localScale = new Vector3(
+                nextViewport.LogicalWidth,
+                nextViewport.LogicalHeight,
+                1f);
+
+            presentationCamera.orthographicSize = nextViewport.PhysicalHeight * 0.5f;
+            presentationRenderer.transform.localPosition = new Vector3(
+                nextViewport.OutputOffsetX + nextViewport.OutputWidth * 0.5f - nextViewport.PhysicalWidth * 0.5f,
+                nextViewport.OutputOffsetY + nextViewport.OutputHeight * 0.5f - nextViewport.PhysicalHeight * 0.5f,
+                0f);
+            presentationRenderer.transform.localScale = new Vector3(
+                nextViewport.OutputWidth,
+                nextViewport.OutputHeight,
+                1f);
+
+            ApplyPenumbraState();
         }
 
         private void RecreateTargets(int width, int height)
         {
-            if (worldCamera != null && worldCamera.targetTexture == _worldTarget)
+            if (worldCamera.targetTexture == _worldTarget)
             {
                 worldCamera.targetTexture = null;
             }
 
+            if (processingCamera.targetTexture == _penumbraTarget)
+            {
+                processingCamera.targetTexture = null;
+            }
+
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
-            // Unity 6 URP RenderGraph requires a depth attachment on a Camera output texture,
-            // even though Rustline's Renderer2D depth/stencil feature remains disabled.
-            _worldTarget = CreateTarget(width, height, 16, "Rustline World - Logical");
-            _penumbraTarget = CreateTarget(width, height, 0, "Rustline Penumbra - Logical");
+            // Unity 6 URP RenderGraph camera outputs require a depth attachment even
+            // though Rustline's Renderer2D depth/stencil feature remains disabled.
+            _worldTarget = CreateTarget(width, height, "Rustline World - Logical");
+            _penumbraTarget = CreateTarget(width, height, "Rustline Penumbra - Logical");
+            _penumbraMaterial.SetTexture(MainTexId, _worldTarget);
         }
 
-        private static RenderTexture CreateTarget(int width, int height, int depthBits, string targetName)
+        private void UpdatePenumbraParameters()
         {
-            RenderTexture target = new RenderTexture(
-                width,
-                height,
-                depthBits,
-                RenderTextureFormat.ARGB32,
-                RenderTextureReadWrite.sRGB)
-            {
-                name = targetName,
-                antiAliasing = 1,
-                filterMode = FilterMode.Point,
-                wrapMode = TextureWrapMode.Clamp,
-                useMipMap = false,
-                autoGenerateMips = false,
-                anisoLevel = 0,
-                hideFlags = HideFlags.HideAndDontSave
-            };
-            target.Create();
-            return target;
-        }
-
-        private void HandleEndCameraRendering(ScriptableRenderContext context, Camera renderedCamera)
-        {
-            if (renderedCamera != worldCamera || _worldTarget == null || _penumbraTarget == null ||
-                _penumbraMaterial == null || playerTarget == null)
+            if (_penumbraMaterial == null || playerTarget == null || worldCamera == null)
             {
                 return;
             }
@@ -225,11 +243,53 @@ namespace Rustline.Presentation
             _penumbraMaterial.SetVector(
                 WorldPixelOriginId,
                 new Vector4(worldOriginX, worldOriginY, 0f, 0f));
-            _penumbraMaterial.SetFloat(PenumbraEnabledId, penumbraEnabled ? 1f : 0f);
+        }
 
-            _penumbraCommands.Clear();
-            _penumbraCommands.Blit(_worldTarget, _penumbraTarget, _penumbraMaterial, 0);
-            context.ExecuteCommandBuffer(_penumbraCommands);
+        private void ApplyPenumbraState()
+        {
+            if (_presentationMaterial == null)
+            {
+                return;
+            }
+
+            bool usePenumbra = penumbraEnabled && _penumbraTarget != null;
+            processingCamera.enabled = usePenumbra;
+            processingRenderer.enabled = usePenumbra;
+            presentationRenderer.enabled = true;
+            _presentationMaterial.SetTexture(
+                MainTexId,
+                usePenumbra ? _penumbraTarget : _worldTarget);
+        }
+
+        private static Material CreateRuntimeMaterial(Shader shader, string materialName)
+        {
+            return new Material(shader)
+            {
+                name = materialName,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+        }
+
+        private static RenderTexture CreateTarget(int width, int height, string targetName)
+        {
+            RenderTexture target = new RenderTexture(
+                width,
+                height,
+                16,
+                RenderTextureFormat.ARGB32,
+                RenderTextureReadWrite.sRGB)
+            {
+                name = targetName,
+                antiAliasing = 1,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                useMipMap = false,
+                autoGenerateMips = false,
+                anisoLevel = 0,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            target.Create();
+            return target;
         }
 
         private static void ReleaseTarget(ref RenderTexture target)
@@ -240,6 +300,17 @@ namespace Rustline.Presentation
             }
 
             target.Release();
+            Destroy(target);
+            target = null;
+        }
+
+        private static void DestroyRuntimeObject<T>(ref T target) where T : Object
+        {
+            if (target == null)
+            {
+                return;
+            }
+
             Destroy(target);
             target = null;
         }

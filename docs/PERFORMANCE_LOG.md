@@ -139,9 +139,10 @@ Implementation boundary:
 - MovementLab world rendering is bounded to the computed logical size, never larger than 1072×1072.
 - One logical-resolution GPU pass performs the palette lookup and ordered dithering before physical integer upscaling.
 - The source and resolved RenderTextures persist across steady-state frames and are recreated only when logical dimensions change.
-- Logical targets use 8-bit sRGB color, Point filtering, no mipmaps, no MSAA, and no HDR. The world camera target has the minimal depth attachment required by Unity 6 URP RenderGraph; the accepted 2D Renderer setting remains `m_UseDepthStencilBuffer: 0`.
-- Final presentation is a centered integer rectangle over a Deep Space camera clear; the HUD is drawn afterward and is not processed by the penumbra.
+- Logical targets use 8-bit sRGB color, Point filtering, no mipmaps, no MSAA, and no HDR. Both camera-output targets have the minimal depth attachment required by Unity 6 URP RenderGraph; the accepted 2D Renderer setting remains `m_UseDepthStencilBuffer: 0`.
+- A dedicated logical processing camera/quad replaces the legacy end-of-camera command-buffer blit. A separate physical presentation camera/quad renders the selected logical target into a centered integer rectangle over a Deep Space clear; the HUD is drawn afterward and is not processed by the penumbra.
 - `P` toggles Penumbra `ON/OFF` in Editor and Development Builds without target reallocation and resets the 2.0-second sample window.
+- Penumbra OFF disables the processing camera and point-presents the raw world target directly.
 - HUD/copy output now includes physical resolution, logical resolution, integer scale, penumbra state, camera-follow state, FPS, AVG, WORST, frames, VSync, and target frame rate.
 
 No new FPS or frame-time result is recorded here. A clean same-session Penumbra `ON` versus `OFF` measurement in a standalone Development Build is still required before making a performance-cost claim.

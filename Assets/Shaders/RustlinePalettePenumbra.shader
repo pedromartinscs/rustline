@@ -7,7 +7,12 @@ Shader "Hidden/Rustline/PalettePenumbra"
 
     SubShader
     {
-        Tags { "RenderPipeline" = "UniversalPipeline" }
+        Tags
+        {
+            "RenderPipeline" = "UniversalPipeline"
+            "Queue" = "Transparent"
+            "RenderType" = "Transparent"
+        }
         Cull Off
         ZWrite Off
         ZTest Always
@@ -15,6 +20,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
         Pass
         {
             Name "Palette Penumbra"
+            Tags { "LightMode" = "SRPDefaultUnlit" }
 
             HLSLPROGRAM
             #pragma target 3.5
