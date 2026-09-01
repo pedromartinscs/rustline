@@ -74,7 +74,7 @@ namespace Rustline.Editor
         [MenuItem("Tools/Rustline/Validate M1A Movement")]
         public static void ValidateFromMenu()
         {
-            ValidateAllOrThrow();
+            ValidateAllOrThrow(reopenMovementLabFromDisk: true);
             EditorUtility.DisplayDialog("Rustline M1A Movement", "All deterministic M1A checks passed.", "OK");
         }
 
@@ -113,7 +113,7 @@ namespace Rustline.Editor
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            ValidateAllOrThrow();
+            ValidateAllOrThrow(reopenMovementLabFromDisk: true);
         }
 
         private static PlayerMovementConfig CreateConfig()
@@ -287,18 +287,22 @@ namespace Rustline.Editor
             CompositeCollider2D composite = collisionTilemap.gameObject.AddComponent<CompositeCollider2D>();
             composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
 
-            foreach (CourseBlock block in Course)
-            {
-                for (int x = block.Left; x < block.Left + block.Width; x++)
-                {
-                    for (int y = block.Top - block.Depth; y < block.Top; y++)
-                    {
-                        Vector3Int position = new Vector3Int(x, y, 0);
-                        visualTilemap.SetTile(position, ruleTile);
-                        collisionTilemap.SetTile(position, collisionTile);
-                    }
-                }
-            }
+            Vector3Int[] courseCells = GetCourseCells().ToArray();
+            TileBase[] visualTiles = Enumerable.Repeat<TileBase>(ruleTile, courseCells.Length).ToArray();
+            TileBase[] collisionTiles = Enumerable.Repeat(collisionTile, courseCells.Length).ToArray();
+            visualTilemap.SetTiles(courseCells, visualTiles);
+            collisionTilemap.SetTiles(courseCells, collisionTiles);
+            visualTilemap.RefreshAllTiles();
+            collisionTilemap.RefreshAllTiles();
+
+            // Tilemap.SetTiles changes native tile data. The collision Tilemap happens to receive
+            // additional dirtiness through TilemapCollider2D; the visual Rule Tile map does not.
+            // Explicitly dirty both maps and the scene so their serialized tile arrays survive saving.
+            EditorUtility.SetDirty(visualTilemap);
+            EditorUtility.SetDirty(visualTilemap.GetComponent<TilemapRenderer>());
+            EditorUtility.SetDirty(collisionTilemap);
+            EditorUtility.SetDirty(collisionTilemap.GetComponent<TilemapRenderer>());
+            EditorSceneManager.MarkSceneDirty(scene);
 
             GameObject spawn = new GameObject("Player Spawn");
             spawn.transform.SetParent(root.transform, false);
@@ -411,7 +415,7 @@ namespace Rustline.Editor
             EditorBuildSettings.scenes = remaining.ToArray();
         }
 
-        internal static void ValidateAllOrThrow()
+        internal static void ValidateAllOrThrow(bool reopenMovementLabFromDisk = true)
         {
             PlayerMovementConfig config = AssetDatabase.LoadAssetAtPath<PlayerMovementConfig>(ConfigPath);
             Require(config != null, "Player movement config is missing.");
@@ -452,7 +456,7 @@ namespace Rustline.Editor
                 EditorBuildSettings.scenes[0].enabled && EditorBuildSettings.scenes[1].path == ArtShowcasePath &&
                 EditorBuildSettings.scenes[1].enabled, "MovementLab and ArtShowcase must lead the build settings.");
 
-            ValidateScene();
+            ValidateScene(reopenMovementLabFromDisk);
             RustlineM0ArtSetup.ValidateAllOrThrow();
 
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
@@ -465,19 +469,58 @@ namespace Rustline.Editor
                 "Networking or multiplayer packages are present.");
         }
 
-        private static void ValidateScene()
+        private static void ValidateScene(bool reopenFromDisk)
         {
-            Scene scene = SceneManager.GetSceneByPath(ScenePath);
-            bool openedForValidation = !scene.IsValid() || !scene.isLoaded;
-            if (openedForValidation)
+            Scene scene;
+            bool openedForValidation;
+            if (reopenFromDisk)
             {
-                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+                // Opening the saved path after replacing the active scene ensures validation reads
+                // the YAML/asset database result, not unsaved in-memory Tilemap state.
+                EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+                openedForValidation = false;
+            }
+            else
+            {
+                scene = SceneManager.GetSceneByPath(ScenePath);
+                openedForValidation = !scene.IsValid() || !scene.isLoaded;
+                if (openedForValidation)
+                {
+                    scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+                }
             }
 
             try
             {
                 Grid grid = FindInScene<Grid>(scene);
                 Require(grid != null && grid.cellSize == Vector3.one, "MovementLab grid must use 1x1 cells.");
+                RuleTile ruleTile = AssetDatabase.LoadAssetAtPath<RuleTile>(RuleTilePath);
+                Tile collisionTile = AssetDatabase.LoadAssetAtPath<Tile>(CollisionTilePath);
+                Require(ruleTile != null && collisionTile != null, "MovementLab Tilemap assets are missing.");
+
+                Tilemap visualTilemap = FindTilemap(scene, "Industrial Surface - Visual");
+                Tilemap collisionTilemap = FindTilemap(scene, "Ground Collision - Hidden");
+                Require(visualTilemap != null, "MovementLab visual Tilemap is missing.");
+                Require(collisionTilemap != null, "MovementLab collision Tilemap is missing.");
+                Require(visualTilemap.GetComponent<TilemapRenderer>()?.enabled == true,
+                    "MovementLab visual Tilemap renderer must remain enabled.");
+                Require(collisionTilemap.GetComponent<TilemapRenderer>()?.enabled == false,
+                    "MovementLab collision Tilemap renderer must remain disabled.");
+
+                Vector3Int[] courseCells = GetCourseCells().ToArray();
+                Require(CountOccupiedCells(visualTilemap) == courseCells.Length,
+                    "MovementLab visual Tilemap occupied-cell count does not match the course geometry.");
+                Require(CountOccupiedCells(collisionTilemap) == courseCells.Length,
+                    "MovementLab collision Tilemap occupied-cell count does not match the course geometry.");
+                foreach (Vector3Int cell in courseCells)
+                {
+                    Require(visualTilemap.GetTile(cell) == ruleTile,
+                        "MovementLab visual Tilemap must use IndustrialSurfaceRuleTile at " + cell + ".");
+                    Require(collisionTilemap.GetTile(cell) == collisionTile,
+                        "MovementLab collision Tilemap is missing its collision tile at " + cell + ".");
+                }
+
                 TilemapCollider2D collider = FindInScene<TilemapCollider2D>(scene);
                 Require(collider != null && collider.compositeOperation == Collider2D.CompositeOperation.Merge &&
                     collider.GetComponent<CompositeCollider2D>() != null,
@@ -515,6 +558,42 @@ namespace Rustline.Editor
             }
 
             return null;
+        }
+
+        private static Tilemap FindTilemap(Scene scene, string name)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Tilemap tilemap in root.GetComponentsInChildren<Tilemap>(true))
+                {
+                    if (tilemap.name == name)
+                    {
+                        return tilemap;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static int CountOccupiedCells(Tilemap tilemap)
+        {
+            BoundsInt bounds = tilemap.cellBounds;
+            return tilemap.GetTilesBlock(bounds).Count(tile => tile != null);
+        }
+
+        private static IEnumerable<Vector3Int> GetCourseCells()
+        {
+            foreach (CourseBlock block in Course)
+            {
+                for (int x = block.Left; x < block.Left + block.Width; x++)
+                {
+                    for (int y = block.Top - block.Depth; y < block.Top; y++)
+                    {
+                        yield return new Vector3Int(x, y, 0);
+                    }
+                }
+            }
         }
 
         private static int EnsureGroundLayer()
