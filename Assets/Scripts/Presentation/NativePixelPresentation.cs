@@ -4,8 +4,12 @@ using UnityEngine.Rendering.Universal;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// MovementLab-only native pixel compositor. Three ordered URP cameras render the
-    /// world, optional logical penumbra quad, and point-sampled physical presentation.
+    /// MovementLab-only native pixel compositor. The gameplay camera renders the logical
+    /// world target; a lightweight utility camera drives RenderGraph passes for optional
+    /// logical penumbra resolve and final point-sampled physical presentation.
+    ///
+    /// The old physical presentation camera/quad remain serialized during Experiment 2
+    /// for trivial rollback, but are disabled at runtime and do not participate in rendering.
     /// </summary>
     [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
@@ -88,29 +92,29 @@ namespace Rustline.Presentation
             _penumbraMaterial.SetFloat(FullDarknessRadiusId, FullDarknessRadiusPixels);
             _penumbraMaterial.SetFloat(PenumbraEnabledId, 1f);
 
+            // Keep the old quad materials wired during the experiment so rollback remains
+            // mechanical. The renderers themselves are disabled by ApplyPenumbraState().
             processingRenderer.sharedMaterial = _penumbraMaterial;
             presentationRenderer.sharedMaterial = _presentationMaterial;
+
             ConfigureLayerIsolation();
             RefreshViewportAndTargets();
             UpdatePenumbraParameters();
             ApplyPenumbraState();
-            presentationCamera.enabled = true;
         }
 
         private void OnDisable()
         {
+            RustlineNativePixelPresentFeature.Clear(processingCamera);
+
             if (worldCamera != null && worldCamera.targetTexture == _worldTarget)
             {
                 worldCamera.targetTexture = null;
             }
 
-            if (processingCamera != null && processingCamera.targetTexture == _penumbraTarget)
-            {
-                processingCamera.targetTexture = null;
-            }
-
             if (processingCamera != null)
             {
+                processingCamera.targetTexture = null;
                 processingCamera.enabled = false;
             }
 
@@ -177,10 +181,8 @@ namespace Rustline.Presentation
 
         private void ConfigureUtilityRenderers()
         {
-            // The world camera deliberately stays on the default 2D Renderer. These two
-            // cameras only draw isolated unlit full-screen quads, so routing them through
-            // the dedicated lightweight Universal Renderer avoids paying Renderer2D setup
-            // costs for presentation-only work.
+            // Experiment 2 needs only the processing/driver camera. Keep the disabled
+            // presentation camera assigned to the utility renderer so rollback is trivial.
             SelectUtilityRenderer(processingCamera);
             SelectUtilityRenderer(presentationCamera);
         }
@@ -200,7 +202,10 @@ namespace Rustline.Presentation
             int processingMask = 1 << processingRenderer.gameObject.layer;
             int presentationMask = 1 << presentationRenderer.gameObject.layer;
             worldCamera.cullingMask &= ~(processingMask | presentationMask);
-            processingCamera.cullingMask = processingMask;
+
+            // The utility camera is now only a RenderGraph driver. It intentionally culls
+            // no scene geometry; both old fullscreen quads are disabled at runtime.
+            processingCamera.cullingMask = 0;
             presentationCamera.cullingMask = presentationMask;
         }
 
@@ -222,8 +227,13 @@ namespace Rustline.Presentation
             worldCamera.targetTexture = _worldTarget;
             worldCamera.orthographicSize = nextViewport.LogicalHeight / (2f * PixelsPerUnit);
 
-            processingCamera.targetTexture = _penumbraTarget;
-            processingCamera.orthographicSize = nextViewport.LogicalHeight * 0.5f;
+            // With no target texture this camera's URP backbuffer is the physical display.
+            // Its renderer feature resolves the optional logical penumbra first, then writes
+            // the selected logical image into the centered integer-scaled output rectangle.
+            processingCamera.targetTexture = null;
+            processingCamera.orthographicSize = nextViewport.PhysicalHeight * 0.5f;
+
+            // Retain deterministic fallback geometry during the reversible experiment.
             processingRenderer.transform.localPosition = Vector3.zero;
             processingRenderer.transform.localScale = new Vector3(
                 nextViewport.LogicalWidth,
@@ -250,15 +260,13 @@ namespace Rustline.Presentation
                 worldCamera.targetTexture = null;
             }
 
-            if (processingCamera.targetTexture == _penumbraTarget)
-            {
-                processingCamera.targetTexture = null;
-            }
-
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
-            // Unity 6 URP RenderGraph camera outputs require a depth attachment even
-            // though Rustline's Renderer2D depth/stencil feature remains disabled.
+
+            // Keep both target descriptors identical during the experiment so the measured
+            // variable is the camera/presentation path. If Experiment 2 is accepted, the
+            // resolved target can be reconsidered separately because it is no longer a
+            // camera output and therefore no longer inherently needs a depth attachment.
             _worldTarget = CreateTarget(width, height, "Rustline World - Logical");
             _penumbraTarget = CreateTarget(width, height, "Rustline Penumbra - Logical");
             _penumbraMaterial.SetTexture(MainTexId, _worldTarget);
@@ -300,12 +308,27 @@ namespace Rustline.Presentation
             }
 
             bool usePenumbra = penumbraEnabled && _penumbraTarget != null;
-            processingCamera.enabled = usePenumbra;
-            processingRenderer.enabled = usePenumbra;
-            presentationRenderer.enabled = true;
+
+            // The Processing Camera must remain enabled even when the penumbra is OFF: it
+            // now drives the final RenderGraph presentation pass. The expensive logical
+            // penumbra pass itself is skipped by the renderer feature when OFF.
+            processingCamera.enabled = true;
+            processingRenderer.enabled = false;
+            presentationCamera.enabled = false;
+            presentationRenderer.enabled = false;
+
             _presentationMaterial.SetTexture(
                 MainTexId,
                 usePenumbra ? _penumbraTarget : _worldTarget);
+
+            RustlineNativePixelPresentFeature.Configure(
+                processingCamera,
+                _worldTarget,
+                _penumbraTarget,
+                _penumbraMaterial,
+                _presentationMaterial,
+                _viewport,
+                usePenumbra);
         }
 
         private static Material CreateRuntimeMaterial(Shader shader, string materialName)
