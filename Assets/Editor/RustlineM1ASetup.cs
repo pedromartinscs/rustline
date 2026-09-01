@@ -35,10 +35,6 @@ namespace Rustline.Editor
         private const string PenumbraShaderPath = "Assets/Shaders/RustlinePalettePenumbra.shader";
         private const string PresentationShaderPath = "Assets/Shaders/RustlineNativePixelPresent.shader";
         private const string Renderer2DPath = "Assets/Settings/Renderer2D.asset";
-        private const string PenumbraLayerName = "RustlinePenumbra";
-        private const string PresentationLayerName = "RustlinePresentation";
-        private const int PenumbraLayerIndex = 28;
-        private const int PresentationLayerIndex = 29;
 
         private static readonly CourseBlock[] Course =
         {
@@ -109,8 +105,6 @@ namespace Rustline.Editor
             EnsureFolder("Assets/Config/Player");
             EnsureFolder("Assets/Prefabs/Player");
             int groundLayer = EnsureGroundLayer();
-            int penumbraLayer = EnsureLayer(PenumbraLayerName, PenumbraLayerIndex);
-            int presentationLayer = EnsureLayer(PresentationLayerName, PresentationLayerIndex);
 
             PlayerMovementConfig config = CreateConfig();
             PhysicsMaterial2D physicsMaterial = CreatePhysicsMaterial();
@@ -121,9 +115,7 @@ namespace Rustline.Editor
                 config,
                 prefab,
                 collisionTile,
-                groundLayer,
-                penumbraLayer,
-                presentationLayer);
+                groundLayer);
             PutMovementScenesFirstInBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -274,9 +266,7 @@ namespace Rustline.Editor
             PlayerMovementConfig config,
             GameObject playerPrefab,
             TileBase collisionTile,
-            int groundLayer,
-            int penumbraLayer,
-            int presentationLayer)
+            int groundLayer)
         {
             RuleTile ruleTile = AssetDatabase.LoadAssetAtPath<RuleTile>(RuleTilePath);
             Require(ruleTile != null, "Accepted M0 IndustrialSurface Rule Tile is missing.");
@@ -333,7 +323,7 @@ namespace Rustline.Editor
             SetObjectReference(respawn, "spawnPoint", spawn.transform);
             SetFloat(respawn, "failureHeight", -12f);
 
-            CreateCamera(root.transform, player.transform, penumbraLayer, presentationLayer);
+            CreateCamera(root.transform, player.transform);
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
@@ -347,11 +337,7 @@ namespace Rustline.Editor
             return tilemap;
         }
 
-        private static void CreateCamera(
-            Transform parent,
-            Transform target,
-            int penumbraLayer,
-            int presentationLayer)
+        private static void CreateCamera(Transform parent, Transform target)
         {
             Shader penumbraShader = AssetDatabase.LoadAssetAtPath<Shader>(PenumbraShaderPath);
             Require(penumbraShader != null, "Native pixel penumbra shader is missing: " + PenumbraShaderPath);
@@ -371,81 +357,36 @@ namespace Rustline.Editor
             worldCamera.backgroundColor = RustlinePalette.DeepSpaceLinear;
             worldCamera.allowHDR = false;
             worldCamera.allowMSAA = false;
-            worldCamera.cullingMask = ~((1 << penumbraLayer) | (1 << presentationLayer));
+            worldCamera.cullingMask = ~0;
             worldCamera.depth = 0f;
             worldCameraObject.AddComponent<UniversalAdditionalCameraData>();
 
             PixelCameraFollow2D follow = worldCameraObject.AddComponent<PixelCameraFollow2D>();
             SetObjectReference(follow, "target", target);
 
-            GameObject processingCameraObject = new GameObject("Penumbra Camera - Logical Pass");
-            processingCameraObject.transform.SetParent(parent, false);
-            processingCameraObject.transform.position = new Vector3(0f, 0f, -10f);
+            GameObject driverCameraObject = new GameObject("Native Pixel Driver Camera");
+            driverCameraObject.transform.SetParent(parent, false);
+            driverCameraObject.transform.position = new Vector3(0f, 0f, -10f);
 
-            Camera processingCamera = processingCameraObject.AddComponent<Camera>();
-            processingCamera.orthographic = true;
-            processingCamera.orthographicSize = 1f;
-            processingCamera.clearFlags = CameraClearFlags.SolidColor;
-            processingCamera.backgroundColor = RustlinePalette.DeepSpaceLinear;
-            processingCamera.allowHDR = false;
-            processingCamera.allowMSAA = false;
-            processingCamera.cullingMask = 1 << penumbraLayer;
-            processingCamera.depth = 5f;
-            processingCamera.enabled = false;
-            processingCameraObject.AddComponent<UniversalAdditionalCameraData>();
+            Camera driverCamera = driverCameraObject.AddComponent<Camera>();
+            driverCamera.orthographic = true;
+            driverCamera.orthographicSize = 1f;
+            driverCamera.clearFlags = CameraClearFlags.Nothing;
+            driverCamera.backgroundColor = RustlinePalette.DeepSpaceLinear;
+            driverCamera.allowHDR = false;
+            driverCamera.allowMSAA = false;
+            driverCamera.cullingMask = 0;
+            driverCamera.depth = 5f;
+            driverCamera.enabled = false;
+            driverCameraObject.AddComponent<UniversalAdditionalCameraData>();
 
-            MeshRenderer processingRenderer = CreatePresentationQuad(
-                parent,
-                "Logical Penumbra Pass Quad",
-                penumbraLayer);
-
-            GameObject presentationCameraObject = new GameObject("Presentation Camera - Deep Space Surround");
-            presentationCameraObject.transform.SetParent(parent, false);
-            presentationCameraObject.transform.position = new Vector3(0f, 0f, -10f);
-
-            Camera presentationCamera = presentationCameraObject.AddComponent<Camera>();
-            presentationCamera.orthographic = true;
-            presentationCamera.orthographicSize = 1f;
-            presentationCamera.clearFlags = CameraClearFlags.SolidColor;
-            presentationCamera.backgroundColor = RustlinePalette.DeepSpaceLinear;
-            presentationCamera.allowHDR = false;
-            presentationCamera.allowMSAA = false;
-            presentationCamera.cullingMask = 1 << presentationLayer;
-            presentationCamera.depth = 10f;
-            presentationCamera.enabled = false;
-            presentationCameraObject.AddComponent<UniversalAdditionalCameraData>();
-
-            MeshRenderer presentationRenderer = CreatePresentationQuad(
-                parent,
-                "Physical Native Pixel Presentation Quad",
-                presentationLayer);
-
-            NativePixelPresentation presentation = presentationCameraObject.AddComponent<NativePixelPresentation>();
+            NativePixelPresentation presentation = driverCameraObject.AddComponent<NativePixelPresentation>();
             SetObjectReference(presentation, "worldCamera", worldCamera);
-            SetObjectReference(presentation, "processingCamera", processingCamera);
-            SetObjectReference(presentation, "presentationCamera", presentationCamera);
+            SetObjectReference(presentation, "processingCamera", driverCamera);
             SetObjectReference(presentation, "playerTarget", target);
-            SetObjectReference(presentation, "processingRenderer", processingRenderer);
-            SetObjectReference(presentation, "presentationRenderer", presentationRenderer);
             SetObjectReference(presentation, "penumbraShader", penumbraShader);
             SetObjectReference(presentation, "presentationShader", presentationShader);
             SetBoolean(presentation, "penumbraEnabled", true);
-        }
-
-        private static MeshRenderer CreatePresentationQuad(
-            Transform parent,
-            string name,
-            int layer)
-        {
-            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
-            quad.name = name;
-            quad.transform.SetParent(parent, false);
-            quad.layer = layer;
-            UnityEngine.Object.DestroyImmediate(quad.GetComponent<MeshCollider>());
-            MeshRenderer renderer = quad.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = null;
-            renderer.enabled = false;
-            return renderer;
         }
 
         private static void CreateGlobalLight(Transform parent)
@@ -616,56 +557,38 @@ namespace Rustline.Editor
                 Require(collider != null && collider.compositeOperation == Collider2D.CompositeOperation.Merge &&
                     collider.GetComponent<CompositeCollider2D>() != null,
                     "MovementLab must use composite Tilemap collision.");
+
                 Camera worldCamera = FindCamera(scene, "World Camera - Native Pixel Follow");
-                Camera processingCamera = FindCamera(scene, "Penumbra Camera - Logical Pass");
-                Camera presentationCamera = FindCamera(scene, "Presentation Camera - Deep Space Surround");
-                int penumbraLayer = LayerMask.NameToLayer(PenumbraLayerName);
-                int presentationLayer = LayerMask.NameToLayer(PresentationLayerName);
-                Require(
-                    penumbraLayer == PenumbraLayerIndex && presentationLayer == PresentationLayerIndex,
-                    "MovementLab presentation layers are missing or use unexpected indices.");
+                Camera driverCamera = FindCamera(scene, "Native Pixel Driver Camera");
+                Require(GetComponentsInScene<Camera>(scene).Count == 2,
+                    "MovementLab must contain only the world camera and the native-pixel RenderGraph driver camera.");
                 Require(worldCamera != null && worldCamera.orthographic && !worldCamera.allowHDR &&
-                    !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera") &&
-                    (worldCamera.cullingMask & (1 << penumbraLayer)) == 0 &&
-                    (worldCamera.cullingMask & (1 << presentationLayer)) == 0,
+                    !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera"),
                     "MovementLab logical world camera configuration is invalid.");
                 Require(worldCamera.GetComponent<PixelCameraFollow2D>() != null,
                     "MovementLab camera follow is missing.");
-                Require(processingCamera != null && processingCamera.orthographic &&
-                    processingCamera.cullingMask == (1 << penumbraLayer) &&
-                    !processingCamera.allowHDR && !processingCamera.allowMSAA &&
-                    processingCamera.targetTexture == null && !processingCamera.enabled &&
-                    Mathf.Approximately(processingCamera.depth, 5f),
-                    "MovementLab logical penumbra camera configuration is invalid.");
-                Require(presentationCamera != null && presentationCamera.orthographic &&
-                    presentationCamera.cullingMask == (1 << presentationLayer) &&
-                    !presentationCamera.allowHDR && !presentationCamera.allowMSAA &&
-                    presentationCamera.targetTexture == null && !presentationCamera.enabled &&
-                    Mathf.Approximately(presentationCamera.depth, 10f),
-                    "MovementLab physical presentation camera configuration is invalid.");
+                Require(driverCamera != null && driverCamera.orthographic &&
+                    driverCamera.cullingMask == 0 &&
+                    !driverCamera.allowHDR && !driverCamera.allowMSAA &&
+                    driverCamera.targetTexture == null && !driverCamera.enabled &&
+                    driverCamera.clearFlags == CameraClearFlags.Nothing &&
+                    Mathf.Approximately(driverCamera.depth, 5f),
+                    "MovementLab native-pixel driver camera configuration is invalid.");
 
-                GameObject processingQuad = FindGameObject(scene, "Logical Penumbra Pass Quad");
-                GameObject presentationQuad = FindGameObject(scene, "Physical Native Pixel Presentation Quad");
-                MeshRenderer processingRenderer = processingQuad?.GetComponent<MeshRenderer>();
-                MeshRenderer presentationRenderer = presentationQuad?.GetComponent<MeshRenderer>();
-                Require(processingQuad != null && processingQuad.layer == penumbraLayer &&
-                    processingRenderer != null && !processingRenderer.enabled &&
-                    processingQuad.GetComponent<MeshCollider>() == null,
-                    "MovementLab logical penumbra quad isolation/configuration is invalid.");
-                Require(presentationQuad != null && presentationQuad.layer == presentationLayer &&
-                    presentationRenderer != null && !presentationRenderer.enabled &&
-                    presentationQuad.GetComponent<MeshCollider>() == null,
-                    "MovementLab physical presentation quad isolation/configuration is invalid.");
+                Require(FindGameObject(scene, "Logical Penumbra Pass Quad") == null,
+                    "MovementLab must not retain the legacy logical penumbra quad.");
+                Require(FindGameObject(scene, "Physical Native Pixel Presentation Quad") == null,
+                    "MovementLab must not retain the legacy physical presentation quad.");
+                Require(FindCamera(scene, "Presentation Camera - Deep Space Surround") == null,
+                    "MovementLab must not retain the legacy physical presentation camera.");
 
                 NativePixelPresentation presentation = FindInScene<NativePixelPresentation>(scene);
                 Shader penumbraShader = AssetDatabase.LoadAssetAtPath<Shader>(PenumbraShaderPath);
                 Shader presentationShader = AssetDatabase.LoadAssetAtPath<Shader>(PresentationShaderPath);
-                Require(presentation != null && presentation.WorldCamera == worldCamera &&
-                    presentation.ProcessingCamera == processingCamera &&
-                    presentation.PresentationCamera == presentationCamera && presentation.PlayerTarget != null &&
+                Require(presentation != null && presentation.gameObject == driverCamera.gameObject &&
+                    presentation.WorldCamera == worldCamera &&
+                    presentation.ProcessingCamera == driverCamera && presentation.PlayerTarget != null &&
                     presentation.PlayerTarget.name == "Player - Movement Specimen" &&
-                    presentation.ProcessingRenderer == processingRenderer &&
-                    presentation.PresentationRenderer == presentationRenderer &&
                     presentation.PenumbraShader == penumbraShader &&
                     presentation.PresentationShader == presentationShader &&
                     presentation.PenumbraEnabled,
