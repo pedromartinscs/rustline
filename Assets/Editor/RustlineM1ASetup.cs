@@ -32,6 +32,8 @@ namespace Rustline.Editor
         private const string RuleTilePath = "Assets/Art/Environment/Tiles/Generated/IndustrialSurfaceRuleTile.asset";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
         private const string BaseSpritePath = "Assets/Art/Characters/Player/player_salvager_base_right.png";
+        private const string PenumbraShaderPath = "Assets/Shaders/RustlinePalettePenumbra.shader";
+        private const string Renderer2DPath = "Assets/Settings/Renderer2D.asset";
 
         private static readonly CourseBlock[] Course =
         {
@@ -332,33 +334,48 @@ namespace Rustline.Editor
 
         private static void CreateCamera(Transform parent, Transform target)
         {
-            GameObject cameraObject = new GameObject("Main Camera - Pixel Follow");
-            cameraObject.transform.SetParent(parent, false);
-            cameraObject.transform.position = new Vector3(target.position.x, target.position.y + 2f, -10f);
-            cameraObject.tag = "MainCamera";
+            Shader penumbraShader = AssetDatabase.LoadAssetAtPath<Shader>(PenumbraShaderPath);
+            Require(penumbraShader != null, "Native pixel penumbra shader is missing: " + PenumbraShaderPath);
 
-            Camera camera = cameraObject.AddComponent<Camera>();
-            camera.orthographic = true;
-            camera.orthographicSize = 8.4375f;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color32(1, 2, 11, 255);
-            camera.allowHDR = false;
-            camera.allowMSAA = false;
-            cameraObject.AddComponent<UniversalAdditionalCameraData>();
+            GameObject worldCameraObject = new GameObject("World Camera - Native Pixel Follow");
+            worldCameraObject.transform.SetParent(parent, false);
+            worldCameraObject.transform.position = new Vector3(target.position.x, target.position.y + 2f, -10f);
+            worldCameraObject.tag = "MainCamera";
 
-            PixelPerfectCamera pixelPerfect = cameraObject.AddComponent<PixelPerfectCamera>();
-            pixelPerfect.assetsPPU = 16;
-            pixelPerfect.refResolutionX = 480;
-            pixelPerfect.refResolutionY = 270;
-            pixelPerfect.cropFrame = PixelPerfectCamera.CropFrame.None;
-            pixelPerfect.gridSnapping = PixelPerfectCamera.GridSnapping.UpscaleRenderTexture;
-            SerializedObject serializedPixelPerfect = new SerializedObject(pixelPerfect);
-            serializedPixelPerfect.FindProperty("m_FilterMode").enumValueIndex =
-                (int)PixelPerfectCamera.PixelPerfectFilterMode.Point;
-            serializedPixelPerfect.ApplyModifiedPropertiesWithoutUndo();
+            Camera worldCamera = worldCameraObject.AddComponent<Camera>();
+            worldCamera.orthographic = true;
+            worldCamera.orthographicSize = 13.125f; // 420 logical px at 16 PPU; runtime follows the window.
+            worldCamera.clearFlags = CameraClearFlags.SolidColor;
+            worldCamera.backgroundColor = RustlinePalette.DeepSpaceLinear;
+            worldCamera.allowHDR = false;
+            worldCamera.allowMSAA = false;
+            worldCamera.depth = 0f;
+            worldCameraObject.AddComponent<UniversalAdditionalCameraData>();
 
-            PixelCameraFollow2D follow = cameraObject.AddComponent<PixelCameraFollow2D>();
+            PixelCameraFollow2D follow = worldCameraObject.AddComponent<PixelCameraFollow2D>();
             SetObjectReference(follow, "target", target);
+
+            GameObject presentationCameraObject = new GameObject("Presentation Camera - Deep Space Surround");
+            presentationCameraObject.transform.SetParent(parent, false);
+            presentationCameraObject.transform.position = new Vector3(0f, 0f, -10f);
+
+            Camera presentationCamera = presentationCameraObject.AddComponent<Camera>();
+            presentationCamera.orthographic = true;
+            presentationCamera.orthographicSize = 1f;
+            presentationCamera.clearFlags = CameraClearFlags.SolidColor;
+            presentationCamera.backgroundColor = RustlinePalette.DeepSpaceLinear;
+            presentationCamera.allowHDR = false;
+            presentationCamera.allowMSAA = false;
+            presentationCamera.cullingMask = 0;
+            presentationCamera.depth = 10f;
+            presentationCameraObject.AddComponent<UniversalAdditionalCameraData>();
+
+            NativePixelPresentation presentation = presentationCameraObject.AddComponent<NativePixelPresentation>();
+            SetObjectReference(presentation, "worldCamera", worldCamera);
+            SetObjectReference(presentation, "presentationCamera", presentationCamera);
+            SetObjectReference(presentation, "playerTarget", target);
+            SetObjectReference(presentation, "penumbraShader", penumbraShader);
+            SetBoolean(presentation, "penumbraEnabled", true);
         }
 
         private static void CreateGlobalLight(Transform parent)
@@ -529,17 +546,44 @@ namespace Rustline.Editor
                 Require(collider != null && collider.compositeOperation == Collider2D.CompositeOperation.Merge &&
                     collider.GetComponent<CompositeCollider2D>() != null,
                     "MovementLab must use composite Tilemap collision.");
-                Camera camera = FindInScene<Camera>(scene);
-                Require(camera != null && camera.orthographic && !camera.allowMSAA,
-                    "MovementLab camera must be orthographic with MSAA disabled.");
-                PixelPerfectCamera pixelPerfect = camera.GetComponent<PixelPerfectCamera>();
-                Require(pixelPerfect != null && pixelPerfect.assetsPPU == 16 &&
-                    pixelPerfect.refResolutionX == 480 && pixelPerfect.refResolutionY == 270,
-                    "MovementLab Pixel Perfect Camera settings are invalid.");
-                Require(camera.GetComponent<PixelCameraFollow2D>() != null,
+                Camera worldCamera = FindCamera(scene, "World Camera - Native Pixel Follow");
+                Camera presentationCamera = FindCamera(scene, "Presentation Camera - Deep Space Surround");
+                Require(worldCamera != null && worldCamera.orthographic && !worldCamera.allowHDR &&
+                    !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera"),
+                    "MovementLab logical world camera configuration is invalid.");
+                Require(worldCamera.GetComponent<PixelCameraFollow2D>() != null,
                     "MovementLab camera follow is missing.");
+                Require(presentationCamera != null && presentationCamera.orthographic &&
+                    presentationCamera.cullingMask == 0 && !presentationCamera.allowHDR &&
+                    !presentationCamera.allowMSAA && presentationCamera.targetTexture == null,
+                    "MovementLab physical presentation camera configuration is invalid.");
+
+                NativePixelPresentation presentation = FindInScene<NativePixelPresentation>(scene);
+                Shader penumbraShader = AssetDatabase.LoadAssetAtPath<Shader>(PenumbraShaderPath);
+                Require(presentation != null && presentation.WorldCamera == worldCamera &&
+                    presentation.PresentationCamera == presentationCamera && presentation.PlayerTarget != null &&
+                    presentation.PlayerTarget.name == "Player - Movement Specimen" &&
+                    presentation.PenumbraShader == penumbraShader &&
+                    presentation.PenumbraEnabled,
+                    "MovementLab native pixel presentation references/defaults are invalid.");
+                Require(penumbraShader != null && !ShaderUtil.ShaderHasError(penumbraShader),
+                    "MovementLab palette penumbra shader is missing or has compile errors.");
+                Require(NativePixelPresentation.PixelsPerUnit == 16 &&
+                    NativePixelViewportMath.MaximumLogicalDimension == 1072 &&
+                    NativePixelPresentation.FullyVisibleRadiusPixels == 456 &&
+                    NativePixelPresentation.PenumbraThicknessPixels == 64 &&
+                    NativePixelPresentation.FullDarknessRadiusPixels == 520,
+                    "MovementLab native pixel presentation constants changed.");
+                Require(GetComponentsInScene<PixelPerfectCamera>(scene).Count == 0,
+                    "MovementLab must not retain the old 480x270 Pixel Perfect Camera path.");
                 Require(FindInScene<MovementLabRespawn>(scene) != null,
                     "MovementLab failsafe respawn is missing.");
+
+                string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+                Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+                string rendererYaml = File.ReadAllText(Path.Combine(projectRoot, Renderer2DPath));
+                Require(rendererYaml.Contains("m_UseDepthStencilBuffer: 0"),
+                    "Renderer2D depth/stencil buffer must remain disabled.");
             }
             finally
             {
@@ -578,6 +622,22 @@ namespace Rustline.Editor
             }
 
             return null;
+        }
+
+        private static Camera FindCamera(Scene scene, string name)
+        {
+            return GetComponentsInScene<Camera>(scene).FirstOrDefault(camera => camera.name == name);
+        }
+
+        private static List<T> GetComponentsInScene<T>(Scene scene) where T : Component
+        {
+            List<T> components = new List<T>();
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                components.AddRange(root.GetComponentsInChildren<T>(true));
+            }
+
+            return components;
         }
 
         private static int CountOccupiedCells(Tilemap tilemap)
@@ -645,6 +705,15 @@ namespace Rustline.Editor
             SerializedProperty property = serialized.FindProperty(propertyName);
             Require(property != null, $"Serialized property {propertyName} is missing on {target.GetType().Name}.");
             property.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetBoolean(UnityEngine.Object target, string propertyName, bool value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            Require(property != null, $"Serialized property {propertyName} is missing on {target.GetType().Name}.");
+            property.boolValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

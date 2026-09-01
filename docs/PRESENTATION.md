@@ -196,6 +196,22 @@ The copied HUD output should report at least:
 
 Toggling the penumbra should reset the current measurement window so the transition/allocation frame is not included in the next completed sample.
 
+## M1B implementation
+
+MovementLab implements this specification through a deliberately small two-camera presentation path:
+
+1. `World Camera - Native Pixel Follow` keeps the accepted `PixelCameraFollow2D` smoothing and 1/16-unit source-pixel snap, but renders the world into a logical 8-bit sRGB RenderTexture sized by `NativePixelViewportMath` instead of the old fixed 480×270 Pixel Perfect Camera path.
+2. `NativePixelPresentation` projects the actual player transform through the world camera, then applies one GPU penumbra pass at logical resolution. The pass uses the centralized `RustlinePalette` five-level lookup table and a world/source-pixel-anchored 4×4 Bayer pattern.
+3. `Presentation Camera - Deep Space Surround` clears the physical display to linear-correct Deep Space. The resolved logical texture is drawn into the centered integral output rectangle with Point filtering; no Canvas panels or fractional scaling are involved.
+
+Both logical textures are persistent and are recreated only when the required logical dimensions change. They use Point filtering, clamp wrapping, no mipmaps, no MSAA, and no HDR. Unity 6 URP RenderGraph requires the world camera's output texture to carry a depth attachment, so that target uses a minimal 16-bit depth buffer; the resolved penumbra target is depthless. This does not re-enable the 2D Renderer depth/stencil feature: `Renderer2D.asset` remains `m_UseDepthStencilBuffer: 0`.
+
+The palette pass leaves pixels inside radius 456 unchanged, remaps/dithers only through Canonical 28 across the 64 px annulus, and emits exact Deep Space from radius 520 outward. Nearest-canonical source identification is confined to the annulus; final physical integer upscaling only duplicates the resolved logical pixels.
+
+In Editor and Development Builds, `P` toggles the pass without rebuilding or reallocating targets and resets the 2.0-second performance sample. The HUD remains outside the world effect and reports physical resolution, logical resolution, integer scale, Penumbra `ON/OFF`, Camera `ON/FROZEN`, FPS, AVG, WORST, frame count, VSync, and target frame rate. Left-click still copies the current text and right-click still toggles camera follow.
+
+The deterministic M1A rebuild writes this presentation setup into `MovementLab.unity` and validates it after reopening the scene from disk. Pure EditMode tests cover every reference viewport case and all palette/LUT invariants; PlayMode smoke coverage verifies logical target properties, toggling without reallocation, and the accepted MovementLab movement/respawn behavior. ArtShowcase retains its M0 presentation and does not receive the penumbra.
+
 ## Validation expectations
 
 Automated tests should cover the pure viewport math and palette data independent of rendering hardware.

@@ -129,3 +129,19 @@ The Pedro ↔ Echo micro-measurement loop remains useful for large regressions a
 Obvious unused features may still be removed incrementally when the change is functionally safe and structurally justified. Claims of small speedups, however, should be treated as provisional until measured outside the Editor.
 
 The next major performance-relevant system is the native-pixel viewport + palette-constrained penumbra. It should ship with a development-only runtime toggle so its incremental cost can be measured directly with the same scene and later in a standalone Development Build.
+
+## M1B — native-pixel viewport and palette penumbra prototype
+
+Status: **implemented and instrumented; performance comparison not yet measured**.
+
+Implementation boundary:
+
+- MovementLab world rendering is bounded to the computed logical size, never larger than 1072×1072.
+- One logical-resolution GPU pass performs the palette lookup and ordered dithering before physical integer upscaling.
+- The source and resolved RenderTextures persist across steady-state frames and are recreated only when logical dimensions change.
+- Logical targets use 8-bit sRGB color, Point filtering, no mipmaps, no MSAA, and no HDR. The world camera target has the minimal depth attachment required by Unity 6 URP RenderGraph; the accepted 2D Renderer setting remains `m_UseDepthStencilBuffer: 0`.
+- Final presentation is a centered integer rectangle over a Deep Space camera clear; the HUD is drawn afterward and is not processed by the penumbra.
+- `P` toggles Penumbra `ON/OFF` in Editor and Development Builds without target reallocation and resets the 2.0-second sample window.
+- HUD/copy output now includes physical resolution, logical resolution, integer scale, penumbra state, camera-follow state, FPS, AVG, WORST, frames, VSync, and target frame rate.
+
+No new FPS or frame-time result is recorded here. A clean same-session Penumbra `ON` versus `OFF` measurement in a standalone Development Build is still required before making a performance-cost claim.

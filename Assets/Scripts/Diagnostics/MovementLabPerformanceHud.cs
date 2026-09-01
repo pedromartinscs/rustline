@@ -2,6 +2,7 @@
 using System;
 using Rustline.Presentation;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
 namespace Rustline.Diagnostics
@@ -10,24 +11,30 @@ namespace Rustline.Diagnostics
     /// Tiny, development-only frame-time readout for MovementLab.
     /// It exists to give optimization work a repeatable baseline without changing gameplay.
     /// </summary>
+    [DefaultExecutionOrder(1000)]
     public sealed class MovementLabPerformanceHud : MonoBehaviour
     {
         private const string MovementLabSceneName = "MovementLab";
         private const float SampleWindowSeconds = 2f;
         private const float FeedbackSeconds = 1f;
 
-        private static readonly Rect ShadowRect = new Rect(11f, 11f, 620f, 96f);
-        private static readonly Rect TextRect = new Rect(10f, 10f, 620f, 96f);
-        private static readonly Rect HintShadowRect = new Rect(11f, 81f, 620f, 24f);
-        private static readonly Rect HintTextRect = new Rect(10f, 80f, 620f, 24f);
+        private static readonly Rect ShadowRect = new Rect(11f, 11f, 760f, 112f);
+        private static readonly Rect TextRect = new Rect(10f, 10f, 760f, 112f);
+        private static readonly Rect HintShadowRect = new Rect(11f, 101f, 760f, 24f);
+        private static readonly Rect HintTextRect = new Rect(10f, 100f, 760f, 24f);
 
         private float elapsedSeconds;
         private float worstFrameSeconds;
         private float feedbackUntil;
+        private float lastAverageFrameSeconds;
+        private float lastFramesPerSecond;
+        private float lastWorstFrameSeconds;
         private int frameCount;
+        private int lastFrameCount;
         private string displayText = "PERF 2.0s\nMeasuring...";
         private string feedbackText;
         private PixelCameraFollow2D cameraFollow;
+        private NativePixelPresentation presentation;
         private GUIStyle foregroundStyle;
         private GUIStyle shadowStyle;
         private GUIStyle hintStyle;
@@ -41,7 +48,7 @@ namespace Rustline.Diagnostics
                 return;
             }
 
-            if (UnityEngine.Object.FindFirstObjectByType<MovementLabPerformanceHud>() != null)
+            if (UnityEngine.Object.FindAnyObjectByType<MovementLabPerformanceHud>() != null)
             {
                 return;
             }
@@ -55,11 +62,17 @@ namespace Rustline.Diagnostics
 
         private void Awake()
         {
-            cameraFollow = UnityEngine.Object.FindFirstObjectByType<PixelCameraFollow2D>();
+            cameraFollow = UnityEngine.Object.FindAnyObjectByType<PixelCameraFollow2D>();
+            presentation = UnityEngine.Object.FindAnyObjectByType<NativePixelPresentation>();
         }
 
         private void Update()
         {
+            if (Keyboard.current != null && Keyboard.current.pKey.wasPressedThisFrame)
+            {
+                TogglePenumbra();
+            }
+
             float deltaTime = Time.unscaledDeltaTime;
             if (deltaTime <= 0f)
             {
@@ -75,12 +88,11 @@ namespace Rustline.Diagnostics
                 return;
             }
 
-            float averageFrameSeconds = elapsedSeconds / frameCount;
-            float framesPerSecond = frameCount / elapsedSeconds;
-            displayText =
-                $"PERF {SampleWindowSeconds:0.0}s  {Screen.width}x{Screen.height}  |  FRAMES {frameCount}\n" +
-                $"FPS {framesPerSecond:0.0}  |  AVG {averageFrameSeconds * 1000f:0.00} ms  |  WORST {worstFrameSeconds * 1000f:0.00} ms\n" +
-                $"VSync {QualitySettings.vSyncCount}  |  Target {Application.targetFrameRate}  |  Camera {GetCameraFollowState()}";
+            lastAverageFrameSeconds = elapsedSeconds / frameCount;
+            lastFramesPerSecond = frameCount / elapsedSeconds;
+            lastWorstFrameSeconds = worstFrameSeconds;
+            lastFrameCount = frameCount;
+            RefreshDisplayText();
 
             ResetSample();
         }
@@ -95,7 +107,7 @@ namespace Rustline.Diagnostics
 
             string hint = Time.realtimeSinceStartup < feedbackUntil
                 ? feedbackText
-                : "LEFT CLICK COPY  |  RIGHT CLICK TOGGLE CAMERA FOLLOW";
+                : "LEFT CLICK COPY  |  RIGHT CLICK TOGGLE CAMERA FOLLOW  |  P TOGGLE PENUMBRA";
             GUI.Label(HintShadowRect, hint, hintShadowStyle);
             GUI.Label(HintTextRect, hint, hintStyle);
         }
@@ -110,6 +122,7 @@ namespace Rustline.Diagnostics
 
             if (current.button == 0)
             {
+                RefreshDisplayText();
                 GUIUtility.systemCopyBuffer = displayText;
                 ShowFeedback("COPIED TO CLIPBOARD");
                 current.Use();
@@ -123,7 +136,7 @@ namespace Rustline.Diagnostics
 
             if (cameraFollow == null)
             {
-                cameraFollow = UnityEngine.Object.FindFirstObjectByType<PixelCameraFollow2D>();
+                cameraFollow = UnityEngine.Object.FindAnyObjectByType<PixelCameraFollow2D>();
             }
 
             if (cameraFollow == null)
@@ -147,6 +160,43 @@ namespace Rustline.Diagnostics
             }
 
             return cameraFollow.enabled ? "ON" : "FROZEN";
+        }
+
+        private void TogglePenumbra()
+        {
+            if (presentation == null)
+            {
+                presentation = UnityEngine.Object.FindAnyObjectByType<NativePixelPresentation>();
+            }
+
+            if (presentation == null)
+            {
+                ShowFeedback("PENUMBRA PRESENTATION NOT FOUND");
+                return;
+            }
+
+            presentation.TogglePenumbra();
+            ResetSample();
+            RefreshDisplayText();
+            ShowFeedback(presentation.PenumbraEnabled ? "PENUMBRA ON" : "PENUMBRA OFF");
+        }
+
+        private void RefreshDisplayText()
+        {
+            NativePixelViewport viewport = presentation != null
+                ? presentation.Viewport
+                : NativePixelViewportMath.Calculate(Mathf.Max(Screen.width, 1), Mathf.Max(Screen.height, 1));
+            string penumbraState = presentation == null
+                ? "MISSING"
+                : (presentation.PenumbraEnabled ? "ON" : "OFF");
+
+            displayText =
+                $"PERF {SampleWindowSeconds:0.0}s  PHYSICAL {Screen.width}x{Screen.height}  |  " +
+                $"LOGICAL {viewport.LogicalWidth}x{viewport.LogicalHeight}  |  SCALE {viewport.IntegerScale}x\n" +
+                $"FPS {lastFramesPerSecond:0.0}  |  AVG {lastAverageFrameSeconds * 1000f:0.00} ms  |  " +
+                $"WORST {lastWorstFrameSeconds * 1000f:0.00} ms  |  FRAMES {lastFrameCount}\n" +
+                $"VSync {QualitySettings.vSyncCount}  |  Target {Application.targetFrameRate}  |  " +
+                $"Camera {GetCameraFollowState()}  |  Penumbra {penumbraState}";
         }
 
         private void ResetSample()
