@@ -145,8 +145,7 @@ namespace Rustline.Presentation
                     renderGraph,
                     selectedSource,
                     backBuffer,
-                    selectedTexture,
-                    presentingRawCameraTarget: !s_PenumbraEnabled);
+                    selectedTexture);
                 resourceData.SwitchActiveTexturesToBackbuffer();
             }
 
@@ -163,7 +162,9 @@ namespace Rustline.Presentation
                     passData.source = source;
                     passData.sourceTexture = sourceTexture;
                     passData.material = s_PenumbraMaterial;
-                    passData.sourceIsCameraTarget = true;
+                    // Camera.targetTexture -> logical RenderTexture needs the platform Y
+                    // normalization once. The resulting logical target is normalized.
+                    passData.sourceNeedsYFlip = SystemInfo.graphicsUVStartsAtTop;
                     passData.viewport = new Rect(0f, 0f, s_Viewport.LogicalWidth, s_Viewport.LogicalHeight);
 
                     builder.UseTexture(source, AccessFlags.Read);
@@ -187,8 +188,7 @@ namespace Rustline.Presentation
                 RenderGraph renderGraph,
                 TextureHandle source,
                 TextureHandle destination,
-                RenderTexture sourceTexture,
-                bool presentingRawCameraTarget)
+                RenderTexture sourceTexture)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
                            PresentPassName,
@@ -197,7 +197,11 @@ namespace Rustline.Presentation
                     passData.source = source;
                     passData.sourceTexture = sourceTexture;
                     passData.material = s_PresentationMaterial;
-                    passData.sourceIsCameraTarget = presentingRawCameraTarget;
+                    // Both possible sources are presented to the physical backbuffer without
+                    // an additional Y correction. Penumbra ON uses the already-normalized
+                    // resolved target; Penumbra OFF samples the camera target directly into
+                    // the backbuffer, whose raster orientation already matches this path.
+                    passData.sourceNeedsYFlip = false;
                     // Raster commands write linear values to the sRGB backbuffer. Supplying
                     // authored display-space #01020B directly would be encoded again.
                     passData.clearColor = ((Color)RustlinePalette.DeepSpace).linear;
@@ -227,13 +231,9 @@ namespace Rustline.Presentation
 
             private static void ConfigureSourceSampling(PassData data)
             {
-                // Orientation is a property of how the source texture was produced, not of
-                // whether RenderGraph happened to use/import that persistent texture in the
-                // previous frame. Camera.targetTexture output needs one Y correction on
-                // top-left graphics APIs. The logical resolved target is written by our own
-                // fullscreen pass in already-normalized logical orientation and needs none.
-                // Keeping this explicit makes repeated P toggles history-independent.
-                bool flip = data.sourceIsCameraTarget && SystemInfo.graphicsUVStartsAtTop;
+                // Orientation is explicit per transition. Do not infer it from transient
+                // RenderGraph texture-origin state; repeated P toggles must be history-independent.
+                bool flip = data.sourceNeedsYFlip;
 
                 // TextureHandle remains responsible for RenderGraph dependency tracking.
                 // Bind the known persistent RenderTexture directly to avoid the unsupported
@@ -280,7 +280,7 @@ namespace Rustline.Presentation
                 public Material material;
                 public Color clearColor;
                 public Rect viewport;
-                public bool sourceIsCameraTarget;
+                public bool sourceNeedsYFlip;
             }
         }
     }
