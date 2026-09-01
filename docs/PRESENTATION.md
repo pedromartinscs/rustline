@@ -172,7 +172,8 @@ Runtime requirements:
 - point filtering, no mipmaps, no MSAA, no HDR for the logical pixel target unless a later explicit feature requires otherwise;
 - release temporary/persistent GPU resources deterministically;
 - avoid adding many scene lights or scene objects to create the penumbra;
-- ideally one logical-resolution penumbra pass plus a cheap presentation composite.
+- ideally one logical-resolution penumbra pass plus a cheap presentation composite;
+- presentation-only cameras/passes must not pay for the full 2D Renderer when they only need isolated unlit composition work.
 
 ## Development diagnostics
 
@@ -198,11 +199,13 @@ Toggling the penumbra should reset the current measurement window so the transit
 
 ## M1B implementation
 
-MovementLab implements this specification through a deliberately small three-camera, two-quad presentation path:
+MovementLab currently implements this specification through a three-camera, two-quad presentation path:
 
-1. `World Camera - Native Pixel Follow` keeps the accepted `PixelCameraFollow2D` smoothing and 1/16-unit source-pixel snap, but renders the world into a logical 8-bit sRGB RenderTexture sized by `NativePixelViewportMath` instead of the old fixed 480×270 Pixel Perfect Camera path.
+1. `World Camera - Native Pixel Follow` keeps the accepted `PixelCameraFollow2D` smoothing and 1/16-unit source-pixel snap, renders the actual 2D world through Rustline's default `Renderer2D`, and writes into a logical 8-bit sRGB RenderTexture sized by `NativePixelViewportMath` instead of the old fixed 480×270 Pixel Perfect Camera path.
 2. `Penumbra Camera - Logical Pass` renders one dedicated-layer full-screen quad into the resolved logical target. Its URP unlit material samples the world target and applies the centralized `RustlinePalette` five-level lookup table plus the world/source-pixel-anchored 4×4 Bayer pattern.
-3. `Presentation Camera - Deep Space Surround` clears the physical display to linear-correct Deep Space, then renders a separate dedicated-layer quad which point-samples the selected logical texture into the centered integral output rectangle. No Canvas panels, IMGUI framebuffer drawing, legacy command-buffer blits, or fractional scaling are involved.
+3. `Presentation Camera - Deep Space Surround` clears the physical display to the authored canonical Deep Space `#01020B`, then renders a separate dedicated-layer quad which point-samples the selected logical texture into the centered integral output rectangle. No Canvas panels, IMGUI framebuffer drawing, legacy command-buffer blits, or fractional scaling are involved.
+
+The two presentation-only cameras do **not** use the full 2D Renderer. They are routed through `Assets/Settings/RustlineUtilityRenderer.asset`, a minimal Universal Renderer registered as renderer index `1` in `UniversalRP.asset`. That renderer has no Renderer Features, performs no opaque-layer work, and only sees the dedicated `RustlinePenumbra` and `RustlinePresentation` layers. `NativePixelPresentation` owns this routing contract directly during `OnEnable`, before target/material presentation begins; the temporary global `AfterSceneLoad` selector used during the reversible performance experiment was removed after the optimization was accepted. The world camera deliberately remains on the default Renderer2D.
 
 The processing and presentation quads use separate layers which are excluded from the world camera, preventing either texture from feeding back into itself. Both logical textures are persistent and are recreated only when the required logical dimensions change. They use Point filtering, clamp wrapping, no mipmaps, no MSAA, and no HDR. Unity 6 URP RenderGraph requires each camera output texture to carry a depth attachment, so both targets use a minimal 16-bit depth buffer. This does not re-enable the 2D Renderer depth/stencil feature: `Renderer2D.asset` remains `m_UseDepthStencilBuffer: 0`.
 
@@ -210,7 +213,9 @@ The palette pass leaves pixels inside radius 456 unchanged, remaps/dithers only 
 
 In Editor and Development Builds, `P` toggles the pass without rebuilding or reallocating targets and resets the 2.0-second performance sample. When OFF, the logical processing camera is disabled and the physical quad samples the raw world target directly. The HUD remains outside the world effect and reports physical resolution, logical resolution, integer scale, Penumbra `ON/OFF`, Camera `ON/FROZEN`, FPS, AVG, WORST, frame count, VSync, and target frame rate. Left-click still copies the current text and right-click still toggles camera follow.
 
-The deterministic M1A rebuild writes this presentation setup into `MovementLab.unity` and validates it after reopening the scene from disk. Pure EditMode tests cover every reference viewport case and all palette/LUT invariants; PlayMode smoke coverage verifies logical target properties, raw/resolved routing without reallocation, actual non-Deep-Space pixels through both logical stages and the physical camera path, and the accepted MovementLab movement/respawn behavior. ArtShowcase retains its M0 presentation and does not receive the penumbra.
+The accepted utility-renderer specialization produced a large Editor recovery after the first M1B implementation: measured Penumbra-ON samples averaged about **75.1 FPS at logical 1072×468** and **66.6 FPS at the full logical 1072×1072 viewport**, versus the approximately 35–40 FPS regression observed before the specialization. Detailed samples and caveats live in `PERFORMANCE_LOG.md`; standalone Development Build measurements are still required before making hardware-tier claims.
+
+Pure EditMode tests cover every reference viewport case and all palette/LUT invariants; PlayMode smoke coverage verifies logical target properties, raw/resolved routing without reallocation, actual non-Deep-Space pixels through both logical stages and the physical camera path, and the accepted MovementLab movement/respawn behavior. PlayMode coverage also locks the renderer-routing contract: the processing and presentation cameras must use utility renderer index `1`, while the gameplay/world camera must not. ArtShowcase retains its M0 presentation and does not receive the penumbra.
 
 ## Validation expectations
 
@@ -227,6 +232,7 @@ At minimum validate:
 - penumbra constants are 456 px / 64 px / 520 px;
 - every palette remap/LUT entry belongs to Rustline Canonical 28;
 - final darkness mappings resolve to Deep Space;
+- presentation-only cameras route through the dedicated utility renderer rather than Renderer2D;
 - no source PNG changes;
 - existing M0 and M1A validation continues to pass after the presentation integration.
 
