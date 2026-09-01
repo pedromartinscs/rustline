@@ -3,6 +3,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
     Properties
     {
         _MainTex ("Logical World", 2D) = "black" {}
+        _SourceScaleBias ("Source Scale Bias", Vector) = (1, 1, 0, 0)
     }
 
     SubShader
@@ -30,7 +31,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
-            float4 _MainTex_TexelSize;
+            float4 _SourceScaleBias;
             float2 _LogicalSize;
             float2 _PlayerPixelCenter;
             float2 _WorldPixelOrigin;
@@ -90,14 +91,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
 
             float4 Fragment(v2f_img input) : SV_Target
             {
-                float2 sampleUv = input.uv;
-                #if UNITY_UV_STARTS_AT_TOP
-                if (_MainTex_TexelSize.y < 0.0)
-                {
-                    sampleUv.y = 1.0 - sampleUv.y;
-                }
-                #endif
-
+                float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
                 float4 source = tex2D(_MainTex, sampleUv);
                 if (_PenumbraEnabled < 0.5)
                 {
@@ -105,7 +99,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
                 }
 
                 // input.uv is the output/logical-screen coordinate. sampleUv may be
-                // vertically corrected only to read the camera RenderTexture on D3D.
+                // vertically corrected only to read the source RenderTexture.
                 float2 logicalPixel = floor(input.uv * _LogicalSize);
                 float distanceFromPlayer = distance(logicalPixel + 0.5, _PlayerPixelCenter);
                 if (distanceFromPlayer <= _FullVisibleRadius)
