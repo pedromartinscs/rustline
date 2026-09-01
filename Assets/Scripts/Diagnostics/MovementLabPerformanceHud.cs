@@ -13,16 +13,22 @@ namespace Rustline.Diagnostics
     {
         private const string MovementLabSceneName = "MovementLab";
         private const float SampleWindowSeconds = 0.5f;
+        private const float CopiedFeedbackSeconds = 1f;
 
         private static readonly Rect ShadowRect = new Rect(11f, 11f, 460f, 96f);
         private static readonly Rect TextRect = new Rect(10f, 10f, 460f, 96f);
+        private static readonly Rect HintShadowRect = new Rect(11f, 81f, 460f, 24f);
+        private static readonly Rect HintTextRect = new Rect(10f, 80f, 460f, 24f);
 
         private float elapsedSeconds;
         private float worstFrameSeconds;
+        private float copiedFeedbackUntil;
         private int frameCount;
         private string displayText = "PERF 0.5s\nMeasuring...";
         private GUIStyle foregroundStyle;
         private GUIStyle shadowStyle;
+        private GUIStyle hintStyle;
+        private GUIStyle hintShadowStyle;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallForMovementLab()
@@ -76,8 +82,29 @@ namespace Rustline.Diagnostics
         private void OnGUI()
         {
             EnsureStyles();
+            HandleCopyClick();
+
             GUI.Label(ShadowRect, displayText, shadowStyle);
             GUI.Label(TextRect, displayText, foregroundStyle);
+
+            string hint = Time.realtimeSinceStartup < copiedFeedbackUntil
+                ? "COPIED TO CLIPBOARD"
+                : "CLICK PERF INFO TO COPY";
+            GUI.Label(HintShadowRect, hint, hintShadowStyle);
+            GUI.Label(HintTextRect, hint, hintStyle);
+        }
+
+        private void HandleCopyClick()
+        {
+            Event current = Event.current;
+            if (current.type != EventType.MouseDown || current.button != 0 || !TextRect.Contains(current.mousePosition))
+            {
+                return;
+            }
+
+            GUIUtility.systemCopyBuffer = displayText;
+            copiedFeedbackUntil = Time.realtimeSinceStartup + CopiedFeedbackSeconds;
+            current.Use();
         }
 
         private void EnsureStyles()
@@ -97,6 +124,15 @@ namespace Rustline.Diagnostics
 
             shadowStyle = new GUIStyle(foregroundStyle);
             shadowStyle.normal.textColor = new Color32(1, 2, 11, 255); // Deep Space
+
+            hintStyle = new GUIStyle(foregroundStyle)
+            {
+                fontSize = 11
+            };
+            hintStyle.normal.textColor = new Color32(201, 187, 177, 255); // Light Metal
+
+            hintShadowStyle = new GUIStyle(hintStyle);
+            hintShadowStyle.normal.textColor = new Color32(1, 2, 11, 255); // Deep Space
         }
     }
 }
