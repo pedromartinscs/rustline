@@ -36,9 +36,15 @@ It samples in 0.5-second windows and displays:
 - current VSync count;
 - `Application.targetFrameRate`.
 
+Clicking the performance readout copies the current metrics directly to the system clipboard. This is the preferred quick-sharing workflow during Pedro ↔ Echo performance iteration because taking screenshots or invoking screen-capture software can perturb frame timing and contaminate the sample being measured.
+
 The HUD is created only when `MovementLab` starts and is compiled only for the Unity Editor or Development Builds. It is not intended to ship in normal release builds.
 
 Editor FPS is useful for quick comparisons but is not a final benchmark because Editor overhead can distort results. Later milestone/performance gates should also use standalone Development Builds and Unity Profiler captures on representative hardware.
+
+### First instrumented observation
+
+An initial Editor observation at `1086×420` showed approximately `104.5 FPS` / `9.56 ms AVG`, with `VSync 0` and `Target -1`. That reading was captured using screenshot software and included a `117.45 ms WORST` sample, so it is **not accepted as a clean worst-frame baseline**. It is retained only as an early sanity check that the HUD works. Clean clipboard-based idle and traversal measurements should replace it before optimization decisions are made.
 
 ## Rendering budget and native-pixel presentation
 
@@ -99,7 +105,8 @@ For quick Pedro ↔ Echo iteration in `MovementLab`:
 2. Let the scene run for several seconds before reading values.
 3. Record whether VSync or a target frame-rate cap is active.
 4. Compare idle/standing measurements under the same conditions first.
-5. When useful, repeat while continuously traversing the course to include animation, Rigidbody2D movement, camera following, and Tilemap rendering.
-6. Change one thing, repeat the same measurement, then decide whether to keep it.
+5. Click the HUD to copy the current sample rather than taking a screenshot.
+6. When useful, repeat while continuously traversing the course to include animation, Rigidbody2D movement, camera following, and Tilemap rendering.
+7. Change one thing, repeat the same measurement, then decide whether to keep it.
 
 As the game grows, synthetic stress scenes and standalone profiling will replace subjective FPS checks for serious performance decisions.
