@@ -72,6 +72,7 @@ namespace Rustline.Presentation
 
         public override void Create()
         {
+            _pass?.Dispose();
             _pass = new NativePixelPresentPass
             {
                 renderPassEvent = RenderPassEvent.AfterRendering
@@ -176,6 +177,7 @@ namespace Rustline.Presentation
                     passData.source = source;
                     passData.destination = destination;
                     passData.material = s_PresentationMaterial;
+                    passData.clearColor = (Color)RustlinePalette.DeepSpace;
                     passData.viewport = new Rect(
                         s_Viewport.OutputOffsetX,
                         s_Viewport.OutputOffsetY,
@@ -183,12 +185,13 @@ namespace Rustline.Presentation
                         s_Viewport.OutputHeight);
 
                     builder.UseTexture(source, AccessFlags.Read);
-                    // The utility camera already clears the full physical target to canonical
-                    // Deep Space. This pass writes only the centered integer-scaled rectangle,
-                    // so preserve the clear outside that viewport.
-                    builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
+                    // This pass deterministically defines the entire physical target: clear
+                    // once to canonical Deep Space, then overwrite only the centered integer
+                    // output rectangle with the selected point-sampled logical image.
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
+                        context.cmd.ClearRenderTarget(false, true, data.clearColor);
                         ConfigureSourceSampling(data, context);
                         context.cmd.SetViewport(data.viewport);
                         context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
@@ -227,6 +230,7 @@ namespace Rustline.Presentation
                 public TextureHandle source;
                 public TextureHandle destination;
                 public Material material;
+                public Color clearColor;
                 public Rect viewport;
             }
         }
