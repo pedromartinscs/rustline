@@ -51,14 +51,29 @@ These additions improve tonal continuity without replacing the semantic accent c
 ## Usage principles
 
 - Do not introduce near-duplicate colors for convenience.
-- Prefer large readable value groups over noisy dithering.
+- Prefer large readable value groups over noisy dithering in production sprites and tiles.
+- Controlled palette-only dithering is allowed as a dedicated atmospheric/lighting presentation effect, especially for the player-centered penumbra documented in [`ART_DIRECTION.md`](ART_DIRECTION.md). It must never synthesize colors outside this palette.
 - Deep Space, Deep Navy, and Shadow are the principal deep outline/shadow colors.
+- **Deep Space `#01020B` is Rustline's canonical full-darkness color.** Do not add literal `#000000` merely for darkness or letterboxing.
 - Steel Shadow, Dark Metal, Steel, and Light Metal form the main metallic ramp.
 - Warm Shadow, Rust Mid, Rust Dark, and Rust Orange form the principal warm/corrosion ramp.
 - Cyan Dark, Cyan, Neon Cyan, and UI Blue are reserved for technology, visors, energy, and readable interactive feedback.
 - Hazard Yellow, Warning Orange, Red, Green, and Violet should remain selective gameplay accents.
 - Muzzle Yellow and Muzzle White are primarily FX colors and should not dominate environment materials.
 - Blood is reserved for damage/gore feedback.
+
+## Palette-constrained shading and penumbra
+
+Runtime darkness effects should preserve the canonical palette rather than multiply colors into arbitrary RGB values.
+
+Where practical, shading maps a source color to a darker canonical member of a suitable tonal/material ramp. A warm bright pixel, for example, may move through existing warm/rust shadow colors before reaching Deep Space. The mapping does not need to be a mathematically perfect hue ramp; readability, material identity, and palette consistency are the priorities.
+
+The player-centered penumbra may combine two palette-safe techniques:
+
+1. **Color remapping:** progressively replace visible colors with darker canonical colors.
+2. **Pixel-pattern dithering:** progressively replace a spatially increasing proportion of pixels with darker canonical colors, ultimately Deep Space.
+
+At no point should the effect introduce interpolated colors, alpha gradients, blur, anti-aliasing, bilinear filtering, or non-canonical shades. The intended result is visibly pixel-art-native even while the scene fades into darkness.
 
 ## Generation rule
 
