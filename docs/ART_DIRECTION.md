@@ -81,13 +81,27 @@ Rustline should treat display resolution as part of its visual language rather t
 The target presentation model is:
 
 - At the base presentation scale, **one production-art pixel maps to one display pixel**. A 64 px player cell therefore remains 64 physical pixels tall.
-- A canonical high-resolution logical viewport will define the maximum world area visible at **1×**. Its exact dimensions are intentionally left open until the camera prototype is perceptually approved.
+- The canonical maximum logical viewport at **1×** is **1072×1072 px**, exactly **67×67** environment tiles at 16 px per tile.
 - Displays smaller than that canonical viewport should show a smaller crop of the same native-pixel world rather than shrinking the art below 1×.
 - Displays larger than the canonical viewport should not reveal additional gameplay world merely because more physical pixels are available. Unused space is filled with the canonical darkness color.
 - When a display can contain an exact integer multiple of the canonical viewport, the presentation may upscale by **2×, 3×, 4×, ...** using nearest-neighbor integer scaling only.
 - Fractional world scaling and smoothing are not part of the target presentation model.
 
 A player-centered atmospheric mask defines the readable visual region. The central area remains fully visible; outward from it, the scene enters a pixel-art penumbra and eventually reaches complete canonical darkness.
+
+### Canonical prototype geometry
+
+The first implementation should use a **perfect circular** visibility mask centered on the player, inside the square 1072×1072 viewport.
+
+- Fully visible circle: **57 tiles in diameter = 912 px**, radius **28.5 tiles = 456 px**.
+- Penumbra thickness: **4 tiles = 64 px radially**.
+- Outer edge of the penumbra / start of full darkness: **65 tiles in diameter = 1040 px**, radius **32.5 tiles = 520 px**.
+- Absolute viewport radius: **33.5 tiles = 536 px**.
+- Therefore at least **1 complete tile = 16 px** of solid canonical darkness remains between the outer visibility circle and each cardinal edge of the logical viewport.
+- The corners of the square viewport naturally contain substantially more full darkness because the mask is circular.
+- Outside the canonical viewport, any unused physical display area is also filled with the same canonical darkness color.
+
+These dimensions are the approved starting specification for the camera/penumbra prototype. They may be tuned later from playtesting, but the native-pixel viewport model, circular-mask concept, and integer-scaling rules should remain stable unless deliberately revisited.
 
 ### Palette-constrained darkness
 
