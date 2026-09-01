@@ -54,7 +54,7 @@ namespace Rustline.Editor
                 "--benchmark-warmup-seconds 1 " +
                 "--benchmark-settle-seconds 0.25 " +
                 "--benchmark-block-seconds 1 " +
-                "--benchmark-pairs 1 --benchmark-auto-quit");
+                "--benchmark-pairs 1 --benchmark-diagnostics --benchmark-auto-quit");
         }
 
         public static void BuildWindowsBenchmarkCommandLine()

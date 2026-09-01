@@ -21,6 +21,8 @@ namespace Rustline.Diagnostics.Benchmarking
         public string calculation;
         public double meanDeltaMs;
         public double medianDeltaMs;
+        public bool hasRelativeCostPercent;
+        public double relativeCostPercent;
     }
 
     [Serializable]
@@ -34,8 +36,16 @@ namespace Rustline.Diagnostics.Benchmarking
         public double standardDeviationOfMeanDeltasMs;
         public double meanOfMedianDeltasMs;
         public double medianOfMedianDeltasMs;
-        public bool hasPercentageRelativeToOff;
-        public double percentageRelativeToOff;
+        public double meanAbsoluteMeanDeltaMs;
+        public double medianAbsoluteMeanDeltaMs;
+        public double maxAbsoluteMeanDeltaMs;
+        public bool hasPairRelativeCostPercent;
+        public int pairRelativeCostPercentCount;
+        public double meanPairRelativeCostPercent;
+        public double medianPairRelativeCostPercent;
+        public double standardDeviationOfPairRelativeCostPercent;
+        public double minPairRelativeCostPercent;
+        public double maxPairRelativeCostPercent;
     }
 
     public static class BenchmarkProtocol
@@ -188,6 +198,14 @@ namespace Rustline.Diagnostics.Benchmarking
                 delta.valid = true;
                 delta.meanDeltaMs = minuend.frameTime.meanMs - subtrahend.frameTime.meanMs;
                 delta.medianDeltaMs = minuend.frameTime.medianMs - subtrahend.frameTime.medianMs;
+                if (mode == BenchmarkMode.PenumbraAb &&
+                    IsFinitePositive(subtrahend.frameTime.meanMs))
+                {
+                    delta.hasRelativeCostPercent = true;
+                    delta.relativeCostPercent =
+                        delta.meanDeltaMs / subtrahend.frameTime.meanMs * 100.0;
+                }
+
                 deltas.Add(delta);
             }
 
@@ -195,8 +213,7 @@ namespace Rustline.Diagnostics.Benchmarking
         }
 
         public static BenchmarkPairedSummary SummarizePairDeltas(
-            IList<BenchmarkPairDelta> deltas,
-            double offMeanMs)
+            IList<BenchmarkPairDelta> deltas)
         {
             int validCount = 0;
             for (int index = 0; index < deltas.Count; index++)
@@ -220,7 +237,19 @@ namespace Rustline.Diagnostics.Benchmarking
 
             double[] meanDeltas = new double[validCount];
             double[] medianDeltas = new double[validCount];
+            double[] absoluteMeanDeltas = new double[validCount];
+            int relativeCount = 0;
+            for (int index = 0; index < deltas.Count; index++)
+            {
+                if (deltas[index].valid && deltas[index].hasRelativeCostPercent)
+                {
+                    relativeCount++;
+                }
+            }
+
+            double[] relativePercentages = new double[relativeCount];
             int destinationIndex = 0;
+            int relativeDestinationIndex = 0;
             for (int index = 0; index < deltas.Count; index++)
             {
                 if (!deltas[index].valid)
@@ -230,21 +259,48 @@ namespace Rustline.Diagnostics.Benchmarking
 
                 meanDeltas[destinationIndex] = deltas[index].meanDeltaMs;
                 medianDeltas[destinationIndex] = deltas[index].medianDeltaMs;
+                absoluteMeanDeltas[destinationIndex] = Math.Abs(deltas[index].meanDeltaMs);
+                if (deltas[index].hasRelativeCostPercent)
+                {
+                    relativePercentages[relativeDestinationIndex] = deltas[index].relativeCostPercent;
+                    relativeDestinationIndex++;
+                }
+
                 destinationIndex++;
             }
 
             BenchmarkMetricSummary meanSummary = BenchmarkStatistics.Calculate(meanDeltas, validCount);
             BenchmarkMetricSummary medianSummary = BenchmarkStatistics.Calculate(medianDeltas, validCount);
+            BenchmarkMetricSummary absoluteSummary =
+                BenchmarkStatistics.Calculate(absoluteMeanDeltas, validCount);
             summary.meanOfMeanDeltasMs = meanSummary.meanMs;
             summary.medianOfMeanDeltasMs = meanSummary.medianMs;
             summary.standardDeviationOfMeanDeltasMs = meanSummary.standardDeviationMs;
             summary.meanOfMedianDeltasMs = medianSummary.meanMs;
             summary.medianOfMedianDeltasMs = medianSummary.medianMs;
-            summary.hasPercentageRelativeToOff = offMeanMs > 0.0;
-            summary.percentageRelativeToOff = offMeanMs > 0.0
-                ? summary.meanOfMeanDeltasMs / offMeanMs * 100.0
-                : 0.0;
+            summary.meanAbsoluteMeanDeltaMs = absoluteSummary.meanMs;
+            summary.medianAbsoluteMeanDeltaMs = absoluteSummary.medianMs;
+            summary.maxAbsoluteMeanDeltaMs = absoluteSummary.maxMs;
+            summary.hasPairRelativeCostPercent = relativeCount > 0;
+            summary.pairRelativeCostPercentCount = relativeCount;
+            if (relativeCount > 0)
+            {
+                BenchmarkMetricSummary relativeSummary =
+                    BenchmarkStatistics.Calculate(relativePercentages, relativeCount);
+                summary.meanPairRelativeCostPercent = relativeSummary.meanMs;
+                summary.medianPairRelativeCostPercent = relativeSummary.medianMs;
+                summary.standardDeviationOfPairRelativeCostPercent =
+                    relativeSummary.standardDeviationMs;
+                summary.minPairRelativeCostPercent = relativeSummary.minMs;
+                summary.maxPairRelativeCostPercent = relativeSummary.maxMs;
+            }
+
             return summary;
+        }
+
+        private static bool IsFinitePositive(double value)
+        {
+            return value > 0.0 && !double.IsNaN(value) && !double.IsInfinity(value);
         }
     }
 }

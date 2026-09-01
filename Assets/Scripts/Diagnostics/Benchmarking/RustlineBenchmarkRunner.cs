@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using Rustline.Presentation;
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -21,6 +22,7 @@ namespace Rustline.Diagnostics.Benchmarking
         private const int RequiredScale = 1;
         private const double ConfigurationTimeoutSeconds = 30.0;
         private const int MaximumExpectedFramesPerSecond = 4096;
+        private const string GcAllocatedInFrameMarker = "GC Allocated In Frame";
 
         private static readonly double TimestampToSeconds = 1.0 / Stopwatch.Frequency;
         private static readonly Rect SummaryRect = new Rect(20f, 20f, 1200f, 680f);
@@ -35,6 +37,11 @@ namespace Rustline.Diagnostics.Benchmarking
         private string _summary;
         private GUIStyle _summaryStyle;
         private string _abortReason;
+        private ProfilerRecorder _gcAllocatedInFrameRecorder;
+        private bool _gcAllocationRecorderAvailable;
+        private string _gcAllocationRecorderStatus;
+        private bool _frameTimingFeatureAvailable;
+        private readonly FrameTiming[] _latestFrameTiming = new FrameTiming[1];
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void InstallWhenRequested()
@@ -101,6 +108,7 @@ namespace Rustline.Diagnostics.Benchmarking
             }
 
             DisableLegacyPerformanceHud();
+            InitializeMeasurementDiagnostics();
             CaptureRuntimeMetadata();
             BenchmarkBlockPlan[] plans = BenchmarkProtocol.CreateBlockPlans(
                 _options.mode,
@@ -111,6 +119,11 @@ namespace Rustline.Diagnostics.Benchmarking
                 64,
                 (int)Math.Ceiling(_options.blockSeconds * MaximumExpectedFramesPerSecond) + 16);
             double[] sampleBuffer = new double[sampleCapacity];
+            long[] allocationBuffer = new long[sampleCapacity];
+            double[] statisticsScratchBuffer = new double[sampleCapacity];
+            long[] allocationScratchBuffer = new long[sampleCapacity];
+            BenchmarkDiagnosticBuffers diagnosticBuffers =
+                new BenchmarkDiagnosticBuffers(sampleCapacity, _options.diagnostics);
             int aggregateCapacity = Math.Max(
                 64,
                 Math.Min(
@@ -145,8 +158,17 @@ namespace Rustline.Diagnostics.Benchmarking
                     plan,
                     _options.blockSeconds,
                     ElapsedBenchmarkSeconds());
-                yield return MeasureBlock(measurement, sampleBuffer);
-                BenchmarkBlockResult block = measurement.CreateResult(sampleBuffer);
+                yield return MeasureBlock(
+                    measurement,
+                    sampleBuffer,
+                    allocationBuffer,
+                    diagnosticBuffers);
+                BenchmarkBlockResult block = measurement.CreateResult(
+                    sampleBuffer,
+                    allocationBuffer,
+                    diagnosticBuffers,
+                    statisticsScratchBuffer,
+                    allocationScratchBuffer);
                 _report.blocks.Add(block);
 
                 if (block.valid)
@@ -179,13 +201,8 @@ namespace Rustline.Diagnostics.Benchmarking
                 _report.blocks,
                 _options.mode,
                 _options.pairCount);
-            double offMean = 0.0;
-            if (_options.mode == BenchmarkMode.PenumbraAb && _report.aggregates.Count == 2)
-            {
-                offMean = _report.aggregates[1].frameTime.meanMs;
-            }
-
-            _report.paired = BenchmarkAnalysis.SummarizePairDeltas(_report.pairDeltas, offMean);
+            _report.paired = BenchmarkAnalysis.SummarizePairDeltas(_report.pairDeltas);
+            BuildBlockStability();
             bool completedAllBlocks =
                 _report.blocks.Count == plans.Length && string.IsNullOrEmpty(_abortReason);
             yield return Finish(
@@ -200,9 +217,7 @@ namespace Rustline.Diagnostics.Benchmarking
                 utcTimestamp = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
                 mode = BenchmarkOptions.ToModeName(options.mode),
                 unityVersion = Application.unityVersion,
-                developmentBuild = UnityEngine.Debug.isDebugBuild,
-                frameTimingStatus =
-                    "Not collected. Default wall-clock runs avoid FrameTimingManager capture overhead and platform-dependent GPU timing support."
+                developmentBuild = UnityEngine.Debug.isDebugBuild
             };
             _report.system = CaptureSystemMetadata();
             _report.build = LoadBuildMetadata(options);
@@ -215,6 +230,15 @@ namespace Rustline.Diagnostics.Benchmarking
                 timingSource = "System.Diagnostics.Stopwatch.GetTimestamp (monotonic)",
                 percentileMethod = "Linear interpolation at (sampleCount - 1) * percentile",
                 scenario = "MovementLab static presentation benchmark"
+            };
+            _report.diagnostics = new BenchmarkDiagnosticsMetadata
+            {
+                diagnosticsRequested = options.diagnostics,
+                allocationCounterName = GcAllocatedInFrameMarker,
+                allocationCounterStatus = "Not initialized.",
+                frameTimingStatus = options.diagnostics
+                    ? "Not initialized."
+                    : "Not requested. Use --benchmark-diagnostics for supplementary CPU/GPU frame timing."
             };
         }
 
@@ -309,9 +333,18 @@ namespace Rustline.Diagnostics.Benchmarking
             }
         }
 
-        private IEnumerator MeasureBlock(BenchmarkBlockMeasurement measurement, double[] sampleBuffer)
+        private IEnumerator MeasureBlock(
+            BenchmarkBlockMeasurement measurement,
+            double[] sampleBuffer,
+            long[] allocationBuffer,
+            BenchmarkDiagnosticBuffers diagnosticBuffers)
         {
             _focusLostDuringBlock = false;
+            measurement.managedAllocationAvailable = _gcAllocationRecorderAvailable;
+            measurement.managedAllocationStatus = _gcAllocationRecorderStatus;
+            measurement.frameTimingRequested = _options.diagnostics;
+            measurement.frameTimingFeatureAvailable = _frameTimingFeatureAvailable;
+            measurement.managedHeapBytesBefore = GC.GetTotalMemory(false);
             int gc0Before = GC.CollectionCount(0);
             int gc1Before = GC.CollectionCount(1);
             int gc2Before = GC.CollectionCount(2);
@@ -320,6 +353,11 @@ namespace Rustline.Diagnostics.Benchmarking
 
             while ((previous - start) * TimestampToSeconds < measurement.requestedDurationSeconds)
             {
+                if (_options.diagnostics && _frameTimingFeatureAvailable)
+                {
+                    FrameTimingManager.CaptureFrameTimings();
+                }
+
                 yield return null;
                 long current = Stopwatch.GetTimestamp();
                 if (measurement.sampleCount >= sampleBuffer.Length)
@@ -329,8 +367,11 @@ namespace Rustline.Diagnostics.Benchmarking
                     break;
                 }
 
-                sampleBuffer[measurement.sampleCount] =
+                int sampleIndex = measurement.sampleCount;
+                sampleBuffer[sampleIndex] =
                     (current - previous) * TimestampToSeconds * 1000.0;
+                RecordManagedAllocation(measurement, allocationBuffer, sampleIndex);
+                RecordDiagnosticFrameTiming(measurement, diagnosticBuffers);
                 measurement.sampleCount++;
                 previous = current;
 
@@ -348,9 +389,60 @@ namespace Rustline.Diagnostics.Benchmarking
             }
 
             measurement.measuredDurationSeconds = (previous - start) * TimestampToSeconds;
+            measurement.managedHeapBytesAfter = GC.GetTotalMemory(false);
             measurement.gcGen0Collections = GC.CollectionCount(0) - gc0Before;
             measurement.gcGen1Collections = GC.CollectionCount(1) - gc1Before;
             measurement.gcGen2Collections = GC.CollectionCount(2) - gc2Before;
+        }
+
+        private void RecordManagedAllocation(
+            BenchmarkBlockMeasurement measurement,
+            long[] allocationBuffer,
+            int sampleIndex)
+        {
+            if (!measurement.managedAllocationAvailable)
+            {
+                return;
+            }
+
+            if (!_gcAllocatedInFrameRecorder.Valid)
+            {
+                measurement.managedAllocationAvailable = false;
+                measurement.managedAllocationStatus =
+                    "ProfilerRecorder became invalid during the measured block.";
+                return;
+            }
+
+            allocationBuffer[sampleIndex] = Math.Max(0L, _gcAllocatedInFrameRecorder.LastValue);
+        }
+
+        private void RecordDiagnosticFrameTiming(
+            BenchmarkBlockMeasurement measurement,
+            BenchmarkDiagnosticBuffers buffers)
+        {
+            if (!measurement.frameTimingRequested || !measurement.frameTimingFeatureAvailable)
+            {
+                return;
+            }
+
+            uint timingCount = FrameTimingManager.GetLatestTimings(1, _latestFrameTiming);
+            if (timingCount == 0)
+            {
+                return;
+            }
+
+            FrameTiming timing = _latestFrameTiming[0];
+            buffers.AddCpuFrameTime(timing.cpuFrameTime, ref measurement.cpuFrameTimingCount);
+            buffers.AddCpuMainThreadFrameTime(
+                timing.cpuMainThreadFrameTime,
+                ref measurement.cpuMainThreadTimingCount);
+            buffers.AddCpuRenderThreadFrameTime(
+                timing.cpuRenderThreadFrameTime,
+                ref measurement.cpuRenderThreadTimingCount);
+            buffers.AddCpuMainThreadPresentWaitTime(
+                timing.cpuMainThreadPresentWaitTime,
+                ref measurement.cpuMainThreadPresentWaitTimingCount);
+            buffers.AddGpuFrameTime(timing.gpuFrameTime, ref measurement.gpuFrameTimingCount);
         }
 
         private bool TryValidateStableConfiguration(out string reason)
@@ -442,15 +534,95 @@ namespace Rustline.Diagnostics.Benchmarking
             AggregateCounters counters)
         {
             double[] values = samples.ToArray();
+            double[] blockMeans = counters.blockMeans.ToArray();
             return new BenchmarkConditionAggregate
             {
                 condition = condition,
                 blockCount = counters.blockCount,
-                frameTime = BenchmarkStatistics.Calculate(values, values.Length),
+                pooledFrameTime = BenchmarkStatistics.Calculate(values, values.Length),
+                blockBalancedFrameTime = BenchmarkStatistics.CalculateBlockBalanced(
+                    blockMeans,
+                    blockMeans.Length),
                 gcGen0Collections = counters.gc0,
                 gcGen1Collections = counters.gc1,
                 gcGen2Collections = counters.gc2
             };
+        }
+
+        private void BuildBlockStability()
+        {
+            double[] chronologicalBlockMeans = new double[_report.blocks.Count];
+            int validCount = 0;
+            for (int index = 0; index < _report.blocks.Count; index++)
+            {
+                BenchmarkBlockResult block = _report.blocks[index];
+                if (!block.valid || !block.frameTime.hasSamples)
+                {
+                    continue;
+                }
+
+                chronologicalBlockMeans[validCount] = block.frameTime.meanMs;
+                validCount++;
+            }
+
+            _report.blockStability = BenchmarkStatistics.CalculateBlockStability(
+                chronologicalBlockMeans,
+                validCount);
+        }
+
+        private void InitializeMeasurementDiagnostics()
+        {
+            try
+            {
+                _gcAllocatedInFrameRecorder = ProfilerRecorder.StartNew(
+                    ProfilerCategory.Memory,
+                    GcAllocatedInFrameMarker,
+                    1);
+                _gcAllocationRecorderAvailable = _gcAllocatedInFrameRecorder.Valid;
+                _gcAllocationRecorderStatus = _gcAllocationRecorderAvailable
+                    ? "Available through Unity.Profiling.ProfilerRecorder."
+                    : "ProfilerRecorder marker is unavailable on this player/platform.";
+            }
+            catch (Exception exception)
+            {
+                _gcAllocationRecorderAvailable = false;
+                _gcAllocationRecorderStatus =
+                    "ProfilerRecorder initialization failed: " + exception.GetType().Name;
+            }
+
+            _report.diagnostics.allocationCounterAvailable = _gcAllocationRecorderAvailable;
+            _report.diagnostics.allocationCounterStatus = _gcAllocationRecorderStatus;
+
+            if (!_options.diagnostics)
+            {
+                return;
+            }
+
+            try
+            {
+                _frameTimingFeatureAvailable = FrameTimingManager.IsFeatureEnabled();
+                _report.diagnostics.frameTimingFeatureAvailable = _frameTimingFeatureAvailable;
+                _report.diagnostics.frameTimingStatus = _frameTimingFeatureAvailable
+                    ? "FrameTimingManager enabled; supplementary timings collected with preallocated buffers."
+                    : "FrameTimingManager feature is unavailable on this player/platform.";
+            }
+            catch (Exception exception)
+            {
+                _frameTimingFeatureAvailable = false;
+                _report.diagnostics.frameTimingFeatureAvailable = false;
+                _report.diagnostics.frameTimingStatus =
+                    "FrameTimingManager availability check failed: " + exception.GetType().Name;
+            }
+        }
+
+        private void DisposeMeasurementDiagnostics()
+        {
+            if (_gcAllocatedInFrameRecorder.Valid)
+            {
+                _gcAllocatedInFrameRecorder.Dispose();
+            }
+
+            _gcAllocationRecorderAvailable = false;
         }
 
         private void CaptureRuntimeMetadata()
@@ -545,6 +717,7 @@ namespace Rustline.Diagnostics.Benchmarking
 
         private IEnumerator Finish(string status, string failureReason)
         {
+            DisposeMeasurementDiagnostics();
             _report.status = status;
             _report.failureReason = failureReason;
             if (_presentation != null)
@@ -575,6 +748,11 @@ namespace Rustline.Diagnostics.Benchmarking
             {
                 _focusLostDuringBlock = true;
             }
+        }
+
+        private void OnDestroy()
+        {
+            DisposeMeasurementDiagnostics();
         }
 
         private void Update()
@@ -628,6 +806,17 @@ namespace Rustline.Diagnostics.Benchmarking
             public int gcGen0Collections;
             public int gcGen1Collections;
             public int gcGen2Collections;
+            public bool managedAllocationAvailable;
+            public string managedAllocationStatus;
+            public long managedHeapBytesBefore;
+            public long managedHeapBytesAfter;
+            public bool frameTimingRequested;
+            public bool frameTimingFeatureAvailable;
+            public int cpuFrameTimingCount;
+            public int cpuMainThreadTimingCount;
+            public int cpuRenderThreadTimingCount;
+            public int cpuMainThreadPresentWaitTimingCount;
+            public int gpuFrameTimingCount;
 
             public BenchmarkBlockMeasurement(
                 BenchmarkBlockPlan plan,
@@ -639,7 +828,12 @@ namespace Rustline.Diagnostics.Benchmarking
                 this.elapsedBenchmarkSecondsAtStart = elapsedBenchmarkSecondsAtStart;
             }
 
-            public BenchmarkBlockResult CreateResult(double[] samples)
+            public BenchmarkBlockResult CreateResult(
+                double[] samples,
+                long[] allocationSamples,
+                BenchmarkDiagnosticBuffers diagnosticBuffers,
+                double[] statisticsScratch,
+                long[] allocationScratch)
             {
                 return new BenchmarkBlockResult
                 {
@@ -652,7 +846,21 @@ namespace Rustline.Diagnostics.Benchmarking
                     measuredDurationSeconds = measuredDurationSeconds,
                     valid = string.IsNullOrEmpty(invalidReason),
                     invalidReason = invalidReason,
-                    frameTime = BenchmarkStatistics.Calculate(samples, sampleCount),
+                    frameTime = BenchmarkStatistics.Calculate(
+                        samples,
+                        sampleCount,
+                        statisticsScratch),
+                    managedAllocation = BenchmarkStatistics.CalculateAllocation(
+                        allocationSamples,
+                        sampleCount,
+                        managedAllocationAvailable,
+                        managedAllocationStatus,
+                        allocationScratch),
+                    managedHeapBytesBefore = managedHeapBytesBefore,
+                    managedHeapBytesAfter = managedHeapBytesAfter,
+                    diagnosticFrameTiming = diagnosticBuffers.CreateSummary(
+                        this,
+                        statisticsScratch),
                     gcGen0Collections = gcGen0Collections,
                     gcGen1Collections = gcGen1Collections,
                     gcGen2Collections = gcGen2Collections
@@ -666,6 +874,7 @@ namespace Rustline.Diagnostics.Benchmarking
             public int gc0;
             public int gc1;
             public int gc2;
+            public readonly List<double> blockMeans = new List<double>();
 
             public void Add(BenchmarkBlockResult block)
             {
@@ -673,6 +882,112 @@ namespace Rustline.Diagnostics.Benchmarking
                 gc0 += block.gcGen0Collections;
                 gc1 += block.gcGen1Collections;
                 gc2 += block.gcGen2Collections;
+                blockMeans.Add(block.frameTime.meanMs);
+            }
+        }
+
+        private sealed class BenchmarkDiagnosticBuffers
+        {
+            private readonly double[] _cpuFrameTime;
+            private readonly double[] _cpuMainThreadFrameTime;
+            private readonly double[] _cpuRenderThreadFrameTime;
+            private readonly double[] _cpuMainThreadPresentWaitTime;
+            private readonly double[] _gpuFrameTime;
+
+            public BenchmarkDiagnosticBuffers(int capacity, bool allocate)
+            {
+                int length = allocate ? capacity : 0;
+                _cpuFrameTime = new double[length];
+                _cpuMainThreadFrameTime = new double[length];
+                _cpuRenderThreadFrameTime = new double[length];
+                _cpuMainThreadPresentWaitTime = new double[length];
+                _gpuFrameTime = new double[length];
+            }
+
+            public void AddCpuFrameTime(double value, ref int count)
+            {
+                AddPositiveFinite(_cpuFrameTime, value, ref count);
+            }
+
+            public void AddCpuMainThreadFrameTime(double value, ref int count)
+            {
+                AddPositiveFinite(_cpuMainThreadFrameTime, value, ref count);
+            }
+
+            public void AddCpuRenderThreadFrameTime(double value, ref int count)
+            {
+                AddPositiveFinite(_cpuRenderThreadFrameTime, value, ref count);
+            }
+
+            public void AddCpuMainThreadPresentWaitTime(double value, ref int count)
+            {
+                AddPositiveFinite(_cpuMainThreadPresentWaitTime, value, ref count);
+            }
+
+            public void AddGpuFrameTime(double value, ref int count)
+            {
+                AddPositiveFinite(_gpuFrameTime, value, ref count);
+            }
+
+            public BenchmarkFrameTimingSummary CreateSummary(
+                BenchmarkBlockMeasurement measurement,
+                double[] statisticsScratch)
+            {
+                string status;
+                if (!measurement.frameTimingRequested)
+                {
+                    status = "Not requested.";
+                }
+                else if (!measurement.frameTimingFeatureAvailable)
+                {
+                    status = "FrameTimingManager unavailable.";
+                }
+                else
+                {
+                    status = "Available fields contain positive samples; empty fields were unsupported or unreported.";
+                }
+
+                return new BenchmarkFrameTimingSummary
+                {
+                    requested = measurement.frameTimingRequested,
+                    featureAvailable = measurement.frameTimingFeatureAvailable,
+                    status = status,
+                    cpuFrameTime = BenchmarkStatistics.Calculate(
+                        _cpuFrameTime,
+                        measurement.cpuFrameTimingCount,
+                        statisticsScratch),
+                    cpuMainThreadFrameTime = BenchmarkStatistics.Calculate(
+                        _cpuMainThreadFrameTime,
+                        measurement.cpuMainThreadTimingCount,
+                        statisticsScratch),
+                    cpuRenderThreadFrameTime = BenchmarkStatistics.Calculate(
+                        _cpuRenderThreadFrameTime,
+                        measurement.cpuRenderThreadTimingCount,
+                        statisticsScratch),
+                    cpuMainThreadPresentWaitTime = BenchmarkStatistics.Calculate(
+                        _cpuMainThreadPresentWaitTime,
+                        measurement.cpuMainThreadPresentWaitTimingCount,
+                        statisticsScratch),
+                    gpuFrameTime = BenchmarkStatistics.Calculate(
+                        _gpuFrameTime,
+                        measurement.gpuFrameTimingCount,
+                        statisticsScratch)
+                };
+            }
+
+            private static void AddPositiveFinite(double[] destination, double value, ref int count)
+            {
+                if (destination.Length == 0 || value <= 0.0 ||
+                    double.IsNaN(value) || double.IsInfinity(value))
+                {
+                    return;
+                }
+
+                if (count < destination.Length)
+                {
+                    destination[count] = value;
+                    count++;
+                }
             }
         }
     }

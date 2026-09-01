@@ -27,6 +27,7 @@ namespace Rustline.Diagnostics.Benchmarking
         public double blockSeconds = DefaultBlockSeconds;
         public int pairCount = DefaultPairCount;
         public bool autoQuit;
+        public bool diagnostics;
         public string gitCommit = "unknown";
         public string gitDirtyState = "unknown";
 
@@ -52,6 +53,12 @@ namespace Rustline.Diagnostics.Benchmarking
                 if (string.Equals(argument, "--benchmark-auto-quit", StringComparison.OrdinalIgnoreCase))
                 {
                     options.autoQuit = true;
+                    continue;
+                }
+
+                if (string.Equals(argument, "--benchmark-diagnostics", StringComparison.OrdinalIgnoreCase))
+                {
+                    options.diagnostics = true;
                     continue;
                 }
 

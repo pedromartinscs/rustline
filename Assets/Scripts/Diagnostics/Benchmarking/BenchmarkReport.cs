@@ -64,6 +64,30 @@ namespace Rustline.Diagnostics.Benchmarking
     }
 
     [Serializable]
+    public sealed class BenchmarkDiagnosticsMetadata
+    {
+        public bool diagnosticsRequested;
+        public string allocationCounterName;
+        public bool allocationCounterAvailable;
+        public string allocationCounterStatus;
+        public bool frameTimingFeatureAvailable;
+        public string frameTimingStatus;
+    }
+
+    [Serializable]
+    public sealed class BenchmarkFrameTimingSummary
+    {
+        public bool requested;
+        public bool featureAvailable;
+        public string status;
+        public BenchmarkMetricSummary cpuFrameTime = new BenchmarkMetricSummary();
+        public BenchmarkMetricSummary cpuMainThreadFrameTime = new BenchmarkMetricSummary();
+        public BenchmarkMetricSummary cpuRenderThreadFrameTime = new BenchmarkMetricSummary();
+        public BenchmarkMetricSummary cpuMainThreadPresentWaitTime = new BenchmarkMetricSummary();
+        public BenchmarkMetricSummary gpuFrameTime = new BenchmarkMetricSummary();
+    }
+
+    [Serializable]
     public sealed class BenchmarkBlockResult
     {
         public int pairIndex;
@@ -76,6 +100,10 @@ namespace Rustline.Diagnostics.Benchmarking
         public bool valid;
         public string invalidReason;
         public BenchmarkMetricSummary frameTime = new BenchmarkMetricSummary();
+        public BenchmarkAllocationSummary managedAllocation = new BenchmarkAllocationSummary();
+        public long managedHeapBytesBefore;
+        public long managedHeapBytesAfter;
+        public BenchmarkFrameTimingSummary diagnosticFrameTiming = new BenchmarkFrameTimingSummary();
         public int gcGen0Collections;
         public int gcGen1Collections;
         public int gcGen2Collections;
@@ -86,7 +114,9 @@ namespace Rustline.Diagnostics.Benchmarking
     {
         public string condition;
         public int blockCount;
-        public BenchmarkMetricSummary frameTime = new BenchmarkMetricSummary();
+        public BenchmarkMetricSummary pooledFrameTime = new BenchmarkMetricSummary();
+        public BenchmarkBlockBalancedSummary blockBalancedFrameTime =
+            new BenchmarkBlockBalancedSummary();
         public int gcGen0Collections;
         public int gcGen1Collections;
         public int gcGen2Collections;
@@ -95,22 +125,24 @@ namespace Rustline.Diagnostics.Benchmarking
     [Serializable]
     public sealed class BenchmarkRunReport
     {
-        public int schemaVersion = 1;
+        public int schemaVersion = 2;
         public string utcTimestamp;
         public string mode;
         public string unityVersion;
         public bool developmentBuild;
         public string status;
         public string failureReason;
-        public string frameTimingStatus;
         public BenchmarkSystemMetadata system = new BenchmarkSystemMetadata();
         public BenchmarkBuildMetadata build = new BenchmarkBuildMetadata();
         public BenchmarkRuntimeMetadata runtime = new BenchmarkRuntimeMetadata();
         public BenchmarkProtocolMetadata protocol = new BenchmarkProtocolMetadata();
+        public BenchmarkDiagnosticsMetadata diagnostics = new BenchmarkDiagnosticsMetadata();
         public List<BenchmarkBlockResult> blocks = new List<BenchmarkBlockResult>();
         public List<BenchmarkConditionAggregate> aggregates = new List<BenchmarkConditionAggregate>();
         public List<BenchmarkPairDelta> pairDeltas = new List<BenchmarkPairDelta>();
         public BenchmarkPairedSummary paired = new BenchmarkPairedSummary();
+        public BenchmarkBlockStabilitySummary blockStability =
+            new BenchmarkBlockStabilitySummary();
     }
 
     public static class BenchmarkReportWriter
@@ -126,11 +158,12 @@ namespace Rustline.Diagnostics.Benchmarking
         {
             StringBuilder builder = new StringBuilder(4096);
             builder.AppendLine(
-                "pair,slot,order,penumbra,valid,invalid_reason,start_elapsed_s,requested_s,measured_s,frames,mean_ms,median_ms,stddev_ms,min_ms,p90_ms,p95_ms,p99_ms,max_ms,equivalent_fps,gc0,gc1,gc2");
+                "pair,slot,order,penumbra,valid,invalid_reason,start_elapsed_s,requested_s,measured_s,frames,mean_ms,median_ms,stddev_ms,min_ms,p90_ms,p95_ms,p99_ms,max_ms,equivalent_fps,gc0,gc1,gc2,allocation_available,allocation_samples,total_allocated_bytes,mean_allocated_bytes_per_frame,median_allocated_bytes_per_frame,p95_allocated_bytes_per_frame,max_allocated_bytes_per_frame,nonzero_allocation_frames,nonzero_allocation_percent,managed_heap_bytes_before,managed_heap_bytes_after,cpu_frame_timing_samples,cpu_frame_timing_mean_ms,gpu_frame_timing_samples,gpu_frame_timing_mean_ms");
             for (int index = 0; index < report.blocks.Count; index++)
             {
                 BenchmarkBlockResult block = report.blocks[index];
                 BenchmarkMetricSummary stats = block.frameTime;
+                BenchmarkAllocationSummary allocation = block.managedAllocation;
                 AppendCsv(builder, block.pairIndex);
                 AppendCsv(builder, block.slot);
                 AppendCsv(builder, block.orderIndex);
@@ -152,7 +185,25 @@ namespace Rustline.Diagnostics.Benchmarking
                 AppendCsv(builder, Format(stats.equivalentFps));
                 AppendCsv(builder, block.gcGen0Collections);
                 AppendCsv(builder, block.gcGen1Collections);
-                AppendCsv(builder, block.gcGen2Collections, endRow: true);
+                AppendCsv(builder, block.gcGen2Collections);
+                AppendCsv(builder, allocation.available ? "true" : "false");
+                AppendCsv(builder, allocation.sampleCount);
+                AppendCsv(builder, allocation.totalAllocatedBytes);
+                AppendCsv(builder, Format(allocation.meanAllocatedBytesPerFrame));
+                AppendCsv(builder, Format(allocation.medianAllocatedBytesPerFrame));
+                AppendCsv(builder, Format(allocation.p95AllocatedBytesPerFrame));
+                AppendCsv(builder, allocation.maxAllocatedBytesPerFrame);
+                AppendCsv(builder, allocation.nonZeroFrameCount);
+                AppendCsv(builder, Format(allocation.nonZeroFramePercent));
+                AppendCsv(builder, block.managedHeapBytesBefore);
+                AppendCsv(builder, block.managedHeapBytesAfter);
+                AppendCsv(builder, block.diagnosticFrameTiming.cpuFrameTime.sampleCount);
+                AppendCsv(builder, Format(block.diagnosticFrameTiming.cpuFrameTime.meanMs));
+                AppendCsv(builder, block.diagnosticFrameTiming.gpuFrameTime.sampleCount);
+                AppendCsv(
+                    builder,
+                    Format(block.diagnosticFrameTiming.gpuFrameTime.meanMs),
+                    endRow: true);
             }
 
             return builder.ToString();
@@ -161,7 +212,7 @@ namespace Rustline.Diagnostics.Benchmarking
         public static string CreateSummary(BenchmarkRunReport report, string reportDirectory)
         {
             StringBuilder builder = new StringBuilder(4096);
-            builder.AppendLine("RUSTLINE BENCHMARK v1");
+            builder.AppendLine("RUSTLINE BENCHMARK v2");
             builder.Append("STATUS ").AppendLine(report.status);
             builder.Append("MODE ").AppendLine(report.mode);
             builder.Append("COMMIT ").Append(report.build.gitCommit)
@@ -179,17 +230,82 @@ namespace Rustline.Diagnostics.Benchmarking
             for (int index = 0; index < report.aggregates.Count; index++)
             {
                 BenchmarkConditionAggregate aggregate = report.aggregates[index];
-                BenchmarkMetricSummary stats = aggregate.frameTime;
+                BenchmarkMetricSummary stats = aggregate.pooledFrameTime;
+                BenchmarkBlockBalancedSummary balanced = aggregate.blockBalancedFrameTime;
                 builder.AppendLine();
                 builder.Append(aggregate.condition).AppendLine(":");
-                builder.Append("mean ").Append(Format(stats.meanMs)).Append(" ms | median ")
+                builder.Append("POOLED FRAMES mean ").Append(Format(stats.meanMs)).Append(" ms | median ")
                     .Append(Format(stats.medianMs)).Append(" ms | p95 ")
                     .Append(Format(stats.p95Ms)).Append(" ms | p99 ")
                     .Append(Format(stats.p99Ms)).Append(" ms | FPS ")
                     .AppendLine(Format(stats.equivalentFps));
+                builder.Append("BLOCK-BALANCED (").Append(balanced.validBlockCount)
+                    .Append(" blocks) mean ").Append(Format(balanced.meanOfBlockMeansMs))
+                    .Append(" ms | median ").Append(Format(balanced.medianOfBlockMeansMs))
+                    .Append(" ms | stddev ")
+                    .Append(Format(balanced.standardDeviationOfBlockMeansMs))
+                    .Append(" ms | min ").Append(Format(balanced.minBlockMeanMs))
+                    .Append(" ms | max ").Append(Format(balanced.maxBlockMeanMs))
+                    .AppendLine(" ms");
                 builder.Append("GC ").Append(aggregate.gcGen0Collections).Append('/')
                     .Append(aggregate.gcGen1Collections).Append('/')
                     .AppendLine(aggregate.gcGen2Collections.ToString(CultureInfo.InvariantCulture));
+            }
+
+            builder.AppendLine();
+            builder.Append("CHRONOLOGICAL BLOCK MEANS [");
+            for (int index = 0; index < report.blocks.Count; index++)
+            {
+                if (index > 0)
+                {
+                    builder.Append(", ");
+                }
+
+                BenchmarkBlockResult block = report.blocks[index];
+                builder.Append(block.valid && block.frameTime.hasSamples
+                    ? Format(block.frameTime.meanMs)
+                    : "INVALID");
+            }
+
+            builder.AppendLine("] ms");
+            BenchmarkBlockStabilitySummary stability = report.blockStability;
+            builder.Append("BLOCK STABILITY min ").Append(Format(stability.minBlockMeanMs))
+                .Append(" ms | max ").Append(Format(stability.maxBlockMeanMs))
+                .Append(" ms | max/min ")
+                .Append(stability.hasMaxMinRatio ? Format(stability.maxMinRatio) : "unavailable")
+                .Append(" | mean ").Append(Format(stability.meanBlockMeanMs))
+                .Append(" ms | stddev ")
+                .Append(Format(stability.standardDeviationOfBlockMeansMs))
+                .Append(" ms | CV ")
+                .AppendLine(stability.hasCoefficientOfVariation
+                    ? Format(stability.coefficientOfVariation)
+                    : "unavailable");
+
+            builder.Append("ALLOCATION COUNTER ")
+                .Append(report.diagnostics.allocationCounterAvailable ? "AVAILABLE" : "UNAVAILABLE")
+                .Append(" — ").AppendLine(report.diagnostics.allocationCounterStatus);
+            builder.Append("OPTIONAL FRAME TIMING ")
+                .Append(report.diagnostics.diagnosticsRequested ? "REQUESTED" : "NOT REQUESTED")
+                .Append(" | feature ")
+                .Append(report.diagnostics.frameTimingFeatureAvailable ? "AVAILABLE" : "UNAVAILABLE")
+                .Append(" — ").AppendLine(report.diagnostics.frameTimingStatus);
+            for (int index = 0; index < report.blocks.Count; index++)
+            {
+                BenchmarkBlockResult block = report.blocks[index];
+                BenchmarkAllocationSummary allocation = block.managedAllocation;
+                builder.Append("BLOCK ").Append(block.orderIndex).Append(" ALLOC ");
+                if (!allocation.available)
+                {
+                    builder.AppendLine("unavailable");
+                    continue;
+                }
+
+                builder.Append(Format(allocation.meanAllocatedBytesPerFrame))
+                    .Append(" B/frame mean | p95 ")
+                    .Append(Format(allocation.p95AllocatedBytesPerFrame))
+                    .Append(" B | max ").Append(allocation.maxAllocatedBytesPerFrame)
+                    .Append(" B | non-zero ").Append(Format(allocation.nonZeroFramePercent))
+                    .AppendLine("%");
             }
 
             builder.AppendLine();
@@ -218,9 +334,23 @@ namespace Rustline.Diagnostics.Benchmarking
                 .Append(" ms | median ").Append(Format(report.paired.medianOfMeanDeltasMs))
                 .Append(" ms | spread ").Append(Format(report.paired.standardDeviationOfMeanDeltasMs))
                 .AppendLine(" ms");
-            if (report.paired.hasPercentageRelativeToOff)
+            builder.Append("ABSOLUTE PAIRED DELTA mean ")
+                .Append(Format(report.paired.meanAbsoluteMeanDeltaMs))
+                .Append(" ms | median ")
+                .Append(Format(report.paired.medianAbsoluteMeanDeltaMs))
+                .Append(" ms | max ")
+                .Append(Format(report.paired.maxAbsoluteMeanDeltaMs))
+                .AppendLine(" ms");
+            if (report.paired.hasPairRelativeCostPercent)
             {
-                builder.Append("RELATIVE TO OFF ").Append(Format(report.paired.percentageRelativeToOff))
+                builder.Append("PAIR-RELATIVE TO EACH OFF mean ")
+                    .Append(Format(report.paired.meanPairRelativeCostPercent))
+                    .Append("% | median ")
+                    .Append(Format(report.paired.medianPairRelativeCostPercent))
+                    .Append("% | stddev ")
+                    .Append(Format(report.paired.standardDeviationOfPairRelativeCostPercent))
+                    .Append("% | min ").Append(Format(report.paired.minPairRelativeCostPercent))
+                    .Append("% | max ").Append(Format(report.paired.maxPairRelativeCostPercent))
                     .AppendLine("%");
             }
 
