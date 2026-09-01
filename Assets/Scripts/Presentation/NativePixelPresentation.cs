@@ -69,6 +69,8 @@ namespace Rustline.Presentation
                 return;
             }
 
+            ApplyCanonicalCameraClearColors();
+
             RustlinePalette.CopyLinearShaderData(_palette, _darknessLut);
             _penumbraMaterial = CreateRuntimeMaterial(
                 penumbraShader,
@@ -146,6 +148,28 @@ namespace Rustline.Presentation
         {
             penumbraEnabled = !penumbraEnabled;
             ApplyPenumbraState();
+        }
+
+        private void ApplyCanonicalCameraClearColors()
+        {
+            // Camera clear colors are presentation values here. Feeding the gamma-authored
+            // canonical color through Color.linear made #01020B effectively collapse to black.
+            Color deepSpace = (Color)RustlinePalette.DeepSpace;
+
+            if (worldCamera != null)
+            {
+                worldCamera.backgroundColor = deepSpace;
+            }
+
+            if (processingCamera != null)
+            {
+                processingCamera.backgroundColor = deepSpace;
+            }
+
+            if (presentationCamera != null)
+            {
+                presentationCamera.backgroundColor = deepSpace;
+            }
         }
 
         private void ConfigureLayerIsolation()
