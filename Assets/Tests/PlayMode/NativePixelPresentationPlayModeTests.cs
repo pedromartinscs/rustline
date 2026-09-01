@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using Rustline.Presentation;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 
@@ -30,6 +31,25 @@ namespace Rustline.Tests
             Assert.That(presentation.PresentationCamera.enabled, Is.True);
             Assert.That(presentation.PresentationRenderer.enabled, Is.True);
             Assert.That(presentation.PresentedSource, Is.SameAs(presentation.ResolvedTarget));
+
+            UniversalAdditionalCameraData worldCameraData =
+                presentation.WorldCamera.GetUniversalAdditionalCameraData();
+            UniversalAdditionalCameraData processingCameraData =
+                presentation.ProcessingCamera.GetUniversalAdditionalCameraData();
+            UniversalAdditionalCameraData presentationCameraData =
+                presentation.PresentationCamera.GetUniversalAdditionalCameraData();
+            Assert.That(
+                worldCameraData.rendererIndex,
+                Is.Not.EqualTo(NativePixelPresentation.UtilityRendererIndex),
+                "The gameplay/world camera must remain on the default 2D Renderer.");
+            Assert.That(
+                processingCameraData.rendererIndex,
+                Is.EqualTo(NativePixelPresentation.UtilityRendererIndex),
+                "The logical penumbra camera must use the lightweight utility renderer.");
+            Assert.That(
+                presentationCameraData.rendererIndex,
+                Is.EqualTo(NativePixelPresentation.UtilityRendererIndex),
+                "The physical presentation camera must use the lightweight utility renderer.");
 
             RenderTexture originalWorldTarget = presentation.WorldTarget;
             RenderTexture originalResolvedTarget = presentation.ResolvedTarget;
