@@ -82,7 +82,12 @@ namespace Rustline.Presentation
 
         public static IReadOnlyList<Color32> CanonicalColors => Colors;
         public static Color32 DeepSpace => Colors[DeepSpaceIndex];
-        public static Color DeepSpaceLinear => ((Color)DeepSpace).linear;
+        public static Color DeepSpaceCameraClear => (Color)DeepSpace;
+
+        // Legacy name kept because the deterministic MovementLab setup already references it.
+        // Camera clear colors in this pipeline must use the authored canonical display value,
+        // not Color.linear; converting #01020B first makes the surround effectively black.
+        public static Color DeepSpaceLinear => DeepSpaceCameraClear;
 
         public static Color32 GetColor(int paletteIndex)
         {
