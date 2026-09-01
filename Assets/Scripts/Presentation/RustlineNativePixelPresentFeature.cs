@@ -119,12 +119,16 @@ namespace Rustline.Presentation
                 EnsureHandle(ref _worldHandle, s_WorldTarget, "Rustline World - Imported");
                 EnsureHandle(ref _resolvedHandle, s_ResolvedTarget, "Rustline Penumbra - Imported");
 
-                TextureHandle worldSource = renderGraph.ImportTexture(_worldHandle);
+                TextureHandle worldSource = renderGraph.ImportTexture(
+                    _worldHandle,
+                    CreateRenderTargetInfo(s_WorldTarget));
                 TextureHandle selectedSource = worldSource;
 
                 if (s_PenumbraEnabled)
                 {
-                    TextureHandle resolvedTarget = renderGraph.ImportTexture(_resolvedHandle);
+                    TextureHandle resolvedTarget = renderGraph.ImportTexture(
+                        _resolvedHandle,
+                        CreateRenderTargetInfo(s_ResolvedTarget));
                     RecordPenumbraPass(renderGraph, worldSource, resolvedTarget);
                     selectedSource = resolvedTarget;
                 }
@@ -209,6 +213,19 @@ namespace Rustline.Presentation
                     flip
                         ? new Vector4(1f, -1f, 0f, 1f)
                         : new Vector4(1f, 1f, 0f, 0f));
+            }
+
+            private static RenderTargetInfo CreateRenderTargetInfo(RenderTexture target)
+            {
+                return new RenderTargetInfo
+                {
+                    format = target.graphicsFormat,
+                    width = target.width,
+                    height = target.height,
+                    bindMS = target.bindTextureMS,
+                    msaaSamples = Mathf.Max(target.antiAliasing, 1),
+                    volumeDepth = target.volumeDepth
+                };
             }
 
             private static void EnsureHandle(
