@@ -237,6 +237,7 @@ namespace Rustline.Editor
 
             GameObject visual = new GameObject("Visual - 48x64 Full Cell");
             visual.transform.SetParent(root.transform, false);
+            visual.transform.localPosition = new Vector3(0f, -0.25f, 0f);
             SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
             renderer.sprite = baseSprite;
             renderer.sortingOrder = 10;
@@ -445,6 +446,9 @@ namespace Rustline.Editor
             Require(prefab.GetComponent<PlayerInputReader>() != null && prefab.GetComponent<PlayerGroundProbe2D>() != null &&
                 prefab.GetComponent<PlayerMotor2D>() != null && prefab.GetComponent<PlayerAnimator2D>() != null,
                 "Player prefab movement components are incomplete.");
+            Transform visual = prefab.transform.Find("Visual - 48x64 Full Cell");
+            Require(visual != null && Vector3.Distance(visual.localPosition, new Vector3(0f, -0.25f, 0f)) < 0.0001f,
+                "Player visual child must be lowered exactly 4 source pixels (-0.25 Unity units).");
             Require(prefab.GetComponentInChildren<SpriteRenderer>()?.transform.localScale == Vector3.one,
                 "Player art must render at integer 1x scale.");
 

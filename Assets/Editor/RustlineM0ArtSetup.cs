@@ -229,7 +229,7 @@ namespace Rustline.Editor
         private static Dictionary<string, PreviewAsset> CreateAnimationPreviews()
         {
             Dictionary<string, PreviewAsset> previews = new Dictionary<string, PreviewAsset>();
-            AddPreview(previews, "Idle", "player_salvager_idle", "Player_Idle", 3f, true);
+            AddPreview(previews, "Idle", "player_salvager_idle", "Player_Idle", 0.5f, true);
             AddPreview(previews, "Run", "player_salvager_run", "Player_Run", 10f, true);
             AddPreview(previews, "Jump", "player_salvager_jump", "Player_Jump", 6f, true);
             AddPreview(previews, "Fall", "player_salvager_fall", "Player_Fall", 1f, false);
@@ -634,7 +634,7 @@ namespace Rustline.Editor
             Dictionary<string, (int frameCount, float frameRate, bool loop)> clipSpecs =
                 new Dictionary<string, (int frameCount, float frameRate, bool loop)>
                 {
-                    { "Player_Idle", (2, 3f, true) },
+                    { "Player_Idle", (2, 0.5f, true) },
                     { "Player_Run", (6, 10f, true) },
                     { "Player_Jump", (3, 6f, true) },
                     { "Player_Fall", (1, 1f, false) },
