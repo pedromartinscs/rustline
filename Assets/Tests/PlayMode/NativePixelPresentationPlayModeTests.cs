@@ -20,24 +20,28 @@ namespace Rustline.Tests
             Assert.That(presentation, Is.Not.Null);
             Assert.That(presentation.PenumbraEnabled, Is.True);
             Assert.That(presentation.HasAllocatedTargets, Is.True);
+            Assert.That(RustlineNativePixelPresentFeature.IsConfigured, Is.True);
 
             NativePixelViewport expected = NativePixelViewportMath.Calculate(Screen.width, Screen.height);
             Assert.That(presentation.Viewport.LogicalWidth, Is.EqualTo(expected.LogicalWidth));
             Assert.That(presentation.Viewport.LogicalHeight, Is.EqualTo(expected.LogicalHeight));
             AssertTarget(presentation.WorldTarget, expected, requiresCameraDepth: true);
             AssertTarget(presentation.ResolvedTarget, expected, requiresCameraDepth: true);
+
+            // Experiment 2: one lightweight utility camera remains active as the RenderGraph
+            // driver. Both legacy fullscreen quads and the physical presentation camera are
+            // intentionally bypassed without deleting them yet, keeping rollback trivial.
             Assert.That(presentation.ProcessingCamera.enabled, Is.True);
-            Assert.That(presentation.ProcessingRenderer.enabled, Is.True);
-            Assert.That(presentation.PresentationCamera.enabled, Is.True);
-            Assert.That(presentation.PresentationRenderer.enabled, Is.True);
+            Assert.That(presentation.ProcessingCamera.targetTexture, Is.Null);
+            Assert.That(presentation.ProcessingRenderer.enabled, Is.False);
+            Assert.That(presentation.PresentationCamera.enabled, Is.False);
+            Assert.That(presentation.PresentationRenderer.enabled, Is.False);
             Assert.That(presentation.PresentedSource, Is.SameAs(presentation.ResolvedTarget));
 
             UniversalAdditionalCameraData worldCameraData =
                 presentation.WorldCamera.GetUniversalAdditionalCameraData();
             UniversalAdditionalCameraData processingCameraData =
                 presentation.ProcessingCamera.GetUniversalAdditionalCameraData();
-            UniversalAdditionalCameraData presentationCameraData =
-                presentation.PresentationCamera.GetUniversalAdditionalCameraData();
             ScriptableRenderer utilityRenderer = UniversalRenderPipeline.asset.GetRenderer(
                 NativePixelPresentation.UtilityRendererIndex);
             Assert.That(utilityRenderer, Is.Not.Null,
@@ -49,11 +53,7 @@ namespace Rustline.Tests
             Assert.That(
                 processingCameraData.scriptableRenderer,
                 Is.SameAs(utilityRenderer),
-                "The logical penumbra camera must use the lightweight utility renderer.");
-            Assert.That(
-                presentationCameraData.scriptableRenderer,
-                Is.SameAs(utilityRenderer),
-                "The physical presentation camera must use the lightweight utility renderer.");
+                "The RenderGraph driver camera must use the lightweight utility renderer.");
 
             RenderTexture originalWorldTarget = presentation.WorldTarget;
             RenderTexture originalResolvedTarget = presentation.ResolvedTarget;
@@ -63,18 +63,21 @@ namespace Rustline.Tests
             Assert.That(presentation.PenumbraEnabled, Is.False);
             Assert.That(presentation.WorldTarget, Is.SameAs(originalWorldTarget));
             Assert.That(presentation.ResolvedTarget, Is.SameAs(originalResolvedTarget));
-            Assert.That(presentation.ProcessingCamera.enabled, Is.False);
+            Assert.That(presentation.ProcessingCamera.enabled, Is.True,
+                "The driver camera must remain active so raw-world presentation still reaches the backbuffer.");
             Assert.That(presentation.ProcessingRenderer.enabled, Is.False);
+            Assert.That(presentation.PresentationCamera.enabled, Is.False);
             Assert.That(presentation.PresentedSource, Is.SameAs(originalWorldTarget));
+
             presentation.TogglePenumbra();
             Assert.That(presentation.PenumbraEnabled, Is.True);
             Assert.That(presentation.ProcessingCamera.enabled, Is.True);
-            Assert.That(presentation.ProcessingRenderer.enabled, Is.True);
+            Assert.That(presentation.ProcessingRenderer.enabled, Is.False);
             Assert.That(presentation.PresentedSource, Is.SameAs(originalResolvedTarget));
         }
 
         [UnityTest]
-        public IEnumerator MovementLab_RendersWorldPixelsThroughRawAndPenumbraPaths()
+        public IEnumerator MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -90,7 +93,7 @@ namespace Rustline.Tests
             AssertPlayerRegionHasVisibleContent(
                 presentation.ResolvedTarget,
                 presentation,
-                "The penumbra target did not receive visible world pixels (stage B).");
+                "The RenderGraph penumbra pass did not receive visible world pixels (stage B).");
 
             RenderTexture physicalTarget = new RenderTexture(
                 Mathf.Max(Screen.width, 1),
@@ -99,7 +102,10 @@ namespace Rustline.Tests
                 RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.sRGB);
             physicalTarget.Create();
-            presentation.PresentationCamera.targetTexture = physicalTarget;
+
+            // For the test, redirect the RenderGraph driver camera's backbuffer to a probe RT.
+            // The renderer feature then exercises the exact same final presentation pass.
+            presentation.ProcessingCamera.targetTexture = physicalTarget;
 
             if (presentation.PenumbraEnabled)
             {
@@ -113,7 +119,7 @@ namespace Rustline.Tests
                 AssertPhysicalPlayerRegionHasVisibleContent(
                     physicalTarget,
                     presentation,
-                    "Penumbra OFF did not present raw world pixels to the physical framebuffer (stage C).");
+                    "Penumbra OFF did not present raw world pixels through RenderGraph (stage C).");
 
                 presentation.TogglePenumbra();
                 yield return null;
@@ -121,11 +127,11 @@ namespace Rustline.Tests
                 AssertPhysicalPlayerRegionHasVisibleContent(
                     physicalTarget,
                     presentation,
-                    "Penumbra ON did not present resolved world pixels to the physical framebuffer (stage C).");
+                    "Penumbra ON did not present resolved world pixels through RenderGraph (stage C).");
             }
             finally
             {
-                presentation.PresentationCamera.targetTexture = null;
+                presentation.ProcessingCamera.targetTexture = null;
                 physicalTarget.Release();
                 Object.Destroy(physicalTarget);
             }
