@@ -6,10 +6,9 @@ using UnityEngine.Rendering.Universal;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// Experimental M1B presentation feature. The lightweight utility camera drives two
+    /// Native-pixel presentation feature. One lightweight utility camera drives two
     /// explicit RenderGraph passes: optional logical penumbra resolve, then point-sampled
-    /// presentation into the camera backbuffer. This removes the need for a separate
-    /// physical presentation camera while keeping the expensive effect at logical size.
+    /// presentation into the camera backbuffer.
     /// </summary>
     public sealed class RustlineNativePixelPresentFeature : ScriptableRendererFeature
     {
@@ -142,7 +141,12 @@ namespace Rustline.Presentation
                     return;
                 }
 
-                RecordPresentationPass(renderGraph, selectedSource, backBuffer, selectedTexture);
+                RecordPresentationPass(
+                    renderGraph,
+                    selectedSource,
+                    backBuffer,
+                    selectedTexture,
+                    presentingRawCameraTarget: !s_PenumbraEnabled);
                 resourceData.SwitchActiveTexturesToBackbuffer();
             }
 
@@ -183,7 +187,8 @@ namespace Rustline.Presentation
                 RenderGraph renderGraph,
                 TextureHandle source,
                 TextureHandle destination,
-                RenderTexture sourceTexture)
+                RenderTexture sourceTexture,
+                bool presentingRawCameraTarget)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
                            PresentPassName,
@@ -193,9 +198,9 @@ namespace Rustline.Presentation
                     passData.destination = destination;
                     passData.sourceTexture = sourceTexture;
                     passData.material = s_PresentationMaterial;
+                    passData.presentingRawCameraTarget = presentingRawCameraTarget;
                     // Raster commands write linear values to the sRGB backbuffer. Supplying
-                    // the authored display-space #01020B directly would be encoded again
-                    // and appear as roughly #0D163B.
+                    // authored display-space #01020B directly would be encoded again.
                     passData.clearColor = ((Color)RustlinePalette.DeepSpace).linear;
                     passData.viewport = new Rect(
                         s_Viewport.OutputOffsetX,
@@ -204,9 +209,6 @@ namespace Rustline.Presentation
                         s_Viewport.OutputHeight);
 
                     builder.UseTexture(source, AccessFlags.Read);
-                    // This pass deterministically defines the entire physical target: clear
-                    // once to canonical Deep Space, then overwrite only the centered integer
-                    // output rectangle with the selected point-sampled logical image.
                     builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
@@ -229,9 +231,18 @@ namespace Rustline.Presentation
                 bool flip = context.GetTextureUVOrigin(data.source) !=
                             context.GetTextureUVOrigin(data.destination);
 
-                // Keep TextureHandle for RenderGraph dependency/orientation tracking only.
-                // Binding the known persistent RenderTexture directly avoids the implicit
-                // TextureHandle -> Texture conversion assertion in Unity 6 RenderGraph.
+                // Camera-rendered RenderTextures on top-left graphics APIs carry one extra
+                // storage-orientation inversion when sampled directly as a persistent
+                // RenderTexture. The logical penumbra resolve normalizes that orientation;
+                // Penumbra OFF bypasses the resolve, so compensate exactly once here.
+                if (data.presentingRawCameraTarget && SystemInfo.graphicsUVStartsAtTop)
+                {
+                    flip = !flip;
+                }
+
+                // TextureHandle remains responsible for RenderGraph dependency/orientation
+                // tracking. Bind the known persistent RenderTexture directly to avoid the
+                // unsupported TextureHandle -> Texture conversion path.
                 data.material.SetTexture(MainTexId, data.sourceTexture);
                 data.material.SetVector(
                     SourceScaleBiasId,
@@ -275,6 +286,7 @@ namespace Rustline.Presentation
                 public Material material;
                 public Color clearColor;
                 public Rect viewport;
+                public bool presentingRawCameraTarget;
             }
         }
     }
