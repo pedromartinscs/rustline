@@ -121,7 +121,17 @@ namespace Rustline.Presentation
 
         public void TogglePenumbra()
         {
-            penumbraEnabled = !penumbraEnabled;
+            SetPenumbraEnabled(!penumbraEnabled);
+        }
+
+        public void SetPenumbraEnabled(bool enabled)
+        {
+            if (penumbraEnabled == enabled)
+            {
+                return;
+            }
+
+            penumbraEnabled = enabled;
             ApplyPenumbraState();
         }
 
