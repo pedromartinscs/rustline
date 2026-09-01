@@ -25,10 +25,8 @@ Shader "Hidden/Rustline/PalettePenumbra"
 
             HLSLPROGRAM
             #pragma target 3.5
-            #pragma vertex vert_img
+            #pragma vertex Vertex
             #pragma fragment Fragment
-
-            #include "UnityCG.cginc"
 
             sampler2D _MainTex;
             float4 _SourceScaleBias;
@@ -40,6 +38,24 @@ Shader "Hidden/Rustline/PalettePenumbra"
             float _PenumbraEnabled;
             float4 _Palette[28];
             float4 _DarknessLut[140];
+
+            struct FullscreenVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            FullscreenVaryings Vertex(uint vertexID : SV_VertexID)
+            {
+                float2 uv = float2(
+                    vertexID == 1 ? 2.0 : 0.0,
+                    vertexID == 2 ? 2.0 : 0.0);
+
+                FullscreenVaryings output;
+                output.positionCS = float4(uv * 2.0 - 1.0, 0.0, 1.0);
+                output.uv = uv;
+                return output;
+            }
 
             float BayerThreshold(int2 pixel)
             {
@@ -89,7 +105,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
                 return nearestIndex;
             }
 
-            float4 Fragment(v2f_img input) : SV_Target
+            float4 Fragment(FullscreenVaryings input) : SV_Target
             {
                 float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
                 float4 source = tex2D(_MainTex, sampleUv);
