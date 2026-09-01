@@ -147,7 +147,7 @@ Implementation boundary:
 
 ### M1B performance recovery 1 — dedicated utility renderer
 
-Status: **kept and consolidated**.
+Status: **accepted, consolidated, and closed**.
 
 Static audit found that the logical penumbra camera and physical presentation camera were both running through Rustline's full `Renderer2D`, even though each renders only one isolated unlit quad. The world camera must keep the 2D Renderer, but the two presentation-only cameras do not need 2D lighting/sprite-renderer machinery.
 
@@ -157,7 +157,7 @@ Change:
 - The utility renderer has no Renderer Features, no opaque-layer work, and only sees the dedicated `RustlinePenumbra` / `RustlinePresentation` layers.
 - `NativePixelPresentation` now owns the routing contract directly: on enable, the processing and presentation cameras select renderer index `1`; the gameplay/world camera remains on the default Renderer2D.
 - The temporary `AfterSceneLoad` bootstrap used for the reversible experiment was removed after acceptance.
-- PlayMode coverage now asserts that both utility cameras use renderer `1` and the world camera does not.
+- PlayMode coverage validates the effective renderer used by both utility cameras and confirms that the world camera does not use the utility renderer.
 
 Observed Editor samples with **Penumbra ON**, `VSync 0`, `Target -1`, and camera follow ON:
 
@@ -185,9 +185,20 @@ Simple mean: approximately **66.6 FPS / 15.07 ms AVG**. Median FPS: approximatel
 
 Before this change, the same post-M1B editor workflow had been observed around **35–40 FPS** with little subjective difference between Penumbra ON and OFF. That earlier value was not captured as a clean formal sample set, so it is retained only as the motivating regression observation, not as a precise benchmark baseline. The post-change measurements are nevertheless large enough to establish the utility-renderer specialization as a meaningful recovery rather than a micro-optimization.
 
+Final post-consolidation validation at `PHYSICAL 1920×1080 / LOGICAL 1072×1072 / SCALE 1×`, again with Penumbra ON, VSync 0, Target -1, and camera follow ON:
+
+| Sample | FPS | AVG ms | WORST ms | Frames |
+|---:|---:|---:|---:|---:|
+| 1 | 88.0 | 11.36 | 22.88 | 177 |
+| 2 | 65.4 | 15.29 | 22.61 | 132 |
+| 3 | 72.1 | 13.88 | 24.32 | 145 |
+
+Simple mean: approximately **75.2 FPS / 13.51 ms AVG**. Median FPS: **72.1 FPS**. The spread remains characteristic of Editor noise, so this final set is used to confirm that consolidation introduced no performance regression; it is not treated as evidence that the cleanup itself produced an additional speedup.
+
 Conclusion:
 
-- Keep the dedicated utility renderer as part of the accepted M1B presentation architecture.
+- **Experiment closed: keep the dedicated utility renderer as part of the accepted M1B presentation architecture.**
 - Do not move the world camera away from Renderer2D; it renders the actual 2D scene and lighting.
-- The next structural optimization target is the remaining physical presentation-camera stage. Penumbra shader micro-optimization remains secondary because the large regression persisted with Penumbra OFF before this recovery.
+- The next structural optimization target is the remaining physical presentation-camera stage.
+- Penumbra shader micro-optimization remains secondary because the large regression persisted with Penumbra OFF before this recovery.
 - A clean standalone Development Build comparison is still required before claiming hardware-tier performance targets.
