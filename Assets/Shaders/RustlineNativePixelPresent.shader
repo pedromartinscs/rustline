@@ -25,15 +25,31 @@ Shader "Hidden/Rustline/NativePixelPresent"
 
             HLSLPROGRAM
             #pragma target 3.5
-            #pragma vertex vert_img
+            #pragma vertex Vertex
             #pragma fragment Fragment
-
-            #include "UnityCG.cginc"
 
             sampler2D _MainTex;
             float4 _SourceScaleBias;
 
-            float4 Fragment(v2f_img input) : SV_Target
+            struct FullscreenVaryings
+            {
+                float4 positionCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            FullscreenVaryings Vertex(uint vertexID : SV_VertexID)
+            {
+                float2 uv = float2(
+                    vertexID == 1 ? 2.0 : 0.0,
+                    vertexID == 2 ? 2.0 : 0.0);
+
+                FullscreenVaryings output;
+                output.positionCS = float4(uv * 2.0 - 1.0, 0.0, 1.0);
+                output.uv = uv;
+                return output;
+            }
+
+            float4 Fragment(FullscreenVaryings input) : SV_Target
             {
                 float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
                 return tex2D(_MainTex, sampleUv);
