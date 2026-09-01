@@ -87,10 +87,115 @@ namespace Rustline.Tests
             Assert.That(deltas[1].medianDeltaMs, Is.EqualTo(2.0));
 
             BenchmarkPairedSummary summary =
-                BenchmarkAnalysis.SummarizePairDeltas(deltas, offMeanMs: 8.5);
+                BenchmarkAnalysis.SummarizePairDeltas(deltas);
             Assert.That(summary.meanOfMeanDeltasMs, Is.EqualTo(2.5));
             Assert.That(summary.medianOfMeanDeltasMs, Is.EqualTo(2.5));
-            Assert.That(summary.percentageRelativeToOff, Is.EqualTo(29.4117647).Within(0.000001));
+            Assert.That(deltas[0].relativeCostPercent, Is.EqualTo(25.0));
+            Assert.That(deltas[1].relativeCostPercent, Is.EqualTo(33.3333333).Within(0.000001));
+            Assert.That(summary.meanPairRelativeCostPercent, Is.EqualTo(29.1666667).Within(0.000001));
+        }
+
+        [Test]
+        public void Statistics_PooledFramesAndBlockBalancedMeansRemainDistinct()
+        {
+            BenchmarkMetricSummary pooled =
+                BenchmarkStatistics.Calculate(new[] { 1.0, 1.0, 1.0, 1.0, 9.0 }, 5);
+            BenchmarkBlockBalancedSummary balanced =
+                BenchmarkStatistics.CalculateBlockBalanced(new[] { 1.0, 9.0 }, 2);
+
+            Assert.That(pooled.meanMs, Is.EqualTo(2.6));
+            Assert.That(balanced.validBlockCount, Is.EqualTo(2));
+            Assert.That(balanced.meanOfBlockMeansMs, Is.EqualTo(5.0));
+            Assert.That(balanced.medianOfBlockMeansMs, Is.EqualTo(5.0));
+            Assert.That(balanced.standardDeviationOfBlockMeansMs, Is.EqualTo(4.0));
+            Assert.That(balanced.minBlockMeanMs, Is.EqualTo(1.0));
+            Assert.That(balanced.maxBlockMeanMs, Is.EqualTo(9.0));
+        }
+
+        [Test]
+        public void Statistics_BlockStabilityExposesRatioAndCoefficientOfVariation()
+        {
+            BenchmarkBlockStabilitySummary stability =
+                BenchmarkStatistics.CalculateBlockStability(new[] { 2.0, 4.0, 6.0 }, 3);
+
+            Assert.That(stability.validBlockCount, Is.EqualTo(3));
+            Assert.That(stability.minBlockMeanMs, Is.EqualTo(2.0));
+            Assert.That(stability.maxBlockMeanMs, Is.EqualTo(6.0));
+            Assert.That(stability.hasMaxMinRatio, Is.True);
+            Assert.That(stability.maxMinRatio, Is.EqualTo(3.0));
+            Assert.That(stability.meanBlockMeanMs, Is.EqualTo(4.0));
+            Assert.That(stability.standardDeviationOfBlockMeansMs,
+                Is.EqualTo(1.6329931619).Within(0.000000001));
+            Assert.That(stability.coefficientOfVariation,
+                Is.EqualTo(0.4082482905).Within(0.000000001));
+        }
+
+        [Test]
+        public void Analysis_AaSummaryIncludesAbsoluteFalseDeltaNoise()
+        {
+            List<BenchmarkPairDelta> deltas = new List<BenchmarkPairDelta>
+            {
+                new BenchmarkPairDelta { valid = true, calculation = "A - B", meanDeltaMs = -2.0 },
+                new BenchmarkPairDelta { valid = true, calculation = "A - B", meanDeltaMs = 4.0 },
+                new BenchmarkPairDelta { valid = true, calculation = "A - B", meanDeltaMs = -6.0 }
+            };
+
+            BenchmarkPairedSummary summary = BenchmarkAnalysis.SummarizePairDeltas(deltas);
+
+            Assert.That(summary.meanOfMeanDeltasMs, Is.EqualTo(-4.0 / 3.0).Within(0.000001));
+            Assert.That(summary.medianOfMeanDeltasMs, Is.EqualTo(-2.0));
+            Assert.That(summary.meanAbsoluteMeanDeltaMs, Is.EqualTo(4.0));
+            Assert.That(summary.medianAbsoluteMeanDeltaMs, Is.EqualTo(4.0));
+            Assert.That(summary.maxAbsoluteMeanDeltaMs, Is.EqualTo(6.0));
+            Assert.That(summary.hasPairRelativeCostPercent, Is.False);
+        }
+
+        [Test]
+        public void Analysis_PairRelativePercentageRejectsNonpositiveOffDenominator()
+        {
+            List<BenchmarkBlockResult> blocks = new List<BenchmarkBlockResult>
+            {
+                CreateBlock(1, "A", true, 1.0, 1.0),
+                CreateBlock(1, "B", false, 0.0, 0.0)
+            };
+
+            List<BenchmarkPairDelta> deltas = BenchmarkAnalysis.CalculatePairDeltas(
+                blocks,
+                BenchmarkMode.PenumbraAb,
+                1);
+            BenchmarkPairedSummary summary = BenchmarkAnalysis.SummarizePairDeltas(deltas);
+
+            Assert.That(deltas[0].valid, Is.True);
+            Assert.That(deltas[0].hasRelativeCostPercent, Is.False);
+            Assert.That(summary.hasPairRelativeCostPercent, Is.False);
+            Assert.That(summary.pairRelativeCostPercentCount, Is.Zero);
+        }
+
+        [Test]
+        public void Statistics_AllocationSummaryReportsDistributionAndAvailability()
+        {
+            BenchmarkAllocationSummary available = BenchmarkStatistics.CalculateAllocation(
+                new long[] { 0, 16, 0, 48 },
+                4,
+                true,
+                "available");
+            BenchmarkAllocationSummary unavailable = BenchmarkStatistics.CalculateAllocation(
+                new long[] { 99 },
+                1,
+                false,
+                "unsupported");
+
+            Assert.That(available.available, Is.True);
+            Assert.That(available.totalAllocatedBytes, Is.EqualTo(64));
+            Assert.That(available.meanAllocatedBytesPerFrame, Is.EqualTo(16.0));
+            Assert.That(available.medianAllocatedBytesPerFrame, Is.EqualTo(8.0));
+            Assert.That(available.p95AllocatedBytesPerFrame, Is.EqualTo(43.2).Within(0.000001));
+            Assert.That(available.maxAllocatedBytesPerFrame, Is.EqualTo(48));
+            Assert.That(available.nonZeroFrameCount, Is.EqualTo(2));
+            Assert.That(available.nonZeroFramePercent, Is.EqualTo(50.0));
+            Assert.That(unavailable.available, Is.False);
+            Assert.That(unavailable.sampleCount, Is.Zero);
+            Assert.That(unavailable.totalAllocatedBytes, Is.Zero);
         }
 
         [Test]
@@ -105,6 +210,7 @@ namespace Rustline.Tests
                 "--benchmark-settle-seconds=0.25",
                 "--benchmark-block-seconds", "2",
                 "--benchmark-pairs=3",
+                "--benchmark-diagnostics",
                 "--benchmark-auto-quit"
             };
 
@@ -120,6 +226,7 @@ namespace Rustline.Tests
             Assert.That(options.settleSeconds, Is.EqualTo(0.25));
             Assert.That(options.blockSeconds, Is.EqualTo(2.0));
             Assert.That(options.pairCount, Is.EqualTo(3));
+            Assert.That(options.diagnostics, Is.True);
             Assert.That(options.autoQuit, Is.True);
         }
 
@@ -154,12 +261,25 @@ namespace Rustline.Tests
                 status = "SUCCEEDED"
             };
             report.blocks.Add(CreateBlock(1, "A", true, 12.25, 12.0));
+            report.aggregates.Add(new BenchmarkConditionAggregate
+            {
+                condition = "ON",
+                pooledFrameTime = new BenchmarkMetricSummary { hasSamples = true, meanMs = 12.25 },
+                blockBalancedFrameTime = new BenchmarkBlockBalancedSummary
+                {
+                    hasBlocks = true,
+                    validBlockCount = 1,
+                    meanOfBlockMeansMs = 12.25
+                }
+            });
 
             string json = BenchmarkReportWriter.SerializeJson(report);
             string csv = BenchmarkReportWriter.CreateCsv(report);
 
-            Assert.That(json, Does.Contain("\"schemaVersion\": 1"));
+            Assert.That(json, Does.Contain("\"schemaVersion\": 2"));
             Assert.That(json, Does.Contain("\"pairIndex\": 1"));
+            Assert.That(json, Does.Contain("\"pooledFrameTime\""));
+            Assert.That(json, Does.Contain("\"managedAllocation\""));
             Assert.That(csv, Does.Contain("12.250000"));
             Assert.That(csv, Does.Not.Contain("12,250000"));
         }
