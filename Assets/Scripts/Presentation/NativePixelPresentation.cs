@@ -228,9 +228,10 @@ namespace Rustline.Presentation
             worldCamera.orthographicSize = nextViewport.LogicalHeight / (2f * PixelsPerUnit);
 
             // With no target texture this camera's URP backbuffer is the physical display.
-            // Its renderer feature resolves the optional logical penumbra first, then writes
-            // the selected logical image into the centered integer-scaled output rectangle.
+            // It does not clear through the Camera path: the final RenderGraph pass owns one
+            // deterministic Deep Space clear before drawing the centered output rectangle.
             processingCamera.targetTexture = null;
+            processingCamera.clearFlags = CameraClearFlags.Nothing;
             processingCamera.orthographicSize = nextViewport.PhysicalHeight * 0.5f;
 
             // Retain deterministic fallback geometry during the reversible experiment.
