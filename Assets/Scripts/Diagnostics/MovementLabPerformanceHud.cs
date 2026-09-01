@@ -12,19 +12,19 @@ namespace Rustline.Diagnostics
     public sealed class MovementLabPerformanceHud : MonoBehaviour
     {
         private const string MovementLabSceneName = "MovementLab";
-        private const float SampleWindowSeconds = 0.5f;
+        private const float SampleWindowSeconds = 2f;
         private const float CopiedFeedbackSeconds = 1f;
 
-        private static readonly Rect ShadowRect = new Rect(11f, 11f, 460f, 96f);
-        private static readonly Rect TextRect = new Rect(10f, 10f, 460f, 96f);
-        private static readonly Rect HintShadowRect = new Rect(11f, 81f, 460f, 24f);
-        private static readonly Rect HintTextRect = new Rect(10f, 80f, 460f, 24f);
+        private static readonly Rect ShadowRect = new Rect(11f, 11f, 520f, 96f);
+        private static readonly Rect TextRect = new Rect(10f, 10f, 520f, 96f);
+        private static readonly Rect HintShadowRect = new Rect(11f, 81f, 520f, 24f);
+        private static readonly Rect HintTextRect = new Rect(10f, 80f, 520f, 24f);
 
         private float elapsedSeconds;
         private float worstFrameSeconds;
         private float copiedFeedbackUntil;
         private int frameCount;
-        private string displayText = "PERF 0.5s\nMeasuring...";
+        private string displayText = "PERF 2.0s\nMeasuring...";
         private GUIStyle foregroundStyle;
         private GUIStyle shadowStyle;
         private GUIStyle hintStyle;
@@ -70,7 +70,7 @@ namespace Rustline.Diagnostics
             float averageFrameSeconds = elapsedSeconds / frameCount;
             float framesPerSecond = frameCount / elapsedSeconds;
             displayText =
-                $"PERF {SampleWindowSeconds:0.0}s  {Screen.width}x{Screen.height}\n" +
+                $"PERF {SampleWindowSeconds:0.0}s  {Screen.width}x{Screen.height}  |  FRAMES {frameCount}\n" +
                 $"FPS {framesPerSecond:0.0}  |  AVG {averageFrameSeconds * 1000f:0.00} ms  |  WORST {worstFrameSeconds * 1000f:0.00} ms\n" +
                 $"VSync {QualitySettings.vSyncCount}  |  Target {Application.targetFrameRate}";
 
