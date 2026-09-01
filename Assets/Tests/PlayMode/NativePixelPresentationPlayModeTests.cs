@@ -28,14 +28,12 @@ namespace Rustline.Tests
             AssertTarget(presentation.WorldTarget, expected, requiresCameraDepth: true);
             AssertTarget(presentation.ResolvedTarget, expected, requiresCameraDepth: true);
 
-            // Experiment 2: one lightweight utility camera remains active as the RenderGraph
-            // driver. Both legacy fullscreen quads and the physical presentation camera are
-            // intentionally bypassed without deleting them yet, keeping rollback trivial.
+            // Consolidated Experiment 2 architecture: the world camera renders stage A;
+            // one lightweight utility camera remains active only as the RenderGraph driver.
             Assert.That(presentation.ProcessingCamera.enabled, Is.True);
             Assert.That(presentation.ProcessingCamera.targetTexture, Is.Null);
-            Assert.That(presentation.ProcessingRenderer.enabled, Is.False);
-            Assert.That(presentation.PresentationCamera.enabled, Is.False);
-            Assert.That(presentation.PresentationRenderer.enabled, Is.False);
+            Assert.That(presentation.ProcessingCamera.cullingMask, Is.EqualTo(0),
+                "The RenderGraph driver camera must not render scene geometry.");
             Assert.That(presentation.PresentedSource, Is.SameAs(presentation.ResolvedTarget));
 
             UniversalAdditionalCameraData worldCameraData =
@@ -65,14 +63,12 @@ namespace Rustline.Tests
             Assert.That(presentation.ResolvedTarget, Is.SameAs(originalResolvedTarget));
             Assert.That(presentation.ProcessingCamera.enabled, Is.True,
                 "The driver camera must remain active so raw-world presentation still reaches the backbuffer.");
-            Assert.That(presentation.ProcessingRenderer.enabled, Is.False);
-            Assert.That(presentation.PresentationCamera.enabled, Is.False);
+            Assert.That(presentation.ProcessingCamera.cullingMask, Is.EqualTo(0));
             Assert.That(presentation.PresentedSource, Is.SameAs(originalWorldTarget));
 
             presentation.TogglePenumbra();
             Assert.That(presentation.PenumbraEnabled, Is.True);
             Assert.That(presentation.ProcessingCamera.enabled, Is.True);
-            Assert.That(presentation.ProcessingRenderer.enabled, Is.False);
             Assert.That(presentation.PresentedSource, Is.SameAs(originalResolvedTarget));
         }
 
@@ -103,8 +99,8 @@ namespace Rustline.Tests
                 RenderTextureReadWrite.sRGB);
             physicalTarget.Create();
 
-            // For the test, redirect the RenderGraph driver camera's backbuffer to a probe RT.
-            // The renderer feature then exercises the exact same final presentation pass.
+            // Redirect the RenderGraph driver camera's physical output to a probe RT. The
+            // renderer feature then exercises the same final presentation pass as the display.
             presentation.ProcessingCamera.targetTexture = physicalTarget;
 
             if (presentation.PenumbraEnabled)
