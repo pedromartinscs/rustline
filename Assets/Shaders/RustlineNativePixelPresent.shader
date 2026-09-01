@@ -3,6 +3,7 @@ Shader "Hidden/Rustline/NativePixelPresent"
     Properties
     {
         _MainTex ("Logical Image", 2D) = "black" {}
+        _SourceScaleBias ("Source Scale Bias", Vector) = (1, 1, 0, 0)
     }
 
     SubShader
@@ -30,18 +31,11 @@ Shader "Hidden/Rustline/NativePixelPresent"
             #include "UnityCG.cginc"
 
             sampler2D _MainTex;
-            float4 _MainTex_TexelSize;
+            float4 _SourceScaleBias;
 
             float4 Fragment(v2f_img input) : SV_Target
             {
-                float2 sampleUv = input.uv;
-                #if UNITY_UV_STARTS_AT_TOP
-                if (_MainTex_TexelSize.y < 0.0)
-                {
-                    sampleUv.y = 1.0 - sampleUv.y;
-                }
-                #endif
-
+                float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
                 return tex2D(_MainTex, sampleUv);
             }
             ENDHLSL
