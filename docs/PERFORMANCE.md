@@ -27,14 +27,17 @@ Avoid optimization by superstition. Unity/URP settings that look expensive are c
 
 `MovementLab` has a development-only diagnostic HUD implemented by `MovementLabPerformanceHud`.
 
-It samples in 0.5-second windows and displays:
+It now samples in **2.0-second windows** and displays:
 
 - frames per second;
 - average frame time in milliseconds;
 - worst frame time inside the current sample window;
+- number of frames included in the completed sample;
 - current screen resolution;
 - current VSync count;
 - `Application.targetFrameRate`.
+
+The original 0.5-second window proved too sensitive to Unity Editor scheduling and other short-lived disturbances for trustworthy before/after comparisons, so it was deliberately increased to 2.0 seconds before any real optimization was attempted.
 
 Clicking the performance readout copies the current metrics directly to the system clipboard. This is the preferred quick-sharing workflow during Pedro ↔ Echo performance iteration because taking screenshots or invoking screen-capture software can perturb frame timing and contaminate the sample being measured.
 
@@ -42,9 +45,17 @@ The HUD is created only when `MovementLab` starts and is compiled only for the U
 
 Editor FPS is useful for quick comparisons but is not a final benchmark because Editor overhead can distort results. Later milestone/performance gates should also use standalone Development Builds and Unity Profiler captures on representative hardware.
 
-### First instrumented observation
+### Early instrumented observations
 
-An initial Editor observation at `1086×420` showed approximately `104.5 FPS` / `9.56 ms AVG`, with `VSync 0` and `Target -1`. That reading was captured using screenshot software and included a `117.45 ms WORST` sample, so it is **not accepted as a clean worst-frame baseline**. It is retained only as an early sanity check that the HUD works. Clean clipboard-based idle and traversal measurements should replace it before optimization decisions are made.
+An initial Editor observation at `1086×420` showed approximately `104.5 FPS` / `9.56 ms AVG`, with `VSync 0` and `Target -1`. That reading was captured using screenshot software and included a `117.45 ms WORST` sample, so it is **not accepted as a clean worst-frame baseline**.
+
+Clipboard-based 0.5-second samples then produced the following ranges:
+
+- idle/standing: roughly `67.8–205.4 FPS`, `4.87–14.75 ms AVG`, `7.43–23.43 ms WORST`;
+- active traversal: roughly `35.6–78.7 FPS`, `12.70–28.06 ms AVG`, `17.29–39.46 ms WORST`;
+- all samples: `VSync 0`, `Target -1`, `1086×420`.
+
+That spread is too large to use as a reliable micro-optimization baseline. It is treated as evidence that the short Editor sample window is noisy, not as evidence that movement itself necessarily costs the full difference between the idle and traversal numbers. The instrumentation was therefore stabilized before changing rendering or gameplay settings.
 
 ## Rendering budget and native-pixel presentation
 
@@ -105,7 +116,7 @@ For quick Pedro ↔ Echo iteration in `MovementLab`:
 2. Let the scene run for several seconds before reading values.
 3. Record whether VSync or a target frame-rate cap is active.
 4. Compare idle/standing measurements under the same conditions first.
-5. Click the HUD to copy the current sample rather than taking a screenshot.
+5. Click the HUD to copy the current completed sample rather than taking a screenshot.
 6. When useful, repeat while continuously traversing the course to include animation, Rigidbody2D movement, camera following, and Tilemap rendering.
 7. Change one thing, repeat the same measurement, then decide whether to keep it.
 
