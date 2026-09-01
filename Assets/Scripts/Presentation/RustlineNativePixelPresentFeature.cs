@@ -123,14 +123,16 @@ namespace Rustline.Presentation
                     _worldHandle,
                     CreateRenderTargetInfo(s_WorldTarget));
                 TextureHandle selectedSource = worldSource;
+                RenderTexture selectedTexture = s_WorldTarget;
 
                 if (s_PenumbraEnabled)
                 {
                     TextureHandle resolvedTarget = renderGraph.ImportTexture(
                         _resolvedHandle,
                         CreateRenderTargetInfo(s_ResolvedTarget));
-                    RecordPenumbraPass(renderGraph, worldSource, resolvedTarget);
+                    RecordPenumbraPass(renderGraph, worldSource, resolvedTarget, s_WorldTarget);
                     selectedSource = resolvedTarget;
+                    selectedTexture = s_ResolvedTarget;
                 }
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
@@ -140,14 +142,15 @@ namespace Rustline.Presentation
                     return;
                 }
 
-                RecordPresentationPass(renderGraph, selectedSource, backBuffer);
+                RecordPresentationPass(renderGraph, selectedSource, backBuffer, selectedTexture);
                 resourceData.SwitchActiveTexturesToBackbuffer();
             }
 
             private static void RecordPenumbraPass(
                 RenderGraph renderGraph,
                 TextureHandle source,
-                TextureHandle destination)
+                TextureHandle destination,
+                RenderTexture sourceTexture)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
                            PenumbraPassName,
@@ -155,6 +158,7 @@ namespace Rustline.Presentation
                 {
                     passData.source = source;
                     passData.destination = destination;
+                    passData.sourceTexture = sourceTexture;
                     passData.material = s_PenumbraMaterial;
                     passData.viewport = new Rect(0f, 0f, s_Viewport.LogicalWidth, s_Viewport.LogicalHeight);
 
@@ -172,7 +176,8 @@ namespace Rustline.Presentation
             private static void RecordPresentationPass(
                 RenderGraph renderGraph,
                 TextureHandle source,
-                TextureHandle destination)
+                TextureHandle destination,
+                RenderTexture sourceTexture)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
                            PresentPassName,
@@ -180,6 +185,7 @@ namespace Rustline.Presentation
                 {
                     passData.source = source;
                     passData.destination = destination;
+                    passData.sourceTexture = sourceTexture;
                     passData.material = s_PresentationMaterial;
                     passData.clearColor = (Color)RustlinePalette.DeepSpace;
                     passData.viewport = new Rect(
@@ -207,7 +213,11 @@ namespace Rustline.Presentation
             {
                 bool flip = context.GetTextureUVOrigin(data.source) !=
                             context.GetTextureUVOrigin(data.destination);
-                data.material.SetTexture(MainTexId, data.source);
+
+                // Keep TextureHandle for RenderGraph dependency/orientation tracking only.
+                // Binding the known persistent RenderTexture directly avoids the implicit
+                // TextureHandle -> Texture conversion assertion in Unity 6 RenderGraph.
+                data.material.SetTexture(MainTexId, data.sourceTexture);
                 data.material.SetVector(
                     SourceScaleBiasId,
                     flip
@@ -246,6 +256,7 @@ namespace Rustline.Presentation
             {
                 public TextureHandle source;
                 public TextureHandle destination;
+                public RenderTexture sourceTexture;
                 public Material material;
                 public Color clearColor;
                 public Rect viewport;
