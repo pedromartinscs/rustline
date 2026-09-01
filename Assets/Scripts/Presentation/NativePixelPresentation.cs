@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Rustline.Presentation
 {
@@ -14,6 +15,7 @@ namespace Rustline.Presentation
         public const int FullyVisibleRadiusPixels = 456;
         public const int PenumbraThicknessPixels = 64;
         public const int FullDarknessRadiusPixels = 520;
+        public const int UtilityRendererIndex = 1;
 
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int LogicalSizeId = Shader.PropertyToID("_LogicalSize");
@@ -70,6 +72,7 @@ namespace Rustline.Presentation
             }
 
             ApplyCanonicalCameraClearColors();
+            ConfigureUtilityRenderers();
 
             RustlinePalette.CopyLinearShaderData(_palette, _darknessLut);
             _penumbraMaterial = CreateRuntimeMaterial(
@@ -170,6 +173,26 @@ namespace Rustline.Presentation
             {
                 presentationCamera.backgroundColor = deepSpace;
             }
+        }
+
+        private void ConfigureUtilityRenderers()
+        {
+            // The world camera deliberately stays on the default 2D Renderer. These two
+            // cameras only draw isolated unlit full-screen quads, so routing them through
+            // the dedicated lightweight Universal Renderer avoids paying Renderer2D setup
+            // costs for presentation-only work.
+            SelectUtilityRenderer(processingCamera);
+            SelectUtilityRenderer(presentationCamera);
+        }
+
+        private static void SelectUtilityRenderer(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            camera.GetUniversalAdditionalCameraData().SetRenderer(UtilityRendererIndex);
         }
 
         private void ConfigureLayerIsolation()
