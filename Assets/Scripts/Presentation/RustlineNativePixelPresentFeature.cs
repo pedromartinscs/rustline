@@ -144,23 +144,24 @@ namespace Rustline.Presentation
                 TextureHandle source,
                 TextureHandle destination)
             {
-                using RasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
-                    PenumbraPassName,
-                    out PassData passData);
-
-                passData.source = source;
-                passData.destination = destination;
-                passData.material = s_PenumbraMaterial;
-                passData.viewport = new Rect(0f, 0f, s_Viewport.LogicalWidth, s_Viewport.LogicalHeight);
-
-                builder.UseTexture(source, AccessFlags.Read);
-                builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
-                builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                using (var builder = renderGraph.AddRasterRenderPass<PassData>(
+                           PenumbraPassName,
+                           out var passData))
                 {
-                    ConfigureSourceSampling(data, context);
-                    context.cmd.SetViewport(data.viewport);
-                    context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
-                });
+                    passData.source = source;
+                    passData.destination = destination;
+                    passData.material = s_PenumbraMaterial;
+                    passData.viewport = new Rect(0f, 0f, s_Viewport.LogicalWidth, s_Viewport.LogicalHeight);
+
+                    builder.UseTexture(source, AccessFlags.Read);
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
+                    builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                    {
+                        ConfigureSourceSampling(data, context);
+                        context.cmd.SetViewport(data.viewport);
+                        context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
+                    });
+                }
             }
 
             private static void RecordPresentationPass(
@@ -168,30 +169,31 @@ namespace Rustline.Presentation
                 TextureHandle source,
                 TextureHandle destination)
             {
-                using RasterRenderGraphBuilder builder = renderGraph.AddRasterRenderPass<PassData>(
-                    PresentPassName,
-                    out PassData passData);
-
-                passData.source = source;
-                passData.destination = destination;
-                passData.material = s_PresentationMaterial;
-                passData.viewport = new Rect(
-                    s_Viewport.OutputOffsetX,
-                    s_Viewport.OutputOffsetY,
-                    s_Viewport.OutputWidth,
-                    s_Viewport.OutputHeight);
-
-                builder.UseTexture(source, AccessFlags.Read);
-                // The utility camera already clears the full physical target to canonical
-                // Deep Space. This pass writes only the centered integer-scaled rectangle,
-                // so preserve the clear outside that viewport.
-                builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
-                builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                using (var builder = renderGraph.AddRasterRenderPass<PassData>(
+                           PresentPassName,
+                           out var passData))
                 {
-                    ConfigureSourceSampling(data, context);
-                    context.cmd.SetViewport(data.viewport);
-                    context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
-                });
+                    passData.source = source;
+                    passData.destination = destination;
+                    passData.material = s_PresentationMaterial;
+                    passData.viewport = new Rect(
+                        s_Viewport.OutputOffsetX,
+                        s_Viewport.OutputOffsetY,
+                        s_Viewport.OutputWidth,
+                        s_Viewport.OutputHeight);
+
+                    builder.UseTexture(source, AccessFlags.Read);
+                    // The utility camera already clears the full physical target to canonical
+                    // Deep Space. This pass writes only the centered integer-scaled rectangle,
+                    // so preserve the clear outside that viewport.
+                    builder.SetRenderAttachment(destination, 0, AccessFlags.Write);
+                    builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
+                    {
+                        ConfigureSourceSampling(data, context);
+                        context.cmd.SetViewport(data.viewport);
+                        context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
+                    });
+                }
             }
 
             private static void ConfigureSourceSampling(PassData data, RasterGraphContext context)
