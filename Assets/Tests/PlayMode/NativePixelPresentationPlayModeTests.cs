@@ -55,7 +55,16 @@ namespace Rustline.Tests
 
             RenderTexture originalWorldTarget = presentation.WorldTarget;
             RenderTexture originalResolvedTarget = presentation.ResolvedTarget;
-            presentation.TogglePenumbra();
+            presentation.SetPenumbraEnabled(true);
+            presentation.SetPenumbraEnabled(true);
+
+            Assert.That(presentation.PenumbraEnabled, Is.True);
+            Assert.That(presentation.WorldTarget, Is.SameAs(originalWorldTarget));
+            Assert.That(presentation.ResolvedTarget, Is.SameAs(originalResolvedTarget));
+            Assert.That(presentation.PresentedSource, Is.SameAs(originalResolvedTarget));
+
+            presentation.SetPenumbraEnabled(false);
+            presentation.SetPenumbraEnabled(false);
             yield return null;
 
             Assert.That(presentation.PenumbraEnabled, Is.False);
