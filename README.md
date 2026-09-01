@@ -47,6 +47,7 @@ See:
 - [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md) — visual specification and asset workflow
 - [`docs/PALETTE.md`](docs/PALETTE.md) — canonical production palette
 - [`docs/TILESET_SPEC.md`](docs/TILESET_SPEC.md) — structural atlas layout and connectivity contract
+- [`docs/MOVEMENT.md`](docs/MOVEMENT.md) — M1A controller architecture, controls, and initial tuning
 
 ## Development approach
 
@@ -63,9 +64,9 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**M0 — Visual foundation / Unity integration ready for visual review.**
+**M1A — Core movement prototype implemented and Unity-validated.**
 
-The Unity 6 Universal 2D project is bootstrapped. The canonical player and movement animation sheets are versioned, the Rustline Canonical 28 palette is locked, and the first 16 canonical structural tile cases are authored. Production pixel-art import conventions, fixed-grid slicing, preview animation clips, the canonical structural Rule Tile, and `Assets/Scenes/ArtShowcase.unity` are now integrated. Automated Unity Editor validation is complete; final M0 visual acceptance is performed by opening the showcase and previewing the animations in Play mode.
+The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` now provides a playable single-player course for tuning acceleration, reversal, air control, variable jump height, coyote time, jump buffering, falling, landing, animation selection, and pixel-stable camera follow. The core calculations have edit-mode coverage and the generated scene has a focused play-mode smoke test. Movement values are an initial baseline and still require iterative human feel tuning.
 
 ## License
 

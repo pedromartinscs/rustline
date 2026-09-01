@@ -36,17 +36,19 @@ See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract.
 
 **Goal:** prove that locomotion feels responsive before building combat systems.
 
-- [ ] Ground acceleration/deceleration
-- [ ] Air control
-- [ ] Jump
-- [ ] Variable jump height
-- [ ] Coyote time
-- [ ] Jump buffering
-- [ ] Fall behavior / terminal velocity
+- [x] Ground acceleration/deceleration
+- [x] Air control
+- [x] Jump
+- [x] Variable jump height
+- [x] Coyote time
+- [x] Jump buffering
+- [x] Fall behavior / terminal velocity
 - [ ] Roll or dodge
 - [ ] Moving-platform behavior if useful
-- [ ] Pixel-perfect camera and presentation
-- [ ] Controller tuning exposed as data/configuration
+- [x] Pixel-perfect camera and presentation
+- [x] Controller tuning exposed as data/configuration
+
+M1A core movement is implemented in `Assets/Scenes/MovementLab.unity`. It includes the reusable player prefab, physics-driven animation presentation, a separate visual/collision Tilemap course, pixel-snapped camera follow, failsafe respawn, and automated edit/play-mode validation. Roll/dodge and moving-platform behavior remain intentionally pending, so M1 as a whole is not marked complete.
 
 **Exit criterion:** traversing a small room is fun without enemies or weapons.
 

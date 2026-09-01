@@ -132,7 +132,7 @@ namespace Rustline.Editor
             Dictionary<string, PreviewAsset> previews = CreateAnimationPreviews();
             RuleTile ruleTile = CreateRuleTile();
             CreateShowcaseScene(previews, ruleTile);
-            PutShowcaseFirstInBuildSettings();
+            PutShowcaseInBuildSettings();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
@@ -584,16 +584,20 @@ namespace Rustline.Editor
             renderer.sortingOrder = 100;
         }
 
-        private static void PutShowcaseFirstInBuildSettings()
+        private static void PutShowcaseInBuildSettings()
         {
+            const string movementLabPath = "Assets/Scenes/MovementLab.unity";
             List<EditorBuildSettingsScene> scenes = EditorBuildSettings.scenes
                 .Where(scene => !string.Equals(scene.path, ScenePath, StringComparison.OrdinalIgnoreCase))
                 .ToList();
-            scenes.Insert(0, new EditorBuildSettingsScene(ScenePath, true));
+            int movementLabIndex = scenes.FindIndex(scene =>
+                string.Equals(scene.path, movementLabPath, StringComparison.OrdinalIgnoreCase));
+            scenes.Insert(movementLabIndex >= 0 ? movementLabIndex + 1 : 0,
+                new EditorBuildSettingsScene(ScenePath, true));
             EditorBuildSettings.scenes = scenes.ToArray();
         }
 
-        private static void ValidateAllOrThrow()
+        internal static void ValidateAllOrThrow()
         {
             foreach (SheetSpec sheet in PlayerSheets)
             {
@@ -652,8 +656,17 @@ namespace Rustline.Editor
             }
 
             Require(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null, "ArtShowcase scene is missing.");
-            Require(EditorBuildSettings.scenes.Length > 0 && EditorBuildSettings.scenes[0].path == ScenePath,
-                "ArtShowcase must be first in build settings.");
+            Require(EditorBuildSettings.scenes.Any(scene => scene.path == ScenePath && scene.enabled),
+                "ArtShowcase must be enabled in build settings.");
+            int movementLabIndex = Array.FindIndex(EditorBuildSettings.scenes,
+                scene => scene.path == "Assets/Scenes/MovementLab.unity" && scene.enabled);
+            if (movementLabIndex >= 0)
+            {
+                int showcaseIndex = Array.FindIndex(EditorBuildSettings.scenes,
+                    scene => scene.path == ScenePath && scene.enabled);
+                Require(movementLabIndex == 0 && showcaseIndex == 1,
+                    "MovementLab and ArtShowcase must be the first two enabled build scenes.");
+            }
 
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
             Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3495d47ebb099a14d944221a484553cc, type: 3}
+  m_Name: PlayerMovementConfig
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Player.PlayerMovementConfig
+  maxGroundSpeed: 7
+  groundAcceleration: 55
+  groundDeceleration: 70
+  directionChangeAcceleration: 90
+  maxAirSpeed: 7
+  airAcceleration: 30
+  inputDeadZone: 0.1
+  jumpSpeed: 12.5
+  jumpReleaseVelocityMultiplier: 0.45
+  coyoteTime: 0.12
+  jumpBufferTime: 0.12
+  ascentGravityScale: 3
+  fallGravityScale: 4.5
+  maxFallSpeed: 18
+  groundCheckDistance: 0.075
+  minimumGroundNormalY: 0.65
+  maximumGroundingUpwardSpeed: 0.1
+  runAnimationSpeedThreshold: 0.2
+  ascendingAnimationThreshold: 0.15
+  facingVelocityThreshold: 0.05
+  landPresentationDuration: 0.25
