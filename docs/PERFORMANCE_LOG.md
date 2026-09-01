@@ -253,7 +253,7 @@ Conclusion:
 
 ### M1B performance experiment 3A — palette-penumbra region rejection
 
-Status: **implemented; visual validation and performance measurements pending**.
+Status: **kept — visual/functional validation passed; measured speedup inconclusive**.
 
 Hypothesis:
 
@@ -280,5 +280,24 @@ Validation status:
 - Unity `6000.4.0f1` imported and compiled the shader for Direct3D 11 without shader errors.
 - The full EditMode suite passed: **32/32**.
 - The full PlayMode suite completed with **2/3 passing**. `MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths` reported no visible pixels in the resolved target near the player during its stage-B readback. The same isolated test failed identically after temporarily restoring the pre-Experiment-3A fragment body, so this batch-mode result does not identify a 3A regression. The test remains unchanged and its failed status is not being hidden or reclassified as a pass.
-- Human visual-equivalence validation is required because the existing automated coverage verifies presentation routing and visible output, but does not compare GPU output pixel-for-pixel across shader implementations.
-- Performance result: **pending Pedro's same-session measurements**. Code inspection supports only the claim that the shader is structured to request less work outside the annulus; it does not establish a measured frame-time improvement, and backend shader compilers may make their own branch/flattening decisions.
+- Pedro's human validation passed: Penumbra ON and OFF look correct, repeated `P` toggles preserve orientation, and movement/camera behavior remains correct.
+
+Approximate Penumbra-ON Editor samples from the validation session:
+
+| Sample | FPS | AVG ms | WORST ms | Frames |
+|---:|---:|---:|---:|---:|
+| 1 | 82.0 | 12.19 | 17.34 | 165 |
+| 2 | 76.8 | 13.03 | 22.75 | 154 |
+| 3 | 79.8 | 12.53 | 47.29 | 160 |
+
+Arithmetic means: approximately **79.5 FPS / 12.58 ms AVG**.
+
+These samples do **not** establish a performance improvement. Instantaneous/runtime Editor behavior drifted severely during the session, from roughly 150 FPS at one point to roughly 20 FPS later. Pedro therefore stopped the Editor micro-benchmark and did not collect a formal comparable Penumbra-OFF set. Comparing the `12.58 ms` mean with older sessions would confound the shader change with large session drift.
+
+Conclusion:
+
+- Experiment 3A visual/functional validation: **passed**.
+- Experiment 3A structural optimization: **keep**.
+- Experiment 3A measured speedup: **inconclusive / not established**.
+- The Editor Game View HUD remains useful for obvious regressions, visual validation, and coarse diagnostics, but not for accepting sub-millisecond changes.
+- Further micro-optimization decisions require the balanced standalone benchmark harness documented in `docs/BENCHMARKING.md`. No Experiment 3B work begins before a same-session A/A control and real A/B standalone run.
