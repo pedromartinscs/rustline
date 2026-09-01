@@ -168,7 +168,13 @@ namespace Rustline.Presentation
                     {
                         ConfigureSourceSampling(data, context);
                         context.cmd.SetViewport(data.viewport);
-                        context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
+                        context.cmd.DrawProcedural(
+                            Matrix4x4.identity,
+                            data.material,
+                            0,
+                            MeshTopology.Triangles,
+                            3,
+                            1);
                     });
                 }
             }
@@ -187,7 +193,10 @@ namespace Rustline.Presentation
                     passData.destination = destination;
                     passData.sourceTexture = sourceTexture;
                     passData.material = s_PresentationMaterial;
-                    passData.clearColor = (Color)RustlinePalette.DeepSpace;
+                    // Raster commands write linear values to the sRGB backbuffer. Supplying
+                    // the authored display-space #01020B directly would be encoded again
+                    // and appear as roughly #0D163B.
+                    passData.clearColor = ((Color)RustlinePalette.DeepSpace).linear;
                     passData.viewport = new Rect(
                         s_Viewport.OutputOffsetX,
                         s_Viewport.OutputOffsetY,
@@ -204,7 +213,13 @@ namespace Rustline.Presentation
                         context.cmd.ClearRenderTarget(false, true, data.clearColor);
                         ConfigureSourceSampling(data, context);
                         context.cmd.SetViewport(data.viewport);
-                        context.cmd.DrawMesh(RenderingUtils.fullscreenMesh, Matrix4x4.identity, data.material, 0, 0);
+                        context.cmd.DrawProcedural(
+                            Matrix4x4.identity,
+                            data.material,
+                            0,
+                            MeshTopology.Triangles,
+                            3,
+                            1);
                     });
                 }
             }
