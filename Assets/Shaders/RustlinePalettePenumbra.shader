@@ -108,26 +108,31 @@ Shader "Hidden/Rustline/PalettePenumbra"
             float4 Fragment(FullscreenVaryings input) : SV_Target
             {
                 float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
-                float4 source = tex2D(_MainTex, sampleUv);
                 if (_PenumbraEnabled < 0.5)
                 {
-                    return source;
+                    return tex2D(_MainTex, sampleUv);
                 }
 
                 // input.uv is the output/logical-screen coordinate. sampleUv may be
                 // vertically corrected only to read the source RenderTexture.
                 float2 logicalPixel = floor(input.uv * _LogicalSize);
-                float distanceFromPlayer = distance(logicalPixel + 0.5, _PlayerPixelCenter);
-                if (distanceFromPlayer <= _FullVisibleRadius)
-                {
-                    return source;
-                }
-
-                if (distanceFromPlayer >= _FullDarknessRadius)
+                float2 deltaFromPlayer = logicalPixel + 0.5 - _PlayerPixelCenter;
+                float distanceSquared = dot(deltaFromPlayer, deltaFromPlayer);
+                float fullDarknessRadiusSquared =
+                    _FullDarknessRadius * _FullDarknessRadius;
+                if (distanceSquared >= fullDarknessRadiusSquared)
                 {
                     return float4(_Palette[0].rgb, 1.0);
                 }
 
+                float4 source = tex2D(_MainTex, sampleUv);
+                float fullVisibleRadiusSquared = _FullVisibleRadius * _FullVisibleRadius;
+                if (distanceSquared <= fullVisibleRadiusSquared)
+                {
+                    return source;
+                }
+
+                float distanceFromPlayer = sqrt(distanceSquared);
                 float bandProgress = saturate(
                     (distanceFromPlayer - _FullVisibleRadius) /
                     (_FullDarknessRadius - _FullVisibleRadius));

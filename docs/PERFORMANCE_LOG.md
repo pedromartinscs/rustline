@@ -250,3 +250,35 @@ Conclusion:
 - The new structure provides direct control over the logical effect and final presentation stages and removes unnecessary scene presentation objects without sacrificing visual correctness.
 - The next focused performance experiment is the palette-penumbra shader itself. Its current same-session incremental cost is approximately `0.60 ms/frame` in this Editor measurement, providing a concrete ON-vs-OFF comparison for the next experiment.
 - Do not claim sub-millisecond gains from Editor Game View alone; use the immediate ON/OFF comparison as a directional experiment and validate serious claims later in a standalone Development Build / Unity Profiler.
+
+### M1B performance experiment 3A — palette-penumbra region rejection
+
+Status: **implemented; visual validation and performance measurements pending**.
+
+Hypothesis:
+
+- The palette-penumbra fragment shader previously sampled the logical world texture and calculated a true Euclidean distance for every logical pixel before classifying that pixel as fully visible, in the 64 px transition annulus, or fully dark.
+- At the maximum `1072×1072` logical viewport, large coherent inner and outer regions do not require the annulus-only square root, ordered dithering, nearest-palette search, or darkness-LUT lookup. The fully dark outer region does not require a world-texture sample either.
+
+Change:
+
+- The shader still derives the logical pixel from `floor(input.uv * _LogicalSize)` and evaluates the player-relative position at the existing half-pixel center, `logicalPixel + 0.5`.
+- It now classifies pixels with `dot(deltaFromPlayer, deltaFromPlayer)` and squared versions of the existing 456 px and 520 px radii.
+- Pixels at or beyond radius 520 return canonical Deep Space immediately, before sampling `_MainTex` and without calculating a square root, Bayer threshold, nearest palette color, or darkness-LUT result.
+- Remaining pixels sample `_MainTex` once. Pixels at or inside radius 456 return that source sample immediately, without calculating a square root, Bayer threshold, nearest palette color, or darkness-LUT result.
+- Only pixels strictly inside the existing 456..520 annulus calculate `sqrt(distanceSquared)` and continue through the unchanged continuous band progression, world-anchored deterministic 4×4 Bayer threshold, 28-color nearest-palette search, and 5-level darkness LUT.
+- The shader's disabled guard still returns the raw source sample. In the accepted runtime, Penumbra OFF remains structurally unchanged: RenderGraph skips the logical effect pass and directly presents the raw world target.
+
+Deliberately unchanged:
+
+- The fullscreen vertex path, RenderGraph architecture, source orientation handling, point sampling, logical/physical sizing, cameras, gameplay, movement, and camera follow.
+- The canonical 28-color palette, Deep Space value, 456/520 px boundaries, 64 px annulus, half-pixel positioning, world anchoring, Bayer matrix/threshold math, band progression, 28-entry linear palette search, and 5-level darkness LUT.
+- No palette-search optimization, texture LUT, compute shader, RenderTexture change, fallback path, presentation camera/quad, `CommandBuffer.Blit`, or `endCameraRendering` callback is introduced.
+
+Validation status:
+
+- Unity `6000.4.0f1` imported and compiled the shader for Direct3D 11 without shader errors.
+- The full EditMode suite passed: **32/32**.
+- The full PlayMode suite completed with **2/3 passing**. `MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths` reported no visible pixels in the resolved target near the player during its stage-B readback. The same isolated test failed identically after temporarily restoring the pre-Experiment-3A fragment body, so this batch-mode result does not identify a 3A regression. The test remains unchanged and its failed status is not being hidden or reclassified as a pass.
+- Human visual-equivalence validation is required because the existing automated coverage verifies presentation routing and visible output, but does not compare GPU output pixel-for-pixel across shader implementations.
+- Performance result: **pending Pedro's same-session measurements**. Code inspection supports only the claim that the shader is structured to request less work outside the annulus; it does not establish a measured frame-time improvement, and backend shader compilers may make their own branch/flattening decisions.
