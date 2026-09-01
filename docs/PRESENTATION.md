@@ -199,23 +199,34 @@ Toggling the penumbra should reset the current measurement window so the transit
 
 ## M1B implementation
 
-MovementLab currently implements this specification through a three-camera, two-quad presentation path:
+MovementLab now implements this specification through a **two-camera RenderGraph path**:
 
-1. `World Camera - Native Pixel Follow` keeps the accepted `PixelCameraFollow2D` smoothing and 1/16-unit source-pixel snap, renders the actual 2D world through Rustline's default `Renderer2D`, and writes into a logical 8-bit sRGB RenderTexture sized by `NativePixelViewportMath` instead of the old fixed 480×270 Pixel Perfect Camera path.
-2. `Penumbra Camera - Logical Pass` renders one dedicated-layer full-screen quad into the resolved logical target. Its URP unlit material samples the world target and applies the centralized `RustlinePalette` five-level lookup table plus the world/source-pixel-anchored 4×4 Bayer pattern.
-3. `Presentation Camera - Deep Space Surround` clears the physical display to the authored canonical Deep Space `#01020B`, then renders a separate dedicated-layer quad which point-samples the selected logical texture into the centered integral output rectangle. No Canvas panels, IMGUI framebuffer drawing, legacy command-buffer blits, or fractional scaling are involved.
+1. `World Camera - Native Pixel Follow` keeps the accepted `PixelCameraFollow2D` smoothing and 1/16-unit source-pixel snap, renders the actual 2D world through Rustline's default `Renderer2D`, and writes into a logical 8-bit sRGB RenderTexture sized by `NativePixelViewportMath`.
+2. `Native Pixel Driver Camera` renders no scene geometry (`cullingMask == 0`). It uses `Assets/Settings/RustlineUtilityRenderer.asset`, the lightweight Universal Renderer registered as renderer index `1`, solely to drive `RustlineNativePixelPresentFeature`.
 
-The two presentation-only cameras do **not** use the full 2D Renderer. They are routed through `Assets/Settings/RustlineUtilityRenderer.asset`, a minimal Universal Renderer registered as renderer index `1` in `UniversalRP.asset`. That renderer has no Renderer Features, performs no opaque-layer work, and only sees the dedicated `RustlinePenumbra` and `RustlinePresentation` layers. `NativePixelPresentation` owns this routing contract directly during `OnEnable`, before target/material presentation begins; the temporary global `AfterSceneLoad` selector used during the reversible performance experiment was removed after the optimization was accepted. The world camera deliberately remains on the default Renderer2D.
+`RustlineNativePixelPresentFeature` records the remaining work through supported Unity 6 / URP RenderGraph APIs:
 
-The processing and presentation quads use separate layers which are excluded from the world camera, preventing either texture from feeding back into itself. Both logical textures are persistent and are recreated only when the required logical dimensions change. They use Point filtering, clamp wrapping, no mipmaps, no MSAA, and no HDR. Unity 6 URP RenderGraph requires each camera output texture to carry a depth attachment, so both targets use a minimal 16-bit depth buffer. This does not re-enable the 2D Renderer depth/stencil feature: `Renderer2D.asset` remains `m_UseDepthStencilBuffer: 0`.
+- when Penumbra is ON, one logical-resolution raster pass samples the world target and writes the palette-safe result into the persistent resolved logical target;
+- the final raster pass point-samples either the resolved target (ON) or raw world target (OFF), clears the physical backbuffer to canonical Deep Space, and writes only the centered integer-scaled output rectangle;
+- `UniversalResourceData.SwitchActiveTexturesToBackbuffer()` marks the physical resolve as complete so URP does not need a redundant final blit;
+- external persistent RenderTextures are imported with explicit `RenderTargetInfo` metadata;
+- fullscreen rendering uses a procedural clip-space triangle rather than legacy camera-dependent quad geometry or `CommandBuffer.Blit`.
 
-The palette pass leaves pixels inside radius 456 unchanged, remaps/dithers only through Canonical 28 across the 64 px annulus, and emits exact Deep Space from radius 520 outward. Nearest-canonical source identification is confined to the annulus; final physical integer upscaling only duplicates the resolved logical pixels.
+There is **no physical Presentation Camera and no presentation/penumbra quad in the consolidated scene contract**. The reversible Experiment 2 fallback objects were removed from the runtime contract and from the deterministic MovementLab generator once the RenderGraph path rendered correctly. The world camera remains on Renderer2D; only the driver camera uses the utility renderer.
 
-In Editor and Development Builds, `P` toggles the pass without rebuilding or reallocating targets and resets the 2.0-second performance sample. When OFF, the logical processing camera is disabled and the physical quad samples the raw world target directly. The HUD remains outside the world effect and reports physical resolution, logical resolution, integer scale, Penumbra `ON/OFF`, Camera `ON/FROZEN`, FPS, AVG, WORST, frame count, VSync, and target frame rate. Left-click still copies the current text and right-click still toggles camera follow.
+Both logical textures are persistent and are recreated only when required logical dimensions change. They use Point filtering, clamp wrapping, no mipmaps, no MSAA, and no HDR. The world target remains a camera output and therefore currently carries the minimal depth attachment required by this Unity/URP path. During Experiment 2 measurement the resolved target deliberately keeps the same descriptor so removal of the physical presentation camera remains the isolated performance variable; making that resolved target depthless is a later focused optimization candidate. `Renderer2D.asset` remains `m_UseDepthStencilBuffer: 0`.
 
-The accepted utility-renderer specialization produced a large Editor recovery after the first M1B implementation: measured Penumbra-ON samples averaged about **75.1 FPS at logical 1072×468** and **66.6 FPS at the full logical 1072×1072 viewport**, versus the approximately 35–40 FPS regression observed before the specialization. Detailed samples and caveats live in `PERFORMANCE_LOG.md`; standalone Development Build measurements are still required before making hardware-tier claims.
+The palette pass leaves pixels inside radius 456 unchanged, remaps/dithers only through Canonical 28 across the 64 px annulus, and emits exact Deep Space from radius 520 outward. Final physical integer upscaling only duplicates already-resolved logical pixels.
 
-Pure EditMode tests cover every reference viewport case and all palette/LUT invariants; PlayMode smoke coverage verifies logical target properties, raw/resolved routing without reallocation, actual non-Deep-Space pixels through both logical stages and the physical camera path, and the accepted MovementLab movement/respawn behavior. PlayMode coverage also locks the renderer-routing contract: the processing and presentation cameras must use utility renderer index `1`, while the gameplay/world camera must not. ArtShowcase retains its M0 presentation and does not receive the penumbra.
+The raw World Camera RenderTexture has a storage-orientation difference on top-left graphics APIs when it is bound directly as a persistent texture. The logical penumbra pass naturally normalizes that orientation. Therefore the Penumbra-OFF direct path applies exactly one explicit Y-orientation compensation before presenting the raw camera target; this prevents the diagnostic bypass from appearing vertically inverted while keeping the ON path unchanged.
+
+The final backbuffer clear is supplied in linear form because raster commands write linear values into the sRGB physical target. This preserves the authored display result `#01020B` rather than double-encoding it to a brighter blue.
+
+In Editor and Development Builds, `P` toggles the logical penumbra pass without rebuilding or reallocating targets and resets the 2.0-second performance sample. The driver camera remains active in both states because it owns the final RenderGraph presentation pass. The HUD remains outside the world effect and reports physical resolution, logical resolution, integer scale, Penumbra `ON/OFF`, Camera `ON/FROZEN`, FPS, AVG, WORST, frame count, VSync, and target frame rate. Left-click still copies the current text and right-click still toggles camera follow.
+
+The accepted Experiment 1 utility-renderer specialization produced a large Editor recovery after the first M1B implementation: measured Penumbra-ON samples averaged about **75.1 FPS at logical 1072×468** and **66.6 FPS at the full logical 1072×1072 viewport**, with a later three-sample full-viewport validation averaging about **75.2 FPS**, versus the approximately 35–40 FPS regression observed before specialization. Experiment 2 performance numbers are intentionally not claimed here until the two-camera RenderGraph path is visually validated and measured. Detailed samples and caveats live in `PERFORMANCE_LOG.md`; standalone Development Build measurements are still required before making hardware-tier claims.
+
+Pure EditMode tests cover every reference viewport case and all palette/LUT invariants. PlayMode smoke coverage verifies logical target properties, raw/resolved routing without reallocation, actual non-Deep-Space pixels through the world, logical penumbra, and physical RenderGraph stages, and the accepted MovementLab movement/respawn behavior. Renderer-routing coverage locks the two-camera contract: the driver camera must use utility renderer index `1` with `cullingMask == 0`, while the gameplay/world camera must remain on Renderer2D. ArtShowcase retains its M0 presentation and does not receive the penumbra.
 
 ## Validation expectations
 
@@ -232,7 +243,9 @@ At minimum validate:
 - penumbra constants are 456 px / 64 px / 520 px;
 - every palette remap/LUT entry belongs to Rustline Canonical 28;
 - final darkness mappings resolve to Deep Space;
-- presentation-only cameras route through the dedicated utility renderer rather than Renderer2D;
+- the RenderGraph driver camera routes through the dedicated utility renderer rather than Renderer2D;
+- the driver camera renders no scene geometry;
+- the consolidated MovementLab contains no legacy physical presentation camera or fullscreen presentation quads;
 - no source PNG changes;
 - existing M0 and M1A validation continues to pass after the presentation integration.
 
