@@ -74,6 +74,39 @@ Prefer designs that produce strong gameplay silhouettes and modest animation req
 - Flying drone
 - Turret or heavy stationary/slow unit
 
+## Native-pixel viewport and penumbra
+
+Rustline should treat display resolution as part of its visual language rather than freely scaling the world to fill every screen.
+
+The target presentation model is:
+
+- At the base presentation scale, **one production-art pixel maps to one display pixel**. A 64 px player cell therefore remains 64 physical pixels tall.
+- A canonical high-resolution logical viewport will define the maximum world area visible at **1×**. Its exact dimensions are intentionally left open until the camera prototype is perceptually approved.
+- Displays smaller than that canonical viewport should show a smaller crop of the same native-pixel world rather than shrinking the art below 1×.
+- Displays larger than the canonical viewport should not reveal additional gameplay world merely because more physical pixels are available. Unused space is filled with the canonical darkness color.
+- When a display can contain an exact integer multiple of the canonical viewport, the presentation may upscale by **2×, 3×, 4×, ...** using nearest-neighbor integer scaling only.
+- Fractional world scaling and smoothing are not part of the target presentation model.
+
+A player-centered atmospheric mask defines the readable visual region. The central area remains fully visible; outward from it, the scene enters a pixel-art penumbra and eventually reaches complete canonical darkness.
+
+### Palette-constrained darkness
+
+The penumbra must preserve the fixed Rustline palette. It must **not** generate arbitrary interpolated RGB shades.
+
+Darkening should happen by remapping visible colors through existing canonical colors of progressively lower value. For example, a bright warm/red pixel may step through darker canonical warm tones before reaching the darkest canonical color. The exact ramp used depends on the source material and should preserve hue/material identity where practical.
+
+The final darkness color is **Deep Space `#01020B`**, not an additional `#000000` color.
+
+Controlled pixel-pattern dithering is explicitly allowed for this atmospheric transition, provided that:
+
+- every resulting pixel is still one of Rustline Canonical 28;
+- no alpha gradients, anti-aliasing, blur, bilinear filtering, or synthesized intermediate colors are introduced;
+- dithering is deliberate, sparse, and readable at native scale rather than noisy texture;
+- the effect transitions from fully readable color, through palette-constrained shadow/remapping and pixel-pattern penumbra, into solid Deep Space;
+- production sprites and tiles themselves remain unchanged; the penumbra is a presentation/lighting effect layered over the rendered world.
+
+The penumbra is intended to become a gameplay-readable boundary as well as an aesthetic device. Future rendering, simulation, and spatial-audio ranges may use related but independently tunable distances; they should not be hard-coupled merely because the initial prototype centers all three around the player.
+
 ## Weapon presentation
 
 Weapons are independent sprites attached to an aim pivot. This allows continuous 360° aiming without requiring directional firing animations for the player body.
