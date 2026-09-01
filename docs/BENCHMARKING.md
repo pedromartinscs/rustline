@@ -70,6 +70,8 @@ Run `control-off` before the real comparison. Both A and B slots use Penumbra OF
 
 Do not invent a universal A/A pass threshold. A small real ON-minus-OFF delta is credible only when it is more consistent and meaningfully larger than the same-session A/A noise.
 
+The September 1 control run at commit `83b0bfa` was not stable enough to serve this purpose. Identical Penumbra-OFF block means ranged from about `1.76 ms` to `116.34 ms`, with false paired deltas from about `-10.86 ms` to `+77.50 ms`. The nearby Penumbra A/B run was similarly unstable, so its reported aggregate difference is not shader-performance evidence. Benchmark Stabilization 1 keeps those blocks rather than filtering them and makes the instability explicit in the report.
+
 The real `penumbra-ab` mode calculates every pair as `ON - OFF`, regardless of whether ON ran first or second.
 
 ## Command-line usage
@@ -91,7 +93,7 @@ From the repository root after building:
 ### Short smoke
 
 ```powershell
-.\Builds\Performance\RustlineBenchmark.exe --rustline-benchmark --benchmark-mode control-off --benchmark-warmup-seconds 1 --benchmark-settle-seconds 0.25 --benchmark-block-seconds 1 --benchmark-pairs 1 --benchmark-auto-quit
+.\Builds\Performance\RustlineBenchmark.exe --rustline-benchmark --benchmark-mode control-off --benchmark-warmup-seconds 1 --benchmark-settle-seconds 0.25 --benchmark-block-seconds 1 --benchmark-pairs 1 --benchmark-diagnostics --benchmark-auto-quit
 ```
 
 The smoke proves activation, normalization, deterministic state selection, report output, and clean exit only. Its timing values are not benchmark evidence.
@@ -102,6 +104,7 @@ Supported overrides:
 - `--benchmark-settle-seconds <0..60>`
 - `--benchmark-block-seconds <greater than 0, up to 600>`
 - `--benchmark-pairs <1..100>`
+- `--benchmark-diagnostics`
 - `--benchmark-auto-quit`
 
 After a non-auto-quit run, press `C` to copy the final summary or `Q`/Escape to quit. Detailed UI is created only after measurement. The ordinary MovementLab performance HUD is disabled before benchmark warm-up and remains unchanged in normal Editor/Development play.
@@ -119,6 +122,8 @@ Every block reports:
 - p90, p95, and p99;
 - maximum;
 - equivalent FPS (`1000 / mean ms`);
+- `GC Allocated In Frame` counter availability, total bytes, mean/median/p95/max bytes per frame, and non-zero frame count/percentage;
+- `GC.GetTotalMemory(false)` before and after the block as heap snapshots, not as an allocation total;
 - generation 0/1/2 GC collection deltas;
 - validity and any invalidation reason.
 
@@ -126,7 +131,34 @@ Percentiles use linear interpolation at `(sampleCount - 1) × percentile` in the
 
 Mean reflects total frame-time cost and is the basis of the primary paired comparison. Median describes the typical frame with less sensitivity to isolated hitches. p95 and p99 expose tail behavior without reducing the run to one extreme observation. Maximum/WORST is retained but is not a useful optimization decision by itself because one unrelated scheduling or OS hitch can dominate it.
 
-For a real A/B run, the report includes aggregate ON and OFF distributions plus chronological block data. More importantly, it calculates each pair's mean and median delta as `ON - OFF`, then reports the list, mean, median, and spread of paired deltas. The relative percentage uses the aggregate OFF mean as its denominator.
+The allocation counter is opened once before warm-up with `Unity.Profiling.ProfilerRecorder`, category `Memory`, marker `GC Allocated In Frame`, and capacity 1. Its value is copied once per measured frame into a preallocated `long[]`. If Unity does not expose the marker on a player/platform, the run continues and records it as unavailable. `GC.CollectionCount(0/1/2)` remains supplementary context; equal values must not be interpreted as ordinary desktop .NET generational-GC pressure.
+
+The Windows D3D11 validation player exposed the counter. Matching one-second smokes with diagnostics ON and OFF both reported a `4400 B/frame` allocation median, so optional FrameTimingManager capture did not cause that regular allocation. The counter covers the complete frame and supplies no call stacks; this observation does not by itself identify Rustline scripts, URP/RenderGraph, Input System, the benchmark coroutine, or Development-player internals as the owner. No source-level allocation was changed without that evidence.
+
+The valid measured loop itself performs a coroutine resume (`yield return null`), `Stopwatch.GetTimestamp`, preallocated array writes, cheap scalar configuration checks, and optional recorder reads. It does not log, format strings, use LINQ, or allocate a result object per frame. Failure strings are constructed only after contamination is detected. Large statistic-sorting buffers are also preallocated and reused between blocks, avoiding temporary per-block sample arrays that could seed a later measured block with avoidable garbage.
+
+### Pooled and block-balanced statistics
+
+The report keeps two distinct estimands:
+
+- `pooledFrameTime` describes the distribution of every captured frame. A faster fixed-duration block contributes more frames and therefore more weight.
+- `blockBalancedFrameTime` gives every valid block equal weight by summarizing block means. It reports count, mean, median, population standard deviation, minimum, and maximum of those block means.
+
+Neither is substituted for the other. Absolute paired block-mean deltas remain the primary comparison. The report also preserves chronological block order and exposes minimum/maximum block mean, max/min ratio, mean, standard deviation, and coefficient of variation without automatically rejecting a block.
+
+For A/A, paired output includes signed `A - B` deltas plus mean, median, and maximum absolute false delta. For Penumbra A/B, every valid pair computes:
+
+```text
+relativeCostPercent = (ON block mean - OFF block mean) / that pair's OFF block mean × 100
+```
+
+The report summarizes those pair-relative percentages only when the individual OFF denominator is finite and positive. It no longer divides an equal-weight paired numerator by a differently weighted pooled OFF mean. Absolute `ON - OFF` milliseconds remain primary; volatile pair denominators do not support a confident conclusion.
+
+### Optional CPU/GPU diagnostics
+
+`--benchmark-diagnostics` additionally calls `FrameTimingManager.CaptureFrameTimings` and reads the latest timing into one preallocated `FrameTiming` slot. Positive reported values are summarized separately for CPU frame, CPU main thread, CPU render thread, CPU present wait, and GPU frame timing. The report records both feature availability and per-field sample availability; an empty metric means unsupported/unreported, not a measured zero.
+
+Default runs do not call `FrameTimingManager`, so wall-clock timing remains canonical and its optional capture overhead/platform variation cannot silently change the normal protocol. The managed-allocation recorder remains active in both default and diagnostic runs because its one-value read is the focus of this stabilization pass.
 
 ## Reports
 
@@ -148,18 +180,33 @@ UTC timestamped output includes:
 - `.csv`: one block-summary row per chronological block;
 - `.txt`: concise copy/paste summary.
 
-Schema version 1 records Unity/build state, system/graphics information, requested and actual viewport configuration, quality name/index, protocol, sequence, every block, GC deltas, aggregates, and paired comparisons.
+Schema version 2 records Unity/build state, system/graphics information, requested and actual viewport configuration, quality name/index, protocol, diagnostic availability, sequence, every block, managed-allocation metrics, GC deltas, explicitly pooled and block-balanced aggregates, block stability, paired absolute-noise metrics, and pair-consistent relative percentages.
 
-Unity `FrameTimingManager` CPU/GPU timing is intentionally not captured in the default harness. Support and validity vary by graphics API/platform, and `CaptureFrameTimings` would add a measurement behavior not required by the primary wall-clock comparison. Reports state this explicitly and never substitute zero CPU/GPU values.
+## Laptop pre-run checklist
+
+- Connect AC power and select Windows **Best performance** (or the equivalent vendor power mode).
+- Close Unity before the full standalone run.
+- Close browser video, OBS/recording, overlays, and game launchers or background tools doing active work.
+- Give the machine a short idle period before starting.
+- Keep the benchmark focused and do not interact with the machine during the run.
+- Run A/A before A/B.
+- Do not change power, thermal, display, driver, or background-process conditions between the two runs.
+- Do not attach the Unity Profiler, enable deep profiling, Auto Connect Profiler, or Script Debugging for the canonical run.
 
 ## Limitations and interpretation
 
 - Wall-clock frame intervals are end-to-end behavior, not isolated GPU duration.
 - Development Builds carry overhead and should be compared only with matching benchmark builds.
 - OS tasks, overlays, recording software, power policy, driver behavior, hardware clocks, and thermal state still affect results.
-- Keep the benchmark window focused and avoid interacting with the machine during a run.
-- Compare an A/B result with a nearby A/A control from the same build and session.
+- Optional recorder/FrameTimingManager diagnostics add some instrumentation overhead. Compare like with like and keep diagnostics settings identical within a decision sequence.
+- Compare an A/B result only after a nearby A/A control from the same build and session has passed human review.
 - Preserve chronological blocks; drift across the run is diagnostic information.
 - Do not accept or reject Experiment 3A from the short smoke or from the old Editor HUD.
 
-The next optimization should begin only after a full A/A control and full Penumbra A/B run establish that this harness's noise floor is small enough for the intended decision.
+## Final decision gate after Benchmark Stabilization 1
+
+Run exactly one full `control-off` A/A first. Review chronological block means, signed and absolute A-B deltas, allocation metrics, GC counts, and any optional CPU/GPU diagnostics.
+
+If A/A is reasonably stable, run the Penumbra A/B and retain this harness for future optimization work. If identical OFF blocks still change by many milliseconds or large multiples comparable to the previous run, stop benchmark-engineering work for now. Keep the harness as a coarse diagnostic, document the environment limitation, keep Experiment 3A because it is structurally cheaper and visually correct without claiming a measured speedup, and return project focus to gameplay/content/assets.
+
+There is no automatic Benchmark Stabilization 2 and no universal pass/fail threshold. Pedro and Echo make this one human methodological decision before any A/B run or further optimization.

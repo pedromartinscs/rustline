@@ -301,3 +301,44 @@ Conclusion:
 - Experiment 3A measured speedup: **inconclusive / not established**.
 - The Editor Game View HUD remains useful for obvious regressions, visual validation, and coarse diagnostics, but not for accepting sub-millisecond changes.
 - Further micro-optimization decisions require the balanced standalone benchmark harness documented in `docs/BENCHMARKING.md`. No Experiment 3B work begins before a same-session A/A control and real A/B standalone run.
+
+## Benchmark Stabilization 1 — allocation visibility and balanced report semantics
+
+Status: **implemented; one final full A/A control pending**.
+
+Motivation:
+
+- The first full standalone `control-off` A/A at commit `83b0bfa` was extremely unstable. Identical Penumbra-OFF block means ranged from approximately `1.76 ms` to `116.34 ms`; signed false deltas ranged from approximately `-10.86 ms` to `+77.50 ms`.
+- A nearby Penumbra A/B run also changed behavior sharply between identical-time blocks. Its old aggregate `9.41 ms` / `264.69%` output is not accepted as penumbra-cost evidence.
+- GC collection deltas appeared at roughly one reported collection per 245–251 rendered frames across conditions. Matching `CollectionCount(0/1/2)` values are treated only as a clue under Unity's managed-GC model, not as proof of desktop-style generation-2 pressure.
+
+Static managed-allocation audit:
+
+- Active movement, ground checking, respawn, camera follow, native-pixel parameter updates, and animation selection use value types, persistent buffers, or event callbacks; no clear unnecessary per-frame user-code heap allocation was found.
+- `PlayerAnimator2D` calls `ToString()` only when animation state changes, not every frame. Changing that was unnecessary for the static benchmark and could not explain the regular collection cadence.
+- The development-only MovementLab HUD periodically formats display strings and uses IMGUI, but the benchmark disables the component before warm-up.
+- The valid benchmark loop has no per-frame logging, formatting, LINQ, collections growth, or object creation. Failure descriptions allocate only after invalid state is detected.
+- RenderGraph may perform Unity-internal managed/native work not visible from source inspection; accepted rendering architecture was not changed. Runtime allocation recording is used to observe the complete player frame.
+- No behavior-preserving allocation fix was made because no source-level per-frame culprit was established.
+
+Change:
+
+- Every benchmark attempts Unity's `ProfilerRecorder` memory counter `GC Allocated In Frame` once before warm-up. Each measured value goes into a preallocated `long[]`; every block reports availability, total, mean, median, p95, maximum, and non-zero frames. `GC.GetTotalMemory(false)` before/after remains an explicitly non-cumulative heap snapshot.
+- Statistics scratch buffers are allocated once and reused, removing large post-block sample-sort allocations that could leave avoidable garbage for a later block.
+- Optional `--benchmark-diagnostics` enables preallocated `FrameTimingManager` CPU/main-thread/render-thread/present-wait/GPU observations. Default wall-clock timing remains canonical and does not call FrameTimingManager.
+- Schema version 2 labels pooled frame distributions as `pooledFrameTime` and adds equal-weight `blockBalancedFrameTime` summaries. Global chronological block stability now includes min/max, ratio, mean, standard deviation, and coefficient of variation.
+- A/A paired output adds mean/median/max absolute false delta. Penumbra relative percentages are now calculated per pair using that pair's OFF block mean, then summarized; absolute ON-minus-OFF milliseconds remain primary.
+
+Windows D3D11 smoke validation:
+
+- `GC Allocated In Frame` was available in the Unity `6000.4.0f1` Windows x86_64 Development player.
+- A one-pair diagnostic smoke serialized all schema-v2 fields, reported FrameTimingManager available, returned positive CPU/main-thread/render-thread/present-wait/GPU samples, and exited cleanly.
+- The diagnostic smoke reported a `4400 B/frame` allocation median in both blocks. A matching smoke without `--benchmark-diagnostics` reported the same `4400 B/frame` median, so optional FrameTimingManager capture was not the source of that regular allocation.
+- This proves that the complete Development-player frame reports managed allocation; it does not attribute the bytes to Rustline gameplay, the benchmark coroutine, URP/RenderGraph, Input System, or Unity Development-player internals. The recorder observes the whole frame and does not provide allocation call stacks. The pre-instrumentation collection cadence is consistent with continuing allocation pressure, but causation remains unproven.
+- The smoke's frame times and its apparently tight A/A delta are non-evidence because blocks were only one second long.
+
+Decision gate:
+
+- Pedro will run one full diagnostic `control-off` A/A after the implementation is validated.
+- If that A/A is reasonably stable, Penumbra A/B may follow. If it remains extremely unstable, benchmark engineering stops for now; the harness remains a coarse diagnostic, Experiment 3A remains structurally justified without a measured-speedup claim, and project focus returns to gameplay/content/assets.
+- No Experiment 3B or automatic Benchmark Stabilization 2 begins from this work.
