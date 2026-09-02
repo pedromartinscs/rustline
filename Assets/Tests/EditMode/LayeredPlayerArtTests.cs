@@ -13,6 +13,8 @@ namespace Rustline.Tests
         private const string BodyRoot = "Assets/Art/Characters/Player/Sprites/Body";
         private const string ArmsRoot = "Assets/Art/Characters/Player/Sprites/Arms/Unarmed";
         private const string BodyAnimationRoot = "Assets/Art/Characters/Player/Animations/Body";
+        private const string JumpDustPath = "Assets/Art/Effects/Movement/player_jump_dust.png";
+        private const string JumpDustPrefabPath = "Assets/Prefabs/Effects/Movement/PlayerJumpDust.prefab";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
 
         [TestCase("idle", 2)]
@@ -76,12 +78,50 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void JumpDustSheet_MatchesCanonicalFullCellImportContract()
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(JumpDustPath);
+            Assert.That(texture, Is.Not.Null);
+            Assert.That(texture.width, Is.EqualTo(144));
+            Assert.That(texture.height, Is.EqualTo(64));
+            AssertImporter(JumpDustPath);
+            AssertSprites(JumpDustPath, "player_jump_dust", 3);
+            AssertSourcePixels(JumpDustPath);
+        }
+
+        [Test]
+        public void PlayerPrefab_HasAnchoredJumpPresentationAndWorldSpaceDustPrefab()
+        {
+            GameObject playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
+            PlayerJumpDustFx2D dustPrefab = AssetDatabase.LoadAssetAtPath<PlayerJumpDustFx2D>(JumpDustPrefabPath);
+            Assert.That(playerPrefab, Is.Not.Null);
+            Assert.That(dustPrefab, Is.Not.Null);
+
+            Transform visual = playerPrefab.transform.Find("Visual - 48x64 Full Cell");
+            SpriteRenderer bodyRenderer = visual?.Find("BodySpriteRenderer")?.GetComponent<SpriteRenderer>();
+            PlayerJumpPresentation2D presentation = playerPrefab.GetComponent<PlayerJumpPresentation2D>();
+            Assert.That(presentation, Is.Not.Null);
+            Assert.That(presentation.Visual, Is.SameAs(visual));
+            Assert.That(presentation.BodySpriteRenderer, Is.SameAs(bodyRenderer));
+            Assert.That(presentation.JumpDustPrefab, Is.SameAs(dustPrefab));
+            Assert.That(visual.localPosition, Is.EqualTo(new Vector3(0f, -0.25f, 0f)));
+
+            Assert.That(dustPrefab.FrameCount, Is.EqualTo(3));
+            Assert.That(dustPrefab.SpriteRenderer, Is.Not.Null);
+            Assert.That(dustPrefab.SpriteRenderer.sortingOrder, Is.EqualTo(9));
+            for (int index = 0; index < dustPrefab.FrameCount; index++)
+            {
+                Assert.That(dustPrefab.GetFrame(index).name, Is.EqualTo("player_jump_dust_" + index));
+            }
+        }
+
+        [Test]
         public void JumpClip_PlaysTakeoffOnceThenHoldsFinalFrame()
         {
             AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
                 BodyAnimationRoot + "/Player_Body_Jump.anim");
             Assert.That(clip, Is.Not.Null);
-            Assert.That(clip.frameRate, Is.EqualTo(20f));
+            Assert.That(clip.frameRate, Is.EqualTo(50f));
             Assert.That(clip.wrapMode, Is.EqualTo(WrapMode.ClampForever));
             Assert.That(AnimationUtility.GetAnimationClipSettings(clip).loopTime, Is.False);
 
@@ -91,12 +131,21 @@ namespace Rustline.Tests
             Assert.That(keyframes, Has.Length.EqualTo(3));
 
             List<Sprite> expectedSprites = LoadSprites(BodyRoot + "/player_salvager_body_jump.png");
-            float[] expectedTimes = { 0f, 0.05f, 0.1f };
+            float[] expectedTimes = { 0f, 0.1f, 0.26f };
             for (int index = 0; index < keyframes.Length; index++)
             {
                 Assert.That(keyframes[index].time, Is.EqualTo(expectedTimes[index]).Within(0.0001f));
                 Assert.That(keyframes[index].value, Is.SameAs(expectedSprites[index]));
             }
+        }
+
+        [TestCase(0f, 0f)]
+        [TestCase(0.25f, 0.578125f)]
+        [TestCase(0.5f, 0.875f)]
+        [TestCase(1f, 1f)]
+        public void JumpTakeoffEaseOutCubic_IsDeterministic(float progress, float expected)
+        {
+            Assert.That(PlayerJumpPresentation2D.EaseOutCubic(progress), Is.EqualTo(expected).Within(0.000001f));
         }
 
         private static void AssertImporter(string path)
@@ -111,6 +160,7 @@ namespace Rustline.Tests
             Assert.That(importer.textureCompression, Is.EqualTo(TextureImporterCompression.Uncompressed));
             Assert.That(importer.crunchedCompression, Is.False);
             Assert.That(importer.alphaIsTransparency, Is.True);
+            Assert.That(importer.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
             TextureImporterSettings settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             Assert.That(settings.spriteMeshType, Is.EqualTo(SpriteMeshType.FullRect));

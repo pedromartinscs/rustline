@@ -25,6 +25,7 @@ namespace Rustline.Tests
             CapsuleCollider2D collider = player.GetComponent<CapsuleCollider2D>();
             PlayerUnarmedArmsPresenter2D presenter = player.GetComponent<PlayerUnarmedArmsPresenter2D>();
             PlayerAnimator2D playerAnimator = player.GetComponent<PlayerAnimator2D>();
+            PlayerJumpPresentation2D jumpPresentation = player.GetComponent<PlayerJumpPresentation2D>();
             Transform visual = player.transform.Find("Visual - 48x64 Full Cell");
             Transform bodyVisual = visual?.Find("BodySpriteRenderer");
             Transform armsVisual = visual?.Find("ArmsWeaponSpriteRenderer");
@@ -39,6 +40,7 @@ namespace Rustline.Tests
             Assert.That(collider.offset, Is.EqualTo(new Vector2(0f, 1.375f)));
             Assert.That(playerAnimator, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(jumpPresentation, Is.Not.Null);
             Assert.That(visual, Is.Not.Null);
             Assert.That(bodyVisual, Is.Not.Null);
             Assert.That(armsVisual, Is.Not.Null);
@@ -104,9 +106,113 @@ namespace Rustline.Tests
                 Assert.That(sawFall, Is.True, "Fall presentation state was not observed.");
                 Assert.That(sawLand, Is.True, "Land presentation state was not observed.");
                 Assert.That(bodyRenderer.flipX, Is.EqualTo(armsRenderer.flipX));
+                Assert.That(jumpPresentation.TakeoffActive, Is.False,
+                    "Short-hop takeoff compensation remained active after landing.");
+                Assert.That(visual.localPosition, Is.EqualTo(jumpPresentation.BaselineLocalPosition),
+                    "Short hop left a residual Visual offset.");
             }
             finally
             {
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_GroundedRunningJumpAnchorsOnlyYThenEasesExactlyToBaseline()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Assert.That(motor, Is.Not.Null);
+            PlayerJumpPresentation2D presentation = motor.GetComponent<PlayerJumpPresentation2D>();
+            Transform visual = motor.transform.Find("Visual - 48x64 Full Cell");
+            Assert.That(presentation, Is.Not.Null);
+            Assert.That(visual, Is.Not.Null);
+
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                for (int index = 0; index < 30; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
+                for (int index = 0; index < 10; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+
+                Assert.That(motor.IsGrounded, Is.True);
+                Vector3 baseline = visual.localPosition;
+                Vector3 startingRootPosition = motor.transform.position;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
+                InputSystem.Update();
+
+                bool observedAnchoredVerticalMotion = false;
+                bool observedCatchUp = false;
+                bool restoredExactly = false;
+                float earlyCatchUpCompensation = 0f;
+                float lateCatchUpCompensation = float.MaxValue;
+                for (int index = 0; index < 90; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+
+                    if (!presentation.TakeoffActive)
+                    {
+                        if (observedCatchUp)
+                        {
+                            restoredExactly = visual.localPosition == baseline;
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    float elapsed = presentation.TakeoffElapsed;
+                    float normalTargetWorldY = motor.transform.TransformPoint(baseline).y;
+                    float remainingCompensation = Mathf.Abs(normalTargetWorldY - visual.position.y);
+                    Assert.That(visual.localPosition.x, Is.EqualTo(baseline.x).Within(0.0001f),
+                        "Jump takeoff presentation anchored X instead of following the physical root.");
+
+                    if (elapsed < 0.095f && motor.transform.position.y > startingRootPosition.y + 0.02f)
+                    {
+                        observedAnchoredVerticalMotion = true;
+                        Assert.That(visual.position.y,
+                            Is.EqualTo(presentation.TakeoffAnchorWorldY).Within(0.005f),
+                            "Visual Y moved during the full-anchor phase.");
+                    }
+
+                    if (elapsed >= 0.105f && elapsed <= 0.16f)
+                    {
+                        observedCatchUp = true;
+                        earlyCatchUpCompensation = Mathf.Max(earlyCatchUpCompensation, remainingCompensation);
+                    }
+                    else if (elapsed >= 0.20f && elapsed < 0.255f)
+                    {
+                        lateCatchUpCompensation = Mathf.Min(lateCatchUpCompensation, remainingCompensation);
+                    }
+                }
+
+                Assert.That(observedAnchoredVerticalMotion, Is.True,
+                    "The root did not rise while Visual Y remained anchored during the first 100 ms.");
+                Assert.That(motor.transform.position.x, Is.GreaterThan(startingRootPosition.x + 0.1f),
+                    "Running-jump X motion was frozen by presentation anchoring.");
+                Assert.That(observedCatchUp, Is.True, "The 100-260 ms catch-up phase was not observed.");
+                Assert.That(earlyCatchUpCompensation, Is.GreaterThan(0.01f));
+                Assert.That(lateCatchUpCompensation, Is.LessThan(earlyCatchUpCompensation * 0.5f),
+                    "Remaining Y compensation did not decrease substantially during cubic catch-up.");
+                Assert.That(restoredExactly, Is.True,
+                    "Visual did not return to its exact configured baseline after catch-up.");
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
                 InputSystem.RemoveDevice(keyboard);
             }
         }
@@ -126,11 +232,13 @@ namespace Rustline.Tests
             SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
             Animator animator = bodyVisual?.GetComponent<Animator>();
             PlayerUnarmedArmsPresenter2D presenter = motor.GetComponent<PlayerUnarmedArmsPresenter2D>();
+            PlayerJumpPresentation2D jumpPresentation = motor.GetComponent<PlayerJumpPresentation2D>();
 
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
             Assert.That(animator, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(jumpPresentation, Is.Not.Null);
 
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
             try
@@ -161,6 +269,8 @@ namespace Rustline.Tests
                         AssertLayers(presenter, bodyRenderer, armsRenderer);
                         if (bodyRenderer.sprite.name == "player_salvager_body_jump_2")
                         {
+                            Assert.That(visual.localPosition, Is.EqualTo(jumpPresentation.BaselineLocalPosition),
+                                "Frame 3 began before takeoff compensation returned to baseline.");
                             heldBodySprite ??= bodyRenderer.sprite;
                             heldArmsSprite ??= armsRenderer.sprite;
                             Assert.That(bodyRenderer.sprite, Is.SameAs(heldBodySprite),
@@ -190,6 +300,198 @@ namespace Rustline.Tests
                 Assert.That(heldAscendingFrames, Is.GreaterThanOrEqualTo(4),
                     "The final layered takeoff frame was not held through sustained ascent.");
                 Assert.That(sawFall, Is.True, "Fall did not take ownership after ascent ended.");
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_RunningJumpDustStaysInWorldAndPlaysExactlyOnce()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Assert.That(motor, Is.Not.Null);
+            PlayerJumpPresentation2D presentation = motor.GetComponent<PlayerJumpPresentation2D>();
+            Transform bodyVisual = motor.transform.Find("Visual - 48x64 Full Cell/BodySpriteRenderer");
+            SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
+            Assert.That(presentation, Is.Not.Null);
+            Assert.That(bodyRenderer, Is.Not.Null);
+
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                for (int index = 0; index < 30; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
+                for (int index = 0; index < 10; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+
+                Assert.That(bodyRenderer.flipX, Is.False);
+                Vector3 playerPositionAtInput = motor.transform.position;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
+                InputSystem.Update();
+
+                PlayerJumpDustFx2D dust = null;
+                for (int index = 0; index < 12 && dust == null; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                    dust = Object.FindAnyObjectByType<PlayerJumpDustFx2D>();
+                }
+
+                Assert.That(dust, Is.Not.Null, "Grounded jump did not spawn jump dust.");
+                Assert.That(dust.transform.parent, Is.Null, "Jump dust was parented beneath the moving player.");
+                Assert.That(dust.SpriteRenderer.flipX, Is.False,
+                    "Right-facing takeoff did not snapshot right-facing dust.");
+                Vector3 dustSpawnPosition = dust.transform.position;
+                Assert.That(dustSpawnPosition, Is.EqualTo(presentation.TakeoffWorldPosition),
+                    "Dust did not spawn at the authored full-cell takeoff pivot.");
+                bool[] observedFrames = new bool[3];
+                for (int index = 0; index < 90 && dust != null; index++)
+                {
+                    observedFrames[dust.CurrentFrameIndex] = true;
+                    Assert.That(dust.transform.position, Is.EqualTo(dustSpawnPosition),
+                        "World-space dust moved after takeoff.");
+                    Assert.That(Object.FindObjectsByType<PlayerJumpDustFx2D>(FindObjectsSortMode.None), Has.Length.EqualTo(1),
+                        "One successful jump spawned more than one dust object.");
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+
+                yield return null;
+                Assert.That(observedFrames, Is.All.True, "Dust did not visibly progress through all three frames.");
+                Assert.That(Object.FindAnyObjectByType<PlayerJumpDustFx2D>(), Is.Null,
+                    "Jump dust persisted after its one-shot duration.");
+                Assert.That(motor.transform.position.x, Is.GreaterThan(playerPositionAtInput.x + 0.2f));
+                Assert.That(motor.transform.position.y, Is.GreaterThan(playerPositionAtInput.y + 0.2f));
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_LeftFacingDustKeepsTakeoffFacingAfterPlayerTurns()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Assert.That(motor, Is.Not.Null);
+            SpriteRenderer bodyRenderer = motor.transform
+                .Find("Visual - 48x64 Full Cell/BodySpriteRenderer")?.GetComponent<SpriteRenderer>();
+            Assert.That(bodyRenderer, Is.Not.Null);
+
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                for (int index = 0; index < 30; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A));
+                InputSystem.Update();
+                for (int index = 0; index < 30 && !bodyRenderer.flipX; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+
+                Assert.That(bodyRenderer.flipX, Is.True);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.Space));
+                InputSystem.Update();
+                PlayerJumpDustFx2D dust = null;
+                for (int index = 0; index < 12 && dust == null; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                    dust = Object.FindAnyObjectByType<PlayerJumpDustFx2D>();
+                }
+
+                Assert.That(dust, Is.Not.Null);
+                Assert.That(dust.SpriteRenderer.flipX, Is.True,
+                    "Left-facing takeoff did not snapshot mirrored dust.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
+                for (int index = 0; index < 12 && bodyRenderer.flipX && dust != null; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+
+                Assert.That(bodyRenderer.flipX, Is.False, "Player did not turn after takeoff.");
+                Assert.That(dust, Is.Not.Null, "Dust expired before facing snapshot could be verified.");
+                Assert.That(dust.SpriteRenderer.flipX, Is.True,
+                    "Existing world-space dust changed facing with the airborne player.");
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_CoyoteJumpKeepsImpulseWithoutSpawningFloatingDust()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Assert.That(motor, Is.Not.Null);
+            PlayerJumpPresentation2D presentation = motor.GetComponent<PlayerJumpPresentation2D>();
+            Assert.That(presentation, Is.Not.Null);
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                for (int index = 0; index < 30; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                Assert.That(motor.IsGrounded, Is.True);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A));
+                InputSystem.Update();
+                for (int index = 0; index < 180 && motor.IsGrounded; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+
+                Assert.That(motor.IsGrounded, Is.False, "Player did not leave the platform for the coyote test.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.Space));
+                InputSystem.Update();
+                bool receivedCoyoteImpulse = false;
+                for (int index = 0; index < 8 && !receivedCoyoteImpulse; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                    receivedCoyoteImpulse = motor.Velocity.y > 5f;
+                }
+
+                Assert.That(receivedCoyoteImpulse, Is.True, "Coyote jump no longer received its normal impulse.");
+                Assert.That(presentation.TakeoffActive, Is.True,
+                    "Coyote jump did not receive takeoff presentation from its current visual position.");
+                Assert.That(Object.FindAnyObjectByType<PlayerJumpDustFx2D>(), Is.Null,
+                    "Coyote jump spawned floating dust while already airborne.");
             }
             finally
             {
