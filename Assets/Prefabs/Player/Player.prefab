@@ -254,6 +254,7 @@ GameObject:
   - component: {fileID: 1484602084223197885}
   - component: {fileID: 9189312535779651393}
   - component: {fileID: 8080597632018127864}
+  - component: {fileID: 2385879683141238295}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -446,3 +447,18 @@ MonoBehaviour:
   - bodySprite: {fileID: 5363521786687209104, guid: 0a2b19989805f054d8d884d4ffca2ef6, type: 3}
     armsSprite: {fileID: -5598587385480291362, guid: 560e2e742335dec42b4e2a4b459fc077, type: 3}
   ownsRenderer: 1
+--- !u!114 &2385879683141238295
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2e2a14fe326af5246a3415b238390d60, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerJumpPresentation2D
+  visual: {fileID: 4968877354513996504}
+  bodySpriteRenderer: {fileID: 4475617162220178310}
+  jumpDustPrefab: {fileID: 8308283082814044191, guid: 8a118c6a5b6bfe44a8a852ed26417140, type: 3}

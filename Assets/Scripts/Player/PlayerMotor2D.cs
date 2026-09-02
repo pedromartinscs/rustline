@@ -14,6 +14,7 @@ namespace Rustline.Gameplay.Player
         private PlayerJumpGrace _jumpGrace;
 
         public event Action Landed;
+        public event Action<bool> Jumped;
 
         public bool IsGrounded { get; private set; }
         public Vector2 Velocity => _body != null ? _body.linearVelocity : Vector2.zero;
@@ -53,8 +54,10 @@ namespace Rustline.Gameplay.Player
             bool jumped = _jumpGrace.TryConsume();
             if (jumped)
             {
+                bool jumpedWhileGrounded = IsGrounded;
                 velocity.y = config.JumpSpeed;
                 IsGrounded = false;
+                Jumped?.Invoke(jumpedWhileGrounded);
             }
 
             if (_input.ConsumeJumpReleased() && velocity.y > 0f)

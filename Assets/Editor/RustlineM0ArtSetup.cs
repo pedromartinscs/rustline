@@ -23,13 +23,17 @@ namespace Rustline.Editor
         private const string PlayerRoot = "Assets/Art/Characters/Player";
         private const string BodySpriteRoot = PlayerRoot + "/Sprites/Body";
         private const string UnarmedArmsSpriteRoot = PlayerRoot + "/Sprites/Arms/Unarmed";
+        private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
+        private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
         private const string AnimationRoot = PlayerRoot + "/Animations";
         private const string BodyAnimationRoot = AnimationRoot + "/Body";
         private const string TileAssetRoot = "Assets/Art/Environment/Tiles/Generated";
         private const string RuleTilePath = TileAssetRoot + "/IndustrialSurfaceRuleTile.asset";
         private const string ScenePath = "Assets/Scenes/ArtShowcase.unity";
-        private const float JumpTakeoffFrameRate = 20f;
+        private const float JumpClipSampleRate = 50f;
+
+        private static readonly float[] JumpTakeoffKeyframeTimes = { 0f, 0.1f, 0.26f };
 
         private static readonly SheetSpec[] PlayerSheets =
         {
@@ -143,9 +147,11 @@ namespace Rustline.Editor
         {
             EnsureFolder(AnimationRoot);
             EnsureFolder(BodyAnimationRoot);
+            EnsureFolder(MovementEffectsRoot);
             EnsureFolder(TileAssetRoot);
 
             ConfigurePlayerSheets();
+            ConfigureJumpDust();
             ConfigureEnvironmentAtlas();
             MoveLegacyBodyAnimationClips();
 
@@ -191,6 +197,18 @@ namespace Rustline.Editor
                 AtlasSpriteName,
                 new Vector2(0.5f, 0.5f),
                 logicalRowsRunTopToBottom: true);
+        }
+
+        private static void ConfigureJumpDust()
+        {
+            ConfigureFixedGrid(
+                JumpDustPath,
+                48,
+                64,
+                3,
+                index => "player_jump_dust_" + index,
+                new Vector2(0.5f, 0f),
+                logicalRowsRunTopToBottom: false);
         }
 
         private static void MoveLegacyBodyAnimationClips()
@@ -281,7 +299,7 @@ namespace Rustline.Editor
             Dictionary<string, PreviewAsset> previews = new Dictionary<string, PreviewAsset>();
             AddPreview(previews, "Idle", "idle", 0.5f, true);
             AddPreview(previews, "Run", "run", 10f, true);
-            AddPreview(previews, "Jump", "jump", JumpTakeoffFrameRate, false);
+            AddPreview(previews, "Jump", "jump", JumpClipSampleRate, false, JumpTakeoffKeyframeTimes);
             AddPreview(previews, "Fall", "fall", 1f, false);
             AddPreview(previews, "Land", "land", 8f, true);
             return previews;
@@ -292,7 +310,8 @@ namespace Rustline.Editor
             string label,
             string stateId,
             float frameRate,
-            bool loop)
+            bool loop,
+            IReadOnlyList<float> keyframeTimes = null)
         {
             string bodySheetPath = BodySpriteRoot + "/player_salvager_body_" + stateId + ".png";
             string armsSheetPath = UnarmedArmsSpriteRoot + "/player_salvager_arms_" + stateId + ".png";
@@ -304,6 +323,8 @@ namespace Rustline.Editor
                 .ToList();
             Require(bodyFrames.Count > 0, "No frames found for " + bodySheetPath);
             Require(bodyFrames.Count == armsFrames.Count, label + " body/arms frame counts differ.");
+            Require(keyframeTimes == null || keyframeTimes.Count == bodyFrames.Count,
+                label + " explicit keyframe timing count must match its sprite count.");
 
             string clipName = "Player_Body_" + label;
             string clipPath = BodyAnimationRoot + "/" + clipName + ".anim";
@@ -323,7 +344,7 @@ namespace Rustline.Editor
             {
                 keyframes.Add(new ObjectReferenceKeyframe
                 {
-                    time = index / frameRate,
+                    time = keyframeTimes != null ? keyframeTimes[index] : index / frameRate,
                     value = bodyFrames[index],
                 });
             }
@@ -781,6 +802,20 @@ namespace Rustline.Editor
                 ValidateSourcePixels(sheet.AssetPath);
             }
 
+            ValidateImporter(JumpDustPath);
+            ValidateSpriteGrid(
+                JumpDustPath,
+                48,
+                64,
+                3,
+                false,
+                index => "player_jump_dust_" + index,
+                new Vector2(24f, 0f));
+            ValidateSourcePixels(JumpDustPath);
+            Texture2D jumpDust = AssetDatabase.LoadAssetAtPath<Texture2D>(JumpDustPath);
+            Require(jumpDust != null && jumpDust.width == 144 && jumpDust.height == 64,
+                "Jump dust must remain exactly 144x64 (three 48x64 full cells).");
+
             string[] layeredStates = { "idle", "run", "jump", "fall", "land" };
             foreach (string state in layeredStates)
             {
@@ -825,7 +860,7 @@ namespace Rustline.Editor
                 {
                     { "Player_Body_Idle", (2, 0.5f, true) },
                     { "Player_Body_Run", (6, 10f, true) },
-                    { "Player_Body_Jump", (3, JumpTakeoffFrameRate, false) },
+                    { "Player_Body_Jump", (3, JumpClipSampleRate, false) },
                     { "Player_Body_Fall", (1, 1f, false) },
                     { "Player_Body_Land", (2, 8f, true) },
                 };
@@ -849,7 +884,7 @@ namespace Rustline.Editor
                         "Player_Body_Jump must hold its final frame instead of looping.");
                     for (int index = 0; index < keyframes.Length; index++)
                     {
-                        Require(Mathf.Abs(keyframes[index].time - index / JumpTakeoffFrameRate) < 0.0001f,
+                        Require(Mathf.Abs(keyframes[index].time - JumpTakeoffKeyframeTimes[index]) < 0.0001f,
                             "Player_Body_Jump key time mismatch at frame " + index + ".");
                         Require(keyframes[index].value != null &&
                                 keyframes[index].value.name == "player_salvager_body_jump_" + index,
@@ -889,9 +924,12 @@ namespace Rustline.Editor
             Require(importer.textureCompression == TextureImporterCompression.Uncompressed, path + " must disable compression.");
             Require(!importer.crunchedCompression, path + " must disable crunch compression.");
             Require(importer.alphaIsTransparency, path + " must import alpha as transparency.");
+            Require(importer.wrapMode == TextureWrapMode.Clamp, path + " must use Clamp wrapping.");
             TextureImporterSettings settings = new TextureImporterSettings();
             importer.ReadTextureSettings(settings);
             Require(settings.spriteMeshType == SpriteMeshType.FullRect, path + " must use Full Rect meshes.");
+            Require(!settings.spriteGenerateFallbackPhysicsShape,
+                path + " must disable fallback physics-shape generation.");
             Require(importer.spriteImportMode == SpriteImportMode.Multiple, path + " must use fixed multiple-sprite slicing.");
         }
 

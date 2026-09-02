@@ -27,6 +27,8 @@ namespace Rustline.Editor
         private const string ConfigPath = "Assets/Config/Player/PlayerMovementConfig.asset";
         private const string PhysicsMaterialPath = "Assets/Config/Player/PlayerFrictionless.physicsMaterial2D";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
+        private const string JumpDustSpritePath = "Assets/Art/Effects/Movement/player_jump_dust.png";
+        private const string JumpDustPrefabPath = "Assets/Prefabs/Effects/Movement/PlayerJumpDust.prefab";
         private const string ControllerPath = "Assets/Art/Characters/Player/Animations/PlayerGameplay.controller";
         private const string BodyAnimationRoot = "Assets/Art/Characters/Player/Animations/Body";
         private const string BodySpriteRoot = "Assets/Art/Characters/Player/Sprites/Body";
@@ -106,13 +108,15 @@ namespace Rustline.Editor
         {
             EnsureFolder("Assets/Config/Player");
             EnsureFolder("Assets/Prefabs/Player");
+            EnsureFolder("Assets/Prefabs/Effects/Movement");
             int groundLayer = EnsureGroundLayer();
 
             PlayerMovementConfig config = CreateConfig();
             PhysicsMaterial2D physicsMaterial = CreatePhysicsMaterial();
             AnimatorController controller = CreateGameplayController();
             Tile collisionTile = CreateCollisionTile();
-            GameObject prefab = CreatePlayerPrefab(config, physicsMaterial, controller, groundLayer);
+            PlayerJumpDustFx2D jumpDustPrefab = CreateJumpDustPrefab();
+            GameObject prefab = CreatePlayerPrefab(config, physicsMaterial, controller, jumpDustPrefab, groundLayer);
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
             {
                 CreateMovementLab(config, prefab, collisionTile, groundLayer);
@@ -220,6 +224,7 @@ namespace Rustline.Editor
             PlayerMovementConfig config,
             PhysicsMaterial2D physicsMaterial,
             RuntimeAnimatorController controller,
+            PlayerJumpDustFx2D jumpDustPrefab,
             int groundLayer)
         {
             InputActionAsset inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
@@ -300,9 +305,54 @@ namespace Rustline.Editor
                 SetObjectReference(presentation, "bodySpriteRenderer", bodyRenderer);
                 SetObjectReference(presentation, "armsWeaponSpriteRenderer", armsRenderer);
 
+                PlayerJumpPresentation2D jumpPresentation = GetOrAddComponent<PlayerJumpPresentation2D>(root);
+                SetObjectReference(jumpPresentation, "visual", visual.transform);
+                SetObjectReference(jumpPresentation, "bodySpriteRenderer", bodyRenderer);
+                SetObjectReference(jumpPresentation, "jumpDustPrefab", jumpDustPrefab);
+
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Require(prefab != null, "Failed to create the player prefab.");
                 return prefab;
+            }
+            finally
+            {
+                if (editingExistingPrefab)
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+            }
+        }
+
+        private static PlayerJumpDustFx2D CreateJumpDustPrefab()
+        {
+            List<Sprite> frames = AssetDatabase.LoadAllAssetsAtPath(JumpDustSpritePath)
+                .OfType<Sprite>()
+                .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                .ToList();
+            Require(frames.Count == 3, "Jump dust prefab requires exactly three imported sprites.");
+
+            bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(JumpDustPrefabPath) != null;
+            GameObject root = editingExistingPrefab
+                ? PrefabUtility.LoadPrefabContents(JumpDustPrefabPath)
+                : new GameObject("PlayerJumpDust");
+            try
+            {
+                root.name = "PlayerJumpDust";
+                SpriteRenderer renderer = GetOrAddComponent<SpriteRenderer>(root);
+                renderer.sprite = frames[0];
+                renderer.sortingOrder = 9;
+
+                PlayerJumpDustFx2D effect = GetOrAddComponent<PlayerJumpDustFx2D>(root);
+                SetObjectReference(effect, "spriteRenderer", renderer);
+                SetObjectReferenceArray(effect, "frames", frames);
+
+                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, JumpDustPrefabPath);
+                Require(prefab != null, "Failed to create the jump dust prefab.");
+                return prefab.GetComponent<PlayerJumpDustFx2D>();
             }
             finally
             {
@@ -581,6 +631,7 @@ namespace Rustline.Editor
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Require(armsPresenter != null && armsPresenter.MappingCount == 14 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
+            PlayerJumpPresentation2D jumpPresentation = prefab.GetComponent<PlayerJumpPresentation2D>();
             Transform visual = prefab.transform.Find("Visual - 48x64 Full Cell");
             Require(visual != null && Vector3.Distance(visual.localPosition, new Vector3(0f, -0.25f, 0f)) < 0.0001f,
                 "Player visual child must be lowered exactly 4 source pixels (-0.25 Unity units).");
@@ -596,6 +647,20 @@ namespace Rustline.Editor
                 armsRenderer.sortingOrder == 11 && armsPresenter.BodySpriteRenderer == bodyRenderer &&
                 armsPresenter.ArmsWeaponSpriteRenderer == armsRenderer,
                 "Player layered renderer references or sorting contract are invalid.");
+            PlayerJumpDustFx2D jumpDustPrefab = AssetDatabase.LoadAssetAtPath<PlayerJumpDustFx2D>(JumpDustPrefabPath);
+            Require(jumpPresentation != null && jumpPresentation.Visual == visual &&
+                jumpPresentation.BodySpriteRenderer == bodyRenderer &&
+                jumpPresentation.JumpDustPrefab == jumpDustPrefab,
+                "Player jump presentation references are incomplete.");
+            Require(jumpDustPrefab != null && jumpDustPrefab.FrameCount == 3 &&
+                jumpDustPrefab.SpriteRenderer != null && jumpDustPrefab.SpriteRenderer.sortingOrder == 9,
+                "Jump dust prefab must contain the three-frame one-shot renderer at sorting order 9.");
+            for (int index = 0; index < 3; index++)
+            {
+                Require(jumpDustPrefab.GetFrame(index) != null &&
+                    jumpDustPrefab.GetFrame(index).name == "player_jump_dust_" + index,
+                    "Jump dust prefab sprite order mismatch at frame " + index + ".");
+            }
             Animator[] animators = prefab.GetComponentsInChildren<Animator>(true);
             Require(animators.Length == 1 && animators[0].transform == bodyVisual,
                 "The body layer must contain the player's only Animator.");
@@ -870,6 +935,22 @@ namespace Rustline.Editor
             SerializedProperty property = serialized.FindProperty(propertyName);
             Require(property != null, $"Serialized property {propertyName} is missing on {target.GetType().Name}.");
             property.objectReferenceValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetObjectReferenceArray<T>(UnityEngine.Object target, string propertyName, IReadOnlyList<T> values)
+            where T : UnityEngine.Object
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            Require(property != null && property.isArray,
+                $"Serialized array property {propertyName} is missing on {target.GetType().Name}.");
+            property.arraySize = values.Count;
+            for (int index = 0; index < values.Count; index++)
+            {
+                property.GetArrayElementAtIndex(index).objectReferenceValue = values[index];
+            }
+
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
