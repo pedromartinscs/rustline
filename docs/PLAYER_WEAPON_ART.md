@@ -245,6 +245,8 @@ Player_Body_Fall.anim
 Player_Body_Land.anim
 ```
 
+`Player_Body_Jump.anim` is a non-looping takeoff sequence. Its three Body frames are keyed at `0.00`, `0.05`, and `0.10` seconds (20 fps), after which the final frame is held while the locomotion state remains Jump. The explicit Body-to-Arms map therefore holds the matching third Unarmed Arms frame with it. Fall takes over through the existing velocity-based state selection; the clip does not drive movement or introduce visual anchoring.
+
 The runtime deliberately does not create a second set of Arms AnimationClips or a second Animator. The sole Animator drives `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite in `LateUpdate`, looks it up in an explicit serialized 14-entry Body-to-Arms map, and changes `ArmsWeaponSpriteRenderer.sprite` only when the Body sprite changes. The lookup dictionary is built once at initialization; runtime asset searches, string parsing, LINQ, `Resources.Load`, and `AssetDatabase` are not used per frame.
 
 `PlayerAnimator2D` continues to select locomotion states, maintain the landing presentation timer, and determine movement-facing. It writes the same `flipX` value to both renderers. A future equipped-weapon presenter can call `SetRendererOwnership(false)` on the unarmed presenter before taking over `ArmsWeaponSpriteRenderer`, then restore unarmed ownership with `SetRendererOwnership(true)` when appropriate.

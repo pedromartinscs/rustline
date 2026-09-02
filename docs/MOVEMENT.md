@@ -22,6 +22,17 @@ The prefab root uses a fixed vertical CapsuleCollider2D with size `1.05 × 2.75`
 
 MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile` supplies visuals, while a hidden Tilemap of simple Grid collider tiles feeds `TilemapCollider2D` into a `CompositeCollider2D` to avoid per-cell seams.
 
+## Jump presentation
+
+The physical jump impulse remains immediate and is not delayed or repositioned by animation. The three-frame layered Jump presentation runs once at 20 fps:
+
+- Frame 1 is the fast anticipation/loading pose from `0.00` to about `0.05` seconds.
+- Frame 2 is the fast impulse/dust pose from about `0.05` to `0.10` seconds.
+- Frame 3 begins at about `0.10` seconds and is held as the ascent pose while Jump remains selected.
+- Fall begins when the existing velocity-based state selector transfers presentation to Fall.
+
+This is presentation timing only: there is no visual anchoring, root offset, collider adjustment, or movement-tuning change. Further timing changes should follow a human MovementLab feel test rather than altering physics to compensate for artwork.
+
 ## Initial tuning
 
 These values are a starting point, not final feel approval.

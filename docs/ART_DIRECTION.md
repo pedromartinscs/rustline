@@ -65,6 +65,7 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - Unarmed Body + Unarmed Arms must produce the accepted coherent layered appearance; deliberate decomposition retouching means historical composites are diagnostic references, not pixel-equality targets
 - Armed aiming uses authored full-cell directional overlays rather than free runtime rotation of the final pixel art
 - Body animation must remain readable when horizontally flipped
+- The current three-frame Jump takeoff plays once at 20 fps and holds its final layered pose through ascent; Fall remains a separate velocity-selected presentation state
 - Initial canonical pose: neutral, unarmed, facing right
 
 The complete Body/Arms decomposition, directional-aim sprite, naming, folder, mirroring, and locomotion-state contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
