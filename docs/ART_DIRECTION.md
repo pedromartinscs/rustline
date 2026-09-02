@@ -65,7 +65,8 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - Unarmed Body + Unarmed Arms must produce the accepted coherent layered appearance; deliberate decomposition retouching means historical composites are diagnostic references, not pixel-equality targets
 - Armed aiming uses authored full-cell directional overlays rather than free runtime rotation of the final pixel art
 - Body animation must remain readable when horizontally flipped
-- The current three-frame Jump takeoff plays once at 20 fps and holds its final layered pose through ascent; Fall remains a separate velocity-selected presentation state
+- The three-frame Jump takeoff uses explicit keys at 0.00, 0.10, and 0.26 seconds: 100 ms of Y-anchored compression, 160 ms of cubic eased catch-up, then a held layered ascent pose; X and the camera continue following the physical root, and Fall remains velocity-selected
+- Grounded takeoff dust is a separate three-frame, 48×64 world-space one-shot at the player pivot; it snapshots facing, stays on the floor, and is omitted for coyote jumps
 - Initial canonical pose: neutral, unarmed, facing right
 
 The complete Body/Arms decomposition, directional-aim sprite, naming, folder, mirroring, and locomotion-state contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).

@@ -24,14 +24,18 @@ MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile`
 
 ## Jump presentation
 
-The physical jump impulse remains immediate and is not delayed or repositioned by animation. The three-frame layered Jump presentation runs once at 20 fps:
+The physical jump impulse remains immediate and all movement tuning is unchanged. `PlayerMotor2D` emits a presentation-only notification when a buffered or coyote jump is actually consumed; it does not delay or modify the impulse. The three-frame layered Jump clip is non-looping and uses explicit non-uniform keys:
 
-- Frame 1 is the fast anticipation/loading pose from `0.00` to about `0.05` seconds.
-- Frame 2 is the fast impulse/dust pose from about `0.05` to `0.10` seconds.
-- Frame 3 begins at about `0.10` seconds and is held as the ascent pose while Jump remains selected.
-- Fall begins when the existing velocity-based state selector transfers presentation to Fall.
+- Frame 1 begins at `0.00` seconds and holds the takeoff compression for 100 ms. During this phase only the shared Visual parent's world Y is anchored at takeoff.
+- Frame 2 begins at `0.10` seconds and holds the leg-extension launch pose for 160 ms. Visual Y catches the rising root using `1 - (1 - t)^3`, targeting the root's current normal visual position every rendered frame.
+- Frame 3 begins at `0.26` seconds, after the Visual has returned exactly to its configured `(0, -0.25, 0)` local position, and is held while Jump remains selected.
+- Fall begins through the unchanged velocity-based state selector. A short hop may enter Fall before Frame 3; the timed catch-up still restores the exact baseline without forcing the Jump pose.
 
-This is presentation timing only: there is no visual anchoring, root offset, collider adjustment, or movement-tuning change. Further timing changes should follow a human MovementLab feel test rather than altering physics to compensate for artwork.
+Horizontal presentation is never anchored, so running-jump X motion remains immediate. `PixelCameraFollow2D` still tracks the physical root, not the compensated Visual child. Neither the root, Rigidbody2D, collider, ground probe, nor movement configuration is adjusted by presentation.
+
+A grounded successful jump spawns one `PlayerJumpDust` object at the full-cell Visual pivot's takeoff world position. The dust uses three 48×64 cells at 16 PPU, holds each sprite for 80 ms, renders at sorting order 9 below the player, and destroys itself after its non-looping sequence. It is never parented to the player, snapshots takeoff facing once, and remains fixed while the player moves. Coyote jumps receive Visual takeoff presentation from their current position but deliberately spawn no floating dust. Landing dust is not implemented.
+
+Human MovementLab inspection remains authoritative for compression readability, camera/root separation, eased extension, dust grounding and timing, mirrored appearance, and short-hop transitions.
 
 ## Initial tuning
 

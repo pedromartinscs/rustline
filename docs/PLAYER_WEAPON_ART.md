@@ -245,7 +245,9 @@ Player_Body_Fall.anim
 Player_Body_Land.anim
 ```
 
-`Player_Body_Jump.anim` is a non-looping takeoff sequence. Its three Body frames are keyed at `0.00`, `0.05`, and `0.10` seconds (20 fps), after which the final frame is held while the locomotion state remains Jump. The explicit Body-to-Arms map therefore holds the matching third Unarmed Arms frame with it. Fall takes over through the existing velocity-based state selection; the clip does not drive movement or introduce visual anchoring.
+`Player_Body_Jump.anim` is a non-looping takeoff sequence with non-uniform Body keys at `0.00`, `0.10`, and `0.26` seconds. Frame 1 is a 100 ms Y-anchored compression pose; Frame 2 is a 160 ms leg-extension pose with cubic ease-out catch-up to the root's current normal Visual position; Frame 3 is held while the locomotion state remains Jump. The shared Visual parent keeps Body and Arms positionally identical, and the explicit map supplies the matching Arms frame. Fall still takes over through the existing velocity-based state selection. X movement, physical impulse, and camera root-follow are unchanged.
+
+Jump dust is separate production art at `Assets/Art/Effects/Movement/player_jump_dust.png`: three 48×64 bottom-center-pivot cells in the same full-cell authoring space as the player. A grounded jump spawns its serialized one-shot prefab at the takeoff world position and facing; it stays in world space for three 80 ms frames and then destroys itself. Coyote jumps do not spawn dust, and landing dust is not part of this pass.
 
 The runtime deliberately does not create a second set of Arms AnimationClips or a second Animator. The sole Animator drives `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite in `LateUpdate`, looks it up in an explicit serialized 14-entry Body-to-Arms map, and changes `ArmsWeaponSpriteRenderer.sprite` only when the Body sprite changes. The lookup dictionary is built once at initialization; runtime asset searches, string parsing, LINQ, `Resources.Load`, and `AssetDatabase` are not used per frame.
 
