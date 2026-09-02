@@ -1,5 +1,96 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &999172389639284088
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5732559661433987354}
+  - component: {fileID: 2490630099379857390}
+  m_Layer: 0
+  m_Name: ArmsWeaponSpriteRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5732559661433987354
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 999172389639284088}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4968877354513996504}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &2490630099379857390
+SpriteRenderer:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 999172389639284088}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 0
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 11
+  m_MaskInteraction: 0
+  m_Sprite: {fileID: -1568422065354038646, guid: 9d70f33642c47ea4dabd95d1392665d4, type: 3}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_FlipX: 0
+  m_FlipY: 0
+  m_DrawMode: 0
+  m_Size: {x: 3, y: 4}
+  m_AdaptiveModeThreshold: 0.5
+  m_SpriteTileMode: 0
+  m_WasSpriteAssigned: 1
+  m_SpriteSortPoint: 0
 --- !u!1 &3999578343451328343
 GameObject:
   m_ObjectHideFlags: 0
@@ -9,8 +100,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4968877354513996504}
-  - component: {fileID: 985316737040773887}
-  - component: {fileID: 8459174557840400095}
   m_Layer: 0
   m_Name: Visual - 48x64 Full Cell
   m_TagString: Untagged
@@ -30,17 +119,52 @@ Transform:
   m_LocalPosition: {x: 0, y: -0.25, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 7810883199182966989}
+  - {fileID: 5732559661433987354}
   m_Father: {fileID: 8561571167840580776}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!212 &985316737040773887
+--- !u!1 &7260910190796752387
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7810883199182966989}
+  - component: {fileID: 4475617162220178310}
+  - component: {fileID: 7081516483258033477}
+  m_Layer: 0
+  m_Name: BodySpriteRenderer
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7810883199182966989
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7260910190796752387}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4968877354513996504}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!212 &4475617162220178310
 SpriteRenderer:
   serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3999578343451328343}
+  m_GameObject: {fileID: 7260910190796752387}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -82,7 +206,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 10
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -3806227580598174520, guid: 1430ac053bb8a344ba7c5bb891ee8396, type: 3}
+  m_Sprite: {fileID: -994535270271076823, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -92,14 +216,14 @@ SpriteRenderer:
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
---- !u!95 &8459174557840400095
+--- !u!95 &7081516483258033477
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3999578343451328343}
+  m_GameObject: {fileID: 7260910190796752387}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
   m_Controller: {fileID: 9100000, guid: fed85ed89cf4bc34f8e36bae7e401022, type: 2}
@@ -129,6 +253,7 @@ GameObject:
   - component: {fileID: 4660431720091408198}
   - component: {fileID: 1484602084223197885}
   - component: {fileID: 9189312535779651393}
+  - component: {fileID: 8080597632018127864}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -274,5 +399,50 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerAnimator2D
   config: {fileID: 11400000, guid: ffa31f0afb2b55441ad424e0ca03b7fe, type: 2}
-  animator: {fileID: 8459174557840400095}
-  spriteRenderer: {fileID: 985316737040773887}
+  animator: {fileID: 7081516483258033477}
+  bodySpriteRenderer: {fileID: 4475617162220178310}
+  armsWeaponSpriteRenderer: {fileID: 2490630099379857390}
+--- !u!114 &8080597632018127864
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e0607bf1521e9a94797ca48a58632254, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerUnarmedArmsPresenter2D
+  bodySpriteRenderer: {fileID: 4475617162220178310}
+  armsWeaponSpriteRenderer: {fileID: 2490630099379857390}
+  frameMappings:
+  - bodySprite: {fileID: -994535270271076823, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
+    armsSprite: {fileID: -1568422065354038646, guid: 9d70f33642c47ea4dabd95d1392665d4, type: 3}
+  - bodySprite: {fileID: -5071295811932535803, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
+    armsSprite: {fileID: 8705111971983667961, guid: 9d70f33642c47ea4dabd95d1392665d4, type: 3}
+  - bodySprite: {fileID: 5577225229016412505, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
+    armsSprite: {fileID: -2203505007232942806, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: -6924160364507130186, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
+    armsSprite: {fileID: -5157996838167167483, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: -5986102753268315552, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
+    armsSprite: {fileID: -9142477478650478463, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: 4576634471825993776, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
+    armsSprite: {fileID: -3922892736993764929, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: 5576211623184615396, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
+    armsSprite: {fileID: 1921014408824674265, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: -4573777542490109379, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
+    armsSprite: {fileID: -8225884235278813994, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: 8069153423872376370, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
+    armsSprite: {fileID: -7222640204443459743, guid: d9196537766afe240afbd395db61eb66, type: 3}
+  - bodySprite: {fileID: -4116197542669697790, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
+    armsSprite: {fileID: 1195353864846856981, guid: d9196537766afe240afbd395db61eb66, type: 3}
+  - bodySprite: {fileID: -6548528696848270277, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
+    armsSprite: {fileID: 2815287461117304598, guid: d9196537766afe240afbd395db61eb66, type: 3}
+  - bodySprite: {fileID: 3318448561657881336, guid: 467ef8f65985cc44fada5f0d70207087, type: 3}
+    armsSprite: {fileID: -5994342209450274823, guid: e4a1ceeb2bb75cf48bce84ed5f40a43d, type: 3}
+  - bodySprite: {fileID: 6353205104408470852, guid: 0a2b19989805f054d8d884d4ffca2ef6, type: 3}
+    armsSprite: {fileID: -1202656841264047008, guid: 560e2e742335dec42b4e2a4b459fc077, type: 3}
+  - bodySprite: {fileID: 5363521786687209104, guid: 0a2b19989805f054d8d884d4ffca2ef6, type: 3}
+    armsSprite: {fileID: -5598587385480291362, guid: 560e2e742335dec42b4e2a4b459fc077, type: 3}
+  ownsRenderer: 1

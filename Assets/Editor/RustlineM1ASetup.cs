@@ -28,10 +28,12 @@ namespace Rustline.Editor
         private const string PhysicsMaterialPath = "Assets/Config/Player/PlayerFrictionless.physicsMaterial2D";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string ControllerPath = "Assets/Art/Characters/Player/Animations/PlayerGameplay.controller";
+        private const string BodyAnimationRoot = "Assets/Art/Characters/Player/Animations/Body";
+        private const string BodySpriteRoot = "Assets/Art/Characters/Player/Sprites/Body";
+        private const string UnarmedArmsSpriteRoot = "Assets/Art/Characters/Player/Sprites/Arms/Unarmed";
         private const string CollisionTilePath = "Assets/Art/Environment/Tiles/Generated/MovementCollisionTile.asset";
         private const string RuleTilePath = "Assets/Art/Environment/Tiles/Generated/IndustrialSurfaceRuleTile.asset";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
-        private const string BaseSpritePath = "Assets/Art/Characters/Player/player_salvager_base_right.png";
         private const string PenumbraShaderPath = "Assets/Shaders/RustlinePalettePenumbra.shader";
         private const string PresentationShaderPath = "Assets/Shaders/RustlineNativePixelPresent.shader";
         private const string Renderer2DPath = "Assets/Settings/Renderer2D.asset";
@@ -111,11 +113,10 @@ namespace Rustline.Editor
             AnimatorController controller = CreateGameplayController();
             Tile collisionTile = CreateCollisionTile();
             GameObject prefab = CreatePlayerPrefab(config, physicsMaterial, controller, groundLayer);
-            CreateMovementLab(
-                config,
-                prefab,
-                collisionTile,
-                groundLayer);
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
+            {
+                CreateMovementLab(config, prefab, collisionTile, groundLayer);
+            }
             PutMovementScenesFirstInBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -160,23 +161,33 @@ namespace Rustline.Editor
             }
 
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
-            foreach (ChildAnimatorState child in stateMachine.states.ToArray())
-            {
-                stateMachine.RemoveState(child.state);
-            }
-
             foreach (ChildAnimatorStateMachine child in stateMachine.stateMachines.ToArray())
             {
                 stateMachine.RemoveStateMachine(child.stateMachine);
             }
 
             string[] stateNames = { "Idle", "Run", "Jump", "Fall", "Land" };
+            HashSet<string> requiredStates = new HashSet<string>(stateNames);
+            foreach (ChildAnimatorState child in stateMachine.states.ToArray())
+            {
+                if (!requiredStates.Contains(child.state.name))
+                {
+                    stateMachine.RemoveState(child.state);
+                }
+            }
+
             foreach (string stateName in stateNames)
             {
                 AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
-                    $"Assets/Art/Characters/Player/Animations/Player_{stateName}.anim");
-                Require(clip != null, "Missing accepted M0 animation clip: Player_" + stateName);
-                AnimatorState state = stateMachine.AddState(stateName);
+                    BodyAnimationRoot + "/Player_Body_" + stateName + ".anim");
+                Require(clip != null, "Missing accepted layered body animation clip: Player_Body_" + stateName);
+                AnimatorState state = stateMachine.states
+                    .Select(child => child.state)
+                    .FirstOrDefault(candidate => candidate.name == stateName);
+                if (state == null)
+                {
+                    state = stateMachine.AddState(stateName);
+                }
                 state.motion = clip;
                 if (stateName == "Idle")
                 {
@@ -213,53 +224,146 @@ namespace Rustline.Editor
         {
             InputActionAsset inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
             Require(inputActions != null, "Input action asset is missing: " + InputPath);
-            Sprite baseSprite = AssetDatabase.LoadAllAssetsAtPath(BaseSpritePath).OfType<Sprite>()
-                .FirstOrDefault(sprite => sprite.name.EndsWith("_0", StringComparison.Ordinal));
-            Require(baseSprite != null, "Fixed-cell player base sprite is missing.");
+            List<Sprite> bodyFrames = LoadLayeredPlayerFrames(BodySpriteRoot, "body");
+            List<Sprite> armsFrames = LoadLayeredPlayerFrames(UnarmedArmsSpriteRoot, "arms");
+            Require(bodyFrames.Count == 14 && armsFrames.Count == 14,
+                "The player prefab requires all 14 Body and Unarmed Arms frames.");
 
-            GameObject root = new GameObject("Player");
-            Rigidbody2D body = root.AddComponent<Rigidbody2D>();
-            body.bodyType = RigidbodyType2D.Dynamic;
-            body.gravityScale = 0f;
-            body.freezeRotation = true;
-            body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-            body.interpolation = RigidbodyInterpolation2D.Interpolate;
-            body.sharedMaterial = physicsMaterial;
+            bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath) != null;
+            GameObject root = editingExistingPrefab
+                ? PrefabUtility.LoadPrefabContents(PlayerPrefabPath)
+                : new GameObject("Player");
+            try
+            {
+                if (!editingExistingPrefab)
+                {
+                    Rigidbody2D body = root.AddComponent<Rigidbody2D>();
+                    body.bodyType = RigidbodyType2D.Dynamic;
+                    body.gravityScale = 0f;
+                    body.freezeRotation = true;
+                    body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+                    body.interpolation = RigidbodyInterpolation2D.Interpolate;
+                    body.sharedMaterial = physicsMaterial;
 
-            CapsuleCollider2D collider = root.AddComponent<CapsuleCollider2D>();
-            collider.direction = CapsuleDirection2D.Vertical;
-            collider.size = new Vector2(1.05f, 2.75f);
-            collider.offset = new Vector2(0f, 1.375f);
-            collider.sharedMaterial = physicsMaterial;
+                    CapsuleCollider2D collider = root.AddComponent<CapsuleCollider2D>();
+                    collider.direction = CapsuleDirection2D.Vertical;
+                    collider.size = new Vector2(1.05f, 2.75f);
+                    collider.offset = new Vector2(0f, 1.375f);
+                    collider.sharedMaterial = physicsMaterial;
+                }
 
-            PlayerInputReader input = root.AddComponent<PlayerInputReader>();
-            SetObjectReference(input, "inputActions", inputActions);
+                PlayerInputReader input = GetOrAddComponent<PlayerInputReader>(root);
+                SetObjectReference(input, "inputActions", inputActions);
+                PlayerGroundProbe2D probe = GetOrAddComponent<PlayerGroundProbe2D>(root);
+                SetObjectReference(probe, "config", config);
+                SetInteger(probe, "groundLayers", 1 << groundLayer);
+                PlayerMotor2D motor = GetOrAddComponent<PlayerMotor2D>(root);
+                SetObjectReference(motor, "config", config);
 
-            PlayerGroundProbe2D probe = root.AddComponent<PlayerGroundProbe2D>();
-            SetObjectReference(probe, "config", config);
-            SetInteger(probe, "groundLayers", 1 << groundLayer);
+                Transform visualTransform = root.transform.Find("Visual - 48x64 Full Cell");
+                GameObject visual = visualTransform != null
+                    ? visualTransform.gameObject
+                    : new GameObject("Visual - 48x64 Full Cell");
+                visual.transform.SetParent(root.transform, false);
+                visual.transform.localPosition = new Vector3(0f, -0.25f, 0f);
 
-            PlayerMotor2D motor = root.AddComponent<PlayerMotor2D>();
-            SetObjectReference(motor, "config", config);
+                SpriteRenderer legacyRenderer = visual.GetComponent<SpriteRenderer>();
+                Animator legacyAnimator = visual.GetComponent<Animator>();
+                if (legacyRenderer != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(legacyRenderer);
+                }
+                if (legacyAnimator != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(legacyAnimator);
+                }
 
-            GameObject visual = new GameObject("Visual - 48x64 Full Cell");
-            visual.transform.SetParent(root.transform, false);
-            visual.transform.localPosition = new Vector3(0f, -0.25f, 0f);
-            SpriteRenderer renderer = visual.AddComponent<SpriteRenderer>();
-            renderer.sprite = baseSprite;
-            renderer.sortingOrder = 10;
-            Animator animator = visual.AddComponent<Animator>();
-            animator.runtimeAnimatorController = controller;
+                GameObject bodyVisual = GetOrCreateChild(visual.transform, "BodySpriteRenderer");
+                SpriteRenderer bodyRenderer = GetOrAddComponent<SpriteRenderer>(bodyVisual);
+                bodyRenderer.sprite = bodyFrames[0];
+                bodyRenderer.sortingOrder = 10;
+                Animator animator = GetOrAddComponent<Animator>(bodyVisual);
+                animator.runtimeAnimatorController = controller;
 
-            PlayerAnimator2D presentation = root.AddComponent<PlayerAnimator2D>();
-            SetObjectReference(presentation, "config", config);
-            SetObjectReference(presentation, "animator", animator);
-            SetObjectReference(presentation, "spriteRenderer", renderer);
+                GameObject armsVisual = GetOrCreateChild(visual.transform, "ArmsWeaponSpriteRenderer");
+                SpriteRenderer armsRenderer = GetOrAddComponent<SpriteRenderer>(armsVisual);
+                armsRenderer.sprite = armsFrames[0];
+                armsRenderer.sortingOrder = 11;
 
-            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
-            UnityEngine.Object.DestroyImmediate(root);
-            Require(prefab != null, "Failed to create the player prefab.");
-            return prefab;
+                PlayerUnarmedArmsPresenter2D armsPresenter = GetOrAddComponent<PlayerUnarmedArmsPresenter2D>(root);
+                RustlineM0ArtSetup.ConfigureLayeredPresenter(
+                    armsPresenter, bodyRenderer, armsRenderer, bodyFrames, armsFrames);
+
+                PlayerAnimator2D presentation = GetOrAddComponent<PlayerAnimator2D>(root);
+                SetObjectReference(presentation, "config", config);
+                SetObjectReference(presentation, "animator", animator);
+                SetObjectReference(presentation, "bodySpriteRenderer", bodyRenderer);
+                SetObjectReference(presentation, "armsWeaponSpriteRenderer", armsRenderer);
+
+                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+                Require(prefab != null, "Failed to create the player prefab.");
+                return prefab;
+            }
+            finally
+            {
+                if (editingExistingPrefab)
+                {
+                    PrefabUtility.UnloadPrefabContents(root);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(root);
+                }
+            }
+        }
+
+        private static T GetOrAddComponent<T>(GameObject target) where T : Component
+        {
+            T component = target.GetComponent<T>();
+            return component != null ? component : target.AddComponent<T>();
+        }
+
+        private static GameObject GetOrCreateChild(Transform parent, string name)
+        {
+            Transform existing = parent.Find(name);
+            if (existing != null)
+            {
+                existing.localPosition = Vector3.zero;
+                existing.localRotation = Quaternion.identity;
+                existing.localScale = Vector3.one;
+                return existing.gameObject;
+            }
+
+            GameObject child = new GameObject(name);
+            child.transform.SetParent(parent, false);
+            return child;
+        }
+
+        private static List<Sprite> LoadLayeredPlayerFrames(string spriteRoot, string layerId)
+        {
+            string[] states = { "idle", "run", "jump", "fall", "land" };
+            List<Sprite> frames = new List<Sprite>(14);
+            foreach (string state in states)
+            {
+                string path = spriteRoot + "/player_salvager_" + layerId + "_" + state + ".png";
+                List<Sprite> stateFrames = AssetDatabase.LoadAllAssetsAtPath(path)
+                    .OfType<Sprite>()
+                    .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                    .ToList();
+                Require(stateFrames.Count > 0, "Layered player sprites are missing: " + path);
+                frames.AddRange(stateFrames);
+            }
+
+            return frames;
+        }
+
+        private static int ParseTrailingIndex(string name)
+        {
+            int separator = name.LastIndexOf('_');
+            int index = -1;
+            Require(separator >= 0 && int.TryParse(name.Substring(separator + 1), out index),
+                "Layered player sprite name must end in a numeric frame index: " + name);
+            return index;
         }
 
         private static void CreateMovementLab(
@@ -474,11 +578,38 @@ namespace Rustline.Editor
             Require(prefab.GetComponent<PlayerInputReader>() != null && prefab.GetComponent<PlayerGroundProbe2D>() != null &&
                 prefab.GetComponent<PlayerMotor2D>() != null && prefab.GetComponent<PlayerAnimator2D>() != null,
                 "Player prefab movement components are incomplete.");
+            PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
+            Require(armsPresenter != null && armsPresenter.MappingCount == 14 && armsPresenter.OwnsRenderer,
+                "Player prefab must contain the complete active unarmed arms presenter.");
             Transform visual = prefab.transform.Find("Visual - 48x64 Full Cell");
             Require(visual != null && Vector3.Distance(visual.localPosition, new Vector3(0f, -0.25f, 0f)) < 0.0001f,
                 "Player visual child must be lowered exactly 4 source pixels (-0.25 Unity units).");
-            Require(prefab.GetComponentInChildren<SpriteRenderer>()?.transform.localScale == Vector3.one,
-                "Player art must render at integer 1x scale.");
+            Transform bodyVisual = visual.Find("BodySpriteRenderer");
+            Transform armsVisual = visual.Find("ArmsWeaponSpriteRenderer");
+            SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
+            SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+            Require(bodyVisual != null && armsVisual != null && bodyVisual.localPosition == Vector3.zero &&
+                armsVisual.localPosition == Vector3.zero && bodyVisual.localScale == Vector3.one &&
+                armsVisual.localScale == Vector3.one,
+                "Player Body and ArmsWeapon layers must share the same zero-offset, integer-scale visual space.");
+            Require(bodyRenderer != null && armsRenderer != null && bodyRenderer.sortingOrder == 10 &&
+                armsRenderer.sortingOrder == 11 && armsPresenter.BodySpriteRenderer == bodyRenderer &&
+                armsPresenter.ArmsWeaponSpriteRenderer == armsRenderer,
+                "Player layered renderer references or sorting contract are invalid.");
+            Animator[] animators = prefab.GetComponentsInChildren<Animator>(true);
+            Require(animators.Length == 1 && animators[0].transform == bodyVisual,
+                "The body layer must contain the player's only Animator.");
+            List<Sprite> expectedBodyFrames = LoadLayeredPlayerFrames(BodySpriteRoot, "body");
+            List<Sprite> expectedArmsFrames = LoadLayeredPlayerFrames(UnarmedArmsSpriteRoot, "arms");
+            HashSet<Sprite> mappedArms = new HashSet<Sprite>();
+            for (int index = 0; index < expectedBodyFrames.Count; index++)
+            {
+                Require(armsPresenter.TryGetArmsSprite(expectedBodyFrames[index], out Sprite mappedArmsSprite) &&
+                    mappedArmsSprite == expectedArmsFrames[index],
+                    "Player body-to-arms mapping is missing or incorrect at frame " + index + ".");
+                Require(mappedArms.Add(mappedArmsSprite),
+                    "Player body-to-arms mapping contains a duplicate Arms sprite at frame " + index + ".");
+            }
 
             Tile collisionTile = AssetDatabase.LoadAssetAtPath<Tile>(CollisionTilePath);
             Require(collisionTile != null && collisionTile.sprite == null && collisionTile.colliderType == Tile.ColliderType.Grid,

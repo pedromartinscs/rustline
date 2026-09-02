@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Rustline.Presentation;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
@@ -20,20 +21,27 @@ namespace Rustline.Editor
     public static class RustlineM0ArtSetup
     {
         private const string PlayerRoot = "Assets/Art/Characters/Player";
+        private const string BodySpriteRoot = PlayerRoot + "/Sprites/Body";
+        private const string UnarmedArmsSpriteRoot = PlayerRoot + "/Sprites/Arms/Unarmed";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
         private const string AnimationRoot = PlayerRoot + "/Animations";
+        private const string BodyAnimationRoot = AnimationRoot + "/Body";
         private const string TileAssetRoot = "Assets/Art/Environment/Tiles/Generated";
         private const string RuleTilePath = TileAssetRoot + "/IndustrialSurfaceRuleTile.asset";
         private const string ScenePath = "Assets/Scenes/ArtShowcase.unity";
 
         private static readonly SheetSpec[] PlayerSheets =
         {
-            new SheetSpec("player_salvager_base_right", 1),
-            new SheetSpec("player_salvager_idle", 2),
-            new SheetSpec("player_salvager_run", 6),
-            new SheetSpec("player_salvager_jump", 3),
-            new SheetSpec("player_salvager_fall", 1),
-            new SheetSpec("player_salvager_land", 2),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_idle", 2),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_run", 6),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_jump", 3),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_fall", 1),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_land", 2),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_idle", 2),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_run", 6),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_jump", 3),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_fall", 1),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_land", 2),
         };
 
         // Bits are N=1, E=2, S=4, W=8. Slot order is the canonical documented order.
@@ -58,31 +66,40 @@ namespace Rustline.Editor
 
         private sealed class SheetSpec
         {
-            internal SheetSpec(string fileName, int frameCount)
+            internal SheetSpec(string assetRoot, string fileName, int frameCount)
             {
+                AssetRoot = assetRoot;
                 FileName = fileName;
                 FrameCount = frameCount;
             }
 
+            internal string AssetRoot { get; }
             internal string FileName { get; }
             internal int FrameCount { get; }
-            internal string AssetPath => PlayerRoot + "/" + FileName + ".png";
+            internal string AssetPath => AssetRoot + "/" + FileName + ".png";
         }
 
         private sealed class PreviewAsset
         {
-            internal PreviewAsset(string label, AnimationClip clip, RuntimeAnimatorController controller, Sprite firstSprite)
+            internal PreviewAsset(
+                string label,
+                AnimationClip clip,
+                RuntimeAnimatorController controller,
+                IReadOnlyList<Sprite> bodyFrames,
+                IReadOnlyList<Sprite> armsFrames)
             {
                 Label = label;
                 Clip = clip;
                 Controller = controller;
-                FirstSprite = firstSprite;
+                BodyFrames = bodyFrames;
+                ArmsFrames = armsFrames;
             }
 
             internal string Label { get; }
             internal AnimationClip Clip { get; }
             internal RuntimeAnimatorController Controller { get; }
-            internal Sprite FirstSprite { get; }
+            internal IReadOnlyList<Sprite> BodyFrames { get; }
+            internal IReadOnlyList<Sprite> ArmsFrames { get; }
         }
 
         [MenuItem("Tools/Rustline/Rebuild M0 Art Showcase")]
@@ -124,14 +141,23 @@ namespace Rustline.Editor
         private static void BuildAndValidate()
         {
             EnsureFolder(AnimationRoot);
+            EnsureFolder(BodyAnimationRoot);
             EnsureFolder(TileAssetRoot);
 
             ConfigurePlayerSheets();
             ConfigureEnvironmentAtlas();
+            MoveLegacyBodyAnimationClips();
 
             Dictionary<string, PreviewAsset> previews = CreateAnimationPreviews();
             RuleTile ruleTile = CreateRuleTile();
-            CreateShowcaseScene(previews, ruleTile);
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
+            {
+                CreateShowcaseScene(previews, ruleTile);
+            }
+            else
+            {
+                MigrateShowcasePlayerSpecimens(previews);
+            }
             PutShowcaseInBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -166,6 +192,27 @@ namespace Rustline.Editor
                 logicalRowsRunTopToBottom: true);
         }
 
+        private static void MoveLegacyBodyAnimationClips()
+        {
+            string[] states = { "Idle", "Run", "Jump", "Fall", "Land" };
+            foreach (string state in states)
+            {
+                string sourcePath = AnimationRoot + "/Player_" + state + ".anim";
+                string destinationPath = BodyAnimationRoot + "/Player_Body_" + state + ".anim";
+                AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(destinationPath);
+                if (clip == null && AssetDatabase.LoadAssetAtPath<AnimationClip>(sourcePath) != null)
+                {
+                    string error = AssetDatabase.MoveAsset(sourcePath, destinationPath);
+                    Require(string.IsNullOrEmpty(error), "Could not preserve the body clip GUID while moving " + sourcePath + ": " + error);
+                    clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(destinationPath);
+                }
+
+                Require(clip != null, "Missing body animation clip: " + destinationPath);
+                clip.name = "Player_Body_" + state;
+                EditorUtility.SetDirty(clip);
+            }
+        }
+
         private static void ConfigureFixedGrid(
             string path,
             int cellWidth,
@@ -184,6 +231,8 @@ namespace Rustline.Editor
 
             Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             Require(texture != null, "Texture failed to import: " + path);
+            Require(texture.width % cellWidth == 0 && texture.height % cellHeight == 0,
+                $"{path} dimensions {texture.width}x{texture.height} do not align to {cellWidth}x{cellHeight} cells.");
             int columns = texture.width / cellWidth;
             int rows = texture.height / cellHeight;
             Require(columns * rows == spriteCount,
@@ -229,29 +278,34 @@ namespace Rustline.Editor
         private static Dictionary<string, PreviewAsset> CreateAnimationPreviews()
         {
             Dictionary<string, PreviewAsset> previews = new Dictionary<string, PreviewAsset>();
-            AddPreview(previews, "Idle", "player_salvager_idle", "Player_Idle", 0.5f, true);
-            AddPreview(previews, "Run", "player_salvager_run", "Player_Run", 10f, true);
-            AddPreview(previews, "Jump", "player_salvager_jump", "Player_Jump", 6f, true);
-            AddPreview(previews, "Fall", "player_salvager_fall", "Player_Fall", 1f, false);
-            AddPreview(previews, "Land", "player_salvager_land", "Player_Land", 8f, true);
+            AddPreview(previews, "Idle", "idle", 0.5f, true);
+            AddPreview(previews, "Run", "run", 10f, true);
+            AddPreview(previews, "Jump", "jump", 6f, true);
+            AddPreview(previews, "Fall", "fall", 1f, false);
+            AddPreview(previews, "Land", "land", 8f, true);
             return previews;
         }
 
         private static void AddPreview(
             IDictionary<string, PreviewAsset> previews,
             string label,
-            string sheetName,
-            string clipName,
+            string stateId,
             float frameRate,
             bool loop)
         {
-            string sheetPath = PlayerRoot + "/" + sheetName + ".png";
-            List<Sprite> frames = LoadSprites(sheetPath)
+            string bodySheetPath = BodySpriteRoot + "/player_salvager_body_" + stateId + ".png";
+            string armsSheetPath = UnarmedArmsSpriteRoot + "/player_salvager_arms_" + stateId + ".png";
+            List<Sprite> bodyFrames = LoadSprites(bodySheetPath)
                 .OrderBy(sprite => ParseTrailingIndex(sprite.name))
                 .ToList();
-            Require(frames.Count > 0, "No frames found for " + sheetPath);
+            List<Sprite> armsFrames = LoadSprites(armsSheetPath)
+                .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                .ToList();
+            Require(bodyFrames.Count > 0, "No frames found for " + bodySheetPath);
+            Require(bodyFrames.Count == armsFrames.Count, label + " body/arms frame counts differ.");
 
-            string clipPath = AnimationRoot + "/" + clipName + ".anim";
+            string clipName = "Player_Body_" + label;
+            string clipPath = BodyAnimationRoot + "/" + clipName + ".anim";
             AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(clipPath);
             if (clip == null)
             {
@@ -264,12 +318,12 @@ namespace Rustline.Editor
             clip.wrapMode = loop ? WrapMode.Loop : WrapMode.ClampForever;
 
             List<ObjectReferenceKeyframe> keyframes = new List<ObjectReferenceKeyframe>();
-            for (int index = 0; index < frames.Count; index++)
+            for (int index = 0; index < bodyFrames.Count; index++)
             {
                 keyframes.Add(new ObjectReferenceKeyframe
                 {
                     time = index / frameRate,
-                    value = frames[index],
+                    value = bodyFrames[index],
                 });
             }
 
@@ -295,18 +349,27 @@ namespace Rustline.Editor
             }
 
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
-            foreach (ChildAnimatorState childState in stateMachine.states)
+            ChildAnimatorState[] existingStates = stateMachine.states;
+            AnimatorState state;
+            if (existingStates.Length > 0)
             {
-                stateMachine.RemoveState(childState.state);
+                state = existingStates[0].state;
+                for (int index = 1; index < existingStates.Length; index++)
+                {
+                    stateMachine.RemoveState(existingStates[index].state);
+                }
+            }
+            else
+            {
+                state = stateMachine.AddState(clipName);
             }
 
-            AnimatorState state = stateMachine.AddState(clipName);
             state.motion = clip;
             state.writeDefaultValues = true;
             stateMachine.defaultState = state;
             EditorUtility.SetDirty(controller);
 
-            previews.Add(label, new PreviewAsset(label, clip, controller, frames[0]));
+            previews.Add(label, new PreviewAsset(label, clip, controller, bodyFrames, armsFrames));
         }
 
         private static RuleTile CreateRuleTile()
@@ -388,6 +451,82 @@ namespace Rustline.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
+        private static void MigrateShowcasePlayerSpecimens(IReadOnlyDictionary<string, PreviewAsset> previews)
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            foreach (PreviewAsset preview in previews.Values)
+            {
+                GameObject specimen = FindGameObject(scene, "Player_" + preview.Label + "_Specimen");
+                Require(specimen != null, "ArtShowcase is missing the " + preview.Label + " player specimen.");
+
+                SpriteRenderer legacyRenderer = specimen.GetComponent<SpriteRenderer>();
+                Animator legacyAnimator = specimen.GetComponent<Animator>();
+                if (legacyRenderer != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(legacyRenderer);
+                }
+                if (legacyAnimator != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(legacyAnimator);
+                }
+
+                GameObject bodyObject = GetOrCreateChild(specimen.transform, "BodySpriteRenderer");
+                SpriteRenderer bodyRenderer = GetOrAddComponent<SpriteRenderer>(bodyObject);
+                bodyRenderer.sprite = preview.BodyFrames[0];
+                bodyRenderer.sortingOrder = 5;
+                Animator animator = GetOrAddComponent<Animator>(bodyObject);
+                animator.runtimeAnimatorController = preview.Controller;
+
+                GameObject armsObject = GetOrCreateChild(specimen.transform, "ArmsWeaponSpriteRenderer");
+                SpriteRenderer armsRenderer = GetOrAddComponent<SpriteRenderer>(armsObject);
+                armsRenderer.sprite = preview.ArmsFrames[0];
+                armsRenderer.sortingOrder = 6;
+
+                PlayerUnarmedArmsPresenter2D presenter = GetOrAddComponent<PlayerUnarmedArmsPresenter2D>(specimen);
+                ConfigureLayeredPresenter(presenter, bodyRenderer, armsRenderer, preview.BodyFrames, preview.ArmsFrames);
+            }
+
+            EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
+        private static T GetOrAddComponent<T>(GameObject target) where T : Component
+        {
+            T component = target.GetComponent<T>();
+            return component != null ? component : target.AddComponent<T>();
+        }
+
+        private static GameObject GetOrCreateChild(Transform parent, string name)
+        {
+            Transform existing = parent.Find(name);
+            if (existing != null)
+            {
+                existing.localPosition = Vector3.zero;
+                existing.localRotation = Quaternion.identity;
+                existing.localScale = Vector3.one;
+                return existing.gameObject;
+            }
+
+            GameObject child = new GameObject(name);
+            child.transform.SetParent(parent, false);
+            return child;
+        }
+
+        private static GameObject FindGameObject(Scene scene, string name)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+                {
+                    if (child.name == name)
+                    {
+                        return child.gameObject;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         private static void CreateCamera(Transform parent)
         {
             GameObject cameraObject = new GameObject("Main Camera");
@@ -464,12 +603,23 @@ namespace Rustline.Editor
                 specimen.transform.SetParent(specimensRoot.transform, false);
                 specimen.transform.position = new Vector3(xPositions[index], 6f, 0f);
 
-                SpriteRenderer renderer = specimen.AddComponent<SpriteRenderer>();
-                renderer.sprite = preview.FirstSprite;
-                renderer.sortingOrder = 5;
+                GameObject bodyObject = new GameObject("BodySpriteRenderer");
+                bodyObject.transform.SetParent(specimen.transform, false);
+                SpriteRenderer bodyRenderer = bodyObject.AddComponent<SpriteRenderer>();
+                bodyRenderer.sprite = preview.BodyFrames[0];
+                bodyRenderer.sortingOrder = 5;
 
-                Animator animator = specimen.AddComponent<Animator>();
+                Animator animator = bodyObject.AddComponent<Animator>();
                 animator.runtimeAnimatorController = preview.Controller;
+
+                GameObject armsObject = new GameObject("ArmsWeaponSpriteRenderer");
+                armsObject.transform.SetParent(specimen.transform, false);
+                SpriteRenderer armsRenderer = armsObject.AddComponent<SpriteRenderer>();
+                armsRenderer.sprite = preview.ArmsFrames[0];
+                armsRenderer.sortingOrder = 6;
+
+                PlayerUnarmedArmsPresenter2D presenter = specimen.AddComponent<PlayerUnarmedArmsPresenter2D>();
+                ConfigureLayeredPresenter(presenter, bodyRenderer, armsRenderer, preview.BodyFrames, preview.ArmsFrames);
 
                 CreateLabel(
                     labelsRoot,
@@ -478,6 +628,30 @@ namespace Rustline.Editor
                     0.16f,
                     new Color32(253, 208, 69, 255));
             }
+        }
+
+        internal static void ConfigureLayeredPresenter(
+            PlayerUnarmedArmsPresenter2D presenter,
+            SpriteRenderer bodyRenderer,
+            SpriteRenderer armsRenderer,
+            IReadOnlyList<Sprite> bodyFrames,
+            IReadOnlyList<Sprite> armsFrames)
+        {
+            Require(bodyFrames.Count == armsFrames.Count, "Body and arms mapping counts must match.");
+            SerializedObject serialized = new SerializedObject(presenter);
+            serialized.FindProperty("bodySpriteRenderer").objectReferenceValue = bodyRenderer;
+            serialized.FindProperty("armsWeaponSpriteRenderer").objectReferenceValue = armsRenderer;
+            SerializedProperty mappings = serialized.FindProperty("frameMappings");
+            mappings.arraySize = bodyFrames.Count;
+            for (int index = 0; index < bodyFrames.Count; index++)
+            {
+                SerializedProperty mapping = mappings.GetArrayElementAtIndex(index);
+                mapping.FindPropertyRelative("bodySprite").objectReferenceValue = bodyFrames[index];
+                mapping.FindPropertyRelative("armsSprite").objectReferenceValue = armsFrames[index];
+            }
+
+            serialized.FindProperty("ownsRenderer").boolValue = true;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void CreateCanonicalSlotDisplay(Transform parent, Transform labelsRoot)
@@ -603,6 +777,20 @@ namespace Rustline.Editor
             {
                 ValidateImporter(sheet.AssetPath);
                 ValidateSpriteGrid(sheet.AssetPath, 48, 64, sheet.FrameCount, false, index => sheet.FileName + "_" + index, new Vector2(24f, 0f));
+                ValidateSourcePixels(sheet.AssetPath);
+            }
+
+            string[] layeredStates = { "idle", "run", "jump", "fall", "land" };
+            foreach (string state in layeredStates)
+            {
+                string bodyPath = BodySpriteRoot + "/player_salvager_body_" + state + ".png";
+                string armsPath = UnarmedArmsSpriteRoot + "/player_salvager_arms_" + state + ".png";
+                Texture2D body = AssetDatabase.LoadAssetAtPath<Texture2D>(bodyPath);
+                Texture2D arms = AssetDatabase.LoadAssetAtPath<Texture2D>(armsPath);
+                Require(body != null && arms != null && body.width == arms.width && body.height == arms.height,
+                    state + " Body and Arms sheets must use identical cell geometry.");
+                Require(LoadSprites(bodyPath).Count() == LoadSprites(armsPath).Count(),
+                    state + " Body and Arms sprite counts must match.");
             }
 
             ValidateImporter(AtlasPath);
@@ -634,15 +822,15 @@ namespace Rustline.Editor
             Dictionary<string, (int frameCount, float frameRate, bool loop)> clipSpecs =
                 new Dictionary<string, (int frameCount, float frameRate, bool loop)>
                 {
-                    { "Player_Idle", (2, 0.5f, true) },
-                    { "Player_Run", (6, 10f, true) },
-                    { "Player_Jump", (3, 6f, true) },
-                    { "Player_Fall", (1, 1f, false) },
-                    { "Player_Land", (2, 8f, true) },
+                    { "Player_Body_Idle", (2, 0.5f, true) },
+                    { "Player_Body_Run", (6, 10f, true) },
+                    { "Player_Body_Jump", (3, 6f, true) },
+                    { "Player_Body_Fall", (1, 1f, false) },
+                    { "Player_Body_Land", (2, 8f, true) },
                 };
             foreach (KeyValuePair<string, (int frameCount, float frameRate, bool loop)> clipSpec in clipSpecs)
             {
-                AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(AnimationRoot + "/" + clipSpec.Key + ".anim");
+                AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(BodyAnimationRoot + "/" + clipSpec.Key + ".anim");
                 Require(clip != null, "Animation clip missing: " + clipSpec.Key);
                 Require(Mathf.Approximately(clip.frameRate, clipSpec.Value.frameRate),
                     clipSpec.Key + " frame rate mismatch.");
@@ -692,6 +880,31 @@ namespace Rustline.Editor
             Require(importer.spriteImportMode == SpriteImportMode.Multiple, path + " must use fixed multiple-sprite slicing.");
         }
 
+        private static void ValidateSourcePixels(string path)
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absolutePath = Path.Combine(projectRoot, path);
+            Texture2D source = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+            try
+            {
+                Require(source.LoadImage(File.ReadAllBytes(absolutePath), false), "Could not decode source PNG: " + path);
+                Color32[] pixels = source.GetPixels32();
+                for (int index = 0; index < pixels.Length; index++)
+                {
+                    Color32 pixel = pixels[index];
+                    Require(pixel.a == 0 || pixel.a == 255,
+                        path + " contains non-binary alpha at source pixel " + index + ".");
+                    Require(pixel.a == 0 || RustlinePalette.IsCanonical(pixel),
+                        path + " contains an opaque pixel outside Canonical 28 at source pixel " + index + ".");
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
+        }
+
         private static void ValidateSpriteGrid(
             string path,
             int cellWidth,
@@ -703,6 +916,8 @@ namespace Rustline.Editor
         {
             Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
             Require(texture != null, "Missing imported texture: " + path);
+            Require(texture.width % cellWidth == 0 && texture.height % cellHeight == 0,
+                $"{path} dimensions {texture.width}x{texture.height} do not align to {cellWidth}x{cellHeight} cells.");
             int columns = texture.width / cellWidth;
             int rows = texture.height / cellHeight;
             Dictionary<string, Sprite> sprites = LoadSprites(path).ToDictionary(sprite => sprite.name);

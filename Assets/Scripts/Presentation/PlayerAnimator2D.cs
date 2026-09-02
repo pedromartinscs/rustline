@@ -8,7 +8,8 @@ namespace Rustline.Presentation
     {
         [SerializeField] private PlayerMovementConfig config;
         [SerializeField] private Animator animator;
-        [SerializeField] private SpriteRenderer spriteRenderer;
+        [SerializeField] private SpriteRenderer bodySpriteRenderer;
+        [SerializeField] private SpriteRenderer armsWeaponSpriteRenderer;
 
         private PlayerMotor2D _motor;
         private float _landingTimeRemaining;
@@ -39,7 +40,7 @@ namespace Rustline.Presentation
 
         private void Update()
         {
-            if (config == null || animator == null || spriteRenderer == null)
+            if (config == null || animator == null || bodySpriteRenderer == null || armsWeaponSpriteRenderer == null)
             {
                 return;
             }
@@ -56,7 +57,9 @@ namespace Rustline.Presentation
 
             if (Mathf.Abs(velocity.x) >= config.FacingVelocityThreshold)
             {
-                spriteRenderer.flipX = velocity.x < 0f;
+                bool flipX = velocity.x < 0f;
+                bodySpriteRenderer.flipX = flipX;
+                armsWeaponSpriteRenderer.flipX = flipX;
             }
 
             PlayerAnimationState nextState = PlayerAnimationStateSelector.Select(
