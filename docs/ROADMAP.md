@@ -54,9 +54,35 @@ M1A core movement is implemented in `Assets/Scenes/MovementLab.unity`. It includ
 
 ## M2 — Gunplay prototype
 
-**Goal:** prove 360° aiming and weapon feel.
+**Goal:** prove directional aiming, authored weapon presentation, and weapon feel.
 
-- [ ] Independent weapon pivot
+### M2A — Layered player presentation
+
+Before integrating the first gun, decompose the accepted player artwork into synchronized full-cell layers.
+
+- [ ] Produce Body-only idle/run/jump/fall/land sheets
+- [ ] Produce matching Unarmed Arms idle/run/jump/fall/land sheets
+- [ ] Preserve exact 48×64 cells, pivots, frame order, and timing
+- [ ] Implement synchronized Body + Arms sprite presentation
+- [ ] Verify that Body + Unarmed Arms reconstructs the current accepted player appearance
+- [ ] Preserve movement physics and animation timing while changing presentation only
+
+See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the production contract.
+
+### M2B — First weapon presentation package
+
+- [ ] Choose one representative first weapon from [`WEAPONS.md`](WEAPONS.md)
+- [ ] Author 19 right-facing 10-degree aim directions for Idle
+- [ ] Author 19 right-facing 10-degree aim directions for Run
+- [ ] Author 19 right-facing 10-degree aim directions for Fall
+- [ ] Author carry-only weapon presentation for Jump / Land / Roll as those states exist
+- [ ] Mirror the authored right-facing set for the left hemisphere
+- [ ] Keep gameplay aim continuous while visual aim selects the nearest authored direction
+- [ ] Disable firing during Jump / Land / Roll; allow aiming/firing in Idle / Run / Fall
+- [ ] Validate the sheet/import/runtime convention before scaling the art pipeline to the remaining arsenal
+
+### M2C — Gunplay systems
+
 - [ ] Mouse aiming
 - [ ] Gamepad aiming
 - [ ] Horizontal player facing based on aim direction
@@ -68,7 +94,7 @@ M1A core movement is implemented in `Assets/Scenes/MovementLab.unity`. It includ
 - [ ] Impact feedback
 - [ ] Camera feedback where appropriate
 
-**Exit criterion:** shooting targets while moving feels deliberate and responsive.
+**Exit criterion:** shooting targets while moving feels deliberate and responsive, and the authored directional weapon presentation remains visually coherent across locomotion/facing changes.
 
 ## M3 — Combat slice
 
