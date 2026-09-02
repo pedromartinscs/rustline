@@ -42,7 +42,7 @@ Production PNGs under `Assets/Art/` (excluding editable/reference files under `A
 
 The baseline is enforced by `Assets/Editor/RustlinePixelArtPostprocessor.cs`. Known fixed sheets and the M0 showcase are rebuilt with **Tools → Rustline → Rebuild M0 Art Showcase**.
 
-Player sheets are always sliced left-to-right into complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. The industrial structural atlas is always sliced into all **48** fixed **16×16** cells. Its documented logical rows run top-to-bottom, so the editor setup deliberately converts them to Unity's bottom-origin sprite coordinates without changing slot names or semantics.
+Player sheets use complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. Simple horizontal strips remain sliced left-to-right; directional armed sheets may use the documented multi-row grid in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md). The industrial structural atlas is always sliced into all **48** fixed **16×16** cells. Its documented logical rows run top-to-bottom, so the editor setup deliberately converts them to Unity's bottom-origin sprite coordinates without changing slot names or semantics.
 
 ### Environment
 
@@ -61,10 +61,13 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - Side-view humanoid
 - Canonical production cell: **48×64 px**
 - Target visible character height: approximately **42–48 px**
-- Weapon rendered as a separate object from the body
+- Player presentation is decomposed into perfectly aligned Body and Arms/Weapon layers
+- Unarmed Body + Unarmed Arms must reconstruct the accepted current composite appearance
+- Armed aiming uses authored full-cell directional overlays rather than free runtime rotation of the final pixel art
 - Body animation must remain readable when horizontally flipped
-- Stable weapon-hand / weapon-pivot location is more important than ornamental detail
 - Initial canonical pose: neutral, unarmed, facing right
+
+The complete Body/Arms decomposition, directional-aim sprite, naming, folder, mirroring, and locomotion-state contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
 
 ### Enemies
 
@@ -123,13 +126,15 @@ The penumbra is intended to become a gameplay-readable boundary as well as an ae
 
 ## Weapon presentation
 
-Weapons are independent sprites attached to an aim pivot. This allows continuous 360° aiming without requiring directional firing animations for the player body.
+Rustline separates **continuous gameplay aim** from **authored visual aim**.
 
-Initial weapon family:
+The gameplay direction may be mathematically continuous for mouse/gamepad targeting, projectiles, and hitscan. The player artwork uses discrete authored full-cell arm/weapon overlays at 10-degree intervals.
 
-- Sidearm
-- Rifle
-- Shotgun
+The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, and Fall are currently aim/fire-capable. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
+
+This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
+
+See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the complete production contract and [`WEAPONS.md`](WEAPONS.md) for the versioned initial 20-weapon roster.
 
 ## Canonical palette
 
@@ -166,6 +171,7 @@ Once an original Rustline visual baseline exists, prefer Rustline's own artwork 
 ### Player
 
 - Canonical neutral side-view
+- Layered Body / Unarmed Arms decomposition
 - Idle
 - Run
 - Jump
@@ -174,6 +180,13 @@ Once an original Rustline visual baseline exists, prefer Rustline's own artwork 
 - Roll / dodge
 - Hit
 - Death
+
+### Weapons
+
+- First representative weapon presentation package
+- 19 authored right-facing aim directions for aim-capable states
+- Carry-only armed poses for non-firing movement states
+- Remaining initial arsenal from [`WEAPONS.md`](WEAPONS.md) after pipeline validation
 
 ### Environment
 
