@@ -29,6 +29,7 @@ namespace Rustline.Editor
         private const string TileAssetRoot = "Assets/Art/Environment/Tiles/Generated";
         private const string RuleTilePath = TileAssetRoot + "/IndustrialSurfaceRuleTile.asset";
         private const string ScenePath = "Assets/Scenes/ArtShowcase.unity";
+        private const float JumpTakeoffFrameRate = 20f;
 
         private static readonly SheetSpec[] PlayerSheets =
         {
@@ -280,7 +281,7 @@ namespace Rustline.Editor
             Dictionary<string, PreviewAsset> previews = new Dictionary<string, PreviewAsset>();
             AddPreview(previews, "Idle", "idle", 0.5f, true);
             AddPreview(previews, "Run", "run", 10f, true);
-            AddPreview(previews, "Jump", "jump", 6f, true);
+            AddPreview(previews, "Jump", "jump", JumpTakeoffFrameRate, false);
             AddPreview(previews, "Fall", "fall", 1f, false);
             AddPreview(previews, "Land", "land", 8f, true);
             return previews;
@@ -824,7 +825,7 @@ namespace Rustline.Editor
                 {
                     { "Player_Body_Idle", (2, 0.5f, true) },
                     { "Player_Body_Run", (6, 10f, true) },
-                    { "Player_Body_Jump", (3, 6f, true) },
+                    { "Player_Body_Jump", (3, JumpTakeoffFrameRate, false) },
                     { "Player_Body_Fall", (1, 1f, false) },
                     { "Player_Body_Land", (2, 8f, true) },
                 };
@@ -841,6 +842,20 @@ namespace Rustline.Editor
                     clipSpec.Key + " must contain exactly one key per source frame.");
                 AnimationClipSettings clipSettings = AnimationUtility.GetAnimationClipSettings(clip);
                 Require(clipSettings.loopTime == clipSpec.Value.loop, clipSpec.Key + " loop setting mismatch.");
+
+                if (clipSpec.Key == "Player_Body_Jump")
+                {
+                    Require(clip.wrapMode == WrapMode.ClampForever,
+                        "Player_Body_Jump must hold its final frame instead of looping.");
+                    for (int index = 0; index < keyframes.Length; index++)
+                    {
+                        Require(Mathf.Abs(keyframes[index].time - index / JumpTakeoffFrameRate) < 0.0001f,
+                            "Player_Body_Jump key time mismatch at frame " + index + ".");
+                        Require(keyframes[index].value != null &&
+                                keyframes[index].value.name == "player_salvager_body_jump_" + index,
+                            "Player_Body_Jump sprite order mismatch at frame " + index + ".");
+                    }
+                }
             }
 
             Require(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null, "ArtShowcase scene is missing.");
