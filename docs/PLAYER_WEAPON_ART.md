@@ -8,7 +8,7 @@ The goal is to preserve authored pixel-art quality while supporting a large weap
 
 The player is a layered sprite character.
 
-The current composite player artwork is decomposed into two perfectly aligned visual layers:
+The historical composite player artwork was decomposed into two perfectly aligned visual layers:
 
 1. **Body** — head, torso, legs, equipment, and every non-arm pixel.
 2. **Arms** — the arm/hand pixels that complete the current pose.
@@ -22,12 +22,14 @@ Body layer
 +
 Unarmed Arms layer
 =
-current accepted composite appearance
+accepted layered player appearance
 ```
 
-The first implementation milestone is to prove this decomposition with the existing idle/run/jump/fall/land artwork before any weapon artwork is integrated.
+The first implementation milestone proves this decomposition with idle/run/jump/fall/land artwork before any weapon artwork is integrated.
 
-Do not move or rename the currently referenced composite player PNGs while this migration is in progress. Create the new layered assets in parallel; remove/archive old composite production assets only after the layered runtime has been visually accepted and references have been migrated deliberately.
+The old root-level composite player PNGs were intentionally removed from HEAD in `5cf163b`. They must not be restored as production assets. Historical copies remain recoverable from Git history at `da2fbb96c051c9402f46ca220138d6c7eb57ef79` for informational comparison only.
+
+The authored split is not a literal pixel subtraction. Adjacent body pixels were deliberately retouched where the historical composite contained arm-dependent shading, occlusion, contouring, or cleanup. The accepted diagnostic comparison contains 372 visible differences across the 14 frames, including 55 alpha/silhouette differences. RGB values beneath fully transparent pixels are ignored for visual-equivalence diagnostics and must not be sanitized merely to reduce raw RGBA mismatch counts.
 
 ## Why full-cell overlays
 
@@ -56,18 +58,18 @@ player_salvager_body_jump.png
 player_salvager_body_fall.png
 player_salvager_body_land.png
 
-player_salvager_arms_unarmed_idle.png
-player_salvager_arms_unarmed_run.png
-player_salvager_arms_unarmed_jump.png
-player_salvager_arms_unarmed_fall.png
-player_salvager_arms_unarmed_land.png
+player_salvager_arms_idle.png
+player_salvager_arms_run.png
+player_salvager_arms_jump.png
+player_salvager_arms_fall.png
+player_salvager_arms_land.png
 ```
 
 Future roll/dodge artwork follows the same convention:
 
 ```text
 player_salvager_body_roll.png
-player_salvager_arms_unarmed_roll.png
+player_salvager_arms_roll.png
 ```
 
 Each Body/Arms pair must preserve the source sheet's frame count, frame order, cell dimensions, and timing.
@@ -227,13 +229,13 @@ Assets/Art/Characters/Player/
         └── Armed/
 ```
 
-Do not relocate the existing root-level player sheets until runtime migration is complete.
+The layered production hierarchy is now authoritative. Historical root-level composite sheets are absent from HEAD by design.
 
 Editable source artwork should be kept separately from production PNGs. When source-art storage is introduced, use the documented source-art exclusion convention rather than treating XCF files as runtime production sprites.
 
 ## Unity animation naming
 
-Recommended clip names for the first decomposition pass:
+Implemented Body clip names:
 
 ```text
 Player_Body_Idle.anim
@@ -241,24 +243,20 @@ Player_Body_Run.anim
 Player_Body_Jump.anim
 Player_Body_Fall.anim
 Player_Body_Land.anim
-
-Player_Arms_Unarmed_Idle.anim
-Player_Arms_Unarmed_Run.anim
-Player_Arms_Unarmed_Jump.anim
-Player_Arms_Unarmed_Fall.anim
-Player_Arms_Unarmed_Land.anim
 ```
 
-The first coding pass should synchronize Body and Arms animation states and frames so the composited result remains visually equivalent to the accepted current player.
+The runtime deliberately does not create a second set of Arms AnimationClips or a second Animator. The sole Animator drives `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite in `LateUpdate`, looks it up in an explicit serialized 14-entry Body-to-Arms map, and changes `ArmsWeaponSpriteRenderer.sprite` only when the Body sprite changes. The lookup dictionary is built once at initialization; runtime asset searches, string parsing, LINQ, `Resources.Load`, and `AssetDatabase` are not used per frame.
+
+`PlayerAnimator2D` continues to select locomotion states, maintain the landing presentation timer, and determine movement-facing. It writes the same `flipX` value to both renderers. A future equipped-weapon presenter can call `SetRendererOwnership(false)` on the unarmed presenter before taking over `ArmsWeaponSpriteRenderer`, then restore unarmed ownership with `SetRendererOwnership(true)` when appropriate.
 
 Weapon-specific animation/runtime naming will be finalized after the first weapon presentation package is produced and tested.
 
 ## First implementation sequence
 
-1. Duplicate current player art into Body and Unarmed Arms production layers.
+1. Author Body and Unarmed Arms production layers.
 2. Preserve exact 48×64 cells, frame counts, frame order, pivots, and timing.
 3. Implement two synchronized player sprite layers in Unity.
-4. Validate idle/run/jump/fall/land against the current composite player.
+4. Validate idle/run/jump/fall/land as a coherent layered presentation; historical composite comparison is diagnostic rather than an equality gate.
 5. Only after that validation, produce one complete weapon presentation package.
 6. Validate the 19-direction aim system in idle/run/fall plus carry-only jump/land/roll behavior.
 7. Freeze the weapon-art sheet/import contract.

@@ -62,7 +62,7 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - Canonical production cell: **48×64 px**
 - Target visible character height: approximately **42–48 px**
 - Player presentation is decomposed into perfectly aligned Body and Arms/Weapon layers
-- Unarmed Body + Unarmed Arms must reconstruct the accepted current composite appearance
+- Unarmed Body + Unarmed Arms must produce the accepted coherent layered appearance; deliberate decomposition retouching means historical composites are diagnostic references, not pixel-equality targets
 - Armed aiming uses authored full-cell directional overlays rather than free runtime rotation of the final pixel art
 - Body animation must remain readable when horizontally flipped
 - Initial canonical pose: neutral, unarmed, facing right
