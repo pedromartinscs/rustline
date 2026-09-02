@@ -12,6 +12,7 @@ namespace Rustline.Tests
     {
         private const string BodyRoot = "Assets/Art/Characters/Player/Sprites/Body";
         private const string ArmsRoot = "Assets/Art/Characters/Player/Sprites/Arms/Unarmed";
+        private const string BodyAnimationRoot = "Assets/Art/Characters/Player/Animations/Body";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
 
         [TestCase("idle", 2)]
@@ -72,6 +73,30 @@ namespace Rustline.Tests
 
             Assert.That(bodySprites, Has.Count.EqualTo(14));
             Assert.That(armsSprites, Has.Count.EqualTo(14));
+        }
+
+        [Test]
+        public void JumpClip_PlaysTakeoffOnceThenHoldsFinalFrame()
+        {
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_Jump.anim");
+            Assert.That(clip, Is.Not.Null);
+            Assert.That(clip.frameRate, Is.EqualTo(20f));
+            Assert.That(clip.wrapMode, Is.EqualTo(WrapMode.ClampForever));
+            Assert.That(AnimationUtility.GetAnimationClipSettings(clip).loopTime, Is.False);
+
+            EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            Assert.That(bindings, Has.Length.EqualTo(1));
+            ObjectReferenceKeyframe[] keyframes = AnimationUtility.GetObjectReferenceCurve(clip, bindings[0]);
+            Assert.That(keyframes, Has.Length.EqualTo(3));
+
+            List<Sprite> expectedSprites = LoadSprites(BodyRoot + "/player_salvager_body_jump.png");
+            float[] expectedTimes = { 0f, 0.05f, 0.1f };
+            for (int index = 0; index < keyframes.Length; index++)
+            {
+                Assert.That(keyframes[index].time, Is.EqualTo(expectedTimes[index]).Within(0.0001f));
+                Assert.That(keyframes[index].value, Is.SameAs(expectedSprites[index]));
+            }
         }
 
         private static void AssertImporter(string path)

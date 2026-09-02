@@ -112,6 +112,94 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
+        public IEnumerator Player_JumpTakeoffHoldsFinalLayeredFrameUntilFall()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Assert.That(motor, Is.Not.Null);
+            Transform visual = motor.transform.Find("Visual - 48x64 Full Cell");
+            Transform bodyVisual = visual?.Find("BodySpriteRenderer");
+            Transform armsVisual = visual?.Find("ArmsWeaponSpriteRenderer");
+            SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
+            SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+            Animator animator = bodyVisual?.GetComponent<Animator>();
+            PlayerUnarmedArmsPresenter2D presenter = motor.GetComponent<PlayerUnarmedArmsPresenter2D>();
+
+            Assert.That(bodyRenderer, Is.Not.Null);
+            Assert.That(armsRenderer, Is.Not.Null);
+            Assert.That(animator, Is.Not.Null);
+            Assert.That(presenter, Is.Not.Null);
+
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                for (int index = 0; index < 30; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                Assert.That(motor.IsGrounded, Is.True, "Player did not settle before the jump test.");
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space));
+                InputSystem.Update();
+
+                Sprite heldBodySprite = null;
+                Sprite heldArmsSprite = null;
+                int heldAscendingFrames = 0;
+                bool sawJump = false;
+                bool sawFall = false;
+                for (int index = 0; index < 300 && !sawFall; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+
+                    AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+                    if (state.IsName("Jump"))
+                    {
+                        sawJump = true;
+                        AssertLayers(presenter, bodyRenderer, armsRenderer);
+                        if (bodyRenderer.sprite.name == "player_salvager_body_jump_2")
+                        {
+                            heldBodySprite ??= bodyRenderer.sprite;
+                            heldArmsSprite ??= armsRenderer.sprite;
+                            Assert.That(bodyRenderer.sprite, Is.SameAs(heldBodySprite),
+                                "Jump presentation regressed after reaching its final takeoff frame.");
+                            Assert.That(armsRenderer.sprite, Is.SameAs(heldArmsSprite),
+                                "Arms presentation changed while the final takeoff frame was held.");
+                            if (motor.Velocity.y > 0.15f)
+                            {
+                                heldAscendingFrames++;
+                            }
+                        }
+                        else if (heldBodySprite != null)
+                        {
+                            Assert.Fail("Jump presentation left its final frame before entering Fall.");
+                        }
+                    }
+                    else if (state.IsName("Fall"))
+                    {
+                        sawFall = true;
+                        AssertLayers(presenter, bodyRenderer, armsRenderer);
+                        Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_fall_0"));
+                    }
+                }
+
+                Assert.That(sawJump, Is.True, "Jump presentation state was not observed.");
+                Assert.That(heldBodySprite, Is.Not.Null, "The final jump takeoff frame was not observed.");
+                Assert.That(heldAscendingFrames, Is.GreaterThanOrEqualTo(4),
+                    "The final layered takeoff frame was not held through sustained ascent.");
+                Assert.That(sawFall, Is.True, "Fall did not take ownership after ascent ended.");
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Player_MovesJumpsAndRespawnsInMovementLab()
         {
             SceneManager.LoadScene("MovementLab");
