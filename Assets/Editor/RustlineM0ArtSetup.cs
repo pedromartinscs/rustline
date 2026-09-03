@@ -23,6 +23,8 @@ namespace Rustline.Editor
         private const string PlayerRoot = "Assets/Art/Characters/Player";
         private const string BodySpriteRoot = PlayerRoot + "/Sprites/Body";
         private const string UnarmedArmsSpriteRoot = PlayerRoot + "/Sprites/Arms/Unarmed";
+        private const string LongwatchIdleAimRoot =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Idle";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
@@ -47,6 +49,29 @@ namespace Rustline.Editor
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_jump", 3),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_fall", 1),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_land", 2),
+        };
+
+        private static readonly LongwatchDirectionSpec[] LongwatchIdleDirections =
+        {
+            new LongwatchDirectionSpec("p90", 90),
+            new LongwatchDirectionSpec("p80", 80),
+            new LongwatchDirectionSpec("p70", 70),
+            new LongwatchDirectionSpec("p60", 60),
+            new LongwatchDirectionSpec("p50", 50),
+            new LongwatchDirectionSpec("p40", 40),
+            new LongwatchDirectionSpec("p30", 30),
+            new LongwatchDirectionSpec("p20", 20),
+            new LongwatchDirectionSpec("p10", 10),
+            new LongwatchDirectionSpec("0", 0),
+            new LongwatchDirectionSpec("m10", -10),
+            new LongwatchDirectionSpec("m20", -20),
+            new LongwatchDirectionSpec("m30", -30),
+            new LongwatchDirectionSpec("m40", -40),
+            new LongwatchDirectionSpec("m50", -50),
+            new LongwatchDirectionSpec("m60", -60),
+            new LongwatchDirectionSpec("m70", -70),
+            new LongwatchDirectionSpec("m80", -80),
+            new LongwatchDirectionSpec("m90", -90),
         };
 
         // Bits are N=1, E=2, S=4, W=8. Slot order is the canonical documented order.
@@ -82,6 +107,20 @@ namespace Rustline.Editor
             internal string FileName { get; }
             internal int FrameCount { get; }
             internal string AssetPath => AssetRoot + "/" + FileName + ".png";
+        }
+
+        private sealed class LongwatchDirectionSpec
+        {
+            internal LongwatchDirectionSpec(string suffix, int angleDegrees)
+            {
+                Suffix = suffix;
+                AngleDegrees = angleDegrees;
+            }
+
+            internal string Suffix { get; }
+            internal int AngleDegrees { get; }
+            internal string FileName => "player_salvager_longwatch_dmr_idle_aim_" + Suffix;
+            internal string AssetPath => LongwatchIdleAimRoot + "/" + FileName + ".png";
         }
 
         private sealed class PreviewAsset
@@ -151,6 +190,7 @@ namespace Rustline.Editor
             EnsureFolder(TileAssetRoot);
 
             ConfigurePlayerSheets();
+            ConfigureLongwatchIdleAimSheets();
             ConfigureJumpDust();
             ConfigureEnvironmentAtlas();
             MoveLegacyBodyAnimationClips();
@@ -197,6 +237,21 @@ namespace Rustline.Editor
                 AtlasSpriteName,
                 new Vector2(0.5f, 0.5f),
                 logicalRowsRunTopToBottom: true);
+        }
+
+        private static void ConfigureLongwatchIdleAimSheets()
+        {
+            foreach (LongwatchDirectionSpec direction in LongwatchIdleDirections)
+            {
+                ConfigureFixedGrid(
+                    direction.AssetPath,
+                    80,
+                    96,
+                    2,
+                    index => direction.FileName + "_" + index,
+                    new Vector2(0.3f, 8f / 96f),
+                    logicalRowsRunTopToBottom: false);
+            }
         }
 
         private static void ConfigureJumpDust()
@@ -802,6 +857,8 @@ namespace Rustline.Editor
                 ValidateSourcePixels(sheet.AssetPath);
             }
 
+            ValidateLongwatchIdleAimSheets();
+
             ValidateImporter(JumpDustPath);
             ValidateSpriteGrid(
                 JumpDustPath,
@@ -911,6 +968,43 @@ namespace Rustline.Editor
             string manifest = File.ReadAllText(Path.Combine(projectRoot, "Packages", "manifest.json"));
             Require(manifest.IndexOf("com.unity.multiplayer.center", StringComparison.OrdinalIgnoreCase) < 0,
                 "Multiplayer Center is still present in Packages/manifest.json.");
+        }
+
+        private static void ValidateLongwatchIdleAimSheets()
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absoluteRoot = Path.Combine(projectRoot, LongwatchIdleAimRoot);
+            Require(Directory.Exists(absoluteRoot), "Longwatch Idle aim source folder is missing.");
+            string[] actualPngs = Directory.GetFiles(absoluteRoot, "*.png", SearchOption.TopDirectoryOnly);
+            Require(actualPngs.Length == LongwatchIdleDirections.Length,
+                "Longwatch Idle aim folder must contain exactly the 19 expected direction PNGs.");
+
+            HashSet<string> expectedFiles = new HashSet<string>(
+                LongwatchIdleDirections.Select(direction => direction.FileName + ".png"),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string actualPath in actualPngs)
+            {
+                Require(expectedFiles.Contains(Path.GetFileName(actualPath)),
+                    "Unexpected Longwatch Idle aim direction file: " + Path.GetFileName(actualPath));
+            }
+
+            foreach (LongwatchDirectionSpec direction in LongwatchIdleDirections)
+            {
+                ValidateImporter(direction.AssetPath);
+                ValidateSpriteGrid(
+                    direction.AssetPath,
+                    80,
+                    96,
+                    2,
+                    false,
+                    index => direction.FileName + "_" + index,
+                    new Vector2(24f, 8f));
+                ValidateSourcePixels(direction.AssetPath);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.AssetPath);
+                Require(texture != null && texture.width == 160 && texture.height == 96,
+                    direction.AssetPath + " must remain exactly 160x96 (two 80x96 cells)." );
+            }
         }
 
         private static void ValidateImporter(string path)
