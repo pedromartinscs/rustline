@@ -33,6 +33,8 @@ namespace Rustline.Editor
         private const string BodyAnimationRoot = "Assets/Art/Characters/Player/Animations/Body";
         private const string BodySpriteRoot = "Assets/Art/Characters/Player/Sprites/Body";
         private const string UnarmedArmsSpriteRoot = "Assets/Art/Characters/Player/Sprites/Arms/Unarmed";
+        private const string LongwatchIdleAimRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Idle";
         private const string CollisionTilePath = "Assets/Art/Environment/Tiles/Generated/MovementCollisionTile.asset";
         private const string RuleTilePath = "Assets/Art/Environment/Tiles/Generated/IndustrialSurfaceRuleTile.asset";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
@@ -50,6 +52,18 @@ namespace Rustline.Editor
             new CourseBlock(35, -2, 6, 4),
             new CourseBlock(44, -1, 6, 4),
             new CourseBlock(53, 0, 10, 4),
+        };
+
+        private static readonly string[] LongwatchDirectionSuffixes =
+        {
+            "p90", "p80", "p70", "p60", "p50", "p40", "p30", "p20", "p10", "0",
+            "m10", "m20", "m30", "m40", "m50", "m60", "m70", "m80", "m90",
+        };
+
+        private static readonly int[] LongwatchDirectionAngles =
+        {
+            90, 80, 70, 60, 50, 40, 30, 20, 10, 0,
+            -10, -20, -30, -40, -50, -60, -70, -80, -90,
         };
 
         private readonly struct CourseBlock
@@ -121,6 +135,7 @@ namespace Rustline.Editor
             {
                 CreateMovementLab(config, prefab, collisionTile, groundLayer);
             }
+            WireMovementLabLongwatchPresentation();
             PutMovementScenesFirstInBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -231,8 +246,13 @@ namespace Rustline.Editor
             Require(inputActions != null, "Input action asset is missing: " + InputPath);
             List<Sprite> bodyFrames = LoadLayeredPlayerFrames(BodySpriteRoot, "body");
             List<Sprite> armsFrames = LoadLayeredPlayerFrames(UnarmedArmsSpriteRoot, "arms");
+            List<Sprite> bodyIdleFrames = LoadSpritesByFrameIndex(
+                BodySpriteRoot + "/player_salvager_body_idle.png");
+            List<Sprite> longwatchIdleFrames = LoadLongwatchIdleFrames();
             Require(bodyFrames.Count == 14 && armsFrames.Count == 14,
                 "The player prefab requires all 14 Body and Unarmed Arms frames.");
+            Require(bodyIdleFrames.Count == 2 && longwatchIdleFrames.Count == 38,
+                "The Longwatch Idle presenter requires two Body frames and 38 armed sprites.");
 
             bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath) != null;
             GameObject root = editingExistingPrefab
@@ -309,6 +329,18 @@ namespace Rustline.Editor
                 SetObjectReference(jumpPresentation, "visual", visual.transform);
                 SetObjectReference(jumpPresentation, "bodySpriteRenderer", bodyRenderer);
                 SetObjectReference(jumpPresentation, "jumpDustPrefab", jumpDustPrefab);
+
+                PlayerLongwatchIdleAimPresenter2D longwatchPresenter =
+                    GetOrAddComponent<PlayerLongwatchIdleAimPresenter2D>(root);
+                ConfigureLongwatchPresenter(
+                    longwatchPresenter,
+                    input,
+                    presentation,
+                    armsPresenter,
+                    bodyRenderer,
+                    armsRenderer,
+                    bodyIdleFrames,
+                    longwatchIdleFrames);
 
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Require(prefab != null, "Failed to create the player prefab.");
@@ -405,6 +437,87 @@ namespace Rustline.Editor
             }
 
             return frames;
+        }
+
+        private static List<Sprite> LoadLongwatchIdleFrames()
+        {
+            List<Sprite> frames = new List<Sprite>(38);
+            foreach (string suffix in LongwatchDirectionSuffixes)
+            {
+                string path = LongwatchIdleAimRoot +
+                    "/player_salvager_longwatch_dmr_idle_aim_" + suffix + ".png";
+                List<Sprite> directionFrames = LoadSpritesByFrameIndex(path);
+                Require(directionFrames.Count == 2,
+                    "Longwatch Idle direction must contain exactly two frames: " + path);
+                frames.AddRange(directionFrames);
+            }
+
+            return frames;
+        }
+
+        private static List<Sprite> LoadSpritesByFrameIndex(string path)
+        {
+            return AssetDatabase.LoadAllAssetsAtPath(path)
+                .OfType<Sprite>()
+                .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                .ToList();
+        }
+
+        private static void ConfigureLongwatchPresenter(
+            PlayerLongwatchIdleAimPresenter2D presenter,
+            PlayerInputReader input,
+            PlayerAnimator2D playerAnimator,
+            PlayerUnarmedArmsPresenter2D unarmedPresenter,
+            SpriteRenderer bodyRenderer,
+            SpriteRenderer armsRenderer,
+            IReadOnlyList<Sprite> bodyIdleFrames,
+            IReadOnlyList<Sprite> longwatchIdleFrames)
+        {
+            SerializedObject serialized = new SerializedObject(presenter);
+            serialized.FindProperty("input").objectReferenceValue = input;
+            serialized.FindProperty("playerAnimator").objectReferenceValue = playerAnimator;
+            serialized.FindProperty("unarmedPresenter").objectReferenceValue = unarmedPresenter;
+            serialized.FindProperty("bodySpriteRenderer").objectReferenceValue = bodyRenderer;
+            serialized.FindProperty("armsWeaponSpriteRenderer").objectReferenceValue = armsRenderer;
+
+            SerializedProperty bodyFrames = serialized.FindProperty("bodyIdleFrames");
+            bodyFrames.arraySize = bodyIdleFrames.Count;
+            for (int index = 0; index < bodyIdleFrames.Count; index++)
+            {
+                bodyFrames.GetArrayElementAtIndex(index).objectReferenceValue = bodyIdleFrames[index];
+            }
+
+            SerializedProperty poses = serialized.FindProperty("aimPoses");
+            poses.arraySize = LongwatchDirectionAngles.Length;
+            for (int index = 0; index < LongwatchDirectionAngles.Length; index++)
+            {
+                SerializedProperty pose = poses.GetArrayElementAtIndex(index);
+                pose.FindPropertyRelative("angleDegrees").intValue = LongwatchDirectionAngles[index];
+                pose.FindPropertyRelative("frame0").objectReferenceValue = longwatchIdleFrames[index * 2];
+                pose.FindPropertyRelative("frame1").objectReferenceValue = longwatchIdleFrames[index * 2 + 1];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void WireMovementLabLongwatchPresentation()
+        {
+            Scene scene = SceneManager.GetSceneByPath(ScenePath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            PlayerLongwatchIdleAimPresenter2D longwatchPresenter =
+                FindInScene<PlayerLongwatchIdleAimPresenter2D>(scene);
+            NativePixelPresentation nativePresentation = FindInScene<NativePixelPresentation>(scene);
+            Require(longwatchPresenter != null,
+                "MovementLab player is missing the Longwatch Idle aim presenter.");
+            Require(nativePresentation != null,
+                "MovementLab is missing its native-pixel presentation.");
+            SetObjectReference(longwatchPresenter, "nativePixelPresentation", nativePresentation);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
         private static int ParseTrailingIndex(string name)
@@ -608,13 +721,21 @@ namespace Rustline.Editor
             InputActionMap playerMap = input?.FindActionMap("Player", false);
             Require(input != null && input.actionMaps.Count == 1 && playerMap != null,
                 "Input asset must contain only the focused Player action map for M1A.");
-            Require(playerMap.actions.Count == 2 && playerMap.FindAction("Move", false) != null &&
-                playerMap.FindAction("Jump", false) != null, "Player input must contain only Move and Jump.");
+            Require(playerMap.actions.Count == 3 && playerMap.FindAction("Move", false) != null &&
+                playerMap.FindAction("Jump", false) != null &&
+                playerMap.FindAction("PointerPosition", false) != null,
+                "Player input must contain Move, Jump, and PointerPosition.");
             Require(playerMap.FindAction("Move").bindings.Any(binding => binding.path == "<Gamepad>/dpad"),
                 "Move must support the gamepad D-pad.");
             Require(playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Keyboard>/space") &&
                 playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Gamepad>/buttonSouth"),
                 "Jump bindings are incomplete.");
+            InputAction pointerPosition = playerMap.FindAction("PointerPosition");
+            Require(pointerPosition.type == InputActionType.PassThrough &&
+                pointerPosition.expectedControlType == "Vector2" &&
+                pointerPosition.bindings.Count == 1 &&
+                pointerPosition.bindings[0].path == "<Pointer>/position",
+                "PointerPosition must be a Vector2 PassThrough action bound only to <Pointer>/position.");
 
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             Require(prefab != null, "Player prefab is missing.");
@@ -631,6 +752,8 @@ namespace Rustline.Editor
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Require(armsPresenter != null && armsPresenter.MappingCount == 14 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
+            PlayerLongwatchIdleAimPresenter2D longwatchPresenter =
+                prefab.GetComponent<PlayerLongwatchIdleAimPresenter2D>();
             PlayerJumpPresentation2D jumpPresentation = prefab.GetComponent<PlayerJumpPresentation2D>();
             Transform visual = prefab.transform.Find("Visual - 48x64 Full Cell");
             Require(visual != null && Vector3.Distance(visual.localPosition, new Vector3(0f, -0.25f, 0f)) < 0.0001f,
@@ -647,6 +770,23 @@ namespace Rustline.Editor
                 armsRenderer.sortingOrder == 11 && armsPresenter.BodySpriteRenderer == bodyRenderer &&
                 armsPresenter.ArmsWeaponSpriteRenderer == armsRenderer,
                 "Player layered renderer references or sorting contract are invalid.");
+            Require(longwatchPresenter != null && longwatchPresenter.Input == prefab.GetComponent<PlayerInputReader>() &&
+                longwatchPresenter.PlayerAnimator == prefab.GetComponent<PlayerAnimator2D>() &&
+                longwatchPresenter.UnarmedPresenter == armsPresenter &&
+                longwatchPresenter.BodySpriteRenderer == bodyRenderer &&
+                longwatchPresenter.ArmsWeaponSpriteRenderer == armsRenderer &&
+                longwatchPresenter.NativePixelPresentation == null &&
+                longwatchPresenter.BodyIdleFrameCount == 2 && longwatchPresenter.AimPoseCount == 19,
+                "Player prefab Longwatch Idle presenter wiring is incomplete.");
+            for (int index = 0; index < LongwatchDirectionAngles.Length; index++)
+            {
+                LongwatchIdleAimPose pose = longwatchPresenter.GetAimPose(index);
+                Require(pose.AngleDegrees == LongwatchDirectionAngles[index] &&
+                    pose.Frame0 != null && pose.Frame1 != null &&
+                    pose.Frame0.name.EndsWith("_" + LongwatchDirectionSuffixes[index] + "_0") &&
+                    pose.Frame1.name.EndsWith("_" + LongwatchDirectionSuffixes[index] + "_1"),
+                    "Longwatch Idle presenter pose mapping mismatch at direction " + index + ".");
+            }
             PlayerJumpDustFx2D jumpDustPrefab = AssetDatabase.LoadAssetAtPath<PlayerJumpDustFx2D>(JumpDustPrefabPath);
             Require(jumpPresentation != null && jumpPresentation.Visual == visual &&
                 jumpPresentation.BodySpriteRenderer == bodyRenderer &&
@@ -779,6 +919,8 @@ namespace Rustline.Editor
                     "MovementLab must not retain the legacy physical presentation camera.");
 
                 NativePixelPresentation presentation = FindInScene<NativePixelPresentation>(scene);
+                PlayerLongwatchIdleAimPresenter2D longwatchPresenter =
+                    FindInScene<PlayerLongwatchIdleAimPresenter2D>(scene);
                 Shader penumbraShader = AssetDatabase.LoadAssetAtPath<Shader>(PenumbraShaderPath);
                 Shader presentationShader = AssetDatabase.LoadAssetAtPath<Shader>(PresentationShaderPath);
                 Require(presentation != null && presentation.gameObject == driverCamera.gameObject &&
@@ -789,6 +931,9 @@ namespace Rustline.Editor
                     presentation.PresentationShader == presentationShader &&
                     presentation.PenumbraEnabled,
                     "MovementLab native pixel presentation references/defaults are invalid.");
+                Require(longwatchPresenter != null &&
+                    longwatchPresenter.NativePixelPresentation == presentation,
+                    "MovementLab Longwatch presenter must reference its serialized native-pixel presentation.");
                 Require(penumbraShader != null && !ShaderUtil.ShaderHasError(penumbraShader),
                     "MovementLab palette penumbra shader is missing or has compile errors.");
                 Require(presentationShader != null && !ShaderUtil.ShaderHasError(presentationShader),

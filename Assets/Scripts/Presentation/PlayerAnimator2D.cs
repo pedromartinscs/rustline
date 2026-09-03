@@ -14,10 +14,17 @@ namespace Rustline.Presentation
         private PlayerMotor2D _motor;
         private float _landingTimeRemaining;
         private PlayerAnimationState? _currentState;
+        private bool _movementFacingFlipX;
+        private bool _facingOverrideActive;
+        private bool _facingOverrideFlipX;
+
+        public PlayerAnimationState? CurrentState => _currentState;
+        public bool FacingOverrideActive => _facingOverrideActive;
 
         private void Awake()
         {
             _motor = GetComponent<PlayerMotor2D>();
+            _movementFacingFlipX = bodySpriteRenderer != null && bodySpriteRenderer.flipX;
         }
 
         private void OnEnable()
@@ -57,10 +64,10 @@ namespace Rustline.Presentation
 
             if (Mathf.Abs(velocity.x) >= config.FacingVelocityThreshold)
             {
-                bool flipX = velocity.x < 0f;
-                bodySpriteRenderer.flipX = flipX;
-                armsWeaponSpriteRenderer.flipX = flipX;
+                _movementFacingFlipX = velocity.x < 0f;
             }
+
+            ApplyFacing(_facingOverrideActive ? _facingOverrideFlipX : _movementFacingFlipX);
 
             PlayerAnimationState nextState = PlayerAnimationStateSelector.Select(
                 _motor.IsGrounded,
@@ -85,6 +92,22 @@ namespace Rustline.Presentation
             {
                 _landingTimeRemaining = config.LandPresentationDuration;
             }
+        }
+
+        public void SetFacingOverride(bool active, bool flipX)
+        {
+            _facingOverrideActive = active;
+            _facingOverrideFlipX = flipX;
+            if (bodySpriteRenderer != null && armsWeaponSpriteRenderer != null)
+            {
+                ApplyFacing(active ? flipX : _movementFacingFlipX);
+            }
+        }
+
+        private void ApplyFacing(bool flipX)
+        {
+            bodySpriteRenderer.flipX = flipX;
+            armsWeaponSpriteRenderer.flipX = flipX;
         }
     }
 }

@@ -255,6 +255,7 @@ GameObject:
   - component: {fileID: 9189312535779651393}
   - component: {fileID: 8080597632018127864}
   - component: {fileID: 2385879683141238295}
+  - component: {fileID: 2994246285054152671}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -358,6 +359,7 @@ MonoBehaviour:
   actionMapName: Player
   moveActionName: Move
   jumpActionName: Jump
+  pointerPositionActionName: PointerPosition
 --- !u!114 &4660431720091408198
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -462,3 +464,82 @@ MonoBehaviour:
   visual: {fileID: 4968877354513996504}
   bodySpriteRenderer: {fileID: 4475617162220178310}
   jumpDustPrefab: {fileID: 8308283082814044191, guid: 8a118c6a5b6bfe44a8a852ed26417140, type: 3}
+--- !u!114 &2994246285054152671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 82c4036a7bdae1548a6aa61f967070e6, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerLongwatchIdleAimPresenter2D
+  input: {fileID: 6069468980533504220}
+  playerAnimator: {fileID: 9189312535779651393}
+  unarmedPresenter: {fileID: 8080597632018127864}
+  bodySpriteRenderer: {fileID: 4475617162220178310}
+  armsWeaponSpriteRenderer: {fileID: 2490630099379857390}
+  nativePixelPresentation: {fileID: 0}
+  bodyIdleFrames:
+  - {fileID: -994535270271076823, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
+  - {fileID: -5071295811932535803, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
+  aimPoses:
+  - angleDegrees: 90
+    frame0: {fileID: 7274978089257422411, guid: 2d38396863f7dd34fbd6b46467e03c94, type: 3}
+    frame1: {fileID: -5597351656691025840, guid: 2d38396863f7dd34fbd6b46467e03c94, type: 3}
+  - angleDegrees: 80
+    frame0: {fileID: -5397361315244326332, guid: ad64e5992e2f70041b70e5412bc0570e, type: 3}
+    frame1: {fileID: 2894230698417325176, guid: ad64e5992e2f70041b70e5412bc0570e, type: 3}
+  - angleDegrees: 70
+    frame0: {fileID: 7616297902075923985, guid: 2b3695f34de950846ba14374acda6a98, type: 3}
+    frame1: {fileID: 6240848556635657685, guid: 2b3695f34de950846ba14374acda6a98, type: 3}
+  - angleDegrees: 60
+    frame0: {fileID: 389253095618003298, guid: 9f25d2f0fb49191478e046695b5c4881, type: 3}
+    frame1: {fileID: 1592354249426438068, guid: 9f25d2f0fb49191478e046695b5c4881, type: 3}
+  - angleDegrees: 50
+    frame0: {fileID: 4842993031407170480, guid: 2d2ef39efc7b32e44847fd43c5164670, type: 3}
+    frame1: {fileID: -249852587578713734, guid: 2d2ef39efc7b32e44847fd43c5164670, type: 3}
+  - angleDegrees: 40
+    frame0: {fileID: -7417973524627434496, guid: b152313010866dc4c88c17a7539e55f6, type: 3}
+    frame1: {fileID: 4969687100692448372, guid: b152313010866dc4c88c17a7539e55f6, type: 3}
+  - angleDegrees: 30
+    frame0: {fileID: -9153753035641476582, guid: f26c043f9923b4848821d491c8803ae3, type: 3}
+    frame1: {fileID: 546859873416662973, guid: f26c043f9923b4848821d491c8803ae3, type: 3}
+  - angleDegrees: 20
+    frame0: {fileID: 1394174008908161604, guid: 4014206f7ad6b1342943f38cd4bce808, type: 3}
+    frame1: {fileID: -4542287394601920945, guid: 4014206f7ad6b1342943f38cd4bce808, type: 3}
+  - angleDegrees: 10
+    frame0: {fileID: -7985963670959343331, guid: 039fcaffa6c21b3448c1603c327914f4, type: 3}
+    frame1: {fileID: -8671814553042559669, guid: 039fcaffa6c21b3448c1603c327914f4, type: 3}
+  - angleDegrees: 0
+    frame0: {fileID: -6118032722706908174, guid: 68036bf5b020b664f9acf8a9bc1d3972, type: 3}
+    frame1: {fileID: 4240041862577190708, guid: 68036bf5b020b664f9acf8a9bc1d3972, type: 3}
+  - angleDegrees: -10
+    frame0: {fileID: 6483535802255939936, guid: e52d88fec81bef54aae153ba30e201dc, type: 3}
+    frame1: {fileID: 1074074843434261130, guid: e52d88fec81bef54aae153ba30e201dc, type: 3}
+  - angleDegrees: -20
+    frame0: {fileID: -757485611057901537, guid: a097d1e9a9c5fab459b296581ff94ae9, type: 3}
+    frame1: {fileID: 4919701091527140847, guid: a097d1e9a9c5fab459b296581ff94ae9, type: 3}
+  - angleDegrees: -30
+    frame0: {fileID: 35992803738279366, guid: 68abf24f4af42264f88939c02888de78, type: 3}
+    frame1: {fileID: -1155606787587127884, guid: 68abf24f4af42264f88939c02888de78, type: 3}
+  - angleDegrees: -40
+    frame0: {fileID: -1545482086401708886, guid: 3eaa76ba15f578c429556c5032fde7d7, type: 3}
+    frame1: {fileID: -1894411051412880796, guid: 3eaa76ba15f578c429556c5032fde7d7, type: 3}
+  - angleDegrees: -50
+    frame0: {fileID: 5698682284813446391, guid: 600804ca404d8db489a306c690ae242f, type: 3}
+    frame1: {fileID: -7181092582267210544, guid: 600804ca404d8db489a306c690ae242f, type: 3}
+  - angleDegrees: -60
+    frame0: {fileID: -3503581141141127612, guid: 8d6fc3f22fc3965419449e687451aba2, type: 3}
+    frame1: {fileID: -4510662035898489477, guid: 8d6fc3f22fc3965419449e687451aba2, type: 3}
+  - angleDegrees: -70
+    frame0: {fileID: 2037048559654312892, guid: 2783b35d6c910d745ab3ce1851d2e616, type: 3}
+    frame1: {fileID: -7737641219613523402, guid: 2783b35d6c910d745ab3ce1851d2e616, type: 3}
+  - angleDegrees: -80
+    frame0: {fileID: -7487582298545549094, guid: 42f819e5ede895340ae122e8f4e44fbe, type: 3}
+    frame1: {fileID: 6382133003279305439, guid: 42f819e5ede895340ae122e8f4e44fbe, type: 3}
+  - angleDegrees: -90
+    frame0: {fileID: 6569897719176572642, guid: d9e889c5eada8aa4f9573dab4a20e171, type: 3}
+    frame1: {fileID: 2980825206154959865, guid: d9e889c5eada8aa4f9573dab4a20e171, type: 3}

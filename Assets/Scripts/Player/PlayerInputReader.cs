@@ -9,15 +9,18 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string actionMapName = "Player";
         [SerializeField] private string moveActionName = "Move";
         [SerializeField] private string jumpActionName = "Jump";
+        [SerializeField] private string pointerPositionActionName = "PointerPosition";
 
         private InputActionMap _actionMap;
         private InputAction _moveAction;
         private InputAction _jumpAction;
+        private InputAction _pointerPositionAction;
         private bool _jumpPressed;
         private bool _jumpReleased;
 
         public float MoveX { get; private set; }
         public bool JumpHeld { get; private set; }
+        public Vector2 PointerScreenPosition { get; private set; }
 
         private void OnEnable()
         {
@@ -31,7 +34,10 @@ namespace Rustline.Gameplay.Player
             _moveAction.canceled += OnMove;
             _jumpAction.performed += OnJumpPerformed;
             _jumpAction.canceled += OnJumpCanceled;
+            _pointerPositionAction.performed += OnPointerPosition;
+            _pointerPositionAction.canceled += OnPointerPosition;
             _actionMap.Enable();
+            PointerScreenPosition = _pointerPositionAction.ReadValue<Vector2>();
         }
 
         private void OnDisable()
@@ -42,6 +48,8 @@ namespace Rustline.Gameplay.Player
                 _moveAction.canceled -= OnMove;
                 _jumpAction.performed -= OnJumpPerformed;
                 _jumpAction.canceled -= OnJumpCanceled;
+                _pointerPositionAction.performed -= OnPointerPosition;
+                _pointerPositionAction.canceled -= OnPointerPosition;
                 _actionMap.Disable();
             }
 
@@ -75,10 +83,13 @@ namespace Rustline.Gameplay.Player
             _actionMap = inputActions != null ? inputActions.FindActionMap(actionMapName, false) : null;
             _moveAction = _actionMap?.FindAction(moveActionName, false);
             _jumpAction = _actionMap?.FindAction(jumpActionName, false);
+            _pointerPositionAction = _actionMap?.FindAction(pointerPositionActionName, false);
 
-            if (_actionMap == null || _moveAction == null || _jumpAction == null)
+            if (_actionMap == null || _moveAction == null || _jumpAction == null || _pointerPositionAction == null)
             {
-                Debug.LogError("Rustline player input requires Player/Move and Player/Jump actions.", this);
+                Debug.LogError(
+                    "Rustline player input requires Player/Move, Player/Jump, and Player/PointerPosition actions.",
+                    this);
                 _actionMap = null;
             }
         }
@@ -102,6 +113,11 @@ namespace Rustline.Gameplay.Player
         {
             JumpHeld = false;
             _jumpReleased = true;
+        }
+
+        private void OnPointerPosition(InputAction.CallbackContext context)
+        {
+            PointerScreenPosition = context.ReadValue<Vector2>();
         }
     }
 }

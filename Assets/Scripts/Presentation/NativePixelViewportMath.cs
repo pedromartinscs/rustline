@@ -50,6 +50,22 @@ namespace Rustline.Presentation
     {
         public const int MaximumLogicalDimension = 1072;
 
+        /// <summary>
+        /// Converts a physical pointer position into logical camera viewport coordinates.
+        /// Values are intentionally not clamped so Deep Space surround input continues to
+        /// describe a direction beyond the visible logical image.
+        /// </summary>
+        public static Vector2 PhysicalToLogicalViewport(
+            Vector2 physicalPosition,
+            NativePixelViewport viewport)
+        {
+            float logicalX = (physicalPosition.x - viewport.OutputOffsetX) / viewport.IntegerScale;
+            float logicalY = (physicalPosition.y - viewport.OutputOffsetY) / viewport.IntegerScale;
+            return new Vector2(
+                logicalX / viewport.LogicalWidth,
+                logicalY / viewport.LogicalHeight);
+        }
+
         public static NativePixelViewport Calculate(int screenWidth, int screenHeight)
         {
             if (screenWidth <= 0)
