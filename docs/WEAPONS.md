@@ -33,7 +33,7 @@ Large mass, thick receivers, warning markings, oversized barrels, visible feed s
 | 03 | **Needle SMG** | Compact SMG | Security | Very short receiver, vertical magazine, minimal stock. |
 | 04 | **Sentinel AR** | Assault rifle | Security | Clean modular industrial rifle; strong default long-gun silhouette. |
 | 05 | **Tripwire BR** | Burst rifle | Security | Longer than Sentinel, narrow barrel and heavier receiver. |
-| 06 | **Longwatch DMR** | Marksman rifle | Security | Long, controlled silhouette with integrated optic/sensor treatment. |
+| 06 | **Longwatch DMR** | Marksman rifle | Security | Long, controlled silhouette with integrated optic/sensor treatment. **First armed-pipeline validation weapon.** |
 | 07 | **Breach-8** | Pump shotgun | Salvage | Oversized pump, worn steel, repaired industrial character. |
 | 08 | **Scrapper** | Automatic shotgun | Salvage | Short and bulky with an oversized magazine/feed silhouette. |
 | 09 | **Rivet Driver** | Rivet gun conversion | Industrial | Construction tool converted into a weapon; obvious reservoir/cylinder. |
@@ -62,7 +62,31 @@ DMR / sniper            ~50–64 px
 Heavy weapons           ~50–72 px
 ```
 
-The canonical player cell is 48×64 px, so weapon scale must always be judged in relation to that character rather than in isolation.
+The canonical Body cell is 48×64 px, so weapon scale must always be judged in relation to that character rather than in isolation. Armed overlay cells may be larger than the Body cell; the first Longwatch DMR package uses the documented 80×96 armed cell so the weapon silhouette is not clipped or artificially shortened.
+
+## Longwatch DMR — first pipeline weapon
+
+The Longwatch DMR is the first representative weapon chosen to stress-test directional armed presentation before scaling the pipeline to the remaining roster.
+
+Current authored reference/source art:
+
+```text
+ArtSource/Concepts/Longwatch_DMR_concept.png
+ArtSource/Concepts/Longwatch_DMR_zero_degrees_concept.png
+ArtSource/Characters/Player/player_salvager_idle_armed.xcf
+```
+
+Current production status:
+
+- standalone visual identity established;
+- right-facing Idle authored at all 19 canonical angles from `+90°` to `-90°`;
+- two Idle animation frames authored for every angle;
+- each angle stored as one `160×96` PNG containing two `80×96` cells;
+- common armed-cell Body reference and pivot documented in `PLAYER_WEAPON_ART.md`;
+- runtime import, angle quantization, mirroring, and human in-engine validation are the next milestone;
+- Run/Fall aim and Jump/Land/Roll carry art deliberately wait until the Idle pipeline proves itself in Unity.
+
+This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
 
 ## Production rules
 
@@ -72,17 +96,18 @@ The canonical player cell is 48×64 px, so weapon scale must always be judged in
 - Strong silhouettes matter more than micro-detail.
 - Weapons within a family should share visual language without becoming silhouette clones.
 - A weapon is not considered production-ready merely because a standalone gun sprite exists; its player presentation package must follow the discrete aim/carry system in `PLAYER_WEAPON_ART.md`.
-- Muzzle, casing-ejection, projectile, reload, and impact metadata/effects may be added when the first weapon is implemented; they are not required for the current Body/Arms decomposition pass.
+- Muzzle, casing-ejection, projectile, reload, and impact metadata/effects may be added when the first weapon gameplay implementation begins; they are not prerequisites for validating the Idle armed-presentation pipeline.
 
 ## Initial production order
 
 Do not generate all twenty complete weapon packages before validating the pipeline.
 
-1. Complete and validate the layered unarmed player.
-2. Choose one representative first weapon.
-3. Produce its full authored aim/carry presentation package.
-4. Validate aiming, facing, locomotion, and firing restrictions in Unity.
-5. Freeze the final weapon sheet/import convention.
-6. Expand into the remaining roster in controlled batches.
+1. Complete and validate the layered unarmed player. **Done.**
+2. Choose one representative first weapon. **Longwatch DMR chosen.**
+3. Produce its right-facing 19-direction Idle presentation. **Done.**
+4. Validate import, pivot, 360° mirrored visual aim, animation synchronization, and armed presenter ownership in Unity. **Next.**
+5. Expand the accepted Longwatch contract to Run/Fall aim and non-firing carry states.
+6. Freeze the reusable weapon art/import/runtime convention.
+7. Expand into the remaining roster in controlled batches.
 
-A rifle or other long weapon is a useful first stress test because angular and hand-placement errors are easier to see than with a compact pistol.
+A long weapon remains the correct first stress test because angular, clipping, hand-placement, and pivot errors are easier to see than with a compact pistol.
