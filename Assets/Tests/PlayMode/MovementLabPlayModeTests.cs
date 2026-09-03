@@ -24,6 +24,8 @@ namespace Rustline.Tests
             Rigidbody2D body = player.GetComponent<Rigidbody2D>();
             CapsuleCollider2D collider = player.GetComponent<CapsuleCollider2D>();
             PlayerUnarmedArmsPresenter2D presenter = player.GetComponent<PlayerUnarmedArmsPresenter2D>();
+            PlayerLongwatchIdleAimPresenter2D longwatchPresenter =
+                player.GetComponent<PlayerLongwatchIdleAimPresenter2D>();
             PlayerAnimator2D playerAnimator = player.GetComponent<PlayerAnimator2D>();
             PlayerJumpPresentation2D jumpPresentation = player.GetComponent<PlayerJumpPresentation2D>();
             Transform visual = player.transform.Find("Visual - 48x64 Full Cell");
@@ -40,6 +42,7 @@ namespace Rustline.Tests
             Assert.That(collider.offset, Is.EqualTo(new Vector2(0f, 1.375f)));
             Assert.That(playerAnimator, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(longwatchPresenter, Is.Not.Null);
             Assert.That(jumpPresentation, Is.Not.Null);
             Assert.That(visual, Is.Not.Null);
             Assert.That(bodyVisual, Is.Not.Null);
@@ -62,11 +65,13 @@ namespace Rustline.Tests
                     yield return new WaitForFixedUpdate();
                 }
                 yield return null;
-                AssertStateAndLayers(animator, "Idle", presenter, bodyRenderer, armsRenderer);
+                AssertStateAndLayers(
+                    animator, "Idle", presenter, longwatchPresenter, bodyRenderer, armsRenderer);
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
                 InputSystem.Update();
-                yield return WaitForState(animator, "Run", presenter, bodyRenderer, armsRenderer, 90);
+                yield return WaitForState(
+                    animator, "Run", presenter, longwatchPresenter, bodyRenderer, armsRenderer, 90);
                 Assert.That(bodyRenderer.flipX, Is.False);
                 Assert.That(armsRenderer.flipX, Is.False);
 
@@ -76,7 +81,7 @@ namespace Rustline.Tests
                 {
                     yield return new WaitForFixedUpdate();
                     yield return null;
-                    AssertLayers(presenter, bodyRenderer, armsRenderer);
+                    AssertOwnedLayers(presenter, longwatchPresenter, bodyRenderer, armsRenderer);
                 }
                 Assert.That(bodyRenderer.flipX, Is.True);
                 Assert.That(armsRenderer.flipX, Is.True);
@@ -96,7 +101,7 @@ namespace Rustline.Tests
 
                     yield return new WaitForFixedUpdate();
                     yield return null;
-                    AssertLayers(presenter, bodyRenderer, armsRenderer);
+                    AssertOwnedLayers(presenter, longwatchPresenter, bodyRenderer, armsRenderer);
                     sawJump |= animator.GetCurrentAnimatorStateInfo(0).IsName("Jump");
                     sawFall |= animator.GetCurrentAnimatorStateInfo(0).IsName("Fall");
                     sawLand |= animator.GetCurrentAnimatorStateInfo(0).IsName("Land");
@@ -569,6 +574,7 @@ namespace Rustline.Tests
             Animator animator,
             string state,
             PlayerUnarmedArmsPresenter2D presenter,
+            PlayerLongwatchIdleAimPresenter2D longwatchPresenter,
             SpriteRenderer bodyRenderer,
             SpriteRenderer armsRenderer,
             int maximumFrames)
@@ -577,7 +583,7 @@ namespace Rustline.Tests
             {
                 yield return new WaitForFixedUpdate();
                 yield return null;
-                AssertLayers(presenter, bodyRenderer, armsRenderer);
+                AssertOwnedLayers(presenter, longwatchPresenter, bodyRenderer, armsRenderer);
                 if (animator.GetCurrentAnimatorStateInfo(0).IsName(state))
                 {
                     yield break;
@@ -591,11 +597,35 @@ namespace Rustline.Tests
             Animator animator,
             string state,
             PlayerUnarmedArmsPresenter2D presenter,
+            PlayerLongwatchIdleAimPresenter2D longwatchPresenter,
             SpriteRenderer bodyRenderer,
             SpriteRenderer armsRenderer)
         {
             Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName(state), Is.True);
-            AssertLayers(presenter, bodyRenderer, armsRenderer);
+            Assert.That(longwatchPresenter.OwnsRenderer, Is.True);
+            AssertOwnedLayers(presenter, longwatchPresenter, bodyRenderer, armsRenderer);
+        }
+
+        private static void AssertOwnedLayers(
+            PlayerUnarmedArmsPresenter2D unarmedPresenter,
+            PlayerLongwatchIdleAimPresenter2D longwatchPresenter,
+            SpriteRenderer bodyRenderer,
+            SpriteRenderer armsRenderer)
+        {
+            if (!longwatchPresenter.OwnsRenderer)
+            {
+                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+                return;
+            }
+
+            Assert.That(unarmedPresenter.OwnsRenderer, Is.False);
+            Assert.That(bodyRenderer.flipX, Is.EqualTo(armsRenderer.flipX), "Layer facing diverged.");
+            int bodyFrame = bodyRenderer.sprite == longwatchPresenter.GetBodyIdleFrame(0) ? 0 : 1;
+            Assert.That(bodyRenderer.sprite, Is.SameAs(longwatchPresenter.GetBodyIdleFrame(bodyFrame)));
+            LongwatchIdleAimPose pose = longwatchPresenter.GetAimPose(
+                longwatchPresenter.Selection.DirectionIndex);
+            Assert.That(armsRenderer.sprite, Is.SameAs(pose.GetFrame(bodyFrame)),
+                "Longwatch overlay lagged or diverged from the displayed Body Idle frame.");
         }
 
         private static void AssertLayers(
