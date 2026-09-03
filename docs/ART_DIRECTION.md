@@ -137,7 +137,7 @@ The gameplay direction may be mathematically continuous for mouse/gamepad target
 
 The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, and Fall are currently aim/fire-capable. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
 
-The **Longwatch DMR** is the first pipeline-validation weapon. Its full right-facing Idle set is authored as 19 direction-specific `160×96` sheets, each containing two `80×96` Idle cells. This is intentionally being validated in Unity before producing the much larger Run/Fall/carry package.
+The **Longwatch DMR** is the first pipeline-validation weapon. Its full right-facing Idle set is authored and integrated as 19 direction-specific `160×96` sheets, each containing two `80×96` Idle cells. Mouse-driven 360° mirrored presentation and automated pipeline validation are implemented; human native-scale visual approval remains pending before producing the much larger Run/Fall/carry package.
 
 This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
 

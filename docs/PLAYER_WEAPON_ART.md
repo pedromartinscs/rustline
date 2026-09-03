@@ -247,7 +247,7 @@ ArtSource/Concepts/Player_concept.png
 
 The standalone weapon concept is a design reference. The final production authority for hand placement, silhouette, palette, and per-angle pixel cleanup is the authored Arms/Weapon overlay artwork.
 
-The Longwatch Idle package is currently authored and versioned for all 19 right-facing angles. Runtime armed-aim integration is the next implementation milestone; Run/Fall aim and Jump/Land/Roll carry art are intentionally not required before the Idle pipeline is validated in Unity.
+The Longwatch Idle package is authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Automated import, pointer mapping, renderer-ownership, mirroring, and frame-synchronization validation is implemented; human native-scale visual approval remains pending. Run/Fall aim and Jump/Land/Roll carry art intentionally remain deferred until that Idle validation is approved.
 
 ## Aim/fire locomotion rules
 
@@ -363,6 +363,14 @@ Jump dust is separate production art at `Assets/Art/Effects/Movement/player_jump
 
 The runtime deliberately uses one Animator on `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite and maps it to the matching Unarmed Arms sprite. A future equipped-weapon presenter takes ownership of `ArmsWeaponSpriteRenderer` while armed and returns ownership when unequipped; do not add a second Animator merely for armed aiming.
 
+Longwatch Idle now uses `PlayerLongwatchIdleAimPresenter2D`, wired on the Player prefab and given its scene-specific `NativePixelPresentation` reference by the authoritative MovementLab setup. `PlayerInputReader` exposes the `Player/PointerPosition` Vector2 PassThrough action bound to `<Pointer>/position`. Physical pointer coordinates are converted through the current centered native-pixel output offset and integer scale into unclamped logical viewport coordinates, then through the actual World Camera into a continuous world-space aim direction.
+
+`LongwatchAimMath` mirrors left-hemisphere vectors conceptually into the right-authored hemisphere, retains continuous angle/direction data, and quantizes only the displayed pose to the nearest 10 degrees. Exact vertical input retains the last facing hemisphere and zero-length input retains the last valid selection. No final weapon sprite is rotated at runtime.
+
+While locomotion presentation is Idle, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter, drives coherent Body/overlay `flipX` from the aim hemisphere, and maps the final Animator-displayed Body Idle frame directly to the corresponding frame of the selected Longwatch angle. On Run, Jump, Fall, or Land it immediately releases the facing override and renderer ownership so the existing movement-facing and unarmed overlay resume unchanged. This unarmed non-Idle fallback is intentional for this validation milestone.
+
+Mouse/pointer is the only armed-aim acceptance input in this pass. Firing, Run/Fall armed aim, carry states, gamepad aim, inventory, and all weapon gameplay remain deferred.
+
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 
 ## First weapon implementation sequence
@@ -375,12 +383,12 @@ Completed foundations:
 4. Choose the Longwatch DMR as the first representative weapon.
 5. Author Longwatch Idle at all 19 right-facing directions using two Idle frames per direction.
 
-Next implementation milestone:
+Implemented validation milestone:
 
-6. Import/slice all Longwatch Idle direction sheets as **80×96** cells with pivot `(24,8)` / normalized `(0.30, 0.083333333...)`.
-7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere.
-8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or locomotion semantics.
-9. Validate all 19 directions, both Idle frames, full 360° mirroring, transform/pivot stability, palette/import rules, and no frame lag or gaps.
+6. Import/slice all Longwatch Idle direction sheets as **80×96** cells with pivot `(24,8)` / normalized `(0.30, 0.083333333...)`. **Done.**
+7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere. **Done for mouse/pointer Idle validation.**
+8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or locomotion semantics. **Done for Idle, with intentional unarmed fallback outside Idle.**
+9. Automate validation of all 19 directions, both Idle frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; human native-scale approval remains pending.**
 10. Only after Idle is human-approved, expand the Longwatch package to Run/Fall aim and Jump/Land/Roll carry poses.
 11. Freeze the reusable armed import/presenter contract, then scale to additional weapons.
 

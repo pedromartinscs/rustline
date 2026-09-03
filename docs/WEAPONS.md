@@ -83,7 +83,8 @@ Current production status:
 - two Idle animation frames authored for every angle;
 - each angle stored as one `160×96` PNG containing two `80×96` cells;
 - common armed-cell Body reference and pivot documented in `PLAYER_WEAPON_ART.md`;
-- runtime import, angle quantization, mirroring, and human in-engine validation are the next milestone;
+- runtime import, mouse-driven angle quantization, mirroring, renderer ownership, and automated in-engine validation are implemented for Idle;
+- human native-scale Idle approval remains the next gate;
 - Run/Fall aim and Jump/Land/Roll carry art deliberately wait until the Idle pipeline proves itself in Unity.
 
 This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
@@ -105,7 +106,7 @@ Do not generate all twenty complete weapon packages before validating the pipeli
 1. Complete and validate the layered unarmed player. **Done.**
 2. Choose one representative first weapon. **Longwatch DMR chosen.**
 3. Produce its right-facing 19-direction Idle presentation. **Done.**
-4. Validate import, pivot, 360° mirrored visual aim, animation synchronization, and armed presenter ownership in Unity. **Next.**
+4. Validate import, pivot, 360° mirrored visual aim, animation synchronization, and armed presenter ownership in Unity. **Automated validation done; human visual approval pending.**
 5. Expand the accepted Longwatch contract to Run/Fall aim and non-firing carry states.
 6. Freeze the reusable weapon art/import/runtime convention.
 7. Expand into the remaining roster in controlled batches.
