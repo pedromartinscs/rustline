@@ -42,7 +42,9 @@ Production PNGs under `Assets/Art/` (excluding editable/reference files under `A
 
 The baseline is enforced by `Assets/Editor/RustlinePixelArtPostprocessor.cs`. Known fixed sheets and the M0 showcase are rebuilt with **Tools → Rustline → Rebuild M0 Art Showcase**.
 
-Player sheets use complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. Simple horizontal strips remain sliced left-to-right; directional armed sheets may use the documented multi-row grid in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md). The industrial structural atlas is always sliced into all **48** fixed **16×16** cells. Its documented logical rows run top-to-bottom, so the editor setup deliberately converts them to Unity's bottom-origin sprite coordinates without changing slot names or semantics.
+Body and Unarmed Arms player sheets use complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. Armed overlays may use a larger fixed cell when the weapon silhouette needs authored space outside the Body cell, provided the armed pivot represents the exact same body reference point. The first approved armed geometry is the Longwatch DMR **80×96** cell with Body reference rectangle `x=0, y=8, w=48, h=64` and armed pivot `(24,8)` px / normalized `(0.30, 0.083333333...)`. The complete contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
+
+The industrial structural atlas is always sliced into all **48** fixed **16×16** cells. Its documented logical rows run top-to-bottom, so the editor setup deliberately converts them to Unity's bottom-origin sprite coordinates without changing slot names or semantics.
 
 ### Environment
 
@@ -59,17 +61,18 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 ### Player
 
 - Side-view humanoid
-- Canonical production cell: **48×64 px**
+- Canonical Body / Unarmed Arms production cell: **48×64 px**
 - Target visible character height: approximately **42–48 px**
-- Player presentation is decomposed into perfectly aligned Body and Arms/Weapon layers
+- Player presentation is decomposed into aligned Body and Arms/Weapon layers
 - Unarmed Body + Unarmed Arms must produce the accepted coherent layered appearance; deliberate decomposition retouching means historical composites are diagnostic references, not pixel-equality targets
-- Armed aiming uses authored full-cell directional overlays rather than free runtime rotation of the final pixel art
+- Armed aiming uses authored fixed-cell directional overlays rather than free runtime rotation of the final pixel art
+- The first Longwatch DMR armed aim overlay uses **80×96 px** cells around the unchanged 48×64 Body reference, with 32 px additional forward space, 24 px above, and 8 px below
 - Body animation must remain readable when horizontally flipped
 - The three-frame Jump takeoff uses explicit keys at 0.00, 0.10, and 0.26 seconds: 100 ms of Y-anchored compression, 160 ms of cubic eased catch-up, then a held layered ascent pose; X and the camera continue following the physical root, and Fall remains velocity-selected
 - Grounded takeoff dust is a separate three-frame, 48×64 world-space one-shot at the player pivot; it snapshots facing, stays on the floor, and is omitted for coyote jumps
 - Initial canonical pose: neutral, unarmed, facing right
 
-The complete Body/Arms decomposition, directional-aim sprite, naming, folder, mirroring, and locomotion-state contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
+The complete Body/Arms decomposition, armed-cell geometry, directional-aim sprite, naming, folder, mirroring, and locomotion-state contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
 
 ### Enemies
 
@@ -130,9 +133,11 @@ The penumbra is intended to become a gameplay-readable boundary as well as an ae
 
 Rustline separates **continuous gameplay aim** from **authored visual aim**.
 
-The gameplay direction may be mathematically continuous for mouse/gamepad targeting, projectiles, and hitscan. The player artwork uses discrete authored full-cell arm/weapon overlays at 10-degree intervals.
+The gameplay direction may be mathematically continuous for mouse/gamepad targeting, projectiles, and hitscan. The player artwork uses discrete authored arm/weapon overlays at 10-degree intervals. For right-facing artwork, `0°` is horizontal, positive angles aim upward, and negative angles aim downward.
 
 The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, and Fall are currently aim/fire-capable. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
+
+The **Longwatch DMR** is the first pipeline-validation weapon. Its full right-facing Idle set is authored as 19 direction-specific `160×96` sheets, each containing two `80×96` Idle cells. This is intentionally being validated in Unity before producing the much larger Run/Fall/carry package.
 
 This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
 
@@ -185,9 +190,11 @@ Once an original Rustline visual baseline exists, prefer Rustline's own artwork 
 
 ### Weapons
 
-- First representative weapon presentation package
-- 19 authored right-facing aim directions for aim-capable states
-- Carry-only armed poses for non-firing movement states
+- Longwatch DMR standalone/reference concept
+- Longwatch DMR Idle: 19 authored right-facing aim directions × 2 Idle frames
+- Unity import + 360° mirrored Idle aim validation
+- Longwatch Run/Fall aim only after Idle pipeline approval
+- Longwatch carry-only armed poses for non-firing movement states after Idle approval
 - Remaining initial arsenal from [`WEAPONS.md`](WEAPONS.md) after pipeline validation
 
 ### Environment
