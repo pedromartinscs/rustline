@@ -1,19 +1,21 @@
 # Rustline Player / Weapon Art Pipeline
 
-This document defines the production contract for the Rustline player presentation before M2 gunplay implementation.
+This document defines the production contract for the Rustline layered player and authored weapon presentation used by M2 gunplay.
 
-The goal is to preserve authored pixel-art quality while supporting a large weapon roster and directional aiming. Runtime transform rotation of a complete weapon/arm rig is not the canonical production solution.
+The goal is to preserve authored pixel-art quality while supporting a large weapon roster and directional aiming. Runtime transform rotation of the final arm/weapon artwork is not the canonical production solution.
 
 ## Core decision
 
 The player is a layered sprite character.
 
-The historical composite player artwork was decomposed into two perfectly aligned visual layers:
+The historical composite player artwork was decomposed into two aligned visual layers:
 
 1. **Body** — head, torso, legs, equipment, and every non-arm pixel.
-2. **Arms** — the arm/hand pixels that complete the current pose.
+2. **Arms / Weapon overlay** — the arm/hand pixels that complete the current pose, plus the equipped weapon when armed.
 
-Both layers use the same canonical **48×64 px** cell, the same bottom-center pivot `(0.5, 0.0)`, the same frame boundaries, and the same animation timing.
+The Body remains in the canonical **48×64 px** player cell. Unarmed Arms also remain **48×64 px** and share the same bottom-center pivot `(0.5, 0.0)`, frame boundaries, and animation timing.
+
+Armed overlays are allowed to use a larger authored cell when the weapon silhouette needs space outside the Body cell. The first validated armed geometry is the Longwatch DMR **80×96 px** cell documented below.
 
 For an unarmed player:
 
@@ -25,29 +27,26 @@ Unarmed Arms layer
 accepted layered player appearance
 ```
 
-The first implementation milestone proves this decomposition with idle/run/jump/fall/land artwork before any weapon artwork is integrated.
-
 The old root-level composite player PNGs were intentionally removed from HEAD in `5cf163b`. They must not be restored as production assets. Historical copies remain recoverable from Git history at `da2fbb96c051c9402f46ca220138d6c7eb57ef79` for informational comparison only.
 
-The authored split is not a literal pixel subtraction. Adjacent body pixels were deliberately retouched where the historical composite contained arm-dependent shading, occlusion, contouring, or cleanup. The accepted diagnostic comparison contains 372 visible differences across the 14 frames, including 55 alpha/silhouette differences. RGB values beneath fully transparent pixels are ignored for visual-equivalence diagnostics and must not be sanitized merely to reduce raw RGBA mismatch counts.
+The authored split is not a literal pixel subtraction. Adjacent body pixels may be deliberately retouched where a historical composite contained arm-dependent shading, occlusion, contouring, or cleanup. Historical composite comparison is a visual diagnostic, not a byte-equality oracle.
 
-## Why full-cell overlays
+## Why authored full-cell overlays
 
-Arms and armed poses are authored as **full 48×64 aligned sprite cells**, not as a small floating sprite plus a runtime position coordinate.
+Arms and armed poses are authored in fixed transparent cells, not as a small floating sprite plus a runtime shoulder coordinate.
 
 This intentionally trades asset count for absolute artistic control. Rustline production sprites are tiny, so storage cost is negligible compared with the benefit of deterministic alignment and authored silhouettes.
 
-A full-cell transparent overlay means:
+A fixed-cell transparent overlay means:
 
 - every arm/weapon pixel has its final production position;
-- no per-state shoulder coordinate is required merely to line up an overlay;
-- body and overlay can be composited directly at the same transform/pivot;
-- GIMP/XCF source files can preserve exact frame alignment;
-- pixel-art cleanup is performed once in authored art instead of delegated to runtime rotation/resampling.
+- no per-state shoulder coordinate is required merely to line up the overlay;
+- Body and overlay share one world-space body reference point;
+- GIMP/XCF source files preserve exact frame alignment;
+- pixel-art cleanup is performed once in authored art instead of delegated to runtime rotation/resampling;
+- different overlay cell sizes may coexist as long as their pivots represent the same body reference point.
 
 ## Unarmed production sheets
-
-Create a matching Body and Unarmed Arms sheet for every current locomotion state.
 
 Canonical production filenames:
 
@@ -72,17 +71,75 @@ player_salvager_body_roll.png
 player_salvager_arms_roll.png
 ```
 
-Each Body/Arms pair must preserve the source sheet's frame count, frame order, cell dimensions, and timing.
+Each Body/Unarmed Arms pair preserves the source sheet's frame count, frame order, **48×64** cell dimensions, pivot, and timing.
+
+## Armed overlay geometry
+
+### Current canonical first-weapon cell
+
+The Longwatch DMR establishes the first production armed overlay geometry:
+
+```text
+armed overlay cell = 80×96 px
+PPU                = 16
+```
+
+Inside each right-facing `80×96` armed cell, the canonical `48×64` Body reference rectangle is:
+
+```text
+x      = 0
+ y     = 8
+width  = 48
+height = 64
+```
+
+Equivalent authored padding relative to the Body reference is:
+
+```text
+left   = 0 px
+right  = 32 px
+top    = 24 px
+bottom = 8 px
+```
+
+The Body and armed overlay must represent the same world-space body pivot. Therefore the armed sprite pivot is:
+
+```text
+pivot in armed-cell pixels = (24, 8)
+normalized pivot           = (24/80, 8/96)
+                           = (0.30, 0.083333333...)
+```
+
+The Body itself remains:
+
+```text
+Body cell  = 48×64
+Body pivot = (24, 0) px = normalized (0.5, 0.0)
+```
+
+This lets `BodySpriteRenderer` and `ArmsWeaponSpriteRenderer` remain on the same transform without a weapon-specific runtime position offset.
+
+For right-facing authored art, the extra 32 horizontal pixels live in front of the character. Horizontal `flipX` moves that extra space to the opposite side when the player faces left, while preserving the common pivot.
+
+The `80×96` geometry is the approved Longwatch first-weapon contract. Future weapons should reuse it when practical. A larger armed cell may be introduced only when a real silhouette demonstrably requires it; do not shrink or distort artwork merely to satisfy an arbitrary cell size.
 
 ## Armed aiming model
 
 Rustline uses **continuous gameplay aim** but **discrete authored visual aim sprites**.
 
-Gameplay systems may retain the exact mouse/stick aim vector for projectile/hitscan direction. The player artwork selects the nearest authored direction.
+Gameplay systems retain the exact mouse/stick aim vector for projectile/hitscan direction. The player artwork selects the nearest authored direction.
+
+### Angle convention
+
+For right-facing authored artwork:
+
+- `0°` is perfectly horizontal to the right;
+- positive angles point upward;
+- negative angles point downward.
 
 ### Canonical right-facing aim set
 
-Every aim-capable armed state is authored facing right at 10-degree intervals from vertical up to vertical down:
+Every aim-capable armed state is authored facing right at 10-degree intervals:
 
 ```text
 +90
@@ -108,41 +165,89 @@ Every aim-capable armed state is authored facing right at 10-degree intervals fr
 
 That is **19 authored directions** and 18 intervals.
 
-Horizontal mirroring supplies the opposite hemisphere. The two vertical directions are shared geometrically, yielding 36 unique 10-degree directions around the full circle.
+Horizontal mirroring supplies the opposite hemisphere. The two vertical directions are shared geometrically, yielding 36 unique 10-degree visual directions around the full circle. Maximum visual angular error is 5 degrees while gameplay aim remains continuous.
 
-Maximum visual angular error is 5 degrees while gameplay aim remains continuous.
+## Armed sheet storage contract
 
-### Important terminology
+A **sprite** means one individually authored final armed cell. It does not need to be stored as a separate PNG file.
 
-A **sprite** here means an individually authored final 48×64 sprite cell. It does not need to be stored as a separate PNG file.
-
-For efficient production, multiple sprites should normally be packed into one sheet.
-
-For an aim-capable animation with `F` animation frames, the recommended sheet grid is:
+For the first Longwatch DMR Idle package, each aim direction is stored as one horizontal two-frame PNG:
 
 ```text
-columns = 19 aim directions, ordered +90 ... 0 ... -90
-rows    = F animation frames, in normal animation order
-cell    = 48×64 px
+sheet size = 160×96 px
+cell size  = 80×96 px
+frame 0    = left cell
+frame 1    = right cell
 ```
 
-Therefore a four-frame run sheet contains `19 × 4 = 76` authored sprite cells. This is deliberate. Every `animation frame × aim direction` combination may be corrected independently in GIMP.
+There are 19 direction sheets, therefore **38 final Idle armed sprites**.
 
-Suggested armed sheet naming:
+Production folder:
 
 ```text
-player_salvager_<weapon_id>_idle_aim.png
-player_salvager_<weapon_id>_run_aim.png
-player_salvager_<weapon_id>_fall_aim.png
+Assets/Art/Characters/Player/Sprites/Arms/Armed/
+└── longwatch_dmr/
+    └── Aim/
+        └── Idle/
 ```
 
-Example:
+Canonical Longwatch Idle filenames:
 
 ```text
-player_salvager_latch_9_idle_aim.png
-player_salvager_latch_9_run_aim.png
-player_salvager_latch_9_fall_aim.png
+player_salvager_longwatch_dmr_idle_aim_p90.png
+player_salvager_longwatch_dmr_idle_aim_p80.png
+player_salvager_longwatch_dmr_idle_aim_p70.png
+player_salvager_longwatch_dmr_idle_aim_p60.png
+player_salvager_longwatch_dmr_idle_aim_p50.png
+player_salvager_longwatch_dmr_idle_aim_p40.png
+player_salvager_longwatch_dmr_idle_aim_p30.png
+player_salvager_longwatch_dmr_idle_aim_p20.png
+player_salvager_longwatch_dmr_idle_aim_p10.png
+player_salvager_longwatch_dmr_idle_aim_0.png
+player_salvager_longwatch_dmr_idle_aim_m10.png
+player_salvager_longwatch_dmr_idle_aim_m20.png
+player_salvager_longwatch_dmr_idle_aim_m30.png
+player_salvager_longwatch_dmr_idle_aim_m40.png
+player_salvager_longwatch_dmr_idle_aim_m50.png
+player_salvager_longwatch_dmr_idle_aim_m60.png
+player_salvager_longwatch_dmr_idle_aim_m70.png
+player_salvager_longwatch_dmr_idle_aim_m80.png
+player_salvager_longwatch_dmr_idle_aim_m90.png
 ```
+
+`p` means positive/upward and `m` means negative/downward. Avoid `+` and `-` characters in production filenames.
+
+The earlier proposal to manually author one giant 19-column multi-row PNG is superseded for the first weapon by these per-angle sheets. A build/import tool may pack or index sprites internally later, but manual atlas assembly is not a production requirement.
+
+For future Run/Fall aim-capable art, preserve the same principles:
+
+- one authored sprite for every `animation frame × aim direction` combination;
+- fixed armed-cell geometry and common body pivot;
+- deterministic frame order;
+- direction naming using `pNN`, `0`, `mNN`;
+- do not infer arm placement through runtime rotation.
+
+## Longwatch DMR first-weapon source art
+
+The Longwatch DMR is the first representative weapon used to validate the armed pipeline.
+
+Editable authored source:
+
+```text
+ArtSource/Characters/Player/player_salvager_idle_armed.xcf
+```
+
+Versioned concept/reference art includes:
+
+```text
+ArtSource/Concepts/Longwatch_DMR_concept.png
+ArtSource/Concepts/Longwatch_DMR_zero_degrees_concept.png
+ArtSource/Concepts/Player_concept.png
+```
+
+The standalone weapon concept is a design reference. The final production authority for hand placement, silhouette, palette, and per-angle pixel cleanup is the authored Arms/Weapon overlay artwork.
+
+The Longwatch Idle package is currently authored and versioned for all 19 right-facing angles. Runtime armed-aim integration is the next implementation milestone; Run/Fall aim and Jump/Land/Roll carry art are intentionally not required before the Idle pipeline is validated in Unity.
 
 ## Aim/fire locomotion rules
 
@@ -172,45 +277,46 @@ player_salvager_<weapon_id>_land_carry.png
 player_salvager_<weapon_id>_roll_carry.png
 ```
 
-This restriction is an intentional gameplay/animation decision, not an asset-production shortcut. Aim input may still be tracked internally so aiming resumes immediately when the character returns to an aim-capable state.
+Aim input may still be tracked internally so aiming resumes immediately when the character returns to an aim-capable state.
 
 ## Facing and mirroring
 
 Production player/weapon artwork is authored facing right.
 
-The runtime horizontally mirrors the player presentation when aim crosses into the left hemisphere.
+The runtime horizontally mirrors the complete player presentation when aim crosses into the left hemisphere. Body and Arms/Weapon must use the same facing state.
 
-Do not double the entire arsenal merely to preserve asymmetrical weapon details such as ejection ports. A dedicated left-facing artwork variant may be added later for a specific weapon only when mirroring creates a meaningful visual problem.
+Do not double the arsenal merely to preserve asymmetrical details such as ejection ports. A dedicated left-facing artwork variant may be added later for a specific weapon only when mirroring creates a meaningful visual problem.
 
 ## Layering contract
 
-Initial runtime layering should conceptually remain simple:
+Runtime layering remains conceptually simple:
 
 ```text
-PlayerRoot
-├── BodySprite
-└── ArmsWeaponSprite
+Player
+└── Visual
+    ├── BodySpriteRenderer
+    └── ArmsWeaponSpriteRenderer
 ```
 
 Unarmed:
 
 ```text
-BodySprite      = body animation
-ArmsWeaponSprite = matching unarmed-arms animation
+BodySpriteRenderer      = Body animation sprite
+ArmsWeaponSpriteRenderer = matching 48×64 Unarmed Arms sprite
 ```
 
 Armed:
 
 ```text
-BodySprite      = body animation
-ArmsWeaponSprite = selected weapon overlay sprite
+BodySpriteRenderer      = Body animation sprite
+ArmsWeaponSpriteRenderer = selected 80×96 weapon overlay sprite
 ```
 
-If a future weapon requires more sophisticated overlap, the authored source may later be split into rear-arm / weapon / front-arm visual layers. Do not introduce that complexity until a real visual need appears.
+The renderer transform does not move when switching between unarmed and Longwatch artwork; sprite pivots encode the shared body reference.
+
+If a future weapon requires more sophisticated overlap, source art may later be split into rear-arm / weapon / front-arm visual layers. Do not introduce that complexity until a real visual need appears.
 
 ## Production folder contract
-
-New layered production art should use this hierarchy:
 
 ```text
 Assets/Art/Characters/Player/
@@ -221,7 +327,13 @@ Assets/Art/Characters/Player/
 │       └── Armed/
 │           └── <weapon_id>/
 │               ├── Aim/
+│               │   ├── Idle/
+│               │   ├── Run/
+│               │   └── Fall/
 │               └── Carry/
+│                   ├── Jump/
+│                   ├── Land/
+│                   └── Roll/
 └── Animations/
     ├── Body/
     └── Arms/
@@ -229,11 +341,11 @@ Assets/Art/Characters/Player/
         └── Armed/
 ```
 
-The layered production hierarchy is now authoritative. Historical root-level composite sheets are absent from HEAD by design.
+Not every future folder must exist before its art exists. Do not create empty hierarchy merely for aesthetics.
 
-Editable source artwork should be kept separately from production PNGs. When source-art storage is introduced, use the documented source-art exclusion convention rather than treating XCF files as runtime production sprites.
+Editable XCF and large reference/concept artwork belongs under top-level `ArtSource/`, outside Unity `Assets/`, so Unity does not import authoring files as runtime assets.
 
-## Unity animation naming
+## Existing runtime presentation
 
 Implemented Body clip names:
 
@@ -245,37 +357,45 @@ Player_Body_Fall.anim
 Player_Body_Land.anim
 ```
 
-`Player_Body_Jump.anim` is a non-looping takeoff sequence with non-uniform Body keys at `0.00`, `0.10`, and `0.26` seconds. Frame 1 is a 100 ms Y-anchored compression pose; Frame 2 is a 160 ms leg-extension pose with cubic ease-out catch-up to the root's current normal Visual position; Frame 3 is held while the locomotion state remains Jump. The shared Visual parent keeps Body and Arms positionally identical, and the explicit map supplies the matching Arms frame. Fall still takes over through the existing velocity-based state selection. X movement, physical impulse, and camera root-follow are unchanged.
+`Player_Body_Jump.anim` is a non-looping takeoff sequence with Body keys at `0.00`, `0.10`, and `0.26` seconds. Frame 1 is a 100 ms Y-anchored compression pose; Frame 2 is a 160 ms leg-extension pose with cubic ease-out catch-up to the root's current normal Visual position; Frame 3 is held while locomotion remains Jump. X movement, physical impulse, and camera root-follow are unchanged.
 
-Jump dust is separate production art at `Assets/Art/Effects/Movement/player_jump_dust.png`: three 48×64 bottom-center-pivot cells in the same full-cell authoring space as the player. A grounded jump spawns its serialized one-shot prefab at the takeoff world position and facing; it stays in world space for three 80 ms frames and then destroys itself. Coyote jumps do not spawn dust, and landing dust is not part of this pass.
+Jump dust is separate production art at `Assets/Art/Effects/Movement/player_jump_dust.png`: three 48×64 bottom-center-pivot cells. A grounded jump spawns its serialized one-shot prefab at the takeoff world position and facing; coyote jumps do not spawn dust.
 
-The runtime deliberately does not create a second set of Arms AnimationClips or a second Animator. The sole Animator drives `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite in `LateUpdate`, looks it up in an explicit serialized 14-entry Body-to-Arms map, and changes `ArmsWeaponSpriteRenderer.sprite` only when the Body sprite changes. The lookup dictionary is built once at initialization; runtime asset searches, string parsing, LINQ, `Resources.Load`, and `AssetDatabase` are not used per frame.
+The runtime deliberately uses one Animator on `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite and maps it to the matching Unarmed Arms sprite. A future equipped-weapon presenter takes ownership of `ArmsWeaponSpriteRenderer` while armed and returns ownership when unequipped; do not add a second Animator merely for armed aiming.
 
-`PlayerAnimator2D` continues to select locomotion states, maintain the landing presentation timer, and determine movement-facing. It writes the same `flipX` value to both renderers. A future equipped-weapon presenter can call `SetRendererOwnership(false)` on the unarmed presenter before taking over `ArmsWeaponSpriteRenderer`, then restore unarmed ownership with `SetRendererOwnership(true)` when appropriate.
+`PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 
-Weapon-specific animation/runtime naming will be finalized after the first weapon presentation package is produced and tested.
+## First weapon implementation sequence
 
-## First implementation sequence
+Completed foundations:
 
 1. Author Body and Unarmed Arms production layers.
-2. Preserve exact 48×64 cells, frame counts, frame order, pivots, and timing.
-3. Implement two synchronized player sprite layers in Unity.
-4. Validate idle/run/jump/fall/land as a coherent layered presentation; historical composite comparison is diagnostic rather than an equality gate.
-5. Only after that validation, produce one complete weapon presentation package.
-6. Validate the 19-direction aim system in idle/run/fall plus carry-only jump/land/roll behavior.
-7. Freeze the weapon-art sheet/import contract.
-8. Scale the pipeline to the planned arsenal.
+2. Implement and validate synchronized layered unarmed presentation.
+3. Freeze movement/jump presentation v1.
+4. Choose the Longwatch DMR as the first representative weapon.
+5. Author Longwatch Idle at all 19 right-facing directions using two Idle frames per direction.
+
+Next implementation milestone:
+
+6. Import/slice all Longwatch Idle direction sheets as **80×96** cells with pivot `(24,8)` / normalized `(0.30, 0.083333333...)`.
+7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere.
+8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or locomotion semantics.
+9. Validate all 19 directions, both Idle frames, full 360° mirroring, transform/pivot stability, palette/import rules, and no frame lag or gaps.
+10. Only after Idle is human-approved, expand the Longwatch package to Run/Fall aim and Jump/Land/Roll carry poses.
+11. Freeze the reusable armed import/presenter contract, then scale to additional weapons.
 
 ## Non-negotiable pixel-art rules
 
 All existing Rustline production rules still apply:
 
-- canonical 48×64 player cells;
-- 16 PPU;
+- Body and Unarmed Arms cells remain canonical **48×64**;
+- Longwatch armed aim cells are **80×96** with the documented common-body pivot;
+- **16 PPU**;
 - Point filtering;
 - Full Rect meshes;
 - binary alpha only;
 - no antialiasing;
 - Rustline Canonical 28 plus transparency only;
-- horizontal mirroring must preserve readability;
+- no importer rescaling of production pixels;
+- horizontal mirroring must preserve Body/Weapon alignment;
 - judge final poses at native gameplay scale.
