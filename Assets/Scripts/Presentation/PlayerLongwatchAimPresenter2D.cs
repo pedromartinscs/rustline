@@ -17,15 +17,47 @@ namespace Rustline.Presentation
         public Sprite GetFrame(int frameIndex) => frameIndex == 0 ? frame0 : frame1;
     }
 
+    [Serializable]
+    public struct LongwatchRunAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+        [SerializeField] private Sprite frame1;
+        [SerializeField] private Sprite frame2;
+        [SerializeField] private Sprite frame3;
+        [SerializeField] private Sprite frame4;
+        [SerializeField] private Sprite frame5;
+
+        public int AngleDegrees => angleDegrees;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            switch (frameIndex)
+            {
+                case 0: return frame0;
+                case 1: return frame1;
+                case 2: return frame2;
+                case 3: return frame3;
+                case 4: return frame4;
+                case 5: return frame5;
+                default: throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
+    }
+
     /// <summary>
-    /// Owns the shared overlay renderer only while the prototype Longwatch is Idle.
-    /// Body remains Animator-driven; the displayed Body Idle frame selects the matching
-    /// authored weapon frame at the nearest ten-degree aim pose.
+    /// Owns the shared overlay renderer while the prototype Longwatch is in an
+    /// authored aim-capable state. Body remains Animator-driven; its displayed
+    /// frame selects the matching weapon frame at the nearest ten-degree pose.
     /// </summary>
     [DefaultExecutionOrder(100)]
     [DisallowMultipleComponent]
-    public sealed class PlayerLongwatchIdleAimPresenter2D : MonoBehaviour
+    public sealed class PlayerLongwatchAimPresenter2D : MonoBehaviour
     {
+        public const float AimOriginOffsetSourcePixels = 38f;
+        public const float SourcePixelsPerUnit = 16f;
+        public const float AimOriginOffsetWorldUnits = AimOriginOffsetSourcePixels / SourcePixelsPerUnit;
+
         [SerializeField] private PlayerInputReader input;
         [SerializeField] private PlayerAnimator2D playerAnimator;
         [SerializeField] private PlayerUnarmedArmsPresenter2D unarmedPresenter;
@@ -33,7 +65,9 @@ namespace Rustline.Presentation
         [SerializeField] private SpriteRenderer armsWeaponSpriteRenderer;
         [SerializeField] private NativePixelPresentation nativePixelPresentation;
         [SerializeField] private Sprite[] bodyIdleFrames = Array.Empty<Sprite>();
-        [SerializeField] private LongwatchIdleAimPose[] aimPoses = Array.Empty<LongwatchIdleAimPose>();
+        [SerializeField] private LongwatchIdleAimPose[] idleAimPoses = Array.Empty<LongwatchIdleAimPose>();
+        [SerializeField] private Sprite[] bodyRunFrames = Array.Empty<Sprite>();
+        [SerializeField] private LongwatchRunAimPose[] runAimPoses = Array.Empty<LongwatchRunAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private Vector2 _continuousAimDirection = Vector2.right;
@@ -49,15 +83,20 @@ namespace Rustline.Presentation
         public SpriteRenderer ArmsWeaponSpriteRenderer => armsWeaponSpriteRenderer;
         public NativePixelPresentation NativePixelPresentation => nativePixelPresentation;
         public int BodyIdleFrameCount => bodyIdleFrames?.Length ?? 0;
-        public int AimPoseCount => aimPoses?.Length ?? 0;
+        public int BodyRunFrameCount => bodyRunFrames?.Length ?? 0;
+        public int IdleAimPoseCount => idleAimPoses?.Length ?? 0;
+        public int RunAimPoseCount => runAimPoses?.Length ?? 0;
         public bool OwnsRenderer => _ownsRenderer;
         public bool HasValidAim => _hasValidAim;
         public LongwatchAimSelection Selection => _selection;
         public Vector2 ContinuousAimDirection => _continuousAimDirection;
+        public Vector3 AimOriginWorld => bodySpriteRenderer == null
+            ? Vector3.up * AimOriginOffsetWorldUnits
+            : bodySpriteRenderer.transform.position + Vector3.up * AimOriginOffsetWorldUnits;
 
         private void LateUpdate()
         {
-            if (!CanPresentIdle(out int bodyFrameIndex))
+            if (!CanOwnRenderer())
             {
                 ReleaseRenderer();
                 return;
@@ -66,6 +105,11 @@ namespace Rustline.Presentation
             UpdateAimSelection();
             AcquireRenderer();
             playerAnimator.SetFacingOverride(true, _selection.FlipX);
+
+            if (!TryResolveDisplayedBodyFrame(out bool isRunFrame, out int bodyFrameIndex))
+            {
+                return;
+            }
 
             int directionIndex = _selection.DirectionIndex;
             Sprite bodySprite = bodySpriteRenderer.sprite;
@@ -76,7 +120,9 @@ namespace Rustline.Presentation
 
             _lastBodySprite = bodySprite;
             _lastDirectionIndex = directionIndex;
-            armsWeaponSpriteRenderer.sprite = aimPoses[directionIndex].GetFrame(bodyFrameIndex);
+            armsWeaponSpriteRenderer.sprite = isRunFrame
+                ? runAimPoses[directionIndex].GetFrame(bodyFrameIndex)
+                : idleAimPoses[directionIndex].GetFrame(bodyFrameIndex);
         }
 
         private void OnDisable()
@@ -84,9 +130,14 @@ namespace Rustline.Presentation
             ReleaseRenderer();
         }
 
-        public LongwatchIdleAimPose GetAimPose(int index)
+        public LongwatchIdleAimPose GetIdleAimPose(int index)
         {
-            return aimPoses[index];
+            return idleAimPoses[index];
+        }
+
+        public LongwatchRunAimPose GetRunAimPose(int index)
+        {
+            return runAimPoses[index];
         }
 
         public Sprite GetBodyIdleFrame(int index)
@@ -94,32 +145,53 @@ namespace Rustline.Presentation
             return bodyIdleFrames[index];
         }
 
-        private bool CanPresentIdle(out int bodyFrameIndex)
+        public Sprite GetBodyRunFrame(int index)
         {
-            bodyFrameIndex = -1;
+            return bodyRunFrames[index];
+        }
+
+        private bool CanOwnRenderer()
+        {
             if (input == null || playerAnimator == null || unarmedPresenter == null ||
                 bodySpriteRenderer == null || armsWeaponSpriteRenderer == null ||
                 nativePixelPresentation == null || nativePixelPresentation.WorldCamera == null ||
                 bodyIdleFrames == null || bodyIdleFrames.Length != 2 ||
-                aimPoses == null || aimPoses.Length != 19 ||
-                playerAnimator.CurrentState != PlayerAnimationState.Idle)
+                idleAimPoses == null || idleAimPoses.Length != 19 ||
+                bodyRunFrames == null || bodyRunFrames.Length != 6 ||
+                runAimPoses == null || runAimPoses.Length != 19)
             {
                 return false;
             }
 
+            PlayerAnimationState? state = playerAnimator.CurrentState;
+            return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run;
+        }
+
+        private bool TryResolveDisplayedBodyFrame(out bool isRunFrame, out int frameIndex)
+        {
             Sprite displayedBody = bodySpriteRenderer.sprite;
-            if (displayedBody == bodyIdleFrames[0])
+            for (int index = 0; index < bodyIdleFrames.Length; index++)
             {
-                bodyFrameIndex = 0;
-                return true;
+                if (displayedBody == bodyIdleFrames[index])
+                {
+                    isRunFrame = false;
+                    frameIndex = index;
+                    return true;
+                }
             }
 
-            if (displayedBody == bodyIdleFrames[1])
+            for (int index = 0; index < bodyRunFrames.Length; index++)
             {
-                bodyFrameIndex = 1;
-                return true;
+                if (displayedBody == bodyRunFrames[index])
+                {
+                    isRunFrame = true;
+                    frameIndex = index;
+                    return true;
+                }
             }
 
+            isRunFrame = false;
+            frameIndex = -1;
             return false;
         }
 
@@ -130,11 +202,11 @@ namespace Rustline.Presentation
                 input.PointerScreenPosition,
                 viewport);
             Camera worldCamera = nativePixelPresentation.WorldCamera;
-            Vector3 bodyPivotWorld = bodySpriteRenderer.transform.position;
-            float playerViewportDepth = worldCamera.WorldToViewportPoint(bodyPivotWorld).z;
+            Vector3 aimOriginWorld = AimOriginWorld;
+            float playerViewportDepth = worldCamera.WorldToViewportPoint(aimOriginWorld).z;
             Vector3 pointerWorld = worldCamera.ViewportToWorldPoint(
                 new Vector3(viewportPosition.x, viewportPosition.y, playerViewportDepth));
-            Vector2 aimVector = (Vector2)(pointerWorld - bodyPivotWorld);
+            Vector2 aimVector = (Vector2)(pointerWorld - aimOriginWorld);
             if (LongwatchAimMath.TrySelect(aimVector, _hasValidAim, _selection, out LongwatchAimSelection next))
             {
                 _selection = next;
