@@ -25,6 +25,8 @@ namespace Rustline.Editor
         private const string UnarmedArmsSpriteRoot = PlayerRoot + "/Sprites/Arms/Unarmed";
         private const string LongwatchIdleAimRoot =
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Idle";
+        private const string LongwatchRunAimRoot =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
@@ -51,7 +53,7 @@ namespace Rustline.Editor
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_land", 2),
         };
 
-        private static readonly LongwatchDirectionSpec[] LongwatchIdleDirections =
+        private static readonly LongwatchDirectionSpec[] LongwatchDirections =
         {
             new LongwatchDirectionSpec("p90", 90),
             new LongwatchDirectionSpec("p80", 80),
@@ -119,8 +121,10 @@ namespace Rustline.Editor
 
             internal string Suffix { get; }
             internal int AngleDegrees { get; }
-            internal string FileName => "player_salvager_longwatch_dmr_idle_aim_" + Suffix;
-            internal string AssetPath => LongwatchIdleAimRoot + "/" + FileName + ".png";
+            internal string IdleFileName => "player_salvager_longwatch_dmr_idle_aim_" + Suffix;
+            internal string IdleAssetPath => LongwatchIdleAimRoot + "/" + IdleFileName + ".png";
+            internal string RunFileName => "player_salvager_longwatch_dmr_run_aim_" + Suffix;
+            internal string RunAssetPath => LongwatchRunAimRoot + "/" + RunFileName + ".png";
         }
 
         private sealed class PreviewAsset
@@ -190,7 +194,7 @@ namespace Rustline.Editor
             EnsureFolder(TileAssetRoot);
 
             ConfigurePlayerSheets();
-            ConfigureLongwatchIdleAimSheets();
+            ConfigureLongwatchAimSheets();
             ConfigureJumpDust();
             ConfigureEnvironmentAtlas();
             MoveLegacyBodyAnimationClips();
@@ -239,16 +243,24 @@ namespace Rustline.Editor
                 logicalRowsRunTopToBottom: true);
         }
 
-        private static void ConfigureLongwatchIdleAimSheets()
+        private static void ConfigureLongwatchAimSheets()
         {
-            foreach (LongwatchDirectionSpec direction in LongwatchIdleDirections)
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
             {
                 ConfigureFixedGrid(
-                    direction.AssetPath,
+                    direction.IdleAssetPath,
                     80,
                     96,
                     2,
-                    index => direction.FileName + "_" + index,
+                    index => direction.IdleFileName + "_" + index,
+                    new Vector2(0.3f, 8f / 96f),
+                    logicalRowsRunTopToBottom: false);
+                ConfigureFixedGrid(
+                    direction.RunAssetPath,
+                    80,
+                    96,
+                    6,
+                    index => direction.RunFileName + "_" + index,
                     new Vector2(0.3f, 8f / 96f),
                     logicalRowsRunTopToBottom: false);
             }
@@ -858,6 +870,7 @@ namespace Rustline.Editor
             }
 
             ValidateLongwatchIdleAimSheets();
+            ValidateLongwatchRunAimSheets();
 
             ValidateImporter(JumpDustPath);
             ValidateSpriteGrid(
@@ -977,11 +990,11 @@ namespace Rustline.Editor
             string absoluteRoot = Path.Combine(projectRoot, LongwatchIdleAimRoot);
             Require(Directory.Exists(absoluteRoot), "Longwatch Idle aim source folder is missing.");
             string[] actualPngs = Directory.GetFiles(absoluteRoot, "*.png", SearchOption.TopDirectoryOnly);
-            Require(actualPngs.Length == LongwatchIdleDirections.Length,
+            Require(actualPngs.Length == LongwatchDirections.Length,
                 "Longwatch Idle aim folder must contain exactly the 19 expected direction PNGs.");
 
             HashSet<string> expectedFiles = new HashSet<string>(
-                LongwatchIdleDirections.Select(direction => direction.FileName + ".png"),
+                LongwatchDirections.Select(direction => direction.IdleFileName + ".png"),
                 StringComparer.OrdinalIgnoreCase);
             foreach (string actualPath in actualPngs)
             {
@@ -989,22 +1002,64 @@ namespace Rustline.Editor
                     "Unexpected Longwatch Idle aim direction file: " + Path.GetFileName(actualPath));
             }
 
-            foreach (LongwatchDirectionSpec direction in LongwatchIdleDirections)
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
             {
-                ValidateImporter(direction.AssetPath);
+                ValidateImporter(direction.IdleAssetPath);
                 ValidateSpriteGrid(
-                    direction.AssetPath,
+                    direction.IdleAssetPath,
                     80,
                     96,
                     2,
                     false,
-                    index => direction.FileName + "_" + index,
+                    index => direction.IdleFileName + "_" + index,
                     new Vector2(24f, 8f));
-                ValidateSourcePixels(direction.AssetPath);
-                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.AssetPath);
+                ValidateSourcePixels(direction.IdleAssetPath);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.IdleAssetPath);
                 Require(texture != null && texture.width == 160 && texture.height == 96,
-                    direction.AssetPath + " must remain exactly 160x96 (two 80x96 cells)." );
+                    direction.IdleAssetPath + " must remain exactly 160x96 (two 80x96 cells)." );
             }
+        }
+
+        private static void ValidateLongwatchRunAimSheets()
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absoluteRoot = Path.Combine(projectRoot, LongwatchRunAimRoot);
+            Require(Directory.Exists(absoluteRoot), "Longwatch Run aim source folder is missing.");
+            string[] actualPngs = Directory.GetFiles(absoluteRoot, "*.png", SearchOption.TopDirectoryOnly);
+            Require(actualPngs.Length == LongwatchDirections.Length,
+                "Longwatch Run aim folder must contain exactly the 19 expected direction PNGs.");
+
+            HashSet<string> expectedFiles = new HashSet<string>(
+                LongwatchDirections.Select(direction => direction.RunFileName + ".png"),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string actualPath in actualPngs)
+            {
+                Require(expectedFiles.Contains(Path.GetFileName(actualPath)),
+                    "Unexpected Longwatch Run aim direction file: " + Path.GetFileName(actualPath));
+            }
+
+            int importedSpriteCount = 0;
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
+            {
+                ValidateImporter(direction.RunAssetPath);
+                ValidateSpriteGrid(
+                    direction.RunAssetPath,
+                    80,
+                    96,
+                    6,
+                    false,
+                    index => direction.RunFileName + "_" + index,
+                    new Vector2(24f, 8f));
+                ValidateSourcePixels(direction.RunAssetPath);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.RunAssetPath);
+                Require(texture != null && texture.width == 480 && texture.height == 96,
+                    direction.RunAssetPath + " must remain exactly 480x96 (six 80x96 cells)." );
+                importedSpriteCount += LoadSprites(direction.RunAssetPath).Count();
+            }
+
+            Require(importedSpriteCount == 114,
+                "Longwatch Run aim package must import exactly 114 sprites.");
         }
 
         private static void ValidateImporter(string path)
