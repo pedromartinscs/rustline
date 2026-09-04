@@ -137,7 +137,7 @@ The gameplay direction may be mathematically continuous for mouse/gamepad target
 
 The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, and Fall are currently aim/fire-capable. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
 
-The **Longwatch DMR** is the first pipeline-validation weapon. Its full right-facing Idle set is authored and integrated as 19 direction-specific `160×96` sheets, each containing two `80×96` Idle cells. Mouse-driven 360° mirrored presentation and automated pipeline validation are implemented; human native-scale visual approval remains pending before producing the much larger Run/Fall/carry package.
+The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing Idle and Run sets are authored and integrated for all 19 directions: Idle uses two `80×96` cells per `160×96` sheet, while Run uses six cells per `480×96` sheet. Both use the common armed pivot and an aim origin 38 source pixels above the shared renderer pivot. Mouse-driven 360° mirroring, aim-facing independent of movement, and Body-clock synchronization are automated; human native-scale approval of the corrected origin and Run presentation remains pending.
 
 This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
 
@@ -192,9 +192,10 @@ Once an original Rustline visual baseline exists, prefer Rustline's own artwork 
 
 - Longwatch DMR standalone/reference concept
 - Longwatch DMR Idle: 19 authored right-facing aim directions × 2 Idle frames
-- Unity import + 360° mirrored Idle aim validation
-- Longwatch Run/Fall aim only after Idle pipeline approval
-- Longwatch carry-only armed poses for non-firing movement states after Idle approval
+- Longwatch DMR Run: 19 authored right-facing aim directions × 6 Run frames
+- Unity import + 360° mirrored Idle/Run aim validation
+- Longwatch Fall aim remains deferred
+- Longwatch carry-only armed poses for non-firing movement states after the current visual gate
 - Remaining initial arsenal from [`WEAPONS.md`](WEAPONS.md) after pipeline validation
 
 ### Environment

@@ -7,7 +7,7 @@ M1A is a compact single-player Rigidbody2D controller intended for rapid feel tu
 - Keyboard: A/D or Left/Right Arrow to move; Space to jump.
 - Gamepad: Left Stick or D-pad to move; South button to jump.
 
-The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, and a presentation-only `PointerPosition` action. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position` used by the Longwatch Idle visual-validation presenter; it does not feed back into movement physics.
+The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, and a presentation-only `PointerPosition` action. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position` used by the Longwatch Idle/Run visual-validation presenter; it does not feed back into movement physics. While that presenter owns armed Idle or Run presentation, aim controls visual facing independently of Rigidbody movement direction, so backward running is supported without changing motor semantics.
 
 ## Runtime structure
 
