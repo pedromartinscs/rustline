@@ -24,8 +24,9 @@ namespace Rustline.Tests
             Rigidbody2D body = player.GetComponent<Rigidbody2D>();
             CapsuleCollider2D collider = player.GetComponent<CapsuleCollider2D>();
             PlayerUnarmedArmsPresenter2D presenter = player.GetComponent<PlayerUnarmedArmsPresenter2D>();
-            PlayerLongwatchIdleAimPresenter2D longwatchPresenter =
-                player.GetComponent<PlayerLongwatchIdleAimPresenter2D>();
+            PlayerLongwatchAimPresenter2D longwatchPresenter =
+                player.GetComponent<PlayerLongwatchAimPresenter2D>();
+            NativePixelPresentation nativePresentation = Object.FindAnyObjectByType<NativePixelPresentation>();
             PlayerAnimator2D playerAnimator = player.GetComponent<PlayerAnimator2D>();
             PlayerJumpPresentation2D jumpPresentation = player.GetComponent<PlayerJumpPresentation2D>();
             Transform visual = player.transform.Find("Visual - 48x64 Full Cell");
@@ -43,6 +44,7 @@ namespace Rustline.Tests
             Assert.That(playerAnimator, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
             Assert.That(longwatchPresenter, Is.Not.Null);
+            Assert.That(nativePresentation, Is.Not.Null);
             Assert.That(jumpPresentation, Is.Not.Null);
             Assert.That(visual, Is.Not.Null);
             Assert.That(bodyVisual, Is.Not.Null);
@@ -58,12 +60,15 @@ namespace Rustline.Tests
             Assert.That(animator, Is.Not.Null);
 
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            Mouse mouse = InputSystem.AddDevice<Mouse>();
             try
             {
                 for (int index = 0; index < 30; index++)
                 {
                     yield return new WaitForFixedUpdate();
                 }
+                yield return null;
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
                 yield return null;
                 AssertStateAndLayers(
                     animator, "Idle", presenter, longwatchPresenter, bodyRenderer, armsRenderer);
@@ -77,6 +82,7 @@ namespace Rustline.Tests
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A));
                 InputSystem.Update();
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.left);
                 for (int index = 0; index < 90 && !bodyRenderer.flipX; index++)
                 {
                     yield return new WaitForFixedUpdate();
@@ -119,6 +125,7 @@ namespace Rustline.Tests
             finally
             {
                 InputSystem.RemoveDevice(keyboard);
+                InputSystem.RemoveDevice(mouse);
             }
         }
 
@@ -323,12 +330,17 @@ namespace Rustline.Tests
             PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
             Assert.That(motor, Is.Not.Null);
             PlayerJumpPresentation2D presentation = motor.GetComponent<PlayerJumpPresentation2D>();
+            PlayerLongwatchAimPresenter2D longwatchPresenter = motor.GetComponent<PlayerLongwatchAimPresenter2D>();
+            NativePixelPresentation nativePresentation = Object.FindAnyObjectByType<NativePixelPresentation>();
             Transform bodyVisual = motor.transform.Find("Visual - 48x64 Full Cell/BodySpriteRenderer");
             SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
             Assert.That(presentation, Is.Not.Null);
+            Assert.That(longwatchPresenter, Is.Not.Null);
+            Assert.That(nativePresentation, Is.Not.Null);
             Assert.That(bodyRenderer, Is.Not.Null);
 
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            Mouse mouse = InputSystem.AddDevice<Mouse>();
             try
             {
                 for (int index = 0; index < 30; index++)
@@ -336,6 +348,7 @@ namespace Rustline.Tests
                     yield return new WaitForFixedUpdate();
                 }
 
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
                 InputSystem.Update();
                 for (int index = 0; index < 10; index++)
@@ -388,6 +401,7 @@ namespace Rustline.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
                 InputSystem.RemoveDevice(keyboard);
+                InputSystem.RemoveDevice(mouse);
             }
         }
 
@@ -399,11 +413,16 @@ namespace Rustline.Tests
 
             PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
             Assert.That(motor, Is.Not.Null);
+            PlayerLongwatchAimPresenter2D longwatchPresenter = motor.GetComponent<PlayerLongwatchAimPresenter2D>();
+            NativePixelPresentation nativePresentation = Object.FindAnyObjectByType<NativePixelPresentation>();
             SpriteRenderer bodyRenderer = motor.transform
                 .Find("Visual - 48x64 Full Cell/BodySpriteRenderer")?.GetComponent<SpriteRenderer>();
+            Assert.That(longwatchPresenter, Is.Not.Null);
+            Assert.That(nativePresentation, Is.Not.Null);
             Assert.That(bodyRenderer, Is.Not.Null);
 
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            Mouse mouse = InputSystem.AddDevice<Mouse>();
             try
             {
                 for (int index = 0; index < 30; index++)
@@ -411,6 +430,7 @@ namespace Rustline.Tests
                     yield return new WaitForFixedUpdate();
                 }
 
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.left);
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A));
                 InputSystem.Update();
                 for (int index = 0; index < 30 && !bodyRenderer.flipX; index++)
@@ -451,6 +471,7 @@ namespace Rustline.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
                 InputSystem.RemoveDevice(keyboard);
+                InputSystem.RemoveDevice(mouse);
             }
         }
 
@@ -574,7 +595,7 @@ namespace Rustline.Tests
             Animator animator,
             string state,
             PlayerUnarmedArmsPresenter2D presenter,
-            PlayerLongwatchIdleAimPresenter2D longwatchPresenter,
+            PlayerLongwatchAimPresenter2D longwatchPresenter,
             SpriteRenderer bodyRenderer,
             SpriteRenderer armsRenderer,
             int maximumFrames)
@@ -597,7 +618,7 @@ namespace Rustline.Tests
             Animator animator,
             string state,
             PlayerUnarmedArmsPresenter2D presenter,
-            PlayerLongwatchIdleAimPresenter2D longwatchPresenter,
+            PlayerLongwatchAimPresenter2D longwatchPresenter,
             SpriteRenderer bodyRenderer,
             SpriteRenderer armsRenderer)
         {
@@ -608,7 +629,7 @@ namespace Rustline.Tests
 
         private static void AssertOwnedLayers(
             PlayerUnarmedArmsPresenter2D unarmedPresenter,
-            PlayerLongwatchIdleAimPresenter2D longwatchPresenter,
+            PlayerLongwatchAimPresenter2D longwatchPresenter,
             SpriteRenderer bodyRenderer,
             SpriteRenderer armsRenderer)
         {
@@ -620,12 +641,47 @@ namespace Rustline.Tests
 
             Assert.That(unarmedPresenter.OwnsRenderer, Is.False);
             Assert.That(bodyRenderer.flipX, Is.EqualTo(armsRenderer.flipX), "Layer facing diverged.");
-            int bodyFrame = bodyRenderer.sprite == longwatchPresenter.GetBodyIdleFrame(0) ? 0 : 1;
-            Assert.That(bodyRenderer.sprite, Is.SameAs(longwatchPresenter.GetBodyIdleFrame(bodyFrame)));
-            LongwatchIdleAimPose pose = longwatchPresenter.GetAimPose(
-                longwatchPresenter.Selection.DirectionIndex);
-            Assert.That(armsRenderer.sprite, Is.SameAs(pose.GetFrame(bodyFrame)),
-                "Longwatch overlay lagged or diverged from the displayed Body Idle frame.");
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyIdleFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyIdleFrame(frameIndex))
+                {
+                    LongwatchIdleAimPose idlePose = longwatchPresenter.GetIdleAimPose(
+                        longwatchPresenter.Selection.DirectionIndex);
+                    Assert.That(armsRenderer.sprite, Is.SameAs(idlePose.GetFrame(frameIndex)),
+                        "Longwatch overlay lagged or diverged from the displayed Body Idle frame.");
+                    return;
+                }
+            }
+
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyRunFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyRunFrame(frameIndex))
+                {
+                    LongwatchRunAimPose runPose = longwatchPresenter.GetRunAimPose(
+                        longwatchPresenter.Selection.DirectionIndex);
+                    Assert.That(armsRenderer.sprite, Is.SameAs(runPose.GetFrame(frameIndex)),
+                        "Longwatch overlay lagged or diverged from the displayed Body Run frame.");
+                    return;
+                }
+            }
+
+            Assert.Fail("Armed Longwatch owns the overlay for an unsupported Body sprite.");
+        }
+
+        private static void QueueWorldAim(
+            Mouse mouse,
+            NativePixelPresentation presentation,
+            Vector3 aimOriginWorld,
+            Vector2 worldDirection)
+        {
+            Vector3 targetViewport = presentation.WorldCamera.WorldToViewportPoint(
+                aimOriginWorld + (Vector3)(worldDirection.normalized * 8f));
+            NativePixelViewport viewport = presentation.Viewport;
+            Vector2 physicalPosition = new Vector2(
+                viewport.OutputOffsetX + targetViewport.x * viewport.LogicalWidth * viewport.IntegerScale,
+                viewport.OutputOffsetY + targetViewport.y * viewport.LogicalHeight * viewport.IntegerScale);
+            InputSystem.QueueStateEvent(mouse, new MouseState { position = physicalPosition });
+            InputSystem.Update();
         }
 
         private static void AssertLayers(

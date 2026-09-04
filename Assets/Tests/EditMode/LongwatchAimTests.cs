@@ -10,10 +10,12 @@ using UnityEngine.InputSystem;
 
 namespace Rustline.Tests
 {
-    public sealed class LongwatchIdleAimTests
+    public sealed class LongwatchAimTests
     {
-        private const string LongwatchRoot =
+        private const string LongwatchIdleRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Idle";
+        private const string LongwatchRunRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
 
@@ -162,7 +164,7 @@ namespace Rustline.Tests
         [Test]
         public void AllLongwatchIdleSheets_MatchAuthoredImportContract()
         {
-            string[] importedGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { LongwatchRoot });
+            string[] importedGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { LongwatchIdleRoot });
             Assert.That(importedGuids, Has.Length.EqualTo(19),
                 "Longwatch Idle folder must contain only the expected 19 direction textures.");
 
@@ -170,7 +172,7 @@ namespace Rustline.Tests
             {
                 string baseName = "player_salvager_longwatch_dmr_idle_aim_" +
                     DirectionSuffixes[directionIndex];
-                string path = LongwatchRoot + "/" + baseName + ".png";
+                string path = LongwatchIdleRoot + "/" + baseName + ".png";
                 Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
                 Assert.That(texture, Is.Not.Null, "Missing direction sheet: " + path);
                 Assert.That(texture.width, Is.EqualTo(160), path);
@@ -194,29 +196,85 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void AllLongwatchRunSheets_MatchAuthoredImportContract()
+        {
+            string[] importedGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { LongwatchRunRoot });
+            Assert.That(importedGuids, Has.Length.EqualTo(19),
+                "Longwatch Run folder must contain only the expected 19 direction textures.");
+
+            int totalSprites = 0;
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string baseName = "player_salvager_longwatch_dmr_run_aim_" +
+                    DirectionSuffixes[directionIndex];
+                string path = LongwatchRunRoot + "/" + baseName + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                Assert.That(texture, Is.Not.Null, "Missing direction sheet: " + path);
+                Assert.That(texture.width, Is.EqualTo(480), path);
+                Assert.That(texture.height, Is.EqualTo(96), path);
+
+                AssertLongwatchImporter(path);
+                List<Sprite> sprites = LoadSprites(path);
+                Assert.That(sprites, Has.Count.EqualTo(6), path);
+                totalSprites += sprites.Count;
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    Sprite sprite = sprites[frameIndex];
+                    Assert.That(sprite.name, Is.EqualTo(baseName + "_" + frameIndex));
+                    Assert.That(sprite.rect, Is.EqualTo(new Rect(frameIndex * 80, 0, 80, 96)));
+                    Assert.That(Vector2.Distance(sprite.pivot, new Vector2(24f, 8f)),
+                        Is.LessThan(0.001f));
+                    Assert.That(sprite.pixelsPerUnit, Is.EqualTo(16f));
+                }
+
+                AssertSourcePixels(path);
+            }
+
+            Assert.That(totalSprites, Is.EqualTo(114));
+        }
+
+        [Test]
         public void PlayerPrefab_ContainsCompleteLongwatchPoseMapping()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
-            PlayerLongwatchIdleAimPresenter2D presenter =
-                prefab?.GetComponent<PlayerLongwatchIdleAimPresenter2D>();
+            PlayerLongwatchAimPresenter2D presenter =
+                prefab?.GetComponent<PlayerLongwatchAimPresenter2D>();
             Assert.That(presenter, Is.Not.Null);
             Assert.That(presenter.BodyIdleFrameCount, Is.EqualTo(2));
-            Assert.That(presenter.AimPoseCount, Is.EqualTo(19));
+            Assert.That(presenter.IdleAimPoseCount, Is.EqualTo(19));
+            Assert.That(presenter.BodyRunFrameCount, Is.EqualTo(6));
+            Assert.That(presenter.RunAimPoseCount, Is.EqualTo(19));
             Assert.That(presenter.NativePixelPresentation, Is.Null,
                 "The scene-only presentation dependency must not be forged inside the prefab.");
+            Assert.That(PlayerLongwatchAimPresenter2D.AimOriginOffsetSourcePixels, Is.EqualTo(38f));
+            Assert.That(PlayerLongwatchAimPresenter2D.AimOriginOffsetWorldUnits, Is.EqualTo(2.375f));
+            Assert.That(presenter.AimOriginWorld - presenter.BodySpriteRenderer.transform.position,
+                Is.EqualTo(Vector3.up * 2.375f));
 
-            HashSet<Sprite> mappedSprites = new HashSet<Sprite>();
+            HashSet<Sprite> mappedIdleSprites = new HashSet<Sprite>();
+            HashSet<Sprite> mappedRunSprites = new HashSet<Sprite>();
             for (int index = 0; index < DirectionAngles.Length; index++)
             {
-                LongwatchIdleAimPose pose = presenter.GetAimPose(index);
-                Assert.That(pose.AngleDegrees, Is.EqualTo(DirectionAngles[index]));
-                Assert.That(pose.Frame0.name, Does.EndWith("_" + DirectionSuffixes[index] + "_0"));
-                Assert.That(pose.Frame1.name, Does.EndWith("_" + DirectionSuffixes[index] + "_1"));
-                Assert.That(mappedSprites.Add(pose.Frame0), Is.True);
-                Assert.That(mappedSprites.Add(pose.Frame1), Is.True);
+                LongwatchIdleAimPose idlePose = presenter.GetIdleAimPose(index);
+                Assert.That(idlePose.AngleDegrees, Is.EqualTo(DirectionAngles[index]));
+                Assert.That(idlePose.Frame0.name, Does.EndWith("_" + DirectionSuffixes[index] + "_0"));
+                Assert.That(idlePose.Frame1.name, Does.EndWith("_" + DirectionSuffixes[index] + "_1"));
+                Assert.That(mappedIdleSprites.Add(idlePose.Frame0), Is.True);
+                Assert.That(mappedIdleSprites.Add(idlePose.Frame1), Is.True);
+
+                LongwatchRunAimPose runPose = presenter.GetRunAimPose(index);
+                Assert.That(runPose.AngleDegrees, Is.EqualTo(DirectionAngles[index]));
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    Sprite runFrame = runPose.GetFrame(frameIndex);
+                    Assert.That(runFrame.name,
+                        Does.EndWith("_" + DirectionSuffixes[index] + "_" + frameIndex));
+                    Assert.That(mappedRunSprites.Add(runFrame), Is.True);
+                }
             }
 
-            Assert.That(mappedSprites, Has.Count.EqualTo(38));
+            Assert.That(mappedIdleSprites, Has.Count.EqualTo(38));
+            Assert.That(mappedRunSprites, Has.Count.EqualTo(114));
         }
 
         [Test]
