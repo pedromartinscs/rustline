@@ -140,6 +140,28 @@ namespace Rustline.Tests
             }
         }
 
+        [Test]
+        public void BackpedalClip_PreservesFourAuthoredFramesAtSixFps()
+        {
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_Backpedal.anim");
+            Assert.That(clip, Is.Not.Null);
+            Assert.That(clip.frameRate, Is.EqualTo(6f));
+            Assert.That(AnimationUtility.GetAnimationClipSettings(clip).loopTime, Is.True);
+
+            EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            Assert.That(bindings, Has.Length.EqualTo(1));
+            ObjectReferenceKeyframe[] keyframes = AnimationUtility.GetObjectReferenceCurve(clip, bindings[0]);
+            List<Sprite> expectedSprites = LoadSprites(
+                BodyRoot + "/player_salvager_body_backpedal.png");
+            Assert.That(keyframes, Has.Length.EqualTo(4));
+            for (int index = 0; index < 4; index++)
+            {
+                Assert.That(keyframes[index].time, Is.EqualTo(index / 6f).Within(0.0001f));
+                Assert.That(keyframes[index].value, Is.SameAs(expectedSprites[index]));
+            }
+        }
+
         [TestCase(0f, 0f)]
         [TestCase(0.25f, 0.578125f)]
         [TestCase(0.5f, 0.875f)]

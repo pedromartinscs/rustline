@@ -975,6 +975,13 @@ namespace Rustline.Editor
                 ObjectReferenceKeyframe[] keyframes = AnimationUtility.GetObjectReferenceCurve(clip, bindings[0]);
                 Require(keyframes.Length == clipSpec.Value.frameCount,
                     clipSpec.Key + " must contain exactly one key per source frame.");
+                string stateId = clipSpec.Key.Substring("Player_Body_".Length).ToLowerInvariant();
+                for (int index = 0; index < keyframes.Length; index++)
+                {
+                    Require(keyframes[index].value != null &&
+                            keyframes[index].value.name == "player_salvager_body_" + stateId + "_" + index,
+                        clipSpec.Key + " sprite order mismatch at frame " + index + ".");
+                }
                 AnimationClipSettings clipSettings = AnimationUtility.GetAnimationClipSettings(clip);
                 Require(clipSettings.loopTime == clipSpec.Value.loop, clipSpec.Key + " loop setting mismatch.");
 
@@ -986,9 +993,6 @@ namespace Rustline.Editor
                     {
                         Require(Mathf.Abs(keyframes[index].time - JumpTakeoffKeyframeTimes[index]) < 0.0001f,
                             "Player_Body_Jump key time mismatch at frame " + index + ".");
-                        Require(keyframes[index].value != null &&
-                                keyframes[index].value.name == "player_salvager_body_jump_" + index,
-                            "Player_Body_Jump sprite order mismatch at frame " + index + ".");
                     }
                 }
             }
