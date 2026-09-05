@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Rustline.Presentation;
+using Rustline.Gameplay.Player;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,6 +17,8 @@ namespace Rustline.Tests
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Idle";
         private const string LongwatchRunRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
+        private const string LongwatchBackpedalRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
 
@@ -65,6 +68,7 @@ namespace Rustline.Tests
         {
             bool valid = LongwatchAimMath.TrySelect(
                 new Vector2(x, y),
+                expectedFlip,
                 false,
                 LongwatchAimSelection.Default,
                 out LongwatchAimSelection selection);
@@ -86,6 +90,7 @@ namespace Rustline.Tests
             Assert.That(LongwatchAimMath.TrySelect(
                 direction,
                 false,
+                false,
                 LongwatchAimSelection.Default,
                 out LongwatchAimSelection selection), Is.True);
             Assert.That(selection.ContinuousAngleDegrees, Is.EqualTo(angle).Within(0.0001f));
@@ -98,6 +103,7 @@ namespace Rustline.Tests
             LongwatchAimSelection previous = new LongwatchAimSelection(63.5f, 60, true);
             bool valid = LongwatchAimMath.TrySelect(
                 Vector2.zero,
+                previous.FlipX,
                 true,
                 previous,
                 out LongwatchAimSelection selection);
@@ -109,11 +115,12 @@ namespace Rustline.Tests
         }
 
         [Test]
-        public void ExactVerticalAim_RetainsPriorFacingHemisphere()
+        public void VisualSelection_UsesAuthoritativeGenericFacing()
         {
             LongwatchAimSelection previous = new LongwatchAimSelection(40f, 40, true);
             Assert.That(LongwatchAimMath.TrySelect(
                 Vector2.up,
+                true,
                 true,
                 previous,
                 out LongwatchAimSelection selection), Is.True);
@@ -234,6 +241,41 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void AllLongwatchBackpedalSheets_MatchAuthoredFourFrameContract()
+        {
+            string[] importedGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { LongwatchBackpedalRoot });
+            Assert.That(importedGuids, Has.Length.EqualTo(19));
+
+            int totalSprites = 0;
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string baseName = "player_salvager_longwatch_dmr_backpedal_aim_" +
+                    DirectionSuffixes[directionIndex];
+                string path = LongwatchBackpedalRoot + "/" + baseName + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                Assert.That(texture, Is.Not.Null, path);
+                Assert.That(texture.width, Is.EqualTo(320), path);
+                Assert.That(texture.height, Is.EqualTo(96), path);
+                AssertLongwatchImporter(path);
+                List<Sprite> sprites = LoadSprites(path);
+                Assert.That(sprites, Has.Count.EqualTo(4), path);
+                totalSprites += sprites.Count;
+                for (int frameIndex = 0; frameIndex < 4; frameIndex++)
+                {
+                    Sprite sprite = sprites[frameIndex];
+                    Assert.That(sprite.name, Is.EqualTo(baseName + "_" + frameIndex));
+                    Assert.That(sprite.rect, Is.EqualTo(new Rect(frameIndex * 80, 0, 80, 96)));
+                    Assert.That(Vector2.Distance(sprite.pivot, new Vector2(24f, 8f)),
+                        Is.LessThan(0.001f));
+                    Assert.That(sprite.pixelsPerUnit, Is.EqualTo(16f));
+                }
+                AssertSourcePixels(path);
+            }
+
+            Assert.That(totalSprites, Is.EqualTo(76));
+        }
+
+        [Test]
         public void PlayerPrefab_ContainsCompleteLongwatchPoseMapping()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
@@ -244,15 +286,18 @@ namespace Rustline.Tests
             Assert.That(presenter.IdleAimPoseCount, Is.EqualTo(19));
             Assert.That(presenter.BodyRunFrameCount, Is.EqualTo(6));
             Assert.That(presenter.RunAimPoseCount, Is.EqualTo(19));
-            Assert.That(presenter.NativePixelPresentation, Is.Null,
+            Assert.That(presenter.BodyBackpedalFrameCount, Is.EqualTo(4));
+            Assert.That(presenter.BackpedalAimPoseCount, Is.EqualTo(19));
+            PlayerAim2D playerAim = prefab.GetComponent<PlayerAim2D>();
+            Assert.That(playerAim, Is.Not.Null);
+            Assert.That(presenter.PlayerAim, Is.SameAs(playerAim));
+            Assert.That(playerAim.NativePixelPresentation, Is.Null,
                 "The scene-only presentation dependency must not be forged inside the prefab.");
-            Assert.That(PlayerLongwatchAimPresenter2D.AimOriginOffsetSourcePixels, Is.EqualTo(38f));
-            Assert.That(PlayerLongwatchAimPresenter2D.AimOriginOffsetWorldUnits, Is.EqualTo(2.375f));
-            Assert.That(presenter.AimOriginWorld - presenter.BodySpriteRenderer.transform.position,
-                Is.EqualTo(Vector3.up * 2.375f));
+            Assert.That(playerAim.AimOrigin.localPosition, Is.EqualTo(Vector3.up * 2.375f));
 
             HashSet<Sprite> mappedIdleSprites = new HashSet<Sprite>();
             HashSet<Sprite> mappedRunSprites = new HashSet<Sprite>();
+            HashSet<Sprite> mappedBackpedalSprites = new HashSet<Sprite>();
             for (int index = 0; index < DirectionAngles.Length; index++)
             {
                 LongwatchIdleAimPose idlePose = presenter.GetIdleAimPose(index);
@@ -271,10 +316,21 @@ namespace Rustline.Tests
                         Does.EndWith("_" + DirectionSuffixes[index] + "_" + frameIndex));
                     Assert.That(mappedRunSprites.Add(runFrame), Is.True);
                 }
+
+                LongwatchBackpedalAimPose backpedalPose = presenter.GetBackpedalAimPose(index);
+                Assert.That(backpedalPose.AngleDegrees, Is.EqualTo(DirectionAngles[index]));
+                for (int frameIndex = 0; frameIndex < 4; frameIndex++)
+                {
+                    Sprite frame = backpedalPose.GetFrame(frameIndex);
+                    Assert.That(frame.name,
+                        Does.EndWith("_" + DirectionSuffixes[index] + "_" + frameIndex));
+                    Assert.That(mappedBackpedalSprites.Add(frame), Is.True);
+                }
             }
 
             Assert.That(mappedIdleSprites, Has.Count.EqualTo(38));
             Assert.That(mappedRunSprites, Has.Count.EqualTo(114));
+            Assert.That(mappedBackpedalSprites, Has.Count.EqualTo(76));
         }
 
         [Test]

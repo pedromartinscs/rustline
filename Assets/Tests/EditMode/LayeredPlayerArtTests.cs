@@ -19,6 +19,7 @@ namespace Rustline.Tests
 
         [TestCase("idle", 2)]
         [TestCase("run", 6)]
+        [TestCase("backpedal", 4)]
         [TestCase("jump", 3)]
         [TestCase("fall", 1)]
         [TestCase("land", 2)]
@@ -51,7 +52,7 @@ namespace Rustline.Tests
             Assert.That(prefab, Is.Not.Null);
             PlayerUnarmedArmsPresenter2D presenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Assert.That(presenter, Is.Not.Null);
-            Assert.That(presenter.MappingCount, Is.EqualTo(14));
+            Assert.That(presenter.MappingCount, Is.EqualTo(18));
 
             HashSet<Sprite> bodySprites = new HashSet<Sprite>();
             HashSet<Sprite> armsSprites = new HashSet<Sprite>();
@@ -73,8 +74,8 @@ namespace Rustline.Tests
                 }
             }
 
-            Assert.That(bodySprites, Has.Count.EqualTo(14));
-            Assert.That(armsSprites, Has.Count.EqualTo(14));
+            Assert.That(bodySprites, Has.Count.EqualTo(18));
+            Assert.That(armsSprites, Has.Count.EqualTo(18));
         }
 
         [Test]
@@ -218,6 +219,7 @@ namespace Rustline.Tests
         {
             yield return ("idle", 2);
             yield return ("run", 6);
+            yield return ("backpedal", 4);
             yield return ("jump", 3);
             yield return ("fall", 1);
             yield return ("land", 2);

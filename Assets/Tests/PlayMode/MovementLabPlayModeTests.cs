@@ -455,6 +455,7 @@ namespace Rustline.Tests
                     "Left-facing takeoff did not snapshot mirrored dust.");
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
                 InputSystem.Update();
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
                 for (int index = 0; index < 12 && bodyRenderer.flipX && dust != null; index++)
                 {
                     yield return new WaitForFixedUpdate();
@@ -661,6 +662,18 @@ namespace Rustline.Tests
                         longwatchPresenter.Selection.DirectionIndex);
                     Assert.That(armsRenderer.sprite, Is.SameAs(runPose.GetFrame(frameIndex)),
                         "Longwatch overlay lagged or diverged from the displayed Body Run frame.");
+                    return;
+                }
+            }
+
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyBackpedalFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyBackpedalFrame(frameIndex))
+                {
+                    LongwatchBackpedalAimPose backpedalPose = longwatchPresenter.GetBackpedalAimPose(
+                        longwatchPresenter.Selection.DirectionIndex);
+                    Assert.That(armsRenderer.sprite, Is.SameAs(backpedalPose.GetFrame(frameIndex)),
+                        "Longwatch overlay lagged or diverged from the displayed Body Backpedal frame.");
                     return;
                 }
             }
