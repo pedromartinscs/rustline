@@ -66,7 +66,7 @@ These values are a starting point, not final feel approval.
 | Maximum fall speed | 18 units/s |
 | Ground cast distance | 0.075 units |
 | Minimum ground normal Y | 0.65 |
-| Land presentation duration | 0.25 s |
+| Land presentation duration | 0.22 s |
 
 Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course is arranged to exercise flat acceleration/reversal, gaps and ledge exits, different platform heights, a drop for buffered landing jumps, and a short step course. Falling below `-12` respawns the diagnostic specimen without introducing health or death systems.
 

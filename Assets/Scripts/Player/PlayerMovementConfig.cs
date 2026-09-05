@@ -35,7 +35,7 @@ namespace Rustline.Gameplay.Player
         [SerializeField, Min(0f)] private float runAnimationSpeedThreshold = 0.2f;
         [SerializeField, Min(0f)] private float ascendingAnimationThreshold = 0.15f;
         [SerializeField, Min(0f)] private float facingVelocityThreshold = 0.05f;
-        [SerializeField, Min(0f)] private float landPresentationDuration = 0.25f;
+        [SerializeField, Min(0f)] private float landPresentationDuration = 0.22f;
 
         public float MaxGroundSpeed => maxGroundSpeed;
         public float MaxBackpedalGroundSpeed => maxBackpedalGroundSpeed;

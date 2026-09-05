@@ -798,6 +798,8 @@ namespace Rustline.Editor
                 Mathf.Approximately(config.MaxBackpedalGroundSpeed, 4f) &&
                 Mathf.Approximately(config.MaxAirSpeed, 7f),
                 "Player forward/backpedal/air speed defaults changed from 7/4/7.");
+            Require(Mathf.Approximately(config.LandPresentationDuration, 0.22f),
+                "Player Land presentation duration must remain 0.22 seconds.");
 
             InputActionAsset input = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
             InputActionMap playerMap = input?.FindActionMap("Player", false);

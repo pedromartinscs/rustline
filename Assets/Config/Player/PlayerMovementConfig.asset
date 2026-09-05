@@ -33,4 +33,4 @@ MonoBehaviour:
   runAnimationSpeedThreshold: 0.2
   ascendingAnimationThreshold: 0.15
   facingVelocityThreshold: 0.05
-  landPresentationDuration: 0.25
+  landPresentationDuration: 0.22

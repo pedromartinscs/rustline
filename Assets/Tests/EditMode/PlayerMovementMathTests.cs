@@ -1,5 +1,6 @@
 using NUnit.Framework;
 using Rustline.Gameplay.Player;
+using UnityEditor;
 using UnityEngine;
 
 namespace Rustline.Tests
@@ -19,6 +20,17 @@ namespace Rustline.Tests
         {
             float result = PlayerMovementMath.CalculateHorizontalVelocity(0f, 1f, true, false, _config, 1f);
             Assert.That(result, Is.EqualTo(_config.MaxGroundSpeed).Within(0.0001f));
+        }
+
+        [Test]
+        public void LandPresentationDuration_MatchesAcceptedStateGate()
+        {
+            PlayerMovementConfig asset = AssetDatabase.LoadAssetAtPath<PlayerMovementConfig>(
+                "Assets/Config/Player/PlayerMovementConfig.asset");
+
+            Assert.That(_config.LandPresentationDuration, Is.EqualTo(0.22f));
+            Assert.That(asset, Is.Not.Null);
+            Assert.That(asset.LandPresentationDuration, Is.EqualTo(0.22f));
         }
 
         [Test]
