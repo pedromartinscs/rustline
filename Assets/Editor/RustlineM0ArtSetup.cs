@@ -27,6 +27,8 @@ namespace Rustline.Editor
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Idle";
         private const string LongwatchRunAimRoot =
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
+        private const string LongwatchBackpedalAimRoot =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
@@ -43,11 +45,13 @@ namespace Rustline.Editor
         {
             new SheetSpec(BodySpriteRoot, "player_salvager_body_idle", 2),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_run", 6),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_backpedal", 4),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_jump", 3),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_fall", 1),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_land", 2),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_idle", 2),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_run", 6),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_backpedal", 4),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_jump", 3),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_fall", 1),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_land", 2),
@@ -125,6 +129,8 @@ namespace Rustline.Editor
             internal string IdleAssetPath => LongwatchIdleAimRoot + "/" + IdleFileName + ".png";
             internal string RunFileName => "player_salvager_longwatch_dmr_run_aim_" + Suffix;
             internal string RunAssetPath => LongwatchRunAimRoot + "/" + RunFileName + ".png";
+            internal string BackpedalFileName => "player_salvager_longwatch_dmr_backpedal_aim_" + Suffix;
+            internal string BackpedalAssetPath => LongwatchBackpedalAimRoot + "/" + BackpedalFileName + ".png";
         }
 
         private sealed class PreviewAsset
@@ -263,6 +269,14 @@ namespace Rustline.Editor
                     index => direction.RunFileName + "_" + index,
                     new Vector2(0.3f, 8f / 96f),
                     logicalRowsRunTopToBottom: false);
+                ConfigureFixedGrid(
+                    direction.BackpedalAssetPath,
+                    80,
+                    96,
+                    4,
+                    index => direction.BackpedalFileName + "_" + index,
+                    new Vector2(0.3f, 8f / 96f),
+                    logicalRowsRunTopToBottom: false);
             }
         }
 
@@ -280,7 +294,7 @@ namespace Rustline.Editor
 
         private static void MoveLegacyBodyAnimationClips()
         {
-            string[] states = { "Idle", "Run", "Jump", "Fall", "Land" };
+            string[] states = { "Idle", "Run", "Backpedal", "Jump", "Fall", "Land" };
             foreach (string state in states)
             {
                 string sourcePath = AnimationRoot + "/Player_" + state + ".anim";
@@ -293,9 +307,11 @@ namespace Rustline.Editor
                     clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(destinationPath);
                 }
 
-                Require(clip != null, "Missing body animation clip: " + destinationPath);
-                clip.name = "Player_Body_" + state;
-                EditorUtility.SetDirty(clip);
+                if (clip != null)
+                {
+                    clip.name = "Player_Body_" + state;
+                    EditorUtility.SetDirty(clip);
+                }
             }
         }
 
@@ -366,6 +382,7 @@ namespace Rustline.Editor
             Dictionary<string, PreviewAsset> previews = new Dictionary<string, PreviewAsset>();
             AddPreview(previews, "Idle", "idle", 0.5f, true);
             AddPreview(previews, "Run", "run", 10f, true);
+            AddPreview(previews, "Backpedal", "backpedal", 6f, true);
             AddPreview(previews, "Jump", "jump", JumpClipSampleRate, false, JumpTakeoffKeyframeTimes);
             AddPreview(previews, "Fall", "fall", 1f, false);
             AddPreview(previews, "Land", "land", 8f, true);
@@ -546,7 +563,18 @@ namespace Rustline.Editor
             foreach (PreviewAsset preview in previews.Values)
             {
                 GameObject specimen = FindGameObject(scene, "Player_" + preview.Label + "_Specimen");
-                Require(specimen != null, "ArtShowcase is missing the " + preview.Label + " player specimen.");
+                if (specimen == null)
+                {
+                    GameObject specimensRoot = FindGameObject(scene, "Player Animation Specimens - 48x64 Cells");
+                    GameObject labelsRoot = FindGameObject(scene, "Diagnostic Labels");
+                    Require(specimensRoot != null && labelsRoot != null,
+                        "ArtShowcase player specimen roots are missing.");
+                    specimen = new GameObject("Player_" + preview.Label + "_Specimen");
+                    specimen.transform.SetParent(specimensRoot.transform, false);
+                    specimen.transform.position = new Vector3(20f, 6f, 0f);
+                    CreateLabel(labelsRoot.transform, preview.Label.ToUpperInvariant(),
+                        new Vector3(20f, 10.65f, -0.2f), 0.16f, new Color32(253, 208, 69, 255));
+                }
 
                 SpriteRenderer legacyRenderer = specimen.GetComponent<SpriteRenderer>();
                 Animator legacyAnimator = specimen.GetComponent<Animator>();
@@ -682,8 +710,8 @@ namespace Rustline.Editor
         {
             GameObject specimensRoot = new GameObject("Player Animation Specimens - 48x64 Cells");
             specimensRoot.transform.SetParent(parent, false);
-            string[] order = { "Idle", "Run", "Jump", "Fall", "Land" };
-            float[] xPositions = { -16f, -8f, 0f, 8f, 16f };
+            string[] order = { "Idle", "Run", "Backpedal", "Jump", "Fall", "Land" };
+            float[] xPositions = { -20f, -12f, -4f, 4f, 12f, 20f };
 
             for (int index = 0; index < order.Length; index++)
             {
@@ -871,6 +899,7 @@ namespace Rustline.Editor
 
             ValidateLongwatchIdleAimSheets();
             ValidateLongwatchRunAimSheets();
+            ValidateLongwatchBackpedalAimSheets();
 
             ValidateImporter(JumpDustPath);
             ValidateSpriteGrid(
@@ -886,7 +915,7 @@ namespace Rustline.Editor
             Require(jumpDust != null && jumpDust.width == 144 && jumpDust.height == 64,
                 "Jump dust must remain exactly 144x64 (three 48x64 full cells).");
 
-            string[] layeredStates = { "idle", "run", "jump", "fall", "land" };
+            string[] layeredStates = { "idle", "run", "backpedal", "jump", "fall", "land" };
             foreach (string state in layeredStates)
             {
                 string bodyPath = BodySpriteRoot + "/player_salvager_body_" + state + ".png";
@@ -930,6 +959,7 @@ namespace Rustline.Editor
                 {
                     { "Player_Body_Idle", (2, 0.5f, true) },
                     { "Player_Body_Run", (6, 10f, true) },
+                    { "Player_Body_Backpedal", (4, 6f, true) },
                     { "Player_Body_Jump", (3, JumpClipSampleRate, false) },
                     { "Player_Body_Fall", (1, 1f, false) },
                     { "Player_Body_Land", (2, 8f, true) },
@@ -1060,6 +1090,48 @@ namespace Rustline.Editor
 
             Require(importedSpriteCount == 114,
                 "Longwatch Run aim package must import exactly 114 sprites.");
+        }
+
+        private static void ValidateLongwatchBackpedalAimSheets()
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absoluteRoot = Path.Combine(projectRoot, LongwatchBackpedalAimRoot);
+            Require(Directory.Exists(absoluteRoot), "Longwatch Backpedal aim source folder is missing.");
+            string[] actualPngs = Directory.GetFiles(absoluteRoot, "*.png", SearchOption.TopDirectoryOnly);
+            Require(actualPngs.Length == LongwatchDirections.Length,
+                "Longwatch Backpedal aim folder must contain exactly the 19 expected direction PNGs.");
+
+            HashSet<string> expectedFiles = new HashSet<string>(
+                LongwatchDirections.Select(direction => direction.BackpedalFileName + ".png"),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string actualPath in actualPngs)
+            {
+                Require(expectedFiles.Contains(Path.GetFileName(actualPath)),
+                    "Unexpected Longwatch Backpedal aim direction file: " + Path.GetFileName(actualPath));
+            }
+
+            int importedSpriteCount = 0;
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
+            {
+                ValidateImporter(direction.BackpedalAssetPath);
+                ValidateSpriteGrid(
+                    direction.BackpedalAssetPath,
+                    80,
+                    96,
+                    4,
+                    false,
+                    index => direction.BackpedalFileName + "_" + index,
+                    new Vector2(24f, 8f));
+                ValidateSourcePixels(direction.BackpedalAssetPath);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.BackpedalAssetPath);
+                Require(texture != null && texture.width == 320 && texture.height == 96,
+                    direction.BackpedalAssetPath + " must remain exactly 320x96 (four 80x96 cells)." );
+                importedSpriteCount += LoadSprites(direction.BackpedalAssetPath).Count();
+            }
+
+            Require(importedSpriteCount == 76,
+                "Longwatch Backpedal aim package must import exactly 76 sprites.");
         }
 
         private static void ValidateImporter(string path)
