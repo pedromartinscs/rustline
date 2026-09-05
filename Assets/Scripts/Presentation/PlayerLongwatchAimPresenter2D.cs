@@ -14,7 +14,15 @@ namespace Rustline.Presentation
         public int AngleDegrees => angleDegrees;
         public Sprite Frame0 => frame0;
         public Sprite Frame1 => frame1;
-        public Sprite GetFrame(int frameIndex) => frameIndex == 0 ? frame0 : frame1;
+        public Sprite GetFrame(int frameIndex)
+        {
+            switch (frameIndex)
+            {
+                case 0: return frame0;
+                case 1: return frame1;
+                default: throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
     }
 
     [Serializable]
@@ -249,7 +257,7 @@ namespace Rustline.Presentation
         {
             if (playerAim.HasValidAim && LongwatchAimMath.TrySelect(
                     playerAim.ContinuousAimDirection,
-                    playerAim.FacingFlipX,
+                    playerAim.FacingLeft,
                     _hasValidAim,
                     _selection,
                     out LongwatchAimSelection next))

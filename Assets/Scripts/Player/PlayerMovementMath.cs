@@ -8,7 +8,7 @@ namespace Rustline.Gameplay.Player
             float currentVelocity,
             float rawInput,
             bool grounded,
-            bool facingFlipX,
+            bool facingLeft,
             PlayerMovementConfig config,
             float deltaTime)
         {
@@ -16,7 +16,7 @@ namespace Rustline.Gameplay.Player
                 ? 0f
                 : Mathf.Clamp(rawInput, -1f, 1f);
             float maxSpeed = grounded
-                ? GetGroundSpeedLimit(input, facingFlipX, config)
+                ? GetGroundSpeedLimit(input, facingLeft, config)
                 : config.MaxAirSpeed;
             float targetVelocity = input * maxSpeed;
             float acceleration;
@@ -43,18 +43,18 @@ namespace Rustline.Gameplay.Player
 
         public static float GetGroundSpeedLimit(
             float horizontalDirection,
-            bool facingFlipX,
+            bool facingLeft,
             PlayerMovementConfig config)
         {
-            return IsDirectionAgainstFacing(horizontalDirection, facingFlipX)
+            return IsDirectionAgainstFacing(horizontalDirection, facingLeft)
                 ? config.MaxBackpedalGroundSpeed
                 : config.MaxGroundSpeed;
         }
 
-        public static bool IsDirectionAgainstFacing(float horizontalDirection, bool facingFlipX)
+        public static bool IsDirectionAgainstFacing(float horizontalDirection, bool facingLeft)
         {
-            return horizontalDirection < 0f && !facingFlipX ||
-                   horizontalDirection > 0f && facingFlipX;
+            return horizontalDirection < 0f && !facingLeft ||
+                   horizontalDirection > 0f && facingLeft;
         }
 
         public static float ApplyGravity(

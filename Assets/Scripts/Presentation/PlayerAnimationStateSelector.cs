@@ -19,7 +19,7 @@ namespace Rustline.Presentation
             float horizontalVelocity,
             float verticalVelocity,
             bool showingLanding,
-            bool facingFlipX,
+            bool facingLeft,
             float runThreshold,
             float ascendingThreshold)
         {
@@ -42,7 +42,7 @@ namespace Rustline.Presentation
 
             return Gameplay.Player.PlayerMovementMath.IsDirectionAgainstFacing(
                 horizontalVelocity,
-                facingFlipX)
+                facingLeft)
                 ? PlayerAnimationState.Backpedal
                 : PlayerAnimationState.Run;
         }

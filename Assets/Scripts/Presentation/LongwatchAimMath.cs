@@ -28,7 +28,7 @@ namespace Rustline.Presentation
 
         public static bool TrySelect(
             Vector2 aimVector,
-            bool facingFlipX,
+            bool facingLeft,
             bool hasPreviousSelection,
             LongwatchAimSelection previousSelection,
             out LongwatchAimSelection selection)
@@ -41,7 +41,7 @@ namespace Rustline.Presentation
 
             float continuousAngle = Mathf.Atan2(aimVector.y, Mathf.Abs(aimVector.x)) * Mathf.Rad2Deg;
             int authoredAngle = QuantizeToNearestTen(continuousAngle);
-            selection = new LongwatchAimSelection(continuousAngle, authoredAngle, facingFlipX);
+            selection = new LongwatchAimSelection(continuousAngle, authoredAngle, facingLeft);
             return true;
         }
 

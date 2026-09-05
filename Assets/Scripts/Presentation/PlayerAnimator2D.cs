@@ -59,15 +59,15 @@ namespace Rustline.Presentation
                 _landingTimeRemaining = 0f;
             }
 
-            bool facingFlipX = playerAim != null && playerAim.FacingFlipX;
-            ApplyFacing(facingFlipX);
+            bool facingLeft = playerAim != null && playerAim.FacingLeft;
+            ApplyFacing(facingLeft);
 
             PlayerAnimationState nextState = PlayerAnimationStateSelector.Select(
                 _motor.IsGrounded,
                 velocity.x,
                 velocity.y,
                 _landingTimeRemaining > 0f,
-                facingFlipX,
+                facingLeft,
                 config.RunAnimationSpeedThreshold,
                 config.AscendingAnimationThreshold);
 
@@ -88,10 +88,10 @@ namespace Rustline.Presentation
             }
         }
 
-        private void ApplyFacing(bool flipX)
+        private void ApplyFacing(bool facingLeft)
         {
-            bodySpriteRenderer.flipX = flipX;
-            armsWeaponSpriteRenderer.flipX = flipX;
+            bodySpriteRenderer.flipX = facingLeft;
+            armsWeaponSpriteRenderer.flipX = facingLeft;
         }
     }
 }

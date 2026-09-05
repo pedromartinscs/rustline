@@ -15,10 +15,10 @@ namespace Rustline.Tests
         [TestCase(false, 1f, 1f, false, true, PlayerAnimationState.Jump)]
         [TestCase(false, 1f, -0.1f, false, true, PlayerAnimationState.Fall)]
         public void Select_ReturnsPhysicsDrivenState(bool grounded, float horizontalVelocity,
-            float verticalVelocity, bool showingLanding, bool facingFlipX, PlayerAnimationState expected)
+            float verticalVelocity, bool showingLanding, bool facingLeft, PlayerAnimationState expected)
         {
             PlayerAnimationState state = PlayerAnimationStateSelector.Select(
-                grounded, horizontalVelocity, verticalVelocity, showingLanding, facingFlipX, 0.2f, 0.15f);
+                grounded, horizontalVelocity, verticalVelocity, showingLanding, facingLeft, 0.2f, 0.15f);
             Assert.That(state, Is.EqualTo(expected));
         }
     }

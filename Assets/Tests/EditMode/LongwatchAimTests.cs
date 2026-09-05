@@ -98,6 +98,21 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void AimPoses_RejectInvalidFrameIndices()
+        {
+            LongwatchIdleAimPose idle = default;
+            LongwatchRunAimPose run = default;
+            LongwatchBackpedalAimPose backpedal = default;
+
+            Assert.Throws<ArgumentOutOfRangeException>(() => idle.GetFrame(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => idle.GetFrame(2));
+            Assert.Throws<ArgumentOutOfRangeException>(() => run.GetFrame(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => run.GetFrame(6));
+            Assert.Throws<ArgumentOutOfRangeException>(() => backpedal.GetFrame(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => backpedal.GetFrame(4));
+        }
+
+        [Test]
         public void ZeroLengthAim_RetainsPriorValidSelection()
         {
             LongwatchAimSelection previous = new LongwatchAimSelection(63.5f, 60, true);

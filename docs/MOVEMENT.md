@@ -25,6 +25,8 @@ The prefab root uses a fixed vertical CapsuleCollider2D with size `1.05 × 2.75`
 
 Ground acceleration, deceleration, direction-change acceleration, and `Mathf.MoveTowards` behavior are unchanged. Crossing the aim hemisphere while holding movement therefore approaches the new 5 or 7 units/s cap naturally instead of snapping velocity. The Backpedal cap is grounded-only and both speed values remain human-tunable in `PlayerMovementConfig`.
 
+Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 5 units/s Backpedal policy, and the 5° vertical facing hysteresis. The 5 units/s Backpedal cap remains subject to final feel testing after the revised Backpedal art is available.
+
 MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile` supplies visuals, while a hidden Tilemap of simple Grid collider tiles feeds `TilemapCollider2D` into a `CompositeCollider2D` to avoid per-cell seams.
 
 ## Jump presentation

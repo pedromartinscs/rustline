@@ -55,10 +55,10 @@ namespace Rustline.Tests
         [TestCase(1f, true, 5f)]
         public void GroundSpeedLimit_DependsOnMovementRelativeToAimFacing(
             float input,
-            bool facingFlipX,
+            bool facingLeft,
             float expectedSpeed)
         {
-            Assert.That(PlayerMovementMath.GetGroundSpeedLimit(input, facingFlipX, _config),
+            Assert.That(PlayerMovementMath.GetGroundSpeedLimit(input, facingLeft, _config),
                 Is.EqualTo(expectedSpeed));
         }
 

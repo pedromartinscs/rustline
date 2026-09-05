@@ -74,7 +74,7 @@ namespace Rustline.Gameplay.Player
                 velocity.x,
                 _input.MoveX,
                 IsGrounded,
-                _aim != null && _aim.FacingFlipX,
+                _aim != null && _aim.FacingLeft,
                 config,
                 deltaTime);
 

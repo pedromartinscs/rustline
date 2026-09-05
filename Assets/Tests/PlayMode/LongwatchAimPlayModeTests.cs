@@ -319,23 +319,23 @@ namespace Rustline.Tests
             Vector2 leftNearUp = DirectionAtDegrees(88f, true);
             aim.ApplyWorldAimVector(rightOfUp);
             yield return null;
-            Assert.That(aim.FacingFlipX, Is.False);
+            Assert.That(aim.FacingLeft, Is.False);
             aim.ApplyWorldAimVector(leftNearUp);
             yield return null;
-            Assert.That(aim.FacingFlipX, Is.False, "Facing chattered inside the +90 degree zone.");
+            Assert.That(aim.FacingLeft, Is.False, "Facing chattered inside the +90 degree zone.");
             Assert.That(aim.ContinuousAimDirection, Is.EqualTo(leftNearUp.normalized));
             aim.ApplyWorldAimVector(DirectionAtDegrees(84f, true));
             yield return null;
-            Assert.That(aim.FacingFlipX, Is.True);
+            Assert.That(aim.FacingLeft, Is.True);
 
             Vector2 rightNearDown = DirectionAtDegrees(-88f, false);
             aim.ApplyWorldAimVector(rightNearDown);
             yield return null;
-            Assert.That(aim.FacingFlipX, Is.True, "Facing chattered inside the -90 degree zone.");
+            Assert.That(aim.FacingLeft, Is.True, "Facing chattered inside the -90 degree zone.");
             Assert.That(aim.ContinuousAimDirection, Is.EqualTo(rightNearDown.normalized));
             aim.ApplyWorldAimVector(DirectionAtDegrees(-84f, false));
             yield return null;
-            Assert.That(aim.FacingFlipX, Is.False);
+            Assert.That(aim.FacingLeft, Is.False);
         }
 
         [UnityTest]

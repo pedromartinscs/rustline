@@ -11,15 +11,15 @@ namespace Rustline.Gameplay.Player
         public static bool TryResolve(
             Vector2 aimVector,
             bool hasPreviousFacing,
-            bool previousFlipX,
+            bool previousFacingLeft,
             out Vector2 continuousDirection,
-            out bool facingFlipX)
+            out bool facingLeft)
         {
             if (!float.IsFinite(aimVector.x) || !float.IsFinite(aimVector.y) ||
                 aimVector.sqrMagnitude < MinimumAimMagnitudeSquared)
             {
                 continuousDirection = Vector2.zero;
-                facingFlipX = hasPreviousFacing && previousFlipX;
+                facingLeft = hasPreviousFacing && previousFacingLeft;
                 return false;
             }
 
@@ -28,11 +28,11 @@ namespace Rustline.Gameplay.Player
                 VerticalHemisphereHysteresisDegrees * Mathf.Deg2Rad);
             if (Mathf.Abs(continuousDirection.x) <= verticalZoneHalfWidth)
             {
-                facingFlipX = hasPreviousFacing && previousFlipX;
+                facingLeft = hasPreviousFacing && previousFacingLeft;
             }
             else
             {
-                facingFlipX = continuousDirection.x < 0f;
+                facingLeft = continuousDirection.x < 0f;
             }
 
             return true;
@@ -56,14 +56,14 @@ namespace Rustline.Gameplay.Player
 
         private Vector2 _continuousAimDirection = Vector2.right;
         private bool _hasValidAim;
-        private bool _facingFlipX;
+        private bool _facingLeft;
 
         public PlayerInputReader Input => input;
         public Transform AimOrigin => aimOrigin;
         public NativePixelPresentation NativePixelPresentation => nativePixelPresentation;
         public Vector2 ContinuousAimDirection => _continuousAimDirection;
         public bool HasValidAim => _hasValidAim;
-        public bool FacingFlipX => _facingFlipX;
+        public bool FacingLeft => _facingLeft;
         public Vector3 AimOriginWorld => aimOrigin != null
             ? aimOrigin.position
             : transform.position + Vector3.up * AimOriginOffsetWorldUnits;
@@ -103,15 +103,15 @@ namespace Rustline.Gameplay.Player
             if (!PlayerAimMath.TryResolve(
                     aimVector,
                     _hasValidAim,
-                    _facingFlipX,
+                    _facingLeft,
                     out Vector2 direction,
-                    out bool flipX))
+                    out bool facingLeft))
             {
                 return false;
             }
 
             _continuousAimDirection = direction;
-            _facingFlipX = flipX;
+            _facingLeft = facingLeft;
             _hasValidAim = true;
             return true;
         }

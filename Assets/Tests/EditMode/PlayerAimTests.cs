@@ -12,9 +12,9 @@ namespace Rustline.Tests
             Vector2 input = new Vector2(2.75f, -4.25f);
 
             Assert.That(PlayerAimMath.TryResolve(
-                input, false, false, out Vector2 direction, out bool flipX), Is.True);
+                input, false, false, out Vector2 direction, out bool facingLeft), Is.True);
             Assert.That(direction, Is.EqualTo(input.normalized));
-            Assert.That(flipX, Is.False);
+            Assert.That(facingLeft, Is.False);
         }
 
         [TestCase(90f, false, false)]
@@ -35,34 +35,34 @@ namespace Rustline.Tests
         [TestCase(-96f, false, true)]
         public void VerticalHysteresis_RetainsPriorHemisphereInsideFiveDegrees(
             float degrees,
-            bool previousFlipX,
-            bool expectedFlipX)
+            bool previousFacingLeft,
+            bool expectedFacingLeft)
         {
             Vector2 direction = new Vector2(
                 Mathf.Cos(degrees * Mathf.Deg2Rad),
                 Mathf.Sin(degrees * Mathf.Deg2Rad));
 
             Assert.That(PlayerAimMath.TryResolve(
-                direction, true, previousFlipX, out Vector2 continuous, out bool flipX), Is.True);
+                direction, true, previousFacingLeft, out Vector2 continuous, out bool facingLeft), Is.True);
             Assert.That(continuous, Is.EqualTo(direction.normalized));
-            Assert.That(flipX, Is.EqualTo(expectedFlipX));
+            Assert.That(facingLeft, Is.EqualTo(expectedFacingLeft));
         }
 
         [Test]
         public void InvalidAim_RetainsFacingAndDoesNotInventDirection()
         {
             Assert.That(PlayerAimMath.TryResolve(
-                Vector2.zero, true, true, out Vector2 direction, out bool flipX), Is.False);
+                Vector2.zero, true, true, out Vector2 direction, out bool facingLeft), Is.False);
             Assert.That(direction, Is.EqualTo(Vector2.zero));
-            Assert.That(flipX, Is.True);
+            Assert.That(facingLeft, Is.True);
         }
 
         [Test]
         public void NoPriorFacing_DefaultsRightInsideVerticalZone()
         {
             Assert.That(PlayerAimMath.TryResolve(
-                Vector2.up, false, true, out _, out bool flipX), Is.True);
-            Assert.That(flipX, Is.False);
+                Vector2.up, false, true, out _, out bool facingLeft), Is.True);
+            Assert.That(facingLeft, Is.False);
         }
 
         [Test]
@@ -76,7 +76,7 @@ namespace Rustline.Tests
                 Assert.That(aim.ApplyWorldAimVector(new Vector2(-2f, 1f)), Is.True);
                 Assert.That(aim.ApplyWorldAimVector(Vector2.zero), Is.False);
                 Assert.That(aim.ContinuousAimDirection, Is.EqualTo(expected));
-                Assert.That(aim.FacingFlipX, Is.True);
+                Assert.That(aim.FacingLeft, Is.True);
             }
             finally
             {
