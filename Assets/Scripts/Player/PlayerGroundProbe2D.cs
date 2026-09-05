@@ -1,3 +1,4 @@
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Rustline.Gameplay.Player
@@ -5,6 +6,9 @@ namespace Rustline.Gameplay.Player
     [RequireComponent(typeof(Collider2D))]
     public sealed class PlayerGroundProbe2D : MonoBehaviour
     {
+        private static readonly ProfilerMarker GroundProbeMarker =
+            new ProfilerMarker("Rustline.Player.GroundProbe");
+
         [SerializeField] private PlayerMovementConfig config;
         [SerializeField] private LayerMask groundLayers;
 
@@ -27,22 +31,25 @@ namespace Rustline.Gameplay.Player
 
         public bool CheckGrounded(float verticalVelocity)
         {
-            if (_collider == null || config == null || verticalVelocity > config.MaximumGroundingUpwardSpeed)
+            using (GroundProbeMarker.Auto())
             {
+                if (_collider == null || config == null || verticalVelocity > config.MaximumGroundingUpwardSpeed)
+                {
+                    return false;
+                }
+
+                int hitCount = _collider.Cast(Vector2.down, _filter, _hits, config.GroundCheckDistance);
+                for (int index = 0; index < hitCount; index++)
+                {
+                    RaycastHit2D hit = _hits[index];
+                    if (hit.collider != null && hit.normal.y >= config.MinimumGroundNormalY)
+                    {
+                        return true;
+                    }
+                }
+
                 return false;
             }
-
-            int hitCount = _collider.Cast(Vector2.down, _filter, _hits, config.GroundCheckDistance);
-            for (int index = 0; index < hitCount; index++)
-            {
-                RaycastHit2D hit = _hits[index];
-                if (hit.collider != null && hit.normal.y >= config.MinimumGroundNormalY)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private void RebuildFilter()

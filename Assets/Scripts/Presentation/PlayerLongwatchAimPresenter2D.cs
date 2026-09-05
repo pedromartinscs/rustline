@@ -1,5 +1,6 @@
 using System;
 using Rustline.Gameplay.Player;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Rustline.Presentation
@@ -86,6 +87,9 @@ namespace Rustline.Presentation
     [DisallowMultipleComponent]
     public sealed class PlayerLongwatchAimPresenter2D : MonoBehaviour
     {
+        private static readonly ProfilerMarker LongwatchMarker =
+            new ProfilerMarker("Rustline.Presentation.Longwatch");
+
         [SerializeField] private PlayerAim2D playerAim;
         [SerializeField] private PlayerAnimator2D playerAnimator;
         [SerializeField] private PlayerUnarmedArmsPresenter2D unarmedPresenter;
@@ -103,6 +107,9 @@ namespace Rustline.Presentation
         private bool _ownsRenderer;
         private Sprite _lastBodySprite;
         private int _lastDirectionIndex = -1;
+        private bool _configurationValid;
+        private bool _hasObservedAimRevision;
+        private uint _lastAimRevision;
 
         public PlayerAim2D PlayerAim => playerAim;
         public PlayerAnimator2D PlayerAnimator => playerAnimator;
@@ -125,40 +132,52 @@ namespace Rustline.Presentation
 
         private void LateUpdate()
         {
-            if (!CanOwnRenderer())
+            using (LongwatchMarker.Auto())
             {
-                ReleaseRenderer();
-                return;
-            }
+                if (!CanOwnRenderer())
+                {
+                    ReleaseRenderer();
+                    return;
+                }
 
-            UpdateAimSelection();
-            AcquireRenderer();
-            if (!TryResolveDisplayedBodyFrame(out PlayerAnimationState bodyState, out int bodyFrameIndex))
-            {
-                return;
-            }
+                UpdateAimSelection();
+                AcquireRenderer();
 
-            int directionIndex = _selection.DirectionIndex;
-            Sprite bodySprite = bodySpriteRenderer.sprite;
-            if (bodySprite == _lastBodySprite && directionIndex == _lastDirectionIndex)
-            {
-                return;
-            }
+                int directionIndex = _selection.DirectionIndex;
+                Sprite bodySprite = bodySpriteRenderer.sprite;
+                if (bodySprite == _lastBodySprite && directionIndex == _lastDirectionIndex)
+                {
+                    return;
+                }
 
-            _lastBodySprite = bodySprite;
-            _lastDirectionIndex = directionIndex;
-            switch (bodyState)
-            {
-                case PlayerAnimationState.Idle:
-                    armsWeaponSpriteRenderer.sprite = idleAimPoses[directionIndex].GetFrame(bodyFrameIndex);
-                    break;
-                case PlayerAnimationState.Run:
-                    armsWeaponSpriteRenderer.sprite = runAimPoses[directionIndex].GetFrame(bodyFrameIndex);
-                    break;
-                case PlayerAnimationState.Backpedal:
-                    armsWeaponSpriteRenderer.sprite = backpedalAimPoses[directionIndex].GetFrame(bodyFrameIndex);
-                    break;
+                if (!TryResolveDisplayedBodyFrame(bodySprite, out PlayerAnimationState bodyState, out int bodyFrameIndex))
+                {
+                    return;
+                }
+
+                _lastBodySprite = bodySprite;
+                _lastDirectionIndex = directionIndex;
+                switch (bodyState)
+                {
+                    case PlayerAnimationState.Idle:
+                        armsWeaponSpriteRenderer.sprite = idleAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        break;
+                    case PlayerAnimationState.Run:
+                        armsWeaponSpriteRenderer.sprite = runAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        break;
+                    case PlayerAnimationState.Backpedal:
+                        armsWeaponSpriteRenderer.sprite = backpedalAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        break;
+                }
             }
+        }
+
+        private void OnEnable()
+        {
+            _configurationValid = ValidateConfiguration();
+            _hasObservedAimRevision = false;
+            _lastBodySprite = null;
+            _lastDirectionIndex = -1;
         }
 
         private void OnDisable()
@@ -198,14 +217,7 @@ namespace Rustline.Presentation
 
         private bool CanOwnRenderer()
         {
-            if (playerAim == null || playerAnimator == null || unarmedPresenter == null ||
-                bodySpriteRenderer == null || armsWeaponSpriteRenderer == null ||
-                bodyIdleFrames == null || bodyIdleFrames.Length != 2 ||
-                idleAimPoses == null || idleAimPoses.Length != 19 ||
-                bodyRunFrames == null || bodyRunFrames.Length != 6 ||
-                runAimPoses == null || runAimPoses.Length != 19 ||
-                bodyBackpedalFrames == null || bodyBackpedalFrames.Length != 4 ||
-                backpedalAimPoses == null || backpedalAimPoses.Length != 19)
+            if (!_configurationValid)
             {
                 return false;
             }
@@ -215,9 +227,11 @@ namespace Rustline.Presentation
                    state == PlayerAnimationState.Backpedal;
         }
 
-        private bool TryResolveDisplayedBodyFrame(out PlayerAnimationState bodyState, out int frameIndex)
+        private bool TryResolveDisplayedBodyFrame(
+            Sprite displayedBody,
+            out PlayerAnimationState bodyState,
+            out int frameIndex)
         {
-            Sprite displayedBody = bodySpriteRenderer.sprite;
             for (int index = 0; index < bodyIdleFrames.Length; index++)
             {
                 if (displayedBody == bodyIdleFrames[index])
@@ -255,7 +269,15 @@ namespace Rustline.Presentation
 
         private void UpdateAimSelection()
         {
-            if (playerAim.HasValidAim && LongwatchAimMath.TrySelect(
+            if (!playerAim.HasValidAim ||
+                _hasObservedAimRevision && playerAim.AimRevision == _lastAimRevision)
+            {
+                return;
+            }
+
+            _lastAimRevision = playerAim.AimRevision;
+            _hasObservedAimRevision = true;
+            if (LongwatchAimMath.TrySelect(
                     playerAim.ContinuousAimDirection,
                     playerAim.FacingLeft,
                     _hasValidAim,
@@ -265,6 +287,18 @@ namespace Rustline.Presentation
                 _selection = next;
                 _hasValidAim = true;
             }
+        }
+
+        private bool ValidateConfiguration()
+        {
+            return playerAim != null && playerAnimator != null && unarmedPresenter != null &&
+                   bodySpriteRenderer != null && armsWeaponSpriteRenderer != null &&
+                   bodyIdleFrames != null && bodyIdleFrames.Length == 2 &&
+                   idleAimPoses != null && idleAimPoses.Length == 19 &&
+                   bodyRunFrames != null && bodyRunFrames.Length == 6 &&
+                   runAimPoses != null && runAimPoses.Length == 19 &&
+                   bodyBackpedalFrames != null && bodyBackpedalFrames.Length == 4 &&
+                   backpedalAimPoses != null && backpedalAimPoses.Length == 19;
         }
 
         private void AcquireRenderer()

@@ -1,4 +1,5 @@
 using System;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Rustline.Gameplay.Player
@@ -7,6 +8,8 @@ namespace Rustline.Gameplay.Player
     [RequireComponent(typeof(PlayerAim2D))]
     public sealed class PlayerMotor2D : MonoBehaviour
     {
+        private static readonly ProfilerMarker MotorMarker = new ProfilerMarker("Rustline.Player.Motor");
+
         [SerializeField] private PlayerMovementConfig config;
 
         private Rigidbody2D _body;
@@ -32,62 +35,65 @@ namespace Rustline.Gameplay.Player
 
         private void FixedUpdate()
         {
-            if (config == null)
+            using (MotorMarker.Auto())
             {
-                return;
-            }
+                if (config == null)
+                {
+                    return;
+                }
 
-            float deltaTime = Time.fixedDeltaTime;
-            Vector2 velocity = _body.linearVelocity;
-            bool wasGrounded = IsGrounded;
-            IsGrounded = _groundProbe.CheckGrounded(velocity.y);
+                float deltaTime = Time.fixedDeltaTime;
+                Vector2 velocity = _body.linearVelocity;
+                bool wasGrounded = IsGrounded;
+                IsGrounded = _groundProbe.CheckGrounded(velocity.y);
 
-            if (!wasGrounded && IsGrounded)
-            {
-                Landed?.Invoke();
-            }
+                if (!wasGrounded && IsGrounded)
+                {
+                    Landed?.Invoke();
+                }
 
-            if (_input.ConsumeJumpPressed())
-            {
-                _jumpGrace.Buffer(config.JumpBufferTime);
-            }
+                if (_input.ConsumeJumpPressed())
+                {
+                    _jumpGrace.Buffer(config.JumpBufferTime);
+                }
 
-            _jumpGrace.Tick(IsGrounded, deltaTime, config.CoyoteTime);
+                _jumpGrace.Tick(IsGrounded, deltaTime, config.CoyoteTime);
 
-            bool jumped = _jumpGrace.TryConsume();
-            if (jumped)
-            {
-                bool jumpedWhileGrounded = IsGrounded;
-                velocity.y = config.JumpSpeed;
-                IsGrounded = false;
-                Jumped?.Invoke(jumpedWhileGrounded);
-            }
+                bool jumped = _jumpGrace.TryConsume();
+                if (jumped)
+                {
+                    bool jumpedWhileGrounded = IsGrounded;
+                    velocity.y = config.JumpSpeed;
+                    IsGrounded = false;
+                    Jumped?.Invoke(jumpedWhileGrounded);
+                }
 
-            if (_input.ConsumeJumpReleased() && velocity.y > 0f)
-            {
-                velocity.y = PlayerMovementMath.CutJumpVelocity(
-                    velocity.y,
-                    config);
-            }
+                if (_input.ConsumeJumpReleased() && velocity.y > 0f)
+                {
+                    velocity.y = PlayerMovementMath.CutJumpVelocity(
+                        velocity.y,
+                        config);
+                }
 
-            velocity.x = PlayerMovementMath.CalculateHorizontalVelocity(
-                velocity.x,
-                _input.MoveX,
-                IsGrounded,
-                _aim != null && _aim.FacingLeft,
-                config,
-                deltaTime);
-
-            if (!jumped && !IsGrounded)
-            {
-                velocity.y = PlayerMovementMath.ApplyGravity(
-                    velocity.y,
-                    Physics2D.gravity.y,
+                velocity.x = PlayerMovementMath.CalculateHorizontalVelocity(
+                    velocity.x,
+                    _input.MoveX,
+                    IsGrounded,
+                    _aim != null && _aim.FacingLeft,
                     config,
                     deltaTime);
-            }
 
-            _body.linearVelocity = velocity;
+                if (!jumped && !IsGrounded)
+                {
+                    velocity.y = PlayerMovementMath.ApplyGravity(
+                        velocity.y,
+                        Physics2D.gravity.y,
+                        config,
+                        deltaTime);
+                }
+
+                _body.linearVelocity = velocity;
+            }
         }
 
         public void ResetAfterRespawn()

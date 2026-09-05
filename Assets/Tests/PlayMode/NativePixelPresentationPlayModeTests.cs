@@ -25,8 +25,14 @@ namespace Rustline.Tests
             NativePixelViewport expected = NativePixelViewportMath.Calculate(Screen.width, Screen.height);
             Assert.That(presentation.Viewport.LogicalWidth, Is.EqualTo(expected.LogicalWidth));
             Assert.That(presentation.Viewport.LogicalHeight, Is.EqualTo(expected.LogicalHeight));
-            AssertTarget(presentation.WorldTarget, expected, requiresCameraDepth: true);
-            AssertTarget(presentation.ResolvedTarget, expected, requiresCameraDepth: true);
+            AssertTarget(
+                presentation.WorldTarget,
+                expected,
+                NativePixelPresentation.WorldTargetDepthBits);
+            AssertTarget(
+                presentation.ResolvedTarget,
+                expected,
+                NativePixelPresentation.ResolvedTargetDepthBits);
 
             // Consolidated Experiment 2 architecture: the world camera renders stage A;
             // one lightweight utility camera remains active only as the RenderGraph driver.
@@ -145,7 +151,7 @@ namespace Rustline.Tests
         private static void AssertTarget(
             RenderTexture target,
             NativePixelViewport expected,
-            bool requiresCameraDepth)
+            int expectedDepthBits)
         {
             Assert.That(target, Is.Not.Null);
             Assert.That(target.width, Is.EqualTo(expected.LogicalWidth));
@@ -154,7 +160,11 @@ namespace Rustline.Tests
             Assert.That(target.antiAliasing, Is.EqualTo(1));
             Assert.That(target.useMipMap, Is.False);
             Assert.That(target.autoGenerateMips, Is.False);
-            Assert.That(target.depth > 0, Is.EqualTo(requiresCameraDepth));
+            Assert.That(target.depth, Is.EqualTo(expectedDepthBits));
+            Assert.That(target.format, Is.EqualTo(RenderTextureFormat.ARGB32));
+            Assert.That(target.sRGB, Is.True);
+            Assert.That(target.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
+            Assert.That(target.anisoLevel, Is.EqualTo(0));
         }
 
         private static void AssertPlayerRegionHasVisibleContent(

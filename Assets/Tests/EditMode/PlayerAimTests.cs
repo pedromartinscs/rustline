@@ -85,6 +85,34 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void AimRevision_ChangesOnlyWhenResolvedAimStateChanges()
+        {
+            GameObject gameObject = new GameObject("Aim revision test");
+            try
+            {
+                PlayerAim2D aim = gameObject.AddComponent<PlayerAim2D>();
+                Assert.That(aim.AimRevision, Is.EqualTo(0u));
+
+                Assert.That(aim.ApplyWorldAimVector(new Vector2(2f, 1f)), Is.True);
+                uint firstRevision = aim.AimRevision;
+                Vector2 firstDirection = aim.ContinuousAimDirection;
+                Assert.That(firstRevision, Is.EqualTo(1u));
+
+                Assert.That(aim.ApplyWorldAimVector(new Vector2(2f, 1f)), Is.True);
+                Assert.That(aim.AimRevision, Is.EqualTo(firstRevision));
+                Assert.That(aim.ContinuousAimDirection, Is.EqualTo(firstDirection));
+
+                Assert.That(aim.ApplyWorldAimVector(new Vector2(-2f, 1f)), Is.True);
+                Assert.That(aim.AimRevision, Is.EqualTo(firstRevision + 1u));
+                Assert.That(aim.FacingLeft, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(gameObject);
+            }
+        }
+
+        [Test]
         public void AimOriginContract_IsExactlyThirtyEightSourcePixels()
         {
             Assert.That(PlayerAim2D.AimOriginOffsetSourcePixels, Is.EqualTo(38f));

@@ -1,5 +1,7 @@
 using NUnit.Framework;
 using Rustline.Presentation;
+using UnityEditor;
+using UnityEngine.Rendering.Universal;
 
 namespace Rustline.Tests
 {
@@ -65,10 +67,37 @@ namespace Rustline.Tests
             Assert.That(NativePixelPresentation.FullyVisibleRadiusPixels, Is.EqualTo(456));
             Assert.That(NativePixelPresentation.PenumbraThicknessPixels, Is.EqualTo(64));
             Assert.That(NativePixelPresentation.FullDarknessRadiusPixels, Is.EqualTo(520));
+            Assert.That(NativePixelPresentation.WorldTargetDepthBits, Is.EqualTo(16));
+            Assert.That(NativePixelPresentation.ResolvedTargetDepthBits, Is.EqualTo(0));
             Assert.That(
                 NativePixelPresentation.FullyVisibleRadiusPixels +
                 NativePixelPresentation.PenumbraThicknessPixels,
                 Is.EqualTo(NativePixelPresentation.FullDarknessRadiusPixels));
+        }
+
+        [Test]
+        public void UniversalRpAsset_PrunesUnusedThreeDimensionalCapabilities()
+        {
+            UniversalRenderPipelineAsset asset =
+                AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(
+                    "Assets/Settings/UniversalRP.asset");
+
+            Assert.That(asset, Is.Not.Null);
+            Assert.That(asset.supportsCameraDepthTexture, Is.False);
+            Assert.That(asset.supportsCameraOpaqueTexture, Is.False);
+            Assert.That(asset.supportsHDR, Is.False);
+            Assert.That(asset.supportsTerrainHoles, Is.False);
+            Assert.That(asset.enableLODCrossFade, Is.False);
+            Assert.That(asset.mainLightRenderingMode, Is.EqualTo(LightRenderingMode.Disabled));
+            Assert.That(asset.additionalLightsRenderingMode, Is.EqualTo(LightRenderingMode.Disabled));
+            Assert.That(asset.supportsMainLightShadows, Is.False);
+            Assert.That(asset.supportsAdditionalLightShadows, Is.False);
+            Assert.That(asset.supportsMixedLighting, Is.False);
+            Assert.That(asset.supportsLightCookies, Is.False);
+            Assert.That(asset.supportDataDrivenLensFlare, Is.False);
+            Assert.That(asset.supportScreenSpaceLensFlare, Is.False);
+            Assert.That(asset.useAdaptivePerformance, Is.False);
+            Assert.That(asset.volumeFrameworkUpdateMode, Is.EqualTo(VolumeFrameworkUpdateMode.ViaScripting));
         }
     }
 }

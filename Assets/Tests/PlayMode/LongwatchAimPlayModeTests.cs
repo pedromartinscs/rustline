@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
 using Rustline.Gameplay.Player;
 using Rustline.Presentation;
@@ -12,6 +13,104 @@ namespace Rustline.Tests
 {
     public sealed class LongwatchAimPlayModeTests : InputTestFixture
     {
+        [UnityTest]
+        public IEnumerator AimDirtyState_RefreshesForEveryExactConversionInput()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerAim2D aim = Object.FindAnyObjectByType<PlayerAim2D>();
+            NativePixelPresentation presentation = Object.FindAnyObjectByType<NativePixelPresentation>();
+            Assert.That(aim, Is.Not.Null);
+            Assert.That(presentation, Is.Not.Null);
+
+            Mouse mouse = InputSystem.AddDevice<Mouse>();
+            try
+            {
+                yield return SettlePlayer();
+                QueueWorldAim(mouse, presentation, aim.AimOriginWorld, DirectionAtDegrees(27f, false));
+                yield return null;
+
+                Vector2 stationaryDirection = aim.ContinuousAimDirection;
+                bool stationaryFacing = aim.FacingLeft;
+                uint stationaryRevision = aim.AimRevision;
+                aim.RefreshAim();
+                aim.RefreshAim();
+                Assert.That(aim.ContinuousAimDirection, Is.EqualTo(stationaryDirection));
+                Assert.That(aim.FacingLeft, Is.EqualTo(stationaryFacing));
+                Assert.That(aim.AimRevision, Is.EqualTo(stationaryRevision));
+
+                QueueWorldAim(mouse, presentation, aim.AimOriginWorld, DirectionAtDegrees(-31f, false));
+                aim.RefreshAim();
+                Assert.That(aim.AimRevision, Is.GreaterThan(stationaryRevision),
+                    "Pointer movement did not refresh aim immediately.");
+
+                uint pointerRevision = aim.AimRevision;
+                Vector3 originalPlayerPosition = aim.transform.position;
+                aim.transform.position = originalPlayerPosition + new Vector3(0.125f, 0f, 0f);
+                aim.RefreshAim();
+                Assert.That(aim.AimRevision, Is.GreaterThan(pointerRevision),
+                    "Player movement did not refresh aim.");
+                aim.transform.position = originalPlayerPosition;
+                aim.RefreshAim();
+
+                Camera worldCamera = presentation.WorldCamera;
+                uint originRevision = aim.AimRevision;
+                Vector3 originalCameraPosition = worldCamera.transform.position;
+                worldCamera.transform.position = originalCameraPosition + new Vector3(0.125f, 0f, 0f);
+                aim.RefreshAim();
+                Assert.That(aim.AimRevision, Is.GreaterThan(originRevision),
+                    "Camera movement did not refresh aim.");
+                worldCamera.transform.position = originalCameraPosition;
+                aim.RefreshAim();
+
+                uint cameraPositionRevision = aim.AimRevision;
+                Quaternion originalCameraRotation = worldCamera.transform.rotation;
+                worldCamera.transform.rotation = Quaternion.Euler(0f, 0f, 0.125f) * originalCameraRotation;
+                aim.RefreshAim();
+                Assert.That(aim.AimRevision, Is.GreaterThan(cameraPositionRevision),
+                    "Camera rotation did not refresh aim.");
+                worldCamera.transform.rotation = originalCameraRotation;
+                aim.RefreshAim();
+
+                uint cameraRevision = aim.AimRevision;
+                float originalOrthographicSize = worldCamera.orthographicSize;
+                worldCamera.orthographicSize = originalOrthographicSize + 0.125f;
+                aim.RefreshAim();
+                Assert.That(aim.AimRevision, Is.GreaterThan(cameraRevision),
+                    "Camera projection changes did not refresh aim.");
+                worldCamera.orthographicSize = originalOrthographicSize;
+                aim.RefreshAim();
+
+                FieldInfo viewportField = typeof(NativePixelPresentation).GetField(
+                    "_viewport",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(viewportField, Is.Not.Null);
+                NativePixelViewport originalViewport = presentation.Viewport;
+                NativePixelViewport shiftedViewport = new NativePixelViewport(
+                    originalViewport.PhysicalWidth,
+                    originalViewport.PhysicalHeight,
+                    originalViewport.IntegerScale,
+                    originalViewport.LogicalWidth,
+                    originalViewport.LogicalHeight,
+                    originalViewport.OutputWidth,
+                    originalViewport.OutputHeight,
+                    originalViewport.OutputOffsetX + 1,
+                    originalViewport.OutputOffsetY);
+                uint projectionRevision = aim.AimRevision;
+                viewportField.SetValue(presentation, shiftedViewport);
+                aim.RefreshAim();
+                Assert.That(aim.AimRevision, Is.GreaterThan(projectionRevision),
+                    "Native viewport changes did not refresh aim.");
+                viewportField.SetValue(presentation, originalViewport);
+                aim.RefreshAim();
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(mouse);
+            }
+        }
+
         [UnityTest]
         public IEnumerator IdleLongwatch_UsesCorrectedAimOriginAndFollowsBodyWithoutDrift()
         {

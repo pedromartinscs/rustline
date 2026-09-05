@@ -45,6 +45,7 @@ namespace Rustline.Editor
         private const string PenumbraShaderPath = "Assets/Shaders/RustlinePalettePenumbra.shader";
         private const string PresentationShaderPath = "Assets/Shaders/RustlineNativePixelPresent.shader";
         private const string Renderer2DPath = "Assets/Settings/Renderer2D.asset";
+        private const string UniversalRpPath = "Assets/Settings/UniversalRP.asset";
 
         private static readonly CourseBlock[] Course =
         {
@@ -1073,6 +1074,26 @@ namespace Rustline.Editor
                 string rendererYaml = File.ReadAllText(Path.Combine(projectRoot, Renderer2DPath));
                 Require(rendererYaml.Contains("m_UseDepthStencilBuffer: 0"),
                     "Renderer2D depth/stencil buffer must remain disabled.");
+
+                UniversalRenderPipelineAsset pipelineAsset =
+                    AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(UniversalRpPath);
+                Require(pipelineAsset != null &&
+                    !pipelineAsset.supportsCameraDepthTexture &&
+                    !pipelineAsset.supportsCameraOpaqueTexture &&
+                    !pipelineAsset.supportsHDR &&
+                    !pipelineAsset.supportsTerrainHoles &&
+                    !pipelineAsset.enableLODCrossFade &&
+                    pipelineAsset.mainLightRenderingMode == LightRenderingMode.Disabled &&
+                    pipelineAsset.additionalLightsRenderingMode == LightRenderingMode.Disabled &&
+                    !pipelineAsset.supportsMainLightShadows &&
+                    !pipelineAsset.supportsAdditionalLightShadows &&
+                    !pipelineAsset.supportsMixedLighting &&
+                    !pipelineAsset.supportsLightCookies &&
+                    !pipelineAsset.supportDataDrivenLensFlare &&
+                    !pipelineAsset.supportScreenSpaceLensFlare &&
+                    !pipelineAsset.useAdaptivePerformance &&
+                    pipelineAsset.volumeFrameworkUpdateMode == VolumeFrameworkUpdateMode.ViaScripting,
+                    "Rustline's unused URP 3D/HDR/Volume capabilities must remain pruned.");
             }
             finally
             {

@@ -342,3 +342,54 @@ Decision gate:
 - Pedro will run one full diagnostic `control-off` A/A after the implementation is validated.
 - If that A/A is reasonably stable, Penumbra A/B may follow. If it remains extremely unstable, benchmark engineering stops for now; the harness remains a coarse diagnostic, Experiment 3A remains structurally justified without a measured-speedup claim, and project focus returns to gameplay/content/assets.
 - No Experiment 3B or automatic Benchmark Stabilization 2 begins from this work.
+
+## Focused performance pass — depth, steady-state CPU work, and URP capabilities
+
+Status: **implemented and validated in Unity 6000.4.0f1**.
+
+Hypotheses:
+
+- the resolved logical texture was paying for an unused 16-bit depth attachment;
+- stationary presentation, aim, Animator facing, and Longwatch paths repeated native calls or scans despite unchanged inputs;
+- the shared URP asset enabled generic 3D/HDR/Volume capabilities that neither current scene can use.
+
+Retained changes:
+
+- Added static scoped markers: `Rustline.Player.Aim`, `Rustline.Player.Motor`, `Rustline.Player.GroundProbe`, `Rustline.Presentation.NativePixelUpdate`, `Rustline.Presentation.Longwatch`, and `Rustline.Presentation.Animator`.
+- Changed only the resolved/penumbra RenderTexture depth request from 16 to 0. At `1072×1072`, the removed 16-bit attachment is 2,298,368 bytes (approximately 2.19 MiB) before platform-specific alignment. ARGB32 sRGB color, Point/Clamp, AA 1, mipmap-off, and anisotropy 0 are explicitly tested.
+- Kept World Camera target depth at 16. Renderer2D depth/stencil is disabled and no feature samples scene depth, but this pass did not complete the separate depthless-camera experiment plus manual pixel validation across both authored scenes required to accept that less-certain change.
+- Moved `_LogicalSize` updates out of the per-frame path. Exact player/camera/projection dirty state bypasses stationary penumbra coordinate conversion; exact cached vectors suppress redundant material updates.
+- Cached the 5-degree facing threshold once. `PlayerAim2D` now skips camera conversion only when pointer, AimOrigin, World Camera identity/position/rotation/projection values, presentation identity, and every native viewport field are exactly equal to the previous resolved frame. No epsilon is used. A revision changes only when the resolved continuous direction or facing changes.
+- Cached Animator state hashes and facing. Longwatch validates immutable serialized configuration once per enable, uses the aim revision to avoid redundant `Atan2`/quantization, checks Body sprite plus direction before scanning the 2/6/4 Body frame arrays, and retains the sole Body Animator as its clock.
+- Disabled unused URP HDR, Terrain Holes, LOD Cross Fade, 3D main/additional light rendering and shadows, mixed lighting, 3D light cookies, data-driven/screen-space lens flare, and Adaptive Performance. Set Volume Update Mode to `Via Scripting`. Repository audit found only `Light2D`, no 3D `Light`, Terrain, LODGroup, lens flare, runtime Volume, post-processing, or 3D light cookie use; both authored scenes retain their global 2D light.
+
+Quality-profile decision:
+
+- Standalone remains mapped to `Ultra`; the benchmark continues to force `Very Low` by name.
+- The mismatch is documented rather than changed because `Ultra` and `Very Low` also encode different VSync policy and Rustline has no shipping frame-pacing requirement yet.
+- The shared URP asset now makes unused expensive renderer capabilities deterministic across those profiles without changing resolution, native viewport rules, VSync, or target frame rate.
+
+Correctness coverage added:
+
+- final World/resolved depth contracts and all retained RenderTexture sampling/color properties;
+- URP capability policy;
+- aim revision stability and immediate pointer/player/camera-position/camera-rotation/projection/viewport invalidation;
+- existing vertical hysteresis, Longwatch 360-degree selection, Body synchronization, locomotion, jump, dust, respawn, palette, raw/penumbra orientation, and toggle tests remain in place.
+
+Validation evidence and limits:
+
+- The pre-edit benchmark build was attempted with Unity `6000.4.0f1`, but the local Unity Licensing Client repeatedly timed out and reported the headless entitlement unavailable before project compilation. No baseline report was produced.
+- After allowing Unity to reach its local licensing service, the Editor compiled cleanly and the full EditMode suite passed **126/126**.
+- The batch PlayMode suite passed **15/16**. Its sole failure was the already documented environment-sensitive stage-B RenderTexture readback (`MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths` saw zero resolved pixels). The same complete suite then passed **16/16** in the graphical D3D11 Editor, including the raw and Penumbra RenderGraph readbacks. This establishes that the batch result is not a new presentation regression.
+- The Windows Development benchmark built successfully. The short `control-off` smoke succeeded and auto-quit with block stability max/min `1.003537`.
+- The full six-pair `control-off` A/A succeeded at physical `1920×1080`, logical `1072×1072`, Very Low, VSync 0. Its 12 chronological block means stayed between `10.235874 ms` and `10.284769 ms` (max/min `1.004777`, CV `0.001501`). Mean absolute false A/B delta was `0.017725 ms`, with a maximum of `0.041016 ms`. The harness is stable enough for later comparisons, but no before/after percentage is claimed because licensing prevented a pre-edit baseline.
+- A generated-solution MSBuild attempt was not a valid substitute for Unity compilation: its package reference paths were stale/missing. The later Unity test and player-build results supersede that diagnostic.
+- The available benchmark allocation counter is whole-frame only and provides no call stacks. Across the full run, block means were `4553.63–4583.18 B/frame`, p95 was consistently `4388 B`, and isolated maxima were `39040–41616 B`. Without reliable attribution to Rustline code, no speculative allocation rewrite was made and the historical approximately `4400 B/frame` observation remains engine/user-code unattributed.
+
+Expected impact:
+
+- guaranteed logical-target GPU memory reduction from removing the resolved depth attachment;
+- fewer main-thread managed-to-native camera/material/renderer calls during idle and steady aim;
+- fewer Longwatch trigonometric calculations and Body-array comparisons between actual aim/frame changes;
+- less URP feature setup/variant surface and no per-frame Volume stack update for the current no-Volume presentation;
+- profiler attribution in Development captures with no marker Begin/End overhead in non-Development Release builds.

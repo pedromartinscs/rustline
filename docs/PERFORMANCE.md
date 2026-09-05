@@ -102,11 +102,22 @@ For a small number of discrete shadow levels, a lookup can map each canonical so
 
 This is an **approved prototype direction, not yet a mandated implementation**. The exact GPU representation must be chosen after measuring the first penumbra prototype. Do not prematurely convert the whole art pipeline to indexed textures or add complexity merely because a 28-color LUT is possible.
 
-## Known audit candidates — not yet optimizations
+## Focused runtime optimization pass
 
-The current Unity project inherited several generic URP/quality capabilities that Rustline may not need. These include candidates such as HDR support, shadow capabilities, additional-light features, light cookies, lens-flare support, reflection/3D-oriented quality settings, and the default Standalone quality profile.
+The September 2026 pass retained a small set of structurally verifiable changes:
 
-They should be tested incrementally. Do not disable a large group of settings at once: doing so would make regressions difficult to attribute and would prevent meaningful before/after measurement.
+- static `ProfilerMarker` scopes identify player aim, motor, ground probe, native-pixel update, Longwatch presentation, and animation work in Editor/Development captures; Unity compiles marker Begin/End calls out of non-Development Release builds;
+- the persistent resolved/penumbra RenderTexture is depthless because it is only a RenderGraph color attachment; the World Camera target deliberately retains 16-bit depth until a depthless camera-output experiment can be visually verified in Unity;
+- native-pixel material parameters are exact-dirty-checked, and the player/camera-derived penumbra values are not recomputed in a stationary frame;
+- aim conversion skips its two camera-space conversions only when every current conversion input is exactly unchanged; an exact aim revision prevents Longwatch from repeating angle quantization for an unchanged resolved aim;
+- Animator state names are cached as hashes, renderer facing writes happen only on an actual facing change, and Longwatch validates immutable configuration once per enable and scans Body frames only after its Body/direction cache misses;
+- the active URP asset disables unused HDR, Terrain Holes, LOD Cross Fade, 3D main/additional lights and shadows, mixed lighting, 3D light cookies, both lens-flare systems, and Adaptive Performance. Volume updates are `Via Scripting`; current cameras have post-processing off and the repository contains no authored runtime Volume.
+
+The active global `Light2D` in MovementLab and ArtShowcase is unaffected by the disabled 3D-light capabilities. Depth Texture, Opaque Texture, MSAA, Renderer2D depth/stencil, and SRP Batcher retain their accepted settings.
+
+### Shipping quality policy
+
+The benchmark still resolves and forces `Very Low` by exact name, while Standalone still defaults to `Ultra`. The profiles differ in VSync and other generic quality fields, and the repository does not define a shipping frame-pacing policy. The default mapping therefore remains unchanged rather than inventing one. Expensive rendering capabilities Rustline cannot currently display are disabled in the shared URP asset, making that part of the runtime policy deterministic across quality levels. A future shipping-settings milestone must choose VSync/target-frame-rate policy explicitly before changing the Standalone default.
 
 ## Baseline test discipline
 

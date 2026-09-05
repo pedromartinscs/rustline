@@ -1,3 +1,4 @@
+using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -17,6 +18,11 @@ namespace Rustline.Presentation
         public const int PenumbraThicknessPixels = 64;
         public const int FullDarknessRadiusPixels = 520;
         public const int UtilityRendererIndex = 1;
+        public const int WorldTargetDepthBits = 16;
+        public const int ResolvedTargetDepthBits = 0;
+
+        private static readonly ProfilerMarker NativePixelUpdateMarker =
+            new ProfilerMarker("Rustline.Presentation.NativePixelUpdate");
 
         private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int LogicalSizeId = Shader.PropertyToID("_LogicalSize");
@@ -44,6 +50,21 @@ namespace Rustline.Presentation
         private RenderTexture _penumbraTarget;
         private Material _penumbraMaterial;
         private Material _presentationMaterial;
+        private bool _hasLogicalSize;
+        private bool _hasPlayerPixelCenter;
+        private bool _hasWorldPixelOrigin;
+        private Vector4 _lastLogicalSize;
+        private Vector4 _lastPlayerPixelCenter;
+        private Vector4 _lastWorldPixelOrigin;
+        private bool _hasPenumbraInputs;
+        private Vector3 _lastPlayerWorldPosition;
+        private Vector3 _lastWorldCameraPosition;
+        private Quaternion _lastWorldCameraRotation;
+        private float _lastWorldCameraOrthographicSize;
+        private float _lastWorldCameraAspect;
+        private Rect _lastWorldCameraRect;
+        private int _lastPenumbraLogicalWidth;
+        private int _lastPenumbraLogicalHeight;
 
         public NativePixelViewport Viewport => _viewport;
         public bool PenumbraEnabled => penumbraEnabled;
@@ -83,9 +104,9 @@ namespace Rustline.Presentation
             _penumbraMaterial.SetFloat(FullDarknessRadiusId, FullDarknessRadiusPixels);
             _penumbraMaterial.SetFloat(PenumbraEnabledId, 1f);
 
+            InvalidatePenumbraParameterCaches();
             RefreshViewportAndTargets();
             UpdatePenumbraParameters();
-            ApplyPenumbraState();
         }
 
         private void OnDisable()
@@ -111,12 +132,15 @@ namespace Rustline.Presentation
 
         private void LateUpdate()
         {
-            if (_viewport.PhysicalWidth != Screen.width || _viewport.PhysicalHeight != Screen.height)
+            using (NativePixelUpdateMarker.Auto())
             {
-                RefreshViewportAndTargets();
-            }
+                if (_viewport.PhysicalWidth != Screen.width || _viewport.PhysicalHeight != Screen.height)
+                {
+                    RefreshViewportAndTargets();
+                }
 
-            UpdatePenumbraParameters();
+                UpdatePenumbraParameters();
+            }
         }
 
         public void TogglePenumbra()
@@ -176,6 +200,12 @@ namespace Rustline.Presentation
                 RecreateTargets(nextViewport.LogicalWidth, nextViewport.LogicalHeight);
             }
 
+            SetLogicalSizeIfChanged(new Vector4(
+                nextViewport.LogicalWidth,
+                nextViewport.LogicalHeight,
+                0f,
+                0f));
+
             worldCamera.targetTexture = _worldTarget;
             worldCamera.orthographicSize = nextViewport.LogicalHeight / (2f * PixelsPerUnit);
 
@@ -198,12 +228,21 @@ namespace Rustline.Presentation
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
 
-            // Keep descriptors unchanged while Experiment 2 is being measured so camera
-            // elimination remains the isolated performance variable. The resolved target is
-            // no longer a camera output and can be made depthless in a later focused change.
-            _worldTarget = CreateTarget(width, height, "Rustline World - Logical");
-            _penumbraTarget = CreateTarget(width, height, "Rustline Penumbra - Logical");
+            // The 2D world camera retains its proven 16-bit depth contract until depthless
+            // camera output is visually validated on every supported path. The resolved
+            // RenderGraph-only target never needs a depth/stencil attachment.
+            _worldTarget = CreateTarget(
+                width,
+                height,
+                WorldTargetDepthBits,
+                "Rustline World - Logical");
+            _penumbraTarget = CreateTarget(
+                width,
+                height,
+                ResolvedTargetDepthBits,
+                "Rustline Penumbra - Logical");
             _penumbraMaterial.SetTexture(MainTexId, _worldTarget);
+            InvalidatePenumbraParameterCaches();
         }
 
         private void UpdatePenumbraParameters()
@@ -213,25 +252,61 @@ namespace Rustline.Presentation
                 return;
             }
 
-            Vector3 playerViewport = worldCamera.WorldToViewportPoint(playerTarget.position);
-            float cameraPixelX = worldCamera.transform.position.x * PixelsPerUnit;
-            float cameraPixelY = worldCamera.transform.position.y * PixelsPerUnit;
+            Vector3 playerWorldPosition = playerTarget.position;
+            Transform cameraTransform = worldCamera.transform;
+            Vector3 cameraPosition = cameraTransform.position;
+            Quaternion cameraRotation = cameraTransform.rotation;
+            float orthographicSize = worldCamera.orthographicSize;
+            float cameraAspect = worldCamera.aspect;
+            Rect cameraRect = worldCamera.rect;
+            if (_hasPenumbraInputs &&
+                _lastPlayerWorldPosition.Equals(playerWorldPosition) &&
+                _lastWorldCameraPosition.Equals(cameraPosition) &&
+                _lastWorldCameraRotation.Equals(cameraRotation) &&
+                _lastWorldCameraOrthographicSize == orthographicSize &&
+                _lastWorldCameraAspect == cameraAspect &&
+                _lastWorldCameraRect.Equals(cameraRect) &&
+                _lastPenumbraLogicalWidth == _viewport.LogicalWidth &&
+                _lastPenumbraLogicalHeight == _viewport.LogicalHeight)
+            {
+                return;
+            }
+
+            _lastPlayerWorldPosition = playerWorldPosition;
+            _lastWorldCameraPosition = cameraPosition;
+            _lastWorldCameraRotation = cameraRotation;
+            _lastWorldCameraOrthographicSize = orthographicSize;
+            _lastWorldCameraAspect = cameraAspect;
+            _lastWorldCameraRect = cameraRect;
+            _lastPenumbraLogicalWidth = _viewport.LogicalWidth;
+            _lastPenumbraLogicalHeight = _viewport.LogicalHeight;
+            _hasPenumbraInputs = true;
+
+            Vector3 playerViewport = worldCamera.WorldToViewportPoint(playerWorldPosition);
+            float cameraPixelX = cameraPosition.x * PixelsPerUnit;
+            float cameraPixelY = cameraPosition.y * PixelsPerUnit;
             int worldOriginX = Mathf.FloorToInt(cameraPixelX - _viewport.LogicalWidth * 0.5f);
             int worldOriginY = Mathf.FloorToInt(cameraPixelY - _viewport.LogicalHeight * 0.5f);
 
-            _penumbraMaterial.SetVector(
-                LogicalSizeId,
-                new Vector4(_viewport.LogicalWidth, _viewport.LogicalHeight, 0f, 0f));
-            _penumbraMaterial.SetVector(
-                PlayerPixelCenterId,
-                new Vector4(
-                    playerViewport.x * _viewport.LogicalWidth,
-                    playerViewport.y * _viewport.LogicalHeight,
-                    0f,
-                    0f));
-            _penumbraMaterial.SetVector(
-                WorldPixelOriginId,
-                new Vector4(worldOriginX, worldOriginY, 0f, 0f));
+            Vector4 playerPixelCenter = new Vector4(
+                playerViewport.x * _viewport.LogicalWidth,
+                playerViewport.y * _viewport.LogicalHeight,
+                0f,
+                0f);
+            if (!_hasPlayerPixelCenter || !playerPixelCenter.Equals(_lastPlayerPixelCenter))
+            {
+                _penumbraMaterial.SetVector(PlayerPixelCenterId, playerPixelCenter);
+                _lastPlayerPixelCenter = playerPixelCenter;
+                _hasPlayerPixelCenter = true;
+            }
+
+            Vector4 worldPixelOrigin = new Vector4(worldOriginX, worldOriginY, 0f, 0f);
+            if (!_hasWorldPixelOrigin || !worldPixelOrigin.Equals(_lastWorldPixelOrigin))
+            {
+                _penumbraMaterial.SetVector(WorldPixelOriginId, worldPixelOrigin);
+                _lastWorldPixelOrigin = worldPixelOrigin;
+                _hasWorldPixelOrigin = true;
+            }
         }
 
         private void ApplyPenumbraState()
@@ -269,12 +344,37 @@ namespace Rustline.Presentation
             };
         }
 
-        private static RenderTexture CreateTarget(int width, int height, string targetName)
+        private void SetLogicalSizeIfChanged(Vector4 logicalSize)
+        {
+            if (_penumbraMaterial == null ||
+                _hasLogicalSize && logicalSize.Equals(_lastLogicalSize))
+            {
+                return;
+            }
+
+            _penumbraMaterial.SetVector(LogicalSizeId, logicalSize);
+            _lastLogicalSize = logicalSize;
+            _hasLogicalSize = true;
+        }
+
+        private void InvalidatePenumbraParameterCaches()
+        {
+            _hasLogicalSize = false;
+            _hasPlayerPixelCenter = false;
+            _hasWorldPixelOrigin = false;
+            _hasPenumbraInputs = false;
+        }
+
+        private static RenderTexture CreateTarget(
+            int width,
+            int height,
+            int depthBits,
+            string targetName)
         {
             RenderTexture target = new RenderTexture(
                 width,
                 height,
-                16,
+                depthBits,
                 RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.sRGB)
             {

@@ -1,7 +1,11 @@
 {
     "name": "Rustline.EditModeTests",
     "rootNamespace": "Rustline.Tests",
-    "references": ["Rustline.Runtime", "Unity.InputSystem"],
+    "references": [
+        "Rustline.Runtime",
+        "Unity.InputSystem",
+        "Unity.RenderPipelines.Universal.Runtime"
+    ],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
