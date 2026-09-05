@@ -45,6 +45,30 @@ namespace Rustline.Presentation
         }
     }
 
+    [Serializable]
+    public struct LongwatchBackpedalAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+        [SerializeField] private Sprite frame1;
+        [SerializeField] private Sprite frame2;
+        [SerializeField] private Sprite frame3;
+
+        public int AngleDegrees => angleDegrees;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            switch (frameIndex)
+            {
+                case 0: return frame0;
+                case 1: return frame1;
+                case 2: return frame2;
+                case 3: return frame3;
+                default: throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
+    }
+
     /// <summary>
     /// Owns the shared overlay renderer while the prototype Longwatch is in an
     /// authored aim-capable state. Body remains Animator-driven; its displayed
@@ -54,45 +78,42 @@ namespace Rustline.Presentation
     [DisallowMultipleComponent]
     public sealed class PlayerLongwatchAimPresenter2D : MonoBehaviour
     {
-        public const float AimOriginOffsetSourcePixels = 38f;
-        public const float SourcePixelsPerUnit = 16f;
-        public const float AimOriginOffsetWorldUnits = AimOriginOffsetSourcePixels / SourcePixelsPerUnit;
-
-        [SerializeField] private PlayerInputReader input;
+        [SerializeField] private PlayerAim2D playerAim;
         [SerializeField] private PlayerAnimator2D playerAnimator;
         [SerializeField] private PlayerUnarmedArmsPresenter2D unarmedPresenter;
         [SerializeField] private SpriteRenderer bodySpriteRenderer;
         [SerializeField] private SpriteRenderer armsWeaponSpriteRenderer;
-        [SerializeField] private NativePixelPresentation nativePixelPresentation;
         [SerializeField] private Sprite[] bodyIdleFrames = Array.Empty<Sprite>();
         [SerializeField] private LongwatchIdleAimPose[] idleAimPoses = Array.Empty<LongwatchIdleAimPose>();
         [SerializeField] private Sprite[] bodyRunFrames = Array.Empty<Sprite>();
         [SerializeField] private LongwatchRunAimPose[] runAimPoses = Array.Empty<LongwatchRunAimPose>();
+        [SerializeField] private Sprite[] bodyBackpedalFrames = Array.Empty<Sprite>();
+        [SerializeField] private LongwatchBackpedalAimPose[] backpedalAimPoses = Array.Empty<LongwatchBackpedalAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
-        private Vector2 _continuousAimDirection = Vector2.right;
         private bool _hasValidAim;
         private bool _ownsRenderer;
         private Sprite _lastBodySprite;
         private int _lastDirectionIndex = -1;
 
-        public PlayerInputReader Input => input;
+        public PlayerAim2D PlayerAim => playerAim;
         public PlayerAnimator2D PlayerAnimator => playerAnimator;
         public PlayerUnarmedArmsPresenter2D UnarmedPresenter => unarmedPresenter;
         public SpriteRenderer BodySpriteRenderer => bodySpriteRenderer;
         public SpriteRenderer ArmsWeaponSpriteRenderer => armsWeaponSpriteRenderer;
-        public NativePixelPresentation NativePixelPresentation => nativePixelPresentation;
         public int BodyIdleFrameCount => bodyIdleFrames?.Length ?? 0;
         public int BodyRunFrameCount => bodyRunFrames?.Length ?? 0;
         public int IdleAimPoseCount => idleAimPoses?.Length ?? 0;
         public int RunAimPoseCount => runAimPoses?.Length ?? 0;
+        public int BodyBackpedalFrameCount => bodyBackpedalFrames?.Length ?? 0;
+        public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
         public bool OwnsRenderer => _ownsRenderer;
-        public bool HasValidAim => _hasValidAim;
+        public bool HasValidAim => playerAim != null && playerAim.HasValidAim;
         public LongwatchAimSelection Selection => _selection;
-        public Vector2 ContinuousAimDirection => _continuousAimDirection;
-        public Vector3 AimOriginWorld => bodySpriteRenderer == null
-            ? Vector3.up * AimOriginOffsetWorldUnits
-            : bodySpriteRenderer.transform.position + Vector3.up * AimOriginOffsetWorldUnits;
+        public Vector2 ContinuousAimDirection => playerAim != null
+            ? playerAim.ContinuousAimDirection
+            : Vector2.right;
+        public Vector3 AimOriginWorld => playerAim != null ? playerAim.AimOriginWorld : transform.position;
 
         private void LateUpdate()
         {
@@ -104,9 +125,7 @@ namespace Rustline.Presentation
 
             UpdateAimSelection();
             AcquireRenderer();
-            playerAnimator.SetFacingOverride(true, _selection.FlipX);
-
-            if (!TryResolveDisplayedBodyFrame(out bool isRunFrame, out int bodyFrameIndex))
+            if (!TryResolveDisplayedBodyFrame(out PlayerAnimationState bodyState, out int bodyFrameIndex))
             {
                 return;
             }
@@ -120,9 +139,18 @@ namespace Rustline.Presentation
 
             _lastBodySprite = bodySprite;
             _lastDirectionIndex = directionIndex;
-            armsWeaponSpriteRenderer.sprite = isRunFrame
-                ? runAimPoses[directionIndex].GetFrame(bodyFrameIndex)
-                : idleAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+            switch (bodyState)
+            {
+                case PlayerAnimationState.Idle:
+                    armsWeaponSpriteRenderer.sprite = idleAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                    break;
+                case PlayerAnimationState.Run:
+                    armsWeaponSpriteRenderer.sprite = runAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                    break;
+                case PlayerAnimationState.Backpedal:
+                    armsWeaponSpriteRenderer.sprite = backpedalAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                    break;
+            }
         }
 
         private void OnDisable()
@@ -150,31 +178,43 @@ namespace Rustline.Presentation
             return bodyRunFrames[index];
         }
 
+        public LongwatchBackpedalAimPose GetBackpedalAimPose(int index)
+        {
+            return backpedalAimPoses[index];
+        }
+
+        public Sprite GetBodyBackpedalFrame(int index)
+        {
+            return bodyBackpedalFrames[index];
+        }
+
         private bool CanOwnRenderer()
         {
-            if (input == null || playerAnimator == null || unarmedPresenter == null ||
+            if (playerAim == null || playerAnimator == null || unarmedPresenter == null ||
                 bodySpriteRenderer == null || armsWeaponSpriteRenderer == null ||
-                nativePixelPresentation == null || nativePixelPresentation.WorldCamera == null ||
                 bodyIdleFrames == null || bodyIdleFrames.Length != 2 ||
                 idleAimPoses == null || idleAimPoses.Length != 19 ||
                 bodyRunFrames == null || bodyRunFrames.Length != 6 ||
-                runAimPoses == null || runAimPoses.Length != 19)
+                runAimPoses == null || runAimPoses.Length != 19 ||
+                bodyBackpedalFrames == null || bodyBackpedalFrames.Length != 4 ||
+                backpedalAimPoses == null || backpedalAimPoses.Length != 19)
             {
                 return false;
             }
 
             PlayerAnimationState? state = playerAnimator.CurrentState;
-            return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run;
+            return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run ||
+                   state == PlayerAnimationState.Backpedal;
         }
 
-        private bool TryResolveDisplayedBodyFrame(out bool isRunFrame, out int frameIndex)
+        private bool TryResolveDisplayedBodyFrame(out PlayerAnimationState bodyState, out int frameIndex)
         {
             Sprite displayedBody = bodySpriteRenderer.sprite;
             for (int index = 0; index < bodyIdleFrames.Length; index++)
             {
                 if (displayedBody == bodyIdleFrames[index])
                 {
-                    isRunFrame = false;
+                    bodyState = PlayerAnimationState.Idle;
                     frameIndex = index;
                     return true;
                 }
@@ -184,33 +224,37 @@ namespace Rustline.Presentation
             {
                 if (displayedBody == bodyRunFrames[index])
                 {
-                    isRunFrame = true;
+                    bodyState = PlayerAnimationState.Run;
                     frameIndex = index;
                     return true;
                 }
             }
 
-            isRunFrame = false;
+            for (int index = 0; index < bodyBackpedalFrames.Length; index++)
+            {
+                if (displayedBody == bodyBackpedalFrames[index])
+                {
+                    bodyState = PlayerAnimationState.Backpedal;
+                    frameIndex = index;
+                    return true;
+                }
+            }
+
+            bodyState = PlayerAnimationState.Idle;
             frameIndex = -1;
             return false;
         }
 
         private void UpdateAimSelection()
         {
-            NativePixelViewport viewport = nativePixelPresentation.Viewport;
-            Vector2 viewportPosition = NativePixelViewportMath.PhysicalToLogicalViewport(
-                input.PointerScreenPosition,
-                viewport);
-            Camera worldCamera = nativePixelPresentation.WorldCamera;
-            Vector3 aimOriginWorld = AimOriginWorld;
-            float playerViewportDepth = worldCamera.WorldToViewportPoint(aimOriginWorld).z;
-            Vector3 pointerWorld = worldCamera.ViewportToWorldPoint(
-                new Vector3(viewportPosition.x, viewportPosition.y, playerViewportDepth));
-            Vector2 aimVector = (Vector2)(pointerWorld - aimOriginWorld);
-            if (LongwatchAimMath.TrySelect(aimVector, _hasValidAim, _selection, out LongwatchAimSelection next))
+            if (playerAim.HasValidAim && LongwatchAimMath.TrySelect(
+                    playerAim.ContinuousAimDirection,
+                    playerAim.FacingFlipX,
+                    _hasValidAim,
+                    _selection,
+                    out LongwatchAimSelection next))
             {
                 _selection = next;
-                _continuousAimDirection = aimVector.normalized;
                 _hasValidAim = true;
             }
         }
@@ -236,7 +280,6 @@ namespace Rustline.Presentation
             }
 
             _ownsRenderer = false;
-            playerAnimator?.SetFacingOverride(false, false);
             unarmedPresenter?.SetRendererOwnership(true);
             _lastBodySprite = null;
             _lastDirectionIndex = -1;

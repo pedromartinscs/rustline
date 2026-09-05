@@ -10,21 +10,18 @@ namespace Rustline.Presentation
         [SerializeField] private Animator animator;
         [SerializeField] private SpriteRenderer bodySpriteRenderer;
         [SerializeField] private SpriteRenderer armsWeaponSpriteRenderer;
+        [SerializeField] private PlayerAim2D playerAim;
 
         private PlayerMotor2D _motor;
         private float _landingTimeRemaining;
         private PlayerAnimationState? _currentState;
-        private bool _movementFacingFlipX;
-        private bool _facingOverrideActive;
-        private bool _facingOverrideFlipX;
 
         public PlayerAnimationState? CurrentState => _currentState;
-        public bool FacingOverrideActive => _facingOverrideActive;
+        public PlayerAim2D PlayerAim => playerAim;
 
         private void Awake()
         {
             _motor = GetComponent<PlayerMotor2D>();
-            _movementFacingFlipX = bodySpriteRenderer != null && bodySpriteRenderer.flipX;
         }
 
         private void OnEnable()
@@ -62,18 +59,15 @@ namespace Rustline.Presentation
                 _landingTimeRemaining = 0f;
             }
 
-            if (Mathf.Abs(velocity.x) >= config.FacingVelocityThreshold)
-            {
-                _movementFacingFlipX = velocity.x < 0f;
-            }
-
-            ApplyFacing(_facingOverrideActive ? _facingOverrideFlipX : _movementFacingFlipX);
+            bool facingFlipX = playerAim != null && playerAim.FacingFlipX;
+            ApplyFacing(facingFlipX);
 
             PlayerAnimationState nextState = PlayerAnimationStateSelector.Select(
                 _motor.IsGrounded,
                 velocity.x,
                 velocity.y,
                 _landingTimeRemaining > 0f,
+                facingFlipX,
                 config.RunAnimationSpeedThreshold,
                 config.AscendingAnimationThreshold);
 
@@ -91,16 +85,6 @@ namespace Rustline.Presentation
             if (config != null)
             {
                 _landingTimeRemaining = config.LandPresentationDuration;
-            }
-        }
-
-        public void SetFacingOverride(bool active, bool flipX)
-        {
-            _facingOverrideActive = active;
-            _facingOverrideFlipX = flipX;
-            if (bodySpriteRenderer != null && armsWeaponSpriteRenderer != null)
-            {
-                ApplyFacing(active ? flipX : _movementFacingFlipX);
             }
         }
 

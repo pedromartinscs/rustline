@@ -28,6 +28,7 @@ namespace Rustline.Presentation
 
         public static bool TrySelect(
             Vector2 aimVector,
+            bool facingFlipX,
             bool hasPreviousSelection,
             LongwatchAimSelection previousSelection,
             out LongwatchAimSelection selection)
@@ -38,25 +39,9 @@ namespace Rustline.Presentation
                 return false;
             }
 
-            bool flipX;
-            if (aimVector.x < 0f)
-            {
-                flipX = true;
-            }
-            else if (aimVector.x > 0f)
-            {
-                flipX = false;
-            }
-            else
-            {
-                // Exact vertical aim belongs to both mirrored hemispheres. Retaining the
-                // previous side avoids unnecessary facing flicker through the vertical axis.
-                flipX = hasPreviousSelection && previousSelection.FlipX;
-            }
-
             float continuousAngle = Mathf.Atan2(aimVector.y, Mathf.Abs(aimVector.x)) * Mathf.Rad2Deg;
             int authoredAngle = QuantizeToNearestTen(continuousAngle);
-            selection = new LongwatchAimSelection(continuousAngle, authoredAngle, flipX);
+            selection = new LongwatchAimSelection(continuousAngle, authoredAngle, facingFlipX);
             return true;
         }
 

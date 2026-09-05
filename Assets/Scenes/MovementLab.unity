@@ -127,7 +127,7 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 2994246285054152671, guid: c9e98306626b9644a98868d3f01a293b, type: 3}
+    - target: {fileID: 1662337730154184211, guid: c9e98306626b9644a98868d3f01a293b, type: 3}
       propertyPath: nativePixelPresentation
       value:
       objectReference: {fileID: 479772378}

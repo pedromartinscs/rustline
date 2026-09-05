@@ -6,6 +6,7 @@ namespace Rustline.Presentation
     {
         Idle,
         Run,
+        Backpedal,
         Jump,
         Fall,
         Land,
@@ -18,6 +19,7 @@ namespace Rustline.Presentation
             float horizontalVelocity,
             float verticalVelocity,
             bool showingLanding,
+            bool facingFlipX,
             float runThreshold,
             float ascendingThreshold)
         {
@@ -33,9 +35,16 @@ namespace Rustline.Presentation
                 return PlayerAnimationState.Land;
             }
 
-            return Mathf.Abs(horizontalVelocity) >= runThreshold
-                ? PlayerAnimationState.Run
-                : PlayerAnimationState.Idle;
+            if (Mathf.Abs(horizontalVelocity) < runThreshold)
+            {
+                return PlayerAnimationState.Idle;
+            }
+
+            return Gameplay.Player.PlayerMovementMath.IsDirectionAgainstFacing(
+                horizontalVelocity,
+                facingFlipX)
+                ? PlayerAnimationState.Backpedal
+                : PlayerAnimationState.Run;
         }
     }
 }

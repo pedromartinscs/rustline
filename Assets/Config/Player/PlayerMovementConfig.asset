@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: PlayerMovementConfig
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Player.PlayerMovementConfig
   maxGroundSpeed: 7
+  maxBackpedalGroundSpeed: 5
   groundAcceleration: 55
   groundDeceleration: 70
   directionChangeAcceleration: 90

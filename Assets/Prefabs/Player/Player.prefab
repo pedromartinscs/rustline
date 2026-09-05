@@ -120,9 +120,41 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 9068475594154014997}
   - {fileID: 7810883199182966989}
   - {fileID: 5732559661433987354}
   m_Father: {fileID: 8561571167840580776}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5029714712365057234
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9068475594154014997}
+  m_Layer: 0
+  m_Name: AimOrigin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9068475594154014997
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5029714712365057234}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2.375, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4968877354513996504}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7260910190796752387
 GameObject:
@@ -256,6 +288,7 @@ GameObject:
   - component: {fileID: 8080597632018127864}
   - component: {fileID: 2385879683141238295}
   - component: {fileID: 2994246285054152671}
+  - component: {fileID: 1662337730154184211}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -370,7 +403,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2edd5070dd361144983b703d668f16a5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Player.PlayerGroundProbe2D
   config: {fileID: 11400000, guid: ffa31f0afb2b55441ad424e0ca03b7fe, type: 2}
   groundLayers:
@@ -386,7 +419,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3839f0e015ab03458e21a13c2756d1b, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Player.PlayerMotor2D
   config: {fileID: 11400000, guid: ffa31f0afb2b55441ad424e0ca03b7fe, type: 2}
 --- !u!114 &9189312535779651393
@@ -399,12 +432,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 835e6c9774ed6864c8c4a26202346e56, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerAnimator2D
   config: {fileID: 11400000, guid: ffa31f0afb2b55441ad424e0ca03b7fe, type: 2}
   animator: {fileID: 7081516483258033477}
   bodySpriteRenderer: {fileID: 4475617162220178310}
   armsWeaponSpriteRenderer: {fileID: 2490630099379857390}
+  playerAim: {fileID: 1662337730154184211}
 --- !u!114 &8080597632018127864
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -436,6 +470,14 @@ MonoBehaviour:
     armsSprite: {fileID: 1921014408824674265, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
   - bodySprite: {fileID: -4573777542490109379, guid: 6ed3e62d61cf213469c99c74d86a6821, type: 3}
     armsSprite: {fileID: -8225884235278813994, guid: 1a266e9e42db4e94e9e7e743e6eff028, type: 3}
+  - bodySprite: {fileID: 5968121299450474810, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+    armsSprite: {fileID: 1763491018327917552, guid: 7f0b0600b7bf095458c2cfe519728cf9, type: 3}
+  - bodySprite: {fileID: 7908946229663150034, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+    armsSprite: {fileID: -3796231103429595623, guid: 7f0b0600b7bf095458c2cfe519728cf9, type: 3}
+  - bodySprite: {fileID: -314471278953307057, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+    armsSprite: {fileID: -4843329098032441437, guid: 7f0b0600b7bf095458c2cfe519728cf9, type: 3}
+  - bodySprite: {fileID: -546362111982285243, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+    armsSprite: {fileID: -2281652227167016453, guid: 7f0b0600b7bf095458c2cfe519728cf9, type: 3}
   - bodySprite: {fileID: 8069153423872376370, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
     armsSprite: {fileID: -7222640204443459743, guid: d9196537766afe240afbd395db61eb66, type: 3}
   - bodySprite: {fileID: -4116197542669697790, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
@@ -476,12 +518,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82c4036a7bdae1548a6aa61f967070e6, type: 3}
   m_Name:
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerLongwatchAimPresenter2D
-  input: {fileID: 6069468980533504220}
+  playerAim: {fileID: 1662337730154184211}
   playerAnimator: {fileID: 9189312535779651393}
   unarmedPresenter: {fileID: 8080597632018127864}
   bodySpriteRenderer: {fileID: 4475617162220178310}
   armsWeaponSpriteRenderer: {fileID: 2490630099379857390}
-  nativePixelPresentation: {fileID: 0}
   bodyIdleFrames:
   - {fileID: -994535270271076823, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
   - {fileID: -5071295811932535803, guid: 28bb6d46b95053340a9d863983c920c7, type: 3}
@@ -684,3 +725,119 @@ MonoBehaviour:
     frame3: {fileID: 2291286176264107601, guid: a8e46840570d04e44b58468924a97dad, type: 3}
     frame4: {fileID: -6259739075963857333, guid: a8e46840570d04e44b58468924a97dad, type: 3}
     frame5: {fileID: -678558012380607092, guid: a8e46840570d04e44b58468924a97dad, type: 3}
+  bodyBackpedalFrames:
+  - {fileID: 5968121299450474810, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+  - {fileID: 7908946229663150034, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+  - {fileID: -314471278953307057, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+  - {fileID: -546362111982285243, guid: 6f52a5fc36e110149a412f9cb94219d6, type: 3}
+  backpedalAimPoses:
+  - angleDegrees: 90
+    frame0: {fileID: 2004546086481538148, guid: 5950410975e290446b1d0462a91e12b2, type: 3}
+    frame1: {fileID: -3138215709692313200, guid: 5950410975e290446b1d0462a91e12b2, type: 3}
+    frame2: {fileID: 2009181751648675509, guid: 5950410975e290446b1d0462a91e12b2, type: 3}
+    frame3: {fileID: -2012597908353658199, guid: 5950410975e290446b1d0462a91e12b2, type: 3}
+  - angleDegrees: 80
+    frame0: {fileID: -8334052575211651996, guid: a523b2c77b3ca5c4b9f4df00a79ab40f, type: 3}
+    frame1: {fileID: 7977750619289999779, guid: a523b2c77b3ca5c4b9f4df00a79ab40f, type: 3}
+    frame2: {fileID: 919455326430403072, guid: a523b2c77b3ca5c4b9f4df00a79ab40f, type: 3}
+    frame3: {fileID: 7892847792637503588, guid: a523b2c77b3ca5c4b9f4df00a79ab40f, type: 3}
+  - angleDegrees: 70
+    frame0: {fileID: -854701870375126882, guid: 67a78bd4f74d0074c9bd0f20401788f1, type: 3}
+    frame1: {fileID: 4279525905668397200, guid: 67a78bd4f74d0074c9bd0f20401788f1, type: 3}
+    frame2: {fileID: -8234960956073640009, guid: 67a78bd4f74d0074c9bd0f20401788f1, type: 3}
+    frame3: {fileID: 3777142263234544409, guid: 67a78bd4f74d0074c9bd0f20401788f1, type: 3}
+  - angleDegrees: 60
+    frame0: {fileID: 7447262830910828327, guid: 8c3b2a9990fbec5469314a2329798e5d, type: 3}
+    frame1: {fileID: 8818621979630095401, guid: 8c3b2a9990fbec5469314a2329798e5d, type: 3}
+    frame2: {fileID: 2575887760275527026, guid: 8c3b2a9990fbec5469314a2329798e5d, type: 3}
+    frame3: {fileID: 6373413555040712502, guid: 8c3b2a9990fbec5469314a2329798e5d, type: 3}
+  - angleDegrees: 50
+    frame0: {fileID: 2109993420364452133, guid: 0b07007312fc732439128f43e4d2bc8c, type: 3}
+    frame1: {fileID: 7001289047243574887, guid: 0b07007312fc732439128f43e4d2bc8c, type: 3}
+    frame2: {fileID: 8000271438298156827, guid: 0b07007312fc732439128f43e4d2bc8c, type: 3}
+    frame3: {fileID: 2955541130671816736, guid: 0b07007312fc732439128f43e4d2bc8c, type: 3}
+  - angleDegrees: 40
+    frame0: {fileID: -262409117605707611, guid: ec2a797998532ef46b34010a55e82791, type: 3}
+    frame1: {fileID: 1554553408000775716, guid: ec2a797998532ef46b34010a55e82791, type: 3}
+    frame2: {fileID: -8013331187191203776, guid: ec2a797998532ef46b34010a55e82791, type: 3}
+    frame3: {fileID: -3345407207841050516, guid: ec2a797998532ef46b34010a55e82791, type: 3}
+  - angleDegrees: 30
+    frame0: {fileID: -2330624881530339797, guid: 504902c30661f0d499b97c94b07dd995, type: 3}
+    frame1: {fileID: -4976869731070082951, guid: 504902c30661f0d499b97c94b07dd995, type: 3}
+    frame2: {fileID: 3028584290004076858, guid: 504902c30661f0d499b97c94b07dd995, type: 3}
+    frame3: {fileID: -7393132726387302938, guid: 504902c30661f0d499b97c94b07dd995, type: 3}
+  - angleDegrees: 20
+    frame0: {fileID: -1851195185620341883, guid: 4a07e562f9bd7a64d9a24bf6b07bd329, type: 3}
+    frame1: {fileID: 5771221871088702655, guid: 4a07e562f9bd7a64d9a24bf6b07bd329, type: 3}
+    frame2: {fileID: -964521766946995822, guid: 4a07e562f9bd7a64d9a24bf6b07bd329, type: 3}
+    frame3: {fileID: -6299400310547519086, guid: 4a07e562f9bd7a64d9a24bf6b07bd329, type: 3}
+  - angleDegrees: 10
+    frame0: {fileID: 1872165296456644178, guid: c28b8b62bd4679049a0ff4833f705a96, type: 3}
+    frame1: {fileID: -7127327062654766714, guid: c28b8b62bd4679049a0ff4833f705a96, type: 3}
+    frame2: {fileID: -4978351472599909857, guid: c28b8b62bd4679049a0ff4833f705a96, type: 3}
+    frame3: {fileID: 2824636001252853247, guid: c28b8b62bd4679049a0ff4833f705a96, type: 3}
+  - angleDegrees: 0
+    frame0: {fileID: 5657509260522947609, guid: b2069027355b7d64bb33344fac437813, type: 3}
+    frame1: {fileID: -4503854339738580199, guid: b2069027355b7d64bb33344fac437813, type: 3}
+    frame2: {fileID: -2183428662953878034, guid: b2069027355b7d64bb33344fac437813, type: 3}
+    frame3: {fileID: 371560673324464986, guid: b2069027355b7d64bb33344fac437813, type: 3}
+  - angleDegrees: -10
+    frame0: {fileID: 8245122645376734782, guid: d2628bfc451fa7449beddf35d3b178a7, type: 3}
+    frame1: {fileID: -8378120344534525731, guid: d2628bfc451fa7449beddf35d3b178a7, type: 3}
+    frame2: {fileID: 2817391330130436948, guid: d2628bfc451fa7449beddf35d3b178a7, type: 3}
+    frame3: {fileID: -4353289234273688563, guid: d2628bfc451fa7449beddf35d3b178a7, type: 3}
+  - angleDegrees: -20
+    frame0: {fileID: 404415428575797391, guid: 5481daad40b11614388215afe7a87a86, type: 3}
+    frame1: {fileID: 2764250528968388088, guid: 5481daad40b11614388215afe7a87a86, type: 3}
+    frame2: {fileID: 6859944403692218291, guid: 5481daad40b11614388215afe7a87a86, type: 3}
+    frame3: {fileID: -4855936426264638848, guid: 5481daad40b11614388215afe7a87a86, type: 3}
+  - angleDegrees: -30
+    frame0: {fileID: -4965710380388805418, guid: 161e6bb046af4d14dac162315c206beb, type: 3}
+    frame1: {fileID: -8245333495365211913, guid: 161e6bb046af4d14dac162315c206beb, type: 3}
+    frame2: {fileID: -8346581942490872455, guid: 161e6bb046af4d14dac162315c206beb, type: 3}
+    frame3: {fileID: -1544138648830652692, guid: 161e6bb046af4d14dac162315c206beb, type: 3}
+  - angleDegrees: -40
+    frame0: {fileID: -6368744772310214376, guid: 51edf42b5cf13a748a8934081ba0d579, type: 3}
+    frame1: {fileID: -4408072118421003090, guid: 51edf42b5cf13a748a8934081ba0d579, type: 3}
+    frame2: {fileID: -2940345889528525949, guid: 51edf42b5cf13a748a8934081ba0d579, type: 3}
+    frame3: {fileID: -5908377816634794010, guid: 51edf42b5cf13a748a8934081ba0d579, type: 3}
+  - angleDegrees: -50
+    frame0: {fileID: 5954595661445492153, guid: 326de6b6dd67e4846bdd52f5dca279a2, type: 3}
+    frame1: {fileID: 1582102573558878822, guid: 326de6b6dd67e4846bdd52f5dca279a2, type: 3}
+    frame2: {fileID: 7998121820853389469, guid: 326de6b6dd67e4846bdd52f5dca279a2, type: 3}
+    frame3: {fileID: -7547887235253390625, guid: 326de6b6dd67e4846bdd52f5dca279a2, type: 3}
+  - angleDegrees: -60
+    frame0: {fileID: -1038686333823539060, guid: 925fc6bb6b6fdd044aa96a5b3d339ee8, type: 3}
+    frame1: {fileID: 8550277604999970222, guid: 925fc6bb6b6fdd044aa96a5b3d339ee8, type: 3}
+    frame2: {fileID: -1637079734888239739, guid: 925fc6bb6b6fdd044aa96a5b3d339ee8, type: 3}
+    frame3: {fileID: 6284651887188915333, guid: 925fc6bb6b6fdd044aa96a5b3d339ee8, type: 3}
+  - angleDegrees: -70
+    frame0: {fileID: -3958943150345880115, guid: ad510c3e0f1e1134ab63e21ceea13c62, type: 3}
+    frame1: {fileID: -2491004665146774195, guid: ad510c3e0f1e1134ab63e21ceea13c62, type: 3}
+    frame2: {fileID: 1021827164557869965, guid: ad510c3e0f1e1134ab63e21ceea13c62, type: 3}
+    frame3: {fileID: 6334324726958824817, guid: ad510c3e0f1e1134ab63e21ceea13c62, type: 3}
+  - angleDegrees: -80
+    frame0: {fileID: 7783740009954562286, guid: dae5d76e152b5b84da841f9107273356, type: 3}
+    frame1: {fileID: -6697404145335399110, guid: dae5d76e152b5b84da841f9107273356, type: 3}
+    frame2: {fileID: 1949025120267962703, guid: dae5d76e152b5b84da841f9107273356, type: 3}
+    frame3: {fileID: 4608304454136552572, guid: dae5d76e152b5b84da841f9107273356, type: 3}
+  - angleDegrees: -90
+    frame0: {fileID: 6232644251921423951, guid: 2cd03c2833e8b874c8a2be2a703c62d1, type: 3}
+    frame1: {fileID: 3668615086194318149, guid: 2cd03c2833e8b874c8a2be2a703c62d1, type: 3}
+    frame2: {fileID: -5596014743702931224, guid: 2cd03c2833e8b874c8a2be2a703c62d1, type: 3}
+    frame3: {fileID: 7832297977536722603, guid: 2cd03c2833e8b874c8a2be2a703c62d1, type: 3}
+--- !u!114 &1662337730154184211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 13f55923e39c08241ae23ff1ef19ae41, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Player.PlayerAim2D
+  input: {fileID: 6069468980533504220}
+  aimOrigin: {fileID: 9068475594154014997}
+  nativePixelPresentation: {fileID: 0}

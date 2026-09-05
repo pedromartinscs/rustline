@@ -7,6 +7,7 @@ namespace Rustline.Gameplay.Player
     {
         [Header("Horizontal movement")]
         [SerializeField, Min(0.01f)] private float maxGroundSpeed = 7f;
+        [SerializeField, Min(0.01f)] private float maxBackpedalGroundSpeed = 5f;
         [SerializeField, Min(0.01f)] private float groundAcceleration = 55f;
         [SerializeField, Min(0.01f)] private float groundDeceleration = 70f;
         [SerializeField, Min(0.01f)] private float directionChangeAcceleration = 90f;
@@ -37,6 +38,7 @@ namespace Rustline.Gameplay.Player
         [SerializeField, Min(0f)] private float landPresentationDuration = 0.25f;
 
         public float MaxGroundSpeed => maxGroundSpeed;
+        public float MaxBackpedalGroundSpeed => maxBackpedalGroundSpeed;
         public float GroundAcceleration => groundAcceleration;
         public float GroundDeceleration => groundDeceleration;
         public float DirectionChangeAcceleration => directionChangeAcceleration;
@@ -60,9 +62,10 @@ namespace Rustline.Gameplay.Player
 
         public bool IsSane(out string reason)
         {
-            if (maxGroundSpeed <= 0f || maxAirSpeed <= 0f)
+            if (maxGroundSpeed <= 0f || maxBackpedalGroundSpeed <= 0f ||
+                maxBackpedalGroundSpeed > maxGroundSpeed || maxAirSpeed <= 0f)
             {
-                reason = "Maximum movement speeds must be positive.";
+                reason = "Maximum movement speeds must be positive and Backpedal must not exceed forward ground speed.";
                 return false;
             }
 

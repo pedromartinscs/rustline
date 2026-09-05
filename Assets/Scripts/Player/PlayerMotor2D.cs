@@ -4,6 +4,7 @@ using UnityEngine;
 namespace Rustline.Gameplay.Player
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(PlayerInputReader), typeof(PlayerGroundProbe2D))]
+    [RequireComponent(typeof(PlayerAim2D))]
     public sealed class PlayerMotor2D : MonoBehaviour
     {
         [SerializeField] private PlayerMovementConfig config;
@@ -11,6 +12,7 @@ namespace Rustline.Gameplay.Player
         private Rigidbody2D _body;
         private PlayerInputReader _input;
         private PlayerGroundProbe2D _groundProbe;
+        private PlayerAim2D _aim;
         private PlayerJumpGrace _jumpGrace;
 
         public event Action Landed;
@@ -24,6 +26,7 @@ namespace Rustline.Gameplay.Player
             _body = GetComponent<Rigidbody2D>();
             _input = GetComponent<PlayerInputReader>();
             _groundProbe = GetComponent<PlayerGroundProbe2D>();
+            _aim = GetComponent<PlayerAim2D>();
             _jumpGrace = new PlayerJumpGrace();
         }
 
@@ -71,6 +74,7 @@ namespace Rustline.Gameplay.Player
                 velocity.x,
                 _input.MoveX,
                 IsGrounded,
+                _aim != null && _aim.FacingFlipX,
                 config,
                 deltaTime);
 
