@@ -4,7 +4,8 @@
     "references": [
         "Rustline.Runtime",
         "Unity.InputSystem",
-        "Unity.RenderPipelines.Universal.Runtime"
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.2D.Runtime"
     ],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],

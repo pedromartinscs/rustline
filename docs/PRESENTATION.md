@@ -175,6 +175,12 @@ Runtime requirements:
 - ideally one logical-resolution penumbra pass plus a cheap presentation composite;
 - presentation-only cameras/passes must not pay for the full 2D Renderer when they only need isolated unlit composition work.
 
+The World Camera still uses Renderer2D. Current ordinary world sprites and Tilemaps use URP's
+`Sprite-Unlit-Default`, and MovementLab/ArtShowcase contain no identity Global Light2D. This was
+accepted only after an exact rendered-pixel comparison against the former Lit plus white,
+intensity-1 Global Light setup. Future purposeful 2D lighting remains supported by assigning a
+Lit material to the intended renderer and authoring a light that materially changes the image.
+
 ## Development diagnostics
 
 The prototype must support direct A/B performance comparison in Development/Editor builds.

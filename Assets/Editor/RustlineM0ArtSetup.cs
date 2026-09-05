@@ -37,6 +37,11 @@ namespace Rustline.Editor
         private const string TileAssetRoot = "Assets/Art/Environment/Tiles/Generated";
         private const string RuleTilePath = TileAssetRoot + "/IndustrialSurfaceRuleTile.asset";
         private const string ScenePath = "Assets/Scenes/ArtShowcase.unity";
+        private const string Renderer2DPath = "Assets/Settings/Renderer2D.asset";
+        private const string SpriteUnlitMaterialPath =
+            "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
+        private const string SpriteLitMaterialGuid = "a97c105638bdf8b4a8650670310a4cd3";
+        private const string SpriteUnlitMaterialGuid = "9dfc825aed78fcd4ba02077103263b40";
         private const float JumpClipSampleRate = 50f;
 
         private static readonly float[] JumpTakeoffKeyframeTimes = { 0f, 0.1f, 0.26f };
@@ -204,6 +209,7 @@ namespace Rustline.Editor
             ConfigureJumpDust();
             ConfigureEnvironmentAtlas();
             MoveLegacyBodyAnimationClips();
+            ConfigureRenderer2DDefaultMaterial();
 
             Dictionary<string, PreviewAsset> previews = CreateAnimationPreviews();
             RuleTile ruleTile = CreateRuleTile();
@@ -215,6 +221,7 @@ namespace Rustline.Editor
             {
                 MigrateShowcasePlayerSpecimens(previews);
             }
+            ConfigureShowcaseIdentityUnlitRendering();
             PutShowcaseInBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -537,7 +544,6 @@ namespace Rustline.Editor
             GameObject root = new GameObject("RUSTLINE M0 - ART SHOWCASE");
 
             CreateCamera(root.transform);
-            CreateGlobalLight(root.transform);
 
             GameObject labelsRoot = new GameObject("Diagnostic Labels");
             labelsRoot.transform.SetParent(root.transform, false);
@@ -672,14 +678,55 @@ namespace Rustline.Editor
             serializedPixelPerfect.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        private static void CreateGlobalLight(Transform parent)
+        private static void ConfigureRenderer2DDefaultMaterial()
         {
-            GameObject lightObject = new GameObject("Global Light 2D");
-            lightObject.transform.SetParent(parent, false);
-            Light2D light = lightObject.AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Global;
-            light.intensity = 1f;
-            light.color = Color.white;
+            UnityEngine.Object rendererData = AssetDatabase.LoadMainAssetAtPath(Renderer2DPath);
+            Require(rendererData != null, "Renderer2D data asset is missing.");
+            SerializedObject serialized = new SerializedObject(rendererData);
+            SerializedProperty defaultMaterialType = serialized.FindProperty("m_DefaultMaterialType");
+            Require(defaultMaterialType != null,
+                "Renderer2D default material selection is unavailable in this URP version.");
+            if (defaultMaterialType.intValue != 1)
+            {
+                defaultMaterialType.intValue = 1;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(rendererData);
+            }
+        }
+
+        private static void ConfigureShowcaseIdentityUnlitRendering()
+        {
+            Scene scene = SceneManager.GetSceneByPath(ScenePath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (SpriteRenderer renderer in root.GetComponentsInChildren<SpriteRenderer>(true))
+                {
+                    renderer.sharedMaterial = unlitMaterial;
+                    EditorUtility.SetDirty(renderer);
+                }
+
+                foreach (TilemapRenderer renderer in root.GetComponentsInChildren<TilemapRenderer>(true))
+                {
+                    renderer.sharedMaterial = unlitMaterial;
+                    EditorUtility.SetDirty(renderer);
+                }
+            }
+
+            GameObject identityLight = FindGameObject(scene, "Global Light 2D");
+            if (identityLight != null)
+            {
+                UnityEngine.Object.DestroyImmediate(identityLight);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
         private static Grid CreateGrid(Transform parent)
@@ -998,6 +1045,8 @@ namespace Rustline.Editor
             }
 
             Require(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null, "ArtShowcase scene is missing.");
+            ValidateRenderer2DDefaultMaterial();
+            ValidateShowcaseIdentityUnlitRendering();
             Require(EditorBuildSettings.scenes.Any(scene => scene.path == ScenePath && scene.enabled),
                 "ArtShowcase must be enabled in build settings.");
             int movementLabIndex = Array.FindIndex(EditorBuildSettings.scenes,
@@ -1015,6 +1064,67 @@ namespace Rustline.Editor
             string manifest = File.ReadAllText(Path.Combine(projectRoot, "Packages", "manifest.json"));
             Require(manifest.IndexOf("com.unity.multiplayer.center", StringComparison.OrdinalIgnoreCase) < 0,
                 "Multiplayer Center is still present in Packages/manifest.json.");
+        }
+
+        private static void ValidateRenderer2DDefaultMaterial()
+        {
+            UnityEngine.Object rendererData = AssetDatabase.LoadMainAssetAtPath(Renderer2DPath);
+            Require(rendererData != null, "Renderer2D data asset is missing.");
+            SerializedObject serialized = new SerializedObject(rendererData);
+            SerializedProperty defaultMaterialType = serialized.FindProperty("m_DefaultMaterialType");
+            Require(defaultMaterialType != null && defaultMaterialType.intValue == 1,
+                "Renderer2D must default new sprite renderers to Unlit.");
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string rendererYaml = File.ReadAllText(Path.Combine(projectRoot, Renderer2DPath));
+            Require(rendererYaml.Contains(
+                    "m_DefaultLitMaterial: {fileID: 2100000, guid: " +
+                    SpriteLitMaterialGuid),
+                "Renderer2D must retain URP's default Lit material reference for future intentional lighting.");
+            Require(rendererYaml.Contains(
+                    "m_DefaultUnlitMaterial: {fileID: 2100000, guid: " +
+                    SpriteUnlitMaterialGuid),
+                "Renderer2D default Unlit material reference is invalid.");
+        }
+
+        private static void ValidateShowcaseIdentityUnlitRendering()
+        {
+            Scene scene = SceneManager.GetSceneByPath(ScenePath);
+            bool openedForValidation = !scene.IsValid() || !scene.isLoaded;
+            if (openedForValidation)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Additive);
+            }
+
+            try
+            {
+                Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+                Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
+                foreach (GameObject root in scene.GetRootGameObjects())
+                {
+                    foreach (SpriteRenderer renderer in root.GetComponentsInChildren<SpriteRenderer>(true))
+                    {
+                        Require(renderer.sharedMaterial == unlitMaterial,
+                            "ArtShowcase SpriteRenderer must use Sprite-Unlit-Default: " + renderer.name);
+                    }
+
+                    foreach (TilemapRenderer renderer in root.GetComponentsInChildren<TilemapRenderer>(true))
+                    {
+                        Require(renderer.sharedMaterial == unlitMaterial,
+                            "ArtShowcase TilemapRenderer must use Sprite-Unlit-Default: " + renderer.name);
+                    }
+                }
+
+                Require(FindGameObject(scene, "Global Light 2D") == null,
+                    "ArtShowcase must not retain the obsolete identity Global Light 2D.");
+            }
+            finally
+            {
+                if (openedForValidation)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
         }
 
         private static void ValidateLongwatchIdleAimSheets()

@@ -127,8 +127,13 @@ The September 2026 pass retained a small set of structurally verifiable changes:
 - aim conversion skips its two camera-space conversions only when every current conversion input is exactly unchanged; an exact aim revision prevents Longwatch from repeating angle quantization for an unchanged resolved aim;
 - Animator state names are cached as hashes, renderer facing writes happen only on an actual facing change, and Longwatch validates immutable configuration once per enable and scans Body frames only after its Body/direction cache misses;
 - the active URP asset disables unused HDR, Terrain Holes, LOD Cross Fade, 3D main/additional lights and shadows, mixed lighting, 3D light cookies, both lens-flare systems, and Adaptive Performance. Volume updates are `Via Scripting`; current cameras have post-processing off and the repository contains no authored runtime Volume.
+- ordinary SpriteRenderers and TilemapRenderers in MovementLab and ArtShowcase use URP
+  `Sprite-Unlit-Default`; their redundant white, intensity-1 Global Light2D objects were removed
+  after an exact D3D11 Color32 comparison found zero differing pixels. Renderer2D defaults new
+  sprite renderers to Unlit while retaining the Lit material reference for future intentional
+  2D lighting.
 
-The active global `Light2D` in MovementLab and ArtShowcase is unaffected by the disabled 3D-light capabilities. Depth Texture, Opaque Texture, MSAA, Renderer2D depth/stencil, and SRP Batcher retain their accepted settings.
+Depth Texture, Opaque Texture, MSAA, Renderer2D depth/stencil, and SRP Batcher retain their accepted settings. This current-scene optimization does not prohibit a future authored Lit renderer plus purposeful Light2D where lighting changes the accepted image.
 
 ### Shipping quality policy
 

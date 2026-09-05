@@ -46,6 +46,8 @@ namespace Rustline.Editor
         private const string PresentationShaderPath = "Assets/Shaders/RustlineNativePixelPresent.shader";
         private const string Renderer2DPath = "Assets/Settings/Renderer2D.asset";
         private const string UniversalRpPath = "Assets/Settings/UniversalRP.asset";
+        private const string SpriteUnlitMaterialPath =
+            "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
 
         private static readonly CourseBlock[] Course =
         {
@@ -129,6 +131,7 @@ namespace Rustline.Editor
             EnsureFolder("Assets/Prefabs/Player");
             EnsureFolder("Assets/Prefabs/Effects/Movement");
             int groundLayer = EnsureGroundLayer();
+            ConfigureRenderer2DDefaultMaterial();
 
             PlayerMovementConfig config = CreateConfig();
             PhysicsMaterial2D physicsMaterial = CreatePhysicsMaterial();
@@ -141,6 +144,7 @@ namespace Rustline.Editor
                 CreateMovementLab(config, prefab, collisionTile, groundLayer);
             }
             WireMovementLabLongwatchPresentation();
+            ConfigureMovementLabIdentityUnlitRendering();
             PutMovementScenesFirstInBuildSettings();
 
             AssetDatabase.SaveAssets();
@@ -263,6 +267,8 @@ namespace Rustline.Editor
                 LongwatchRunAimRoot, "run", 6);
             List<Sprite> longwatchBackpedalFrames = LoadLongwatchAimFrames(
                 LongwatchBackpedalAimRoot, "backpedal", 4);
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
             Require(bodyFrames.Count == 18 && armsFrames.Count == 18,
                 "The player prefab requires all 18 Body and Unarmed Arms frames.");
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
@@ -326,6 +332,7 @@ namespace Rustline.Editor
                 GameObject bodyVisual = GetOrCreateChild(visual.transform, "BodySpriteRenderer");
                 SpriteRenderer bodyRenderer = GetOrAddComponent<SpriteRenderer>(bodyVisual);
                 bodyRenderer.sprite = bodyFrames[0];
+                bodyRenderer.sharedMaterial = unlitMaterial;
                 bodyRenderer.sortingOrder = 10;
                 Animator animator = GetOrAddComponent<Animator>(bodyVisual);
                 animator.runtimeAnimatorController = controller;
@@ -333,6 +340,7 @@ namespace Rustline.Editor
                 GameObject armsVisual = GetOrCreateChild(visual.transform, "ArmsWeaponSpriteRenderer");
                 SpriteRenderer armsRenderer = GetOrAddComponent<SpriteRenderer>(armsVisual);
                 armsRenderer.sprite = armsFrames[0];
+                armsRenderer.sharedMaterial = unlitMaterial;
                 armsRenderer.sortingOrder = 11;
 
                 PlayerUnarmedArmsPresenter2D armsPresenter = GetOrAddComponent<PlayerUnarmedArmsPresenter2D>(root);
@@ -396,6 +404,8 @@ namespace Rustline.Editor
                 .OrderBy(sprite => ParseTrailingIndex(sprite.name))
                 .ToList();
             Require(frames.Count == 3, "Jump dust prefab requires exactly three imported sprites.");
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
 
             bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(JumpDustPrefabPath) != null;
             GameObject root = editingExistingPrefab
@@ -406,6 +416,7 @@ namespace Rustline.Editor
                 root.name = "PlayerJumpDust";
                 SpriteRenderer renderer = GetOrAddComponent<SpriteRenderer>(root);
                 renderer.sprite = frames[0];
+                renderer.sharedMaterial = unlitMaterial;
                 renderer.sortingOrder = 9;
 
                 PlayerJumpDustFx2D effect = GetOrAddComponent<PlayerJumpDustFx2D>(root);
@@ -598,6 +609,51 @@ namespace Rustline.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
+        private static void ConfigureRenderer2DDefaultMaterial()
+        {
+            UnityEngine.Object rendererData = AssetDatabase.LoadMainAssetAtPath(Renderer2DPath);
+            Require(rendererData != null, "Renderer2D data asset is missing.");
+            SerializedObject serialized = new SerializedObject(rendererData);
+            SerializedProperty defaultMaterialType = serialized.FindProperty("m_DefaultMaterialType");
+            Require(defaultMaterialType != null,
+                "Renderer2D default material selection is unavailable in this URP version.");
+            if (defaultMaterialType.intValue != 1)
+            {
+                defaultMaterialType.intValue = 1;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(rendererData);
+            }
+        }
+
+        private static void ConfigureMovementLabIdentityUnlitRendering()
+        {
+            Scene scene = SceneManager.GetSceneByPath(ScenePath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (TilemapRenderer renderer in root.GetComponentsInChildren<TilemapRenderer>(true))
+                {
+                    renderer.sharedMaterial = unlitMaterial;
+                    EditorUtility.SetDirty(renderer);
+                }
+            }
+
+            GameObject identityLight = FindGameObject(scene, "Global Light 2D");
+            if (identityLight != null)
+            {
+                UnityEngine.Object.DestroyImmediate(identityLight);
+            }
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
         private static int ParseTrailingIndex(string name)
         {
             int separator = name.LastIndexOf('_');
@@ -620,7 +676,6 @@ namespace Rustline.Editor
             scene.name = "MovementLab";
             GameObject root = new GameObject("RUSTLINE M1A - MOVEMENT LAB");
 
-            CreateGlobalLight(root.transform);
             CreateLabels(root.transform);
 
             GameObject gridObject = new GameObject("Environment Grid - 1x1 Cells");
@@ -678,6 +733,7 @@ namespace Rustline.Editor
             tilemapObject.transform.SetParent(parent, false);
             Tilemap tilemap = tilemapObject.AddComponent<Tilemap>();
             TilemapRenderer renderer = tilemapObject.AddComponent<TilemapRenderer>();
+            renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             renderer.sortingOrder = sortingOrder;
             return tilemap;
         }
@@ -732,16 +788,6 @@ namespace Rustline.Editor
             SetObjectReference(presentation, "penumbraShader", penumbraShader);
             SetObjectReference(presentation, "presentationShader", presentationShader);
             SetBoolean(presentation, "penumbraEnabled", true);
-        }
-
-        private static void CreateGlobalLight(Transform parent)
-        {
-            GameObject lightObject = new GameObject("Global Light 2D");
-            lightObject.transform.SetParent(parent, false);
-            Light2D light = lightObject.AddComponent<Light2D>();
-            light.lightType = Light2D.LightType.Global;
-            light.intensity = 1f;
-            light.color = Color.white;
         }
 
         private static void CreateLabels(Transform parent)
@@ -852,6 +898,7 @@ namespace Rustline.Editor
             Transform aimOrigin = visual.Find("AimOrigin");
             SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
             SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(bodyVisual != null && armsVisual != null && bodyVisual.localPosition == Vector3.zero &&
                 armsVisual.localPosition == Vector3.zero && bodyVisual.localScale == Vector3.one &&
                 armsVisual.localScale == Vector3.one,
@@ -866,6 +913,9 @@ namespace Rustline.Editor
                 armsRenderer.sortingOrder == 11 && armsPresenter.BodySpriteRenderer == bodyRenderer &&
                 armsPresenter.ArmsWeaponSpriteRenderer == armsRenderer,
                 "Player layered renderer references or sorting contract are invalid.");
+            Require(unlitMaterial != null && bodyRenderer.sharedMaterial == unlitMaterial &&
+                armsRenderer.sharedMaterial == unlitMaterial,
+                "Player Body and ArmsWeapon renderers must use URP Sprite-Unlit-Default.");
             Require(longwatchPresenter != null && longwatchPresenter.PlayerAim == playerAim &&
                 longwatchPresenter.PlayerAnimator == prefab.GetComponent<PlayerAnimator2D>() &&
                 longwatchPresenter.UnarmedPresenter == armsPresenter &&
@@ -915,6 +965,8 @@ namespace Rustline.Editor
             Require(jumpDustPrefab != null && jumpDustPrefab.FrameCount == 3 &&
                 jumpDustPrefab.SpriteRenderer != null && jumpDustPrefab.SpriteRenderer.sortingOrder == 9,
                 "Jump dust prefab must contain the three-frame one-shot renderer at sorting order 9.");
+            Require(jumpDustPrefab.SpriteRenderer.sharedMaterial == unlitMaterial,
+                "Jump dust renderer must use URP Sprite-Unlit-Default.");
             for (int index = 0; index < 3; index++)
             {
                 Require(jumpDustPrefab.GetFrame(index) != null &&
@@ -995,6 +1047,13 @@ namespace Rustline.Editor
                     "MovementLab visual Tilemap renderer must remain enabled.");
                 Require(collisionTilemap.GetComponent<TilemapRenderer>()?.enabled == false,
                     "MovementLab collision Tilemap renderer must remain disabled.");
+                Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+                Require(unlitMaterial != null &&
+                    visualTilemap.GetComponent<TilemapRenderer>()?.sharedMaterial == unlitMaterial &&
+                    collisionTilemap.GetComponent<TilemapRenderer>()?.sharedMaterial == unlitMaterial,
+                    "MovementLab Tilemap renderers must use URP Sprite-Unlit-Default.");
+                Require(FindGameObject(scene, "Global Light 2D") == null,
+                    "MovementLab must not retain the obsolete identity Global Light 2D.");
 
                 Vector3Int[] courseCells = GetCourseCells().ToArray();
                 Require(CountOccupiedCells(visualTilemap) == courseCells.Length,

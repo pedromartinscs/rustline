@@ -446,3 +446,59 @@ Deferred:
   source-image equivalence and manual A/B review deserve a separate focused pass.
 - Tilemap SRP Batch, SpriteAtlas adoption when actor counts grow, Renderer2D alternatives, and
   a later stable Penumbra benchmark remain separate experiments.
+
+## Identity 2D lighting elimination pass
+
+Status: **retained and validated in Unity 6000.4.0f1 / URP 17.4**.
+
+Hypothesis:
+
+- MovementLab and ArtShowcase used only `Sprite-Lit-Default` renderers under a white,
+  intensity-1 Global Light2D. If that setup is exactly equivalent to Unlit output, removing the
+  identity light lets Renderer2D avoid current-scene light texture and DrawLight2D work without
+  changing accepted pixels.
+
+Objective gate:
+
+- A fixed `1024×768` ARGB32 sRGB, point-filtered D3D11 capture of ArtShowcase compared Lit plus
+  the identity Global Light against Unlit with the light disabled as raw `Color32` pixels.
+- All **786,432** pixels matched exactly: **0 differing pixels**, maximum channel delta **0**.
+  The experiment therefore passed its hard gate and was retained.
+
+Retained changes:
+
+- Switched all current ordinary SpriteRenderer and TilemapRenderer material references in
+  MovementLab, ArtShowcase, the player prefab, and jump-dust prefab to URP
+  `Sprite-Unlit-Default`. No source sprite, palette, animation, sorting, or TextMesh material was
+  changed.
+- Removed only the obsolete `Global Light 2D` identity object from MovementLab and ArtShowcase.
+- Set Renderer2D's verified URP 17.4 default material enum to Unlit (`1`). The existing Lit
+  material references remain serialized so future intentional 2D lighting is still available.
+- Updated both deterministic builders to preserve this state on rebuild and both validators to
+  check current ordinary renderer materials plus the absence of the named identity light. The
+  validation does not ban future purpose-authored Light2D objects.
+
+Structural evidence:
+
+- MovementLab and ArtShowcase contain no Light2D component and no ordinary Lit sprite/tile
+  material; SampleScene was intentionally left outside this focused pass.
+- URP 17.4 calculates active blend styles from culled Light2D statistics, allocates light
+  textures only for those active indices, and returns from `DrawLight2DPass` when a layer batch
+  does not use lights. Removing the only lights therefore eliminates current-scene light texture
+  allocation and light raster-pass execution rather than merely hiding their result.
+
+Validation:
+
+- Focused retained-conversion EditMode tests passed **5/5**, including the exact pixel gate,
+  both scene contracts, prefab contracts, and Renderer2D default/reference contract.
+- Full graphical D3D11 EditMode passed **136/136**.
+- Full graphical D3D11 PlayMode passed **18/18**, including raw and Penumbra RenderGraph
+  readback, repeated toggle coverage, movement/aim/animation behavior, and the new runtime
+  scene-material contract.
+- Deterministic M0 and M1A rebuild/validation commands both completed successfully.
+- A headless `-nographics` full EditMode attempt crashed in Unity's graphics device when the
+  deliberately graphical `Camera.Render` equivalence test executed; the valid graphical D3D11
+  run supersedes it.
+- No standalone benchmark was run and no FPS percentage is claimed. The benefit is high-
+  confidence structural removal of unused per-frame 2D lighting work; a platform capture can
+  quantify its magnitude later if needed.
