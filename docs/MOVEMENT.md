@@ -13,7 +13,7 @@ The existing `InputSystem_Actions` asset contains one focused `Player` map with 
 
 - `PlayerInputReader` collects Input System callbacks and latches jump press/release edges until the physics step consumes them.
 - `PlayerAim2D` owns the explicit `AimOrigin`, continuous aim direction, valid-aim state, native-pixel pointer conversion, and a 5° facing hysteresis zone around both vertical axes.
-- `PlayerMotor2D` applies horizontal velocity, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 5 units/s backward; air speed remains 7 units/s regardless of aim.
+- `PlayerMotor2D` applies horizontal velocity, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 4 units/s backward; air speed remains 7 units/s regardless of aim.
 - `PlayerGroundProbe2D` casts the stable player CapsuleCollider2D a short distance downward against the `Ground` layer and accepts only sufficiently upward-facing normals. Side-wall contacts do not ground the player.
 - `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, or Land from grounded state and actual velocity. Run versus Backpedal uses the same generic velocity-against-facing helper as the motor. It flips only the presentation layers; collision is unchanged. Land presentation never blocks movement.
 - `PixelCameraFollow2D` smooths in continuous world space, then snaps the rendered camera position to the 1/16-unit pixel grid.
@@ -23,9 +23,9 @@ The prefab root uses a fixed vertical CapsuleCollider2D with size `1.05 × 2.75`
 
 `AimOrigin` is an explicit child of `Visual - 48x64 Full Cell` at local `(0, 2.375, 0)`, exactly 38 source pixels above the shared renderer pivot. Pointer input remains unclamped through Deep Space margins. Aim direction stays continuous; only the left/right facing hemisphere is hysteretic. Inside `abs(normalizedAim.x) <= sin(5°)`, the prior hemisphere is retained, defaulting to right when no prior aim exists.
 
-Ground acceleration, deceleration, direction-change acceleration, and `Mathf.MoveTowards` behavior are unchanged. Crossing the aim hemisphere while holding movement therefore approaches the new 5 or 7 units/s cap naturally instead of snapping velocity. The Backpedal cap is grounded-only and both speed values remain human-tunable in `PlayerMovementConfig`.
+Ground acceleration, deceleration, direction-change acceleration, and `Mathf.MoveTowards` behavior are unchanged. Crossing the aim hemisphere while holding movement therefore approaches the new 4 or 7 units/s cap naturally instead of snapping velocity. The Backpedal cap is grounded-only and both speed values remain human-tunable in `PlayerMovementConfig`.
 
-Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 5 units/s Backpedal policy, and the 5° vertical facing hysteresis. The 5 units/s Backpedal cap remains subject to final feel testing after the revised Backpedal art is available.
+Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, and the 5° vertical facing hysteresis. The revised four-frame Backpedal art is accepted; 4 units/s is the current movement-feel target.
 
 MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile` supplies visuals, while a hidden Tilemap of simple Grid collider tiles feeds `TilemapCollider2D` into a `CompositeCollider2D` to avoid per-cell seams.
 
@@ -51,7 +51,7 @@ These values are a starting point, not final feel approval.
 | Setting | Initial value |
 | --- | ---: |
 | Maximum ground / air speed | 7 units/s |
-| Maximum grounded Backpedal speed | 5 units/s |
+| Maximum grounded Backpedal speed | 4 units/s |
 | Ground acceleration | 55 units/s² |
 | Ground deceleration | 70 units/s² |
 | Direction-change acceleration | 90 units/s² |

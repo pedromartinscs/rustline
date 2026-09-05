@@ -88,10 +88,10 @@ Current production status:
 - right-facing Run is authored at all 19 angles with six `80×96` frames in each `480×96` sheet;
 - runtime Run integration uses the sole Body Animator as its six-frame clock and keeps aim-facing independent of movement direction;
 - right-facing Backpedal is authored at all 19 angles with exactly four `80×96` frames in each `320×96` sheet;
-- runtime Backpedal integration uses the same sole Body Animator clock, with a 5 units/s grounded cap versus 7 units/s forward;
+- runtime Backpedal integration uses the same sole Body Animator clock, with a 4 units/s grounded cap versus 7 units/s forward;
 - generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
-- the corrected aim origin and Run presentation are human-approved; Backpedal native-scale approval is the next gate;
+- the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
 - Fall aim and Jump/Land/Roll carry art remain deferred.
 
 This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.

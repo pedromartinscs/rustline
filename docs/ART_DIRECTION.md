@@ -69,7 +69,7 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - The first Longwatch DMR armed aim overlay uses **80×96 px** cells around the unchanged 48×64 Body reference, with 32 px additional forward space, 24 px above, and 8 px below
 - Body animation must remain readable when horizontally flipped
 - The three-frame Jump takeoff uses explicit keys at 0.00, 0.10, and 0.26 seconds: 100 ms of Y-anchored compression, 160 ms of cubic eased catch-up, then a held layered ascent pose; X and the camera continue following the physical root, and Fall remains velocity-selected
-- Grounded Run and Backpedal are selected from actual velocity relative to aim-facing; Backpedal uses exactly four authored frames and a 5 units/s grounded cap versus 7 units/s forward
+- Grounded Run and Backpedal are selected from actual velocity relative to aim-facing; Backpedal uses exactly four authored frames and a 4 units/s grounded cap versus 7 units/s forward
 - `AimOrigin` is an explicit Visual child 38 source pixels above the renderer pivot; generic aim-facing uses a 5° hysteresis zone around vertical
 - Grounded takeoff dust is a separate three-frame, 48×64 world-space one-shot at the player pivot; it snapshots facing, stays on the floor, and is omitted for coyote jumps
 - Initial canonical pose: neutral, unarmed, facing right

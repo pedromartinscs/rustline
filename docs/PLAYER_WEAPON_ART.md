@@ -253,7 +253,7 @@ cell size  = 80×96 px
 frames     = x 0, 80, 160, 240
 ```
 
-Production folder is `Aim/Backpedal`, filenames follow `player_salvager_longwatch_dmr_backpedal_aim_<direction>.png`, and the 19 sheets contain exactly **76 final Backpedal armed sprites**. The Body and Unarmed Arms Backpedal sheets are each exactly `192×64`, four horizontal `48×64` frames. Four frames are the authored animation contract, not an import or storage optimization; do not duplicate, interpolate, or reorder them. The current 6 fps playback rate is provisional pending the revised art and final feel pass.
+Production folder is `Aim/Backpedal`, filenames follow `player_salvager_longwatch_dmr_backpedal_aim_<direction>.png`, and the 19 sheets contain exactly **76 final Backpedal armed sprites**. The Body and Unarmed Arms Backpedal sheets are each exactly `192×64`, four horizontal `48×64` frames. Four frames are the authored animation contract, not an import or storage optimization; do not duplicate, interpolate, or reorder them. The current 6 fps playback rate remains unchanged while movement-speed feel is tuned against the revised art.
 
 For the current Run and Backpedal packages and future Fall aim-capable art, preserve the same principles:
 
@@ -286,7 +286,7 @@ ArtSource/Concepts/Player_concept.png
 
 The standalone weapon concept is a design reference. The final production authority for hand placement, silhouette, palette, and per-angle pixel cleanup is the authored Arms/Weapon overlay artwork.
 
-The Longwatch Idle, Run, and Backpedal packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run supplies 6, and Backpedal supplies exactly 4. Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 5 units/s Backpedal policy, 5° vertical facing hysteresis, renderer ownership, and Body-clock frame synchronization. The corrected aim origin and Run presentation are human-approved. Backpedal art is not approved or frozen: the artist is revising the lower-body/leg motion so the four frames read as one coherent backward step rather than two visually confusing steps. The four-frame contract remains intentional, while 6 fps and the 5 units/s cap remain provisional until that art and feel pass. Fall aim and Jump/Land/Roll carry art remain deferred.
+The Longwatch Idle, Run, and Backpedal packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run supplies 6, and Backpedal supplies exactly 4. Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, 5° vertical facing hysteresis, renderer ownership, and Body-clock frame synchronization. The corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved. The accepted Backpedal solution keeps the right foot visually ahead while alternating short backward steps, preserving a convincing four-frame cycle. The four-frame contract and 6 fps playback remain unchanged; 4 units/s is the current movement-feel target. Fall aim and Jump/Land/Roll carry art remain deferred.
 
 ## Aim/fire locomotion rules
 
@@ -436,7 +436,7 @@ Implemented validation milestones:
 8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or jump semantics. **Done for Idle, Run, and Backpedal, with intentional unarmed fallback for unsupported states.**
 9. Automate validation of all 19 directions, both Idle frames, all six Run frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; human native-scale approval remains pending.**
 10. Correct the Longwatch pointer aim origin to 38 source pixels / 2.375 Unity units above the shared renderer pivot. **Done and human-approved.**
-11. Add grounded armed Backpedal with four authored frames at all 19 directions, driven by generic aim-facing and a 5 units/s cap. **Implemented; human visual approval pending.**
+11. Add grounded armed Backpedal with four authored frames at all 19 directions, driven by generic aim-facing and a 4 units/s cap. **Implemented and human-approved; movement-speed feel tuning continues at 4 units/s.**
 12. Expand the Longwatch package to Fall aim and Jump/Land/Roll carry poses only after the current visual gate.
 13. Freeze the reusable armed import/presenter contract, then scale to additional weapons.
 
