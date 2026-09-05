@@ -87,8 +87,11 @@ Current production status:
 - runtime import, mouse-driven angle quantization, mirroring, renderer ownership, and automated in-engine validation are implemented for Idle;
 - right-facing Run is authored at all 19 angles with six `80×96` frames in each `480×96` sheet;
 - runtime Run integration uses the sole Body Animator as its six-frame clock and keeps aim-facing independent of movement direction;
-- the shared Idle/Run aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
-- human native-scale approval of the corrected aim origin and Run presentation remains the next gate;
+- right-facing Backpedal is authored at all 19 angles with exactly four `80×96` frames in each `320×96` sheet;
+- runtime Backpedal integration uses the same sole Body Animator clock, with a 5 units/s grounded cap versus 7 units/s forward;
+- generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
+- the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
+- the corrected aim origin and Run presentation are human-approved; Backpedal native-scale approval is the next gate;
 - Fall aim and Jump/Land/Roll carry art remain deferred.
 
 This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
@@ -111,9 +114,10 @@ Do not generate all twenty complete weapon packages before validating the pipeli
 2. Choose one representative first weapon. **Longwatch DMR chosen.**
 3. Produce its right-facing 19-direction Idle presentation. **Done.**
 4. Validate import, pivot, 360° mirrored visual aim, animation synchronization, and armed presenter ownership in Unity. **Automated Idle validation done.**
-5. Expand the accepted Longwatch contract to Run. **Authored and integrated; human visual approval pending.**
-6. Expand to Fall aim and non-firing carry states after the current visual gate.
-7. Freeze the reusable weapon art/import/runtime convention.
-8. Expand into the remaining roster in controlled batches.
+5. Expand the accepted Longwatch contract to Run. **Authored, integrated, and human-approved.**
+6. Expand the accepted Longwatch contract to four-frame Backpedal. **Authored and integrated; human visual approval pending.**
+7. Expand to Fall aim and non-firing carry states after the current visual gate.
+8. Freeze the reusable weapon art/import/runtime convention.
+9. Expand into the remaining roster in controlled batches.
 
 A long weapon remains the correct first stress test because angular, clipping, hand-placement, and pivot errors are easier to see than with a compact pistol.

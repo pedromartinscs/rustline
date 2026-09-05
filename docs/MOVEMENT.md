@@ -7,18 +7,23 @@ M1A is a compact single-player Rigidbody2D controller intended for rapid feel tu
 - Keyboard: A/D or Left/Right Arrow to move; Space to jump.
 - Gamepad: Left Stick or D-pad to move; South button to jump.
 
-The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, and a presentation-only `PointerPosition` action. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position` used by the Longwatch Idle/Run visual-validation presenter; it does not feed back into movement physics. While that presenter owns armed Idle or Run presentation, aim controls visual facing independently of Rigidbody movement direction, so backward running is supported without changing motor semantics.
+The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, and `PointerPosition`. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position`. `PlayerAim2D` converts it through the native-pixel viewport and World Camera into continuous world-space aim, then owns the stable facing hemisphere independently of A/D movement.
 
 ## Runtime structure
 
 - `PlayerInputReader` collects Input System callbacks and latches jump press/release edges until the physics step consumes them.
-- `PlayerMotor2D` applies horizontal velocity, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`.
+- `PlayerAim2D` owns the explicit `AimOrigin`, continuous aim direction, valid-aim state, native-pixel pointer conversion, and a 5° facing hysteresis zone around both vertical axes.
+- `PlayerMotor2D` applies horizontal velocity, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 5 units/s backward; air speed remains 7 units/s regardless of aim.
 - `PlayerGroundProbe2D` casts the stable player CapsuleCollider2D a short distance downward against the `Ground` layer and accepts only sufficiently upward-facing normals. Side-wall contacts do not ground the player.
-- `PlayerAnimator2D` selects Idle, Run, Jump, Fall, or Land from grounded state and velocity. It flips only the presentation sprite; collision is unchanged. Land presentation never blocks movement.
+- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, or Land from grounded state and actual velocity. Run versus Backpedal uses the same generic velocity-against-facing helper as the motor. It flips only the presentation layers; collision is unchanged. Land presentation never blocks movement.
 - `PixelCameraFollow2D` smooths in continuous world space, then snaps the rendered camera position to the 1/16-unit pixel grid.
 - `PlayerMovementConfig` stores all important tuning in `Assets/Config/Player/PlayerMovementConfig.asset`.
 
 The prefab root uses a fixed vertical CapsuleCollider2D with size `1.05 × 2.75` and offset `(0, 1.375)`. Its bottom remains at the full-cell bottom-center pivot while excluding the antenna, backpack silhouette, and transparent cell width. The separate `Visual - 48x64 Full Cell` child is presentation-offset to `(0, -0.25, 0)` (four source pixels at 16 PPU); the physics root and collider never change with animation frames.
+
+`AimOrigin` is an explicit child of `Visual - 48x64 Full Cell` at local `(0, 2.375, 0)`, exactly 38 source pixels above the shared renderer pivot. Pointer input remains unclamped through Deep Space margins. Aim direction stays continuous; only the left/right facing hemisphere is hysteretic. Inside `abs(normalizedAim.x) <= sin(5°)`, the prior hemisphere is retained, defaulting to right when no prior aim exists.
+
+Ground acceleration, deceleration, direction-change acceleration, and `Mathf.MoveTowards` behavior are unchanged. Crossing the aim hemisphere while holding movement therefore approaches the new 5 or 7 units/s cap naturally instead of snapping velocity. The Backpedal cap is grounded-only and both speed values remain human-tunable in `PlayerMovementConfig`.
 
 MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile` supplies visuals, while a hidden Tilemap of simple Grid collider tiles feeds `TilemapCollider2D` into a `CompositeCollider2D` to avoid per-cell seams.
 
@@ -44,6 +49,7 @@ These values are a starting point, not final feel approval.
 | Setting | Initial value |
 | --- | ---: |
 | Maximum ground / air speed | 7 units/s |
+| Maximum grounded Backpedal speed | 5 units/s |
 | Ground acceleration | 55 units/s² |
 | Ground deceleration | 70 units/s² |
 | Direction-change acceleration | 90 units/s² |

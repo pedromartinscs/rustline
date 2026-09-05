@@ -69,6 +69,8 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - The first Longwatch DMR armed aim overlay uses **80×96 px** cells around the unchanged 48×64 Body reference, with 32 px additional forward space, 24 px above, and 8 px below
 - Body animation must remain readable when horizontally flipped
 - The three-frame Jump takeoff uses explicit keys at 0.00, 0.10, and 0.26 seconds: 100 ms of Y-anchored compression, 160 ms of cubic eased catch-up, then a held layered ascent pose; X and the camera continue following the physical root, and Fall remains velocity-selected
+- Grounded Run and Backpedal are selected from actual velocity relative to aim-facing; Backpedal uses exactly four authored frames and a 5 units/s grounded cap versus 7 units/s forward
+- `AimOrigin` is an explicit Visual child 38 source pixels above the renderer pivot; generic aim-facing uses a 5° hysteresis zone around vertical
 - Grounded takeoff dust is a separate three-frame, 48×64 world-space one-shot at the player pivot; it snapshots facing, stays on the floor, and is omitted for coyote jumps
 - Initial canonical pose: neutral, unarmed, facing right
 
@@ -135,9 +137,9 @@ Rustline separates **continuous gameplay aim** from **authored visual aim**.
 
 The gameplay direction may be mathematically continuous for mouse/gamepad targeting, projectiles, and hitscan. The player artwork uses discrete authored arm/weapon overlays at 10-degree intervals. For right-facing artwork, `0°` is horizontal, positive angles aim upward, and negative angles aim downward.
 
-The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, and Fall are currently aim/fire-capable. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
+The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, Backpedal, and Fall are aim/fire-capable presentation states. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
 
-The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing Idle and Run sets are authored and integrated for all 19 directions: Idle uses two `80×96` cells per `160×96` sheet, while Run uses six cells per `480×96` sheet. Both use the common armed pivot and an aim origin 38 source pixels above the shared renderer pivot. Mouse-driven 360° mirroring, aim-facing independent of movement, and Body-clock synchronization are automated; human native-scale approval of the corrected origin and Run presentation remains pending.
+The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing Idle, Run, and Backpedal sets are authored and integrated for all 19 directions: Idle uses two `80×96` cells per `160×96` sheet, Run uses six per `480×96`, and Backpedal uses exactly four per `320×96`. All use the common armed pivot and explicit AimOrigin 38 source pixels above the renderer pivot. Mouse-driven 360° mirroring, generic aim-facing, and Body-clock synchronization are automated. Run and the corrected origin are human-approved; Backpedal approval remains pending.
 
 This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
 
@@ -193,7 +195,8 @@ Once an original Rustline visual baseline exists, prefer Rustline's own artwork 
 - Longwatch DMR standalone/reference concept
 - Longwatch DMR Idle: 19 authored right-facing aim directions × 2 Idle frames
 - Longwatch DMR Run: 19 authored right-facing aim directions × 6 Run frames
-- Unity import + 360° mirrored Idle/Run aim validation
+- Longwatch DMR Backpedal: 19 authored right-facing aim directions × exactly 4 Backpedal frames
+- Unity import + 360° mirrored Idle/Run/Backpedal aim validation
 - Longwatch Fall aim remains deferred
 - Longwatch carry-only armed poses for non-firing movement states after the current visual gate
 - Remaining initial arsenal from [`WEAPONS.md`](WEAPONS.md) after pipeline validation
