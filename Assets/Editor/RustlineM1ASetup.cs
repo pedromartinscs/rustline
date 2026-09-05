@@ -794,9 +794,9 @@ namespace Rustline.Editor
             Require(config != null, "Player movement config is missing.");
             Require(config.IsSane(out string configReason), "Player movement config is invalid: " + configReason);
             Require(Mathf.Approximately(config.MaxGroundSpeed, 7f) &&
-                Mathf.Approximately(config.MaxBackpedalGroundSpeed, 5f) &&
+                Mathf.Approximately(config.MaxBackpedalGroundSpeed, 4f) &&
                 Mathf.Approximately(config.MaxAirSpeed, 7f),
-                "Player forward/backpedal/air speed defaults changed from 7/5/7.");
+                "Player forward/backpedal/air speed defaults changed from 7/4/7.");
 
             InputActionAsset input = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
             InputActionMap playerMap = input?.FindActionMap("Player", false);

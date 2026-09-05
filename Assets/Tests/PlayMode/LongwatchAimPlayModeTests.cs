@@ -266,7 +266,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator GroundedAimRelativeLocomotion_UsesSevenForwardAndFiveBackpedal()
+        public IEnumerator GroundedAimRelativeLocomotion_UsesSevenForwardAndFourBackpedal()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -285,13 +285,13 @@ namespace Rustline.Tests
                     Vector2.right, Key.D, 7f, PlayerAnimationState.Run);
                 yield return AssertGroundedLocomotionCase(
                     motor, body, armed, presentation, mouse, keyboard,
-                    Vector2.right, Key.A, -5f, PlayerAnimationState.Backpedal);
+                    Vector2.right, Key.A, -4f, PlayerAnimationState.Backpedal);
                 yield return AssertGroundedLocomotionCase(
                     motor, body, armed, presentation, mouse, keyboard,
                     Vector2.left, Key.A, -7f, PlayerAnimationState.Run);
                 yield return AssertGroundedLocomotionCase(
                     motor, body, armed, presentation, mouse, keyboard,
-                    Vector2.left, Key.D, 5f, PlayerAnimationState.Backpedal);
+                    Vector2.left, Key.D, 4f, PlayerAnimationState.Backpedal);
             }
             finally
             {
@@ -370,12 +370,12 @@ namespace Rustline.Tests
                 {
                     yield return new WaitForFixedUpdate();
                     yield return null;
-                    sawIntermediateVelocity |= motor.Velocity.x > 5.05f && motor.Velocity.x < 6.95f;
+                    sawIntermediateVelocity |= motor.Velocity.x > 4.05f && motor.Velocity.x < 6.95f;
                 }
 
                 Assert.That(sawIntermediateVelocity, Is.True,
                     "Facing change snapped velocity directly to the Backpedal cap.");
-                Assert.That(motor.Velocity.x, Is.EqualTo(5f).Within(0.05f));
+                Assert.That(motor.Velocity.x, Is.EqualTo(4f).Within(0.05f));
                 Assert.That(playerAnimator.CurrentState, Is.EqualTo(PlayerAnimationState.Backpedal));
             }
             finally

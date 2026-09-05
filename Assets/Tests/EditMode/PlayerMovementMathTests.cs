@@ -50,9 +50,9 @@ namespace Rustline.Tests
         }
 
         [TestCase(1f, false, 7f)]
-        [TestCase(-1f, false, 5f)]
+        [TestCase(-1f, false, 4f)]
         [TestCase(-1f, true, 7f)]
-        [TestCase(1f, true, 5f)]
+        [TestCase(1f, true, 4f)]
         public void GroundSpeedLimit_DependsOnMovementRelativeToAimFacing(
             float input,
             bool facingLeft,

@@ -7,7 +7,7 @@ namespace Rustline.Gameplay.Player
     {
         [Header("Horizontal movement")]
         [SerializeField, Min(0.01f)] private float maxGroundSpeed = 7f;
-        [SerializeField, Min(0.01f)] private float maxBackpedalGroundSpeed = 5f;
+        [SerializeField, Min(0.01f)] private float maxBackpedalGroundSpeed = 4f;
         [SerializeField, Min(0.01f)] private float groundAcceleration = 55f;
         [SerializeField, Min(0.01f)] private float groundDeceleration = 70f;
         [SerializeField, Min(0.01f)] private float directionChangeAcceleration = 90f;
