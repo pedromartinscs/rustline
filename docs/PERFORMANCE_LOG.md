@@ -393,3 +393,56 @@ Expected impact:
 - fewer Longwatch trigonometric calculations and Body-array comparisons between actual aim/frame changes;
 - less URP feature setup/variant surface and no per-frame Volume stack update for the current no-Volume presentation;
 - profiler attribution in Development captures with no marker Begin/End overhead in non-Development Release builds.
+
+## High-impact penumbra pass — quantized lookup and steady-state binding
+
+Status: **implemented and validated in Unity 6000.4.0f1**.
+
+Hypotheses:
+
+- the 28-way linear-RGB nearest-color loop was the dominant avoidable ALU work in every
+  Penumbra annulus fragment;
+- persistent source textures and fixed orientation did not need to be rebound from every
+  RenderGraph execution callback;
+- ordinary MovementLab play did not need continuous diagnostic sampling and IMGUI work.
+
+Retained changes:
+
+- Replaced the per-annulus-fragment 28-color search with a point sample from a one-time
+  runtime-generated `1024×160` RGBA32 sRGB lookup. RGB is quantized to 5 bits per linear
+  channel, with `x = r + g*32` and `y = b + level*32`. The table directly stores the final
+  darkness-mapped Canonical color and costs 655,360 bytes (640 KiB) of persistent texel data.
+- Preserved squared-radius rejection, no source sample at/after radius 520, raw return at/before
+  radius 456, annulus `sqrt`, the exact Bayer pattern and comparison, and world anchoring.
+- Moved `_MainTex` and `_SourceScaleBias` material writes to material creation, target
+  recreation, and Penumbra toggle paths. RenderGraph still imports and declares every source
+  through `builder.UseTexture`; its callbacks now only clear where required, set viewports,
+  and draw. This removes four material mutations per Penumbra-ON rendered frame and two per
+  Penumbra-OFF rendered frame.
+- Made the development HUD hidden by default. `H`/`F3` toggles it; hidden state performs no
+  sampling, display-string refresh, style construction, or `GUI.Label` calls. `P` still toggles
+  Penumbra while hidden, and visible camera-follow/copy behavior is unchanged.
+
+Canonical proof and validation:
+
+- Focused lookup tests passed **8/8**. All 28 colors occupy distinct 5-bit linear-RGB cells;
+  Canonical level 0 is identity; all 28×5 results match the existing authored darkness mapping;
+  all 163,840 outputs remain Canonical 28; and every level-4 cell is Deep Space.
+- The final full EditMode suite passed **131/131**.
+- The final graphical Direct3D 11 PlayMode suite passed **17/17**, including raw and Penumbra
+  RenderGraph readback plus three repeated OFF/ON routing cycles and the opt-in HUD behavior.
+- No standalone performance benchmark was run. The benefit is structural; no FPS percentage is
+  claimed.
+
+Reverted experiment:
+
+- A depthless World Camera target was tested and rejected. Graphical D3D11 emitted Unity's
+  RenderGraph validation error that a camera output RenderTexture must have a depth buffer.
+  `WorldTargetDepthBits` remains 16. The resolved RenderGraph-only target remains depth 0.
+
+Deferred:
+
+- The identity Global Light 2D / Sprite-Unlit experiment was not attempted because objective
+  source-image equivalence and manual A/B review deserve a separate focused pass.
+- Tilemap SRP Batch, SpriteAtlas adoption when actor counts grow, Renderer2D alternatives, and
+  a later stable Penumbra benchmark remain separate experiments.

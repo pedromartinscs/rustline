@@ -33,6 +33,7 @@ namespace Rustline.Tests
                 presentation.ResolvedTarget,
                 expected,
                 NativePixelPresentation.ResolvedTargetDepthBits);
+            AssertDarknessLookup(presentation.DarknessLookupTexture);
 
             // Consolidated Experiment 2 architecture: the world camera renders stage A;
             // one lightweight utility camera remains active only as the RenderGraph driver.
@@ -132,13 +133,24 @@ namespace Rustline.Tests
                     presentation,
                     "Penumbra OFF did not present raw world pixels through RenderGraph (stage C).");
 
-                presentation.TogglePenumbra();
-                yield return null;
-                yield return null;
-                AssertPhysicalPlayerRegionHasVisibleContent(
-                    physicalTarget,
-                    presentation,
-                    "Penumbra ON did not present resolved world pixels through RenderGraph (stage C).");
+                for (int toggleCycle = 0; toggleCycle < 3; toggleCycle++)
+                {
+                    presentation.TogglePenumbra();
+                    yield return null;
+                    yield return null;
+                    AssertPhysicalPlayerRegionHasVisibleContent(
+                        physicalTarget,
+                        presentation,
+                        $"Penumbra ON failed after toggle cycle {toggleCycle} (stage C).");
+
+                    presentation.TogglePenumbra();
+                    yield return null;
+                    yield return null;
+                    AssertPhysicalPlayerRegionHasVisibleContent(
+                        physicalTarget,
+                        presentation,
+                        $"Penumbra OFF failed after toggle cycle {toggleCycle} (stage C).");
+                }
             }
             finally
             {
@@ -165,6 +177,20 @@ namespace Rustline.Tests
             Assert.That(target.sRGB, Is.True);
             Assert.That(target.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
             Assert.That(target.anisoLevel, Is.EqualTo(0));
+        }
+
+        private static void AssertDarknessLookup(Texture2D lookup)
+        {
+            Assert.That(lookup, Is.Not.Null);
+            Assert.That(lookup.width, Is.EqualTo(1024));
+            Assert.That(lookup.height, Is.EqualTo(160));
+            Assert.That(lookup.format, Is.EqualTo(TextureFormat.RGBA32));
+            Assert.That(lookup.isDataSRGB, Is.True);
+            Assert.That(lookup.filterMode, Is.EqualTo(FilterMode.Point));
+            Assert.That(lookup.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
+            Assert.That(lookup.mipmapCount, Is.EqualTo(1));
+            Assert.That(lookup.anisoLevel, Is.EqualTo(0));
+            Assert.That(QualitySettings.activeColorSpace, Is.EqualTo(ColorSpace.Linear));
         }
 
         private static void AssertPlayerRegionHasVisibleContent(

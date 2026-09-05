@@ -26,6 +26,8 @@ Avoid optimization by superstition. Unity/URP settings that look expensive are c
 ## Current baseline instrumentation
 
 `MovementLab` has a development-only diagnostic HUD implemented by `MovementLabPerformanceHud`.
+It is hidden by default so ordinary play does not continuously sample, format strings, or run
+IMGUI labels. Press `H` or `F3` to show/hide it; `P` continues to toggle Penumbra while hidden.
 
 It now samples in **2.0-second windows** and displays:
 
@@ -94,20 +96,33 @@ The approved visual geometry for the initial prototype is documented in `ART_DIR
 - canonical viewport: 67×67 tiles / 1072×1072 px;
 - full darkness color: Deep Space `#01020B`.
 
-### Palette lookup-table idea
+### Palette lookup table
 
-Rustline has only 28 legal production colors. The penumbra therefore has a promising optimization/design path based on small palette lookup tables rather than arbitrary RGB interpolation.
+Rustline has only 28 legal production colors. The penumbra annulus uses a runtime-generated,
+point-sampled `1024×160` RGBA32 sRGB lookup rather than searching all 28 colors per fragment.
+Each linear RGB channel is quantized to 5 bits; RGB occupies `1024×32` cells and the five
+darkness levels are stacked vertically. The 655,360-byte (640 KiB) texture stores the final
+Canonical 28 output directly.
 
 For a small number of discrete shadow levels, a lookup can map each canonical source color to another canonical darker color. Pixel-pattern dithering can then transition spatially between those palette-safe levels and ultimately Deep Space.
 
-This is an **approved prototype direction, not yet a mandated implementation**. The exact GPU representation must be chosen after measuring the first penumbra prototype. Do not prematurely convert the whole art pipeline to indexed textures or add complexity merely because a 28-color LUT is possible.
+The table is generated once when presentation is enabled and its CPU copy is discarded after
+upload. Tests prove that all canonical colors occupy distinct quantized cells, resolve to
+themselves at level 0, retain the authored 28×5 darkness mapping, never leave Canonical 28,
+and always reach Deep Space at level 4. This remains a presentation-only lookup; source art is
+not converted to indexed textures.
 
 ## Focused runtime optimization pass
 
 The September 2026 pass retained a small set of structurally verifiable changes:
 
 - static `ProfilerMarker` scopes identify player aim, motor, ground probe, native-pixel update, Longwatch presentation, and animation work in Editor/Development captures; Unity compiles marker Begin/End calls out of non-Development Release builds;
-- the persistent resolved/penumbra RenderTexture is depthless because it is only a RenderGraph color attachment; the World Camera target deliberately retains 16-bit depth until a depthless camera-output experiment can be visually verified in Unity;
+- the persistent resolved/penumbra RenderTexture is depthless; the World Camera target retains
+  16-bit depth because Unity 6.4 RenderGraph rejects a depthless camera output texture even
+  though Renderer2D depth/stencil is disabled and no current feature samples scene depth;
+- stable source texture and orientation bindings are set only when materials, targets, or the
+  Penumbra selection change; RenderGraph callbacks retain texture dependencies but only clear,
+  set viewports, and draw;
 - native-pixel material parameters are exact-dirty-checked, and the player/camera-derived penumbra values are not recomputed in a stationary frame;
 - aim conversion skips its two camera-space conversions only when every current conversion input is exactly unchanged; an exact aim revision prevents Longwatch from repeating angle quantization for an unchanged resolved aim;
 - Animator state names are cached as hashes, renderer facing writes happen only on an actual facing change, and Longwatch validates immutable configuration once per enable and scans Body frames only after its Body/direction cache misses;
@@ -123,7 +138,7 @@ The benchmark still resolves and forces `Very Low` by exact name, while Standalo
 
 For quick Pedro ↔ Echo iteration in `MovementLab`:
 
-1. Use the same Unity version and the same MovementLab scene.
+1. Use the same Unity version and the same MovementLab scene, then press `H` or `F3` to show the HUD.
 2. Let the scene run for several seconds before reading values.
 3. Record whether VSync or a target frame-rate cap is active.
 4. Compare idle/standing measurements under the same conditions first.

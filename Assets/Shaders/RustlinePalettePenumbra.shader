@@ -3,6 +3,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
     Properties
     {
         _MainTex ("Logical World", 2D) = "black" {}
+        _DarknessLookup ("Canonical Darkness Lookup", 2D) = "black" {}
         _SourceScaleBias ("Source Scale Bias", Vector) = (1, 1, 0, 0)
     }
 
@@ -29,6 +30,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
             #pragma fragment Fragment
 
             sampler2D _MainTex;
+            sampler2D _DarknessLookup;
             float4 _SourceScaleBias;
             float2 _LogicalSize;
             float2 _PlayerPixelCenter;
@@ -36,8 +38,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
             float _FullVisibleRadius;
             float _FullDarknessRadius;
             float _PenumbraEnabled;
-            float4 _Palette[28];
-            float4 _DarknessLut[140];
+            float4 _DeepSpaceColor;
 
             struct FullscreenVaryings
             {
@@ -85,26 +86,6 @@ Shader "Hidden/Rustline/PalettePenumbra"
                 return (value + 0.5) / 16.0;
             }
 
-            int FindNearestPaletteIndex(float3 source)
-            {
-                int nearestIndex = 0;
-                float nearestDistance = 1000000.0;
-
-                [unroll]
-                for (int index = 0; index < 28; index++)
-                {
-                    float3 difference = source - _Palette[index].rgb;
-                    float distanceSquared = dot(difference, difference);
-                    if (distanceSquared < nearestDistance)
-                    {
-                        nearestDistance = distanceSquared;
-                        nearestIndex = index;
-                    }
-                }
-
-                return nearestIndex;
-            }
-
             float4 Fragment(FullscreenVaryings input) : SV_Target
             {
                 float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
@@ -122,7 +103,7 @@ Shader "Hidden/Rustline/PalettePenumbra"
                     _FullDarknessRadius * _FullDarknessRadius;
                 if (distanceSquared >= fullDarknessRadiusSquared)
                 {
-                    return float4(_Palette[0].rgb, 1.0);
+                    return float4(_DeepSpaceColor.rgb, 1.0);
                 }
 
                 float4 source = tex2D(_MainTex, sampleUv);
@@ -143,8 +124,12 @@ Shader "Hidden/Rustline/PalettePenumbra"
                 int level = lowerLevel +
                     (BayerThreshold(worldPixel) < adjacentLevelCoverage ? 1 : 0);
 
-                int sourceIndex = FindNearestPaletteIndex(source.rgb);
-                return float4(_DarknessLut[sourceIndex * 5 + level].rgb, 1.0);
+                int3 quantized = (int3)round(saturate(source.rgb) * 31.0);
+                int lookupX = quantized.r + quantized.g * 32;
+                int lookupY = quantized.b + level * 32;
+                float2 lookupUv =
+                    (float2(lookupX, lookupY) + 0.5) / float2(1024.0, 160.0);
+                return float4(tex2D(_DarknessLookup, lookupUv).rgb, 1.0);
             }
             ENDHLSL
         }

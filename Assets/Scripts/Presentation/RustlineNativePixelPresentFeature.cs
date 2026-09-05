@@ -15,9 +15,6 @@ namespace Rustline.Presentation
         private const string PenumbraPassName = "Rustline Logical Penumbra";
         private const string PresentPassName = "Rustline Native Pixel Present";
 
-        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
-        private static readonly int SourceScaleBiasId = Shader.PropertyToID("_SourceScaleBias");
-
         private static Camera s_DriverCamera;
         private static RenderTexture s_WorldTarget;
         private static RenderTexture s_ResolvedTarget;
@@ -122,16 +119,14 @@ namespace Rustline.Presentation
                     _worldHandle,
                     CreateRenderTargetInfo(s_WorldTarget));
                 TextureHandle selectedSource = worldSource;
-                RenderTexture selectedTexture = s_WorldTarget;
 
                 if (s_PenumbraEnabled)
                 {
                     TextureHandle resolvedTarget = renderGraph.ImportTexture(
                         _resolvedHandle,
                         CreateRenderTargetInfo(s_ResolvedTarget));
-                    RecordPenumbraPass(renderGraph, worldSource, resolvedTarget, s_WorldTarget);
+                    RecordPenumbraPass(renderGraph, worldSource, resolvedTarget);
                     selectedSource = resolvedTarget;
-                    selectedTexture = s_ResolvedTarget;
                 }
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
@@ -141,37 +136,28 @@ namespace Rustline.Presentation
                     return;
                 }
 
-                RecordPresentationPass(
-                    renderGraph,
-                    selectedSource,
-                    backBuffer,
-                    selectedTexture);
+                RecordPresentationPass(renderGraph, selectedSource, backBuffer);
                 resourceData.SwitchActiveTexturesToBackbuffer();
             }
 
             private static void RecordPenumbraPass(
                 RenderGraph renderGraph,
                 TextureHandle source,
-                TextureHandle destination,
-                RenderTexture sourceTexture)
+                TextureHandle destination)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
                            PenumbraPassName,
                            out var passData))
                 {
-                    passData.source = source;
-                    passData.sourceTexture = sourceTexture;
                     passData.material = s_PenumbraMaterial;
-                    // Camera.targetTexture -> logical RenderTexture needs the platform Y
-                    // normalization once. The resulting logical target is normalized.
-                    passData.sourceNeedsYFlip = SystemInfo.graphicsUVStartsAtTop;
                     passData.viewport = new Rect(0f, 0f, s_Viewport.LogicalWidth, s_Viewport.LogicalHeight);
 
+                    // The persistent texture is bound by NativePixelPresentation; this
+                    // TextureHandle keeps RenderGraph dependency/lifetime tracking explicit.
                     builder.UseTexture(source, AccessFlags.Read);
                     builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
-                        ConfigureSourceSampling(data);
                         context.cmd.SetViewport(data.viewport);
                         context.cmd.DrawProcedural(
                             Matrix4x4.identity,
@@ -187,21 +173,13 @@ namespace Rustline.Presentation
             private static void RecordPresentationPass(
                 RenderGraph renderGraph,
                 TextureHandle source,
-                TextureHandle destination,
-                RenderTexture sourceTexture)
+                TextureHandle destination)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
                            PresentPassName,
                            out var passData))
                 {
-                    passData.source = source;
-                    passData.sourceTexture = sourceTexture;
                     passData.material = s_PresentationMaterial;
-                    // Both possible sources are presented to the physical backbuffer without
-                    // an additional Y correction. Penumbra ON uses the already-normalized
-                    // resolved target; Penumbra OFF samples the camera target directly into
-                    // the backbuffer, whose raster orientation already matches this path.
-                    passData.sourceNeedsYFlip = false;
                     // Raster commands write linear values to the sRGB backbuffer. Supplying
                     // authored display-space #01020B directly would be encoded again.
                     passData.clearColor = ((Color)RustlinePalette.DeepSpace).linear;
@@ -211,12 +189,13 @@ namespace Rustline.Presentation
                         s_Viewport.OutputWidth,
                         s_Viewport.OutputHeight);
 
+                    // Material state changes only with target/toggle state, while this handle
+                    // remains the authoritative RenderGraph read dependency.
                     builder.UseTexture(source, AccessFlags.Read);
                     builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {
                         context.cmd.ClearRenderTarget(false, true, data.clearColor);
-                        ConfigureSourceSampling(data);
                         context.cmd.SetViewport(data.viewport);
                         context.cmd.DrawProcedural(
                             Matrix4x4.identity,
@@ -227,23 +206,6 @@ namespace Rustline.Presentation
                             1);
                     });
                 }
-            }
-
-            private static void ConfigureSourceSampling(PassData data)
-            {
-                // Orientation is explicit per transition. Do not infer it from transient
-                // RenderGraph texture-origin state; repeated P toggles must be history-independent.
-                bool flip = data.sourceNeedsYFlip;
-
-                // TextureHandle remains responsible for RenderGraph dependency tracking.
-                // Bind the known persistent RenderTexture directly to avoid the unsupported
-                // TextureHandle -> Texture conversion path.
-                data.material.SetTexture(MainTexId, data.sourceTexture);
-                data.material.SetVector(
-                    SourceScaleBiasId,
-                    flip
-                        ? new Vector4(1f, -1f, 0f, 1f)
-                        : new Vector4(1f, 1f, 0f, 0f));
             }
 
             private static RenderTargetInfo CreateRenderTargetInfo(RenderTexture target)
@@ -275,12 +237,9 @@ namespace Rustline.Presentation
 
             private sealed class PassData
             {
-                public TextureHandle source;
-                public RenderTexture sourceTexture;
                 public Material material;
                 public Color clearColor;
                 public Rect viewport;
-                public bool sourceNeedsYFlip;
             }
         }
     }

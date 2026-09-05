@@ -5,14 +5,20 @@ using UnityEngine;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// Auditable runtime copy of Rustline Canonical 28 and the five-level penumbra LUT.
-    /// LUT entries are palette indices, so they cannot synthesize non-canonical colors.
+    /// Auditable runtime copy of Rustline Canonical 28 and the five-level penumbra mapping.
+    /// The generated 5-bit linear-RGB lookup contains only canonical output colors.
     /// </summary>
     public static class RustlinePalette
     {
         public const int ColorCount = 28;
         public const int DarknessLevelCount = 5;
         public const int DeepSpaceIndex = 0;
+        public const int LookupChannelBits = 5;
+        public const int LookupChannelSize = 1 << LookupChannelBits;
+        public const int DarknessLookupWidth = LookupChannelSize * LookupChannelSize;
+        public const int DarknessLookupHeight = LookupChannelSize * DarknessLevelCount;
+        public const int DarknessLookupByteCount =
+            DarknessLookupWidth * DarknessLookupHeight * 4;
 
         private static readonly Color32[] Colors =
         {
@@ -45,6 +51,8 @@ namespace Rustline.Presentation
             Hex(0x99, 0x0E, 0x0E), // Blood
             Hex(0x15, 0xD8, 0xF2), // UI Blue
         };
+
+        private static readonly Vector3[] LinearColors = CreateLinearColors();
 
         // Rows are source colors in canonical order. Columns are darkness levels 0..4.
         // Level 0 is identity. Level 4 is always Deep Space.
@@ -132,28 +140,97 @@ namespace Rustline.Presentation
             return false;
         }
 
-        internal static void CopyLinearShaderData(Vector4[] palette, Vector4[] darknessLut)
+        public static int QuantizeLinearChannel(float value)
         {
-            if (palette == null || palette.Length != ColorCount)
+            return Mathf.Clamp(
+                Mathf.RoundToInt(Mathf.Clamp01(value) * (LookupChannelSize - 1)),
+                0,
+                LookupChannelSize - 1);
+        }
+
+        public static int GetQuantizedLinearCellIndex(Color linearColor)
+        {
+            int red = QuantizeLinearChannel(linearColor.r);
+            int green = QuantizeLinearChannel(linearColor.g);
+            int blue = QuantizeLinearChannel(linearColor.b);
+            return red + green * LookupChannelSize +
+                   blue * LookupChannelSize * LookupChannelSize;
+        }
+
+        public static int GetDarknessLookupPixelIndex(Color linearColor, int level)
+        {
+            if ((uint)level >= DarknessLevelCount)
             {
-                throw new ArgumentException("Palette shader buffer has the wrong length.", nameof(palette));
+                throw new ArgumentOutOfRangeException(nameof(level));
             }
 
-            if (darknessLut == null || darknessLut.Length != ColorCount * DarknessLevelCount)
-            {
-                throw new ArgumentException("Darkness LUT shader buffer has the wrong length.", nameof(darknessLut));
-            }
+            int red = QuantizeLinearChannel(linearColor.r);
+            int green = QuantizeLinearChannel(linearColor.g);
+            int blue = QuantizeLinearChannel(linearColor.b);
+            int x = red + green * LookupChannelSize;
+            int y = blue + level * LookupChannelSize;
+            return y * DarknessLookupWidth + x;
+        }
 
-            for (int sourceIndex = 0; sourceIndex < ColorCount; sourceIndex++)
+        public static Color32[] CreateDarknessLookupPixels()
+        {
+            Color32[] pixels = new Color32[DarknessLookupWidth * DarknessLookupHeight];
+            float inverseMaximumChannel = 1f / (LookupChannelSize - 1);
+
+            for (int blue = 0; blue < LookupChannelSize; blue++)
             {
-                Color sourceLinear = ((Color)Colors[sourceIndex]).linear;
-                palette[sourceIndex] = sourceLinear;
-                for (int level = 0; level < DarknessLevelCount; level++)
+                for (int green = 0; green < LookupChannelSize; green++)
                 {
-                    Color mappedLinear = ((Color)GetDarkenedColor(sourceIndex, level)).linear;
-                    darknessLut[sourceIndex * DarknessLevelCount + level] = mappedLinear;
+                    for (int red = 0; red < LookupChannelSize; red++)
+                    {
+                        Vector3 quantizedLinear = new Vector3(
+                            red * inverseMaximumChannel,
+                            green * inverseMaximumChannel,
+                            blue * inverseMaximumChannel);
+                        int nearestIndex = FindNearestPaletteIndex(quantizedLinear);
+                        int x = red + green * LookupChannelSize;
+
+                        for (int level = 0; level < DarknessLevelCount; level++)
+                        {
+                            int y = blue + level * LookupChannelSize;
+                            pixels[y * DarknessLookupWidth + x] =
+                                GetDarkenedColor(nearestIndex, level);
+                        }
+                    }
                 }
             }
+
+            return pixels;
+        }
+
+        private static int FindNearestPaletteIndex(Vector3 sourceLinear)
+        {
+            int nearestIndex = 0;
+            float nearestDistance = float.MaxValue;
+            for (int index = 0; index < LinearColors.Length; index++)
+            {
+                Vector3 difference = sourceLinear - LinearColors[index];
+                float distanceSquared = Vector3.Dot(difference, difference);
+                if (distanceSquared < nearestDistance)
+                {
+                    nearestDistance = distanceSquared;
+                    nearestIndex = index;
+                }
+            }
+
+            return nearestIndex;
+        }
+
+        private static Vector3[] CreateLinearColors()
+        {
+            Vector3[] linearColors = new Vector3[ColorCount];
+            for (int index = 0; index < ColorCount; index++)
+            {
+                Color linear = ((Color)Colors[index]).linear;
+                linearColors[index] = new Vector3(linear.r, linear.g, linear.b);
+            }
+
+            return linearColors;
         }
 
         private static Color32 Hex(byte red, byte green, byte blue)

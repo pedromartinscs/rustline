@@ -31,8 +31,9 @@ namespace Rustline.Presentation
         private static readonly int FullVisibleRadiusId = Shader.PropertyToID("_FullVisibleRadius");
         private static readonly int FullDarknessRadiusId = Shader.PropertyToID("_FullDarknessRadius");
         private static readonly int PenumbraEnabledId = Shader.PropertyToID("_PenumbraEnabled");
-        private static readonly int PaletteId = Shader.PropertyToID("_Palette");
-        private static readonly int DarknessLutId = Shader.PropertyToID("_DarknessLut");
+        private static readonly int DarknessLookupId = Shader.PropertyToID("_DarknessLookup");
+        private static readonly int DeepSpaceColorId = Shader.PropertyToID("_DeepSpaceColor");
+        private static readonly int SourceScaleBiasId = Shader.PropertyToID("_SourceScaleBias");
 
         [SerializeField] private Camera worldCamera;
         [SerializeField] private Camera processingCamera;
@@ -41,13 +42,10 @@ namespace Rustline.Presentation
         [SerializeField] private Shader presentationShader;
         [SerializeField] private bool penumbraEnabled = true;
 
-        private readonly Vector4[] _palette = new Vector4[RustlinePalette.ColorCount];
-        private readonly Vector4[] _darknessLut =
-            new Vector4[RustlinePalette.ColorCount * RustlinePalette.DarknessLevelCount];
-
         private NativePixelViewport _viewport;
         private RenderTexture _worldTarget;
         private RenderTexture _penumbraTarget;
+        private Texture2D _darknessLookupTexture;
         private Material _penumbraMaterial;
         private Material _presentationMaterial;
         private bool _hasLogicalSize;
@@ -71,6 +69,7 @@ namespace Rustline.Presentation
         public bool HasAllocatedTargets => _worldTarget != null && _penumbraTarget != null;
         public RenderTexture WorldTarget => _worldTarget;
         public RenderTexture ResolvedTarget => _penumbraTarget;
+        public Texture2D DarknessLookupTexture => _darknessLookupTexture;
         public Camera WorldCamera => worldCamera;
         public Camera ProcessingCamera => processingCamera;
         public Transform PlayerTarget => playerTarget;
@@ -90,7 +89,6 @@ namespace Rustline.Presentation
             ApplyCanonicalCameraClearColors();
             ConfigureDriverCamera();
 
-            RustlinePalette.CopyLinearShaderData(_palette, _darknessLut);
             _penumbraMaterial = CreateRuntimeMaterial(
                 penumbraShader,
                 "Rustline Palette Penumbra - Runtime");
@@ -98,8 +96,19 @@ namespace Rustline.Presentation
                 presentationShader,
                 "Rustline Native Pixel Present - Runtime");
 
-            _penumbraMaterial.SetVectorArray(PaletteId, _palette);
-            _penumbraMaterial.SetVectorArray(DarknessLutId, _darknessLut);
+            _darknessLookupTexture = CreateDarknessLookupTexture();
+            _penumbraMaterial.SetTexture(DarknessLookupId, _darknessLookupTexture);
+            _penumbraMaterial.SetColor(
+                DeepSpaceColorId,
+                ((Color)RustlinePalette.DeepSpace).linear);
+            _penumbraMaterial.SetVector(
+                SourceScaleBiasId,
+                SystemInfo.graphicsUVStartsAtTop
+                    ? new Vector4(1f, -1f, 0f, 1f)
+                    : new Vector4(1f, 1f, 0f, 0f));
+            _presentationMaterial.SetVector(
+                SourceScaleBiasId,
+                new Vector4(1f, 1f, 0f, 0f));
             _penumbraMaterial.SetFloat(FullVisibleRadiusId, FullyVisibleRadiusPixels);
             _penumbraMaterial.SetFloat(FullDarknessRadiusId, FullDarknessRadiusPixels);
             _penumbraMaterial.SetFloat(PenumbraEnabledId, 1f);
@@ -126,6 +135,7 @@ namespace Rustline.Presentation
 
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
+            DestroyRuntimeObject(ref _darknessLookupTexture);
             DestroyRuntimeObject(ref _penumbraMaterial);
             DestroyRuntimeObject(ref _presentationMaterial);
         }
@@ -228,9 +238,9 @@ namespace Rustline.Presentation
             ReleaseTarget(ref _worldTarget);
             ReleaseTarget(ref _penumbraTarget);
 
-            // The 2D world camera retains its proven 16-bit depth contract until depthless
-            // camera output is visually validated on every supported path. The resolved
-            // RenderGraph-only target never needs a depth/stencil attachment.
+            // Unity 6.4 RenderGraph requires a camera output RenderTexture to carry a depth
+            // format even though Renderer2D and current effects do not consume scene depth.
+            // The resolved RenderGraph-only target remains safely depthless.
             _worldTarget = CreateTarget(
                 width,
                 height,
@@ -355,6 +365,28 @@ namespace Rustline.Presentation
             _penumbraMaterial.SetVector(LogicalSizeId, logicalSize);
             _lastLogicalSize = logicalSize;
             _hasLogicalSize = true;
+        }
+
+        private static Texture2D CreateDarknessLookupTexture()
+        {
+            // linear:false creates an sRGB texture, so stored Canonical Color32 values are
+            // decoded back to linear RGB when the linear-project shader samples them.
+            Texture2D texture = new Texture2D(
+                RustlinePalette.DarknessLookupWidth,
+                RustlinePalette.DarknessLookupHeight,
+                TextureFormat.RGBA32,
+                false,
+                false)
+            {
+                name = "Rustline Canonical Darkness Lookup - Runtime",
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                anisoLevel = 0,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            texture.SetPixels32(RustlinePalette.CreateDarknessLookupPixels());
+            texture.Apply(false, true);
+            return texture;
         }
 
         private void InvalidatePenumbraParameterCaches()

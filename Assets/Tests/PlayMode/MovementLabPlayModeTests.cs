@@ -1,5 +1,6 @@
 using System.Collections;
 using NUnit.Framework;
+using Rustline.Diagnostics;
 using Rustline.Gameplay.Player;
 using Rustline.Presentation;
 using UnityEngine;
@@ -12,6 +13,64 @@ namespace Rustline.Tests
 {
     public sealed class MovementLabPlayModeTests : InputTestFixture
     {
+        [UnityTest]
+        public IEnumerator PerformanceHud_IsOptInAndPenumbraToggleWorksWhileHidden()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            NativePixelPresentation presentation = Object.FindAnyObjectByType<NativePixelPresentation>();
+            Assert.That(presentation, Is.Not.Null);
+            MovementLabPerformanceHud hud = Object.FindAnyObjectByType<MovementLabPerformanceHud>();
+            GameObject temporaryHudObject = null;
+            if (hud == null)
+            {
+                temporaryHudObject = new GameObject("Performance HUD - Test");
+                hud = temporaryHudObject.AddComponent<MovementLabPerformanceHud>();
+            }
+
+            Assert.That(hud.IsVisible, Is.False);
+
+            yield return null;
+            yield return null;
+            Assert.That(hud.SampleFrameCount, Is.EqualTo(0),
+                "Hidden HUD performed unused frame-window sampling.");
+
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                bool initialPenumbraState = presentation.PenumbraEnabled;
+                Press(keyboard.pKey);
+                yield return null;
+                Release(keyboard.pKey);
+                Assert.That(presentation.PenumbraEnabled, Is.Not.EqualTo(initialPenumbraState),
+                    "P did not toggle Penumbra while the HUD was hidden.");
+
+                Press(keyboard.hKey);
+                yield return null;
+                Release(keyboard.hKey);
+                Assert.That(hud.IsVisible, Is.True);
+                yield return null;
+                Assert.That(hud.SampleFrameCount, Is.GreaterThan(0));
+
+                Press(keyboard.hKey);
+                yield return null;
+                Release(keyboard.hKey);
+                Assert.That(hud.IsVisible, Is.False);
+                Assert.That(hud.SampleFrameCount, Is.EqualTo(0));
+                yield return null;
+                Assert.That(hud.SampleFrameCount, Is.EqualTo(0));
+            }
+            finally
+            {
+                InputSystem.RemoveDevice(keyboard);
+                if (temporaryHudObject != null)
+                {
+                    Object.Destroy(temporaryHudObject);
+                }
+            }
+        }
+
         [UnityTest]
         public IEnumerator Player_LayeredPresentationStaysSynchronizedAcrossLocomotionStates()
         {

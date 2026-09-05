@@ -31,6 +31,7 @@ namespace Rustline.Diagnostics
         private float lastWorstFrameSeconds;
         private int frameCount;
         private int lastFrameCount;
+        private bool hudVisible;
         private string displayText = "PERF 2.0s\nMeasuring...";
         private string feedbackText;
         private PixelCameraFollow2D cameraFollow;
@@ -39,6 +40,9 @@ namespace Rustline.Diagnostics
         private GUIStyle shadowStyle;
         private GUIStyle hintStyle;
         private GUIStyle hintShadowStyle;
+
+        public bool IsVisible => hudVisible;
+        public int SampleFrameCount => frameCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void InstallForMovementLab()
@@ -68,9 +72,21 @@ namespace Rustline.Diagnostics
 
         private void Update()
         {
-            if (Keyboard.current != null && Keyboard.current.pKey.wasPressedThisFrame)
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.pKey.wasPressedThisFrame)
             {
                 TogglePenumbra();
+            }
+
+            if (keyboard != null &&
+                (keyboard.hKey.wasPressedThisFrame || keyboard.f3Key.wasPressedThisFrame))
+            {
+                SetHudVisible(!hudVisible);
+            }
+
+            if (!hudVisible)
+            {
+                return;
             }
 
             float deltaTime = Time.unscaledDeltaTime;
@@ -99,6 +115,11 @@ namespace Rustline.Diagnostics
 
         private void OnGUI()
         {
+            if (!hudVisible)
+            {
+                return;
+            }
+
             EnsureStyles();
             HandleHudClick();
 
@@ -107,7 +128,7 @@ namespace Rustline.Diagnostics
 
             string hint = Time.realtimeSinceStartup < feedbackUntil
                 ? feedbackText
-                : "LEFT CLICK COPY  |  RIGHT CLICK TOGGLE CAMERA FOLLOW  |  P TOGGLE PENUMBRA";
+                : "LEFT CLICK COPY  |  RIGHT CLICK TOGGLE CAMERA FOLLOW  |  P PENUMBRA  |  H/F3 HIDE";
             GUI.Label(HintShadowRect, hint, hintShadowStyle);
             GUI.Label(HintTextRect, hint, hintStyle);
         }
@@ -177,8 +198,24 @@ namespace Rustline.Diagnostics
 
             presentation.TogglePenumbra();
             ResetSample();
+            if (hudVisible)
+            {
+                RefreshDisplayText();
+                ShowFeedback(presentation.PenumbraEnabled ? "PENUMBRA ON" : "PENUMBRA OFF");
+            }
+        }
+
+        private void SetHudVisible(bool visible)
+        {
+            hudVisible = visible;
+            ResetSample();
+            if (!hudVisible)
+            {
+                return;
+            }
+
             RefreshDisplayText();
-            ShowFeedback(presentation.PenumbraEnabled ? "PENUMBRA ON" : "PENUMBRA OFF");
+            ShowFeedback("PERFORMANCE HUD ON");
         }
 
         private void RefreshDisplayText()
