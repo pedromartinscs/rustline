@@ -835,10 +835,10 @@ namespace Rustline.Editor
             CompositeCollider2D composite = collisionTilemap.gameObject.AddComponent<CompositeCollider2D>();
             composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
 
-            // RELEASE-CRITICAL: Windows Player builds can start with empty Composite geometry even
-            // when Editor Play Mode is correct. This initializer and its multi-stage startup
-            // regeneration are a non-negotiable collision contract. See docs/RELEASE_COLLISION.md.
-            collisionTilemap.gameObject.AddComponent<TilemapCompositeColliderInitializer2D>();
+            // RELEASE-CRITICAL: keep the runtime guard from the human-verified 047c49e fix.
+            // Build-time collider baking is performed below and again by ReleaseCollisionBuildGuard.
+            TilemapCompositeColliderInitializer2D collisionInitializer =
+                collisionTilemap.gameObject.AddComponent<TilemapCompositeColliderInitializer2D>();
 
             Vector3Int[] courseCells = GetCourseCells().ToArray();
             TileBase[] visualTiles = Enumerable.Repeat<TileBase>(ruleTile, courseCells.Length).ToArray();
@@ -847,6 +847,11 @@ namespace Rustline.Editor
             collisionTilemap.SetTiles(courseCells, collisionTiles);
             visualTilemap.RefreshAllTiles();
             collisionTilemap.RefreshAllTiles();
+
+            // Do not save/export freshly edited Tilemap cells before the 2D collider pipeline has
+            // consumed them. Editor Play Mode normally gets a LateUpdate that hides this problem;
+            // a Player build can otherwise export stale/empty Composite geometry.
+            BakeCompositeCollisionGeometry(collisionTilemap, collisionInitializer);
 
             // Tilemap.SetTiles changes native tile data. The collision Tilemap happens to receive
             // additional dirtiness through TilemapCollider2D; the visual Rule Tile map does not.
@@ -892,6 +897,14 @@ namespace Rustline.Editor
             bool changed = SynchronizeCompositeCollisionContract(collisionTilemap);
             changed |= SynchronizeTilemap(visualTilemap, courseCells, ruleTile);
             changed |= SynchronizeTilemap(collisionTilemap, courseCells, collisionTile);
+
+            // Always refresh/bake the collision geometry after opening the scene, even when the
+            // authored cell set is already correct. This removes build output dependence on whether
+            // the scene happened to receive an Editor LateUpdate before the Player build started.
+            TilemapCompositeColliderInitializer2D collisionInitializer =
+                collisionTilemap.GetComponent<TilemapCompositeColliderInitializer2D>();
+            BakeCompositeCollisionGeometry(collisionTilemap, collisionInitializer);
+
             changed |= SynchronizeLabels(scene, root.transform);
             changed |= SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
 
@@ -966,6 +979,30 @@ namespace Rustline.Editor
             }
 
             return changed;
+        }
+
+        private static void BakeCompositeCollisionGeometry(
+            Tilemap collisionTilemap,
+            TilemapCompositeColliderInitializer2D initializer)
+        {
+            Require(collisionTilemap != null, "Collision Tilemap is missing.");
+            TilemapCollider2D tilemapCollider = collisionTilemap.GetComponent<TilemapCollider2D>();
+            CompositeCollider2D composite = collisionTilemap.GetComponent<CompositeCollider2D>();
+            Require(tilemapCollider != null && composite != null && initializer != null,
+                "Release collision baking requires TilemapCollider2D, CompositeCollider2D, and initializer.");
+
+            // Refreshing the authored Tile data makes the collider source current in the Editor.
+            // ProcessTilemapChanges is the documented immediate path instead of waiting for
+            // TilemapCollider2D's normal LateUpdate.
+            collisionTilemap.RefreshAllTiles();
+            initializer.EnsureGeometry();
+
+            Require(composite.pathCount > 0 && composite.pointCount > 0,
+                "Release collision bake produced empty Composite geometry. Refusing to save/build " +
+                "a MovementLab that can make the Windows Player fall through the floor.");
+
+            EditorUtility.SetDirty(tilemapCollider);
+            EditorUtility.SetDirty(composite);
         }
 
         private static bool SynchronizeTilemap(
@@ -1708,6 +1745,13 @@ namespace Rustline.Editor
                 Require(collisionInitializer != null && collisionInitializer.enabled,
                     "MovementLab Release collision contract requires the enabled " +
                     "TilemapCompositeColliderInitializer2D startup guard. See docs/RELEASE_COLLISION.md.");
+
+                // Validation must inspect actual generated geometry, not only serialized component
+                // wiring. This is the exact gap that can pass Editor configuration checks yet fail
+                // in a Windows Player.
+                BakeCompositeCollisionGeometry(collisionTilemap, collisionInitializer);
+                Require(composite.pathCount > 0 && composite.pointCount > 0,
+                    "MovementLab Composite collision geometry is empty after deterministic bake.");
 
                 Require(LayerMask.NameToLayer("Ground") == 6 &&
                     LayerMask.NameToLayer("CombatTarget") == 7,

@@ -98,7 +98,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator Player_SpawnRemainsSupportedThroughCompositeStartupPasses()
+        public IEnumerator Player_SpawnRemainsSupportedAfterCompositeInitialization()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -114,8 +114,8 @@ namespace Rustline.Tests
             Assert.That(body, Is.Not.Null);
             Assert.That(composite, Is.Not.Null);
 
-            // This explicitly spans the defensive Start + first two FixedUpdate regeneration
-            // window used to protect Windows Player builds from empty startup Composite geometry.
+            // Keep the player alive across several physics ticks after the runtime Awake guard.
+            // Build-time export geometry is protected separately by ReleaseCollisionBuildGuard.
             for (int index = 0; index < 10; index++)
             {
                 yield return new WaitForFixedUpdate();
