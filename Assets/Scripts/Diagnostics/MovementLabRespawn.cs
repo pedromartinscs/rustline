@@ -1,5 +1,6 @@
 using Rustline.Gameplay.Player;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace Rustline.Diagnostics
 {
@@ -18,7 +19,7 @@ namespace Rustline.Diagnostics
             _motor = GetComponent<PlayerMotor2D>();
 
 #if !UNITY_EDITOR
-            CreateReleaseCollisionControl();
+            ConfigureReleaseTilemapCollisionWithoutComposite();
 #endif
         }
 
@@ -35,38 +36,42 @@ namespace Rustline.Diagnostics
         }
 
 #if !UNITY_EDITOR
-        private void CreateReleaseCollisionControl()
+        private static void ConfigureReleaseTilemapCollisionWithoutComposite()
         {
-            if (spawnPoint == null)
+            TilemapCollider2D tilemapCollider = Object.FindAnyObjectByType<TilemapCollider2D>();
+            if (tilemapCollider == null)
             {
                 Debug.LogWarning(
-                    "TEMP RELEASE COLLISION DIAGNOSTIC: spawn point is missing; control collider was not created.");
+                    "TEMP RELEASE COLLISION DIAGNOSTIC: no TilemapCollider2D was found.");
                 return;
             }
 
-            const float controlWidth = 6f;
-            const float controlHeight = 0.5f;
-            const float spawnClearanceAbovePlatform = 0.08f;
+            Tilemap tilemap = tilemapCollider.GetComponent<Tilemap>();
+            CompositeCollider2D composite = tilemapCollider.GetComponent<CompositeCollider2D>();
 
-            GameObject control = new GameObject("TEMP - Release Collision Control");
-            int groundLayer = LayerMask.NameToLayer("Ground");
-            if (groundLayer >= 0)
+            int tileCount = tilemap != null ? tilemap.GetUsedTilesCount() : -1;
+            int tilemapShapesBefore = tilemapCollider.shapeCount;
+            int compositeShapesBefore = composite != null ? composite.shapeCount : -1;
+
+            tilemapCollider.compositeOperation = Collider2D.CompositeOperation.None;
+            if (composite != null)
             {
-                control.layer = groundLayer;
+                composite.enabled = false;
             }
 
-            control.transform.position = new Vector3(
-                spawnPoint.position.x,
-                spawnPoint.position.y - spawnClearanceAbovePlatform - (controlHeight * 0.5f),
-                0f);
+            if (tilemapCollider.hasTilemapChanges)
+            {
+                tilemapCollider.ProcessTilemapChanges();
+            }
 
-            BoxCollider2D collider = control.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(controlWidth, controlHeight);
+            Physics2D.SyncTransforms();
 
             Debug.Log(
-                $"TEMP RELEASE COLLISION DIAGNOSTIC: created {controlWidth}x{controlHeight} Ground BoxCollider2D " +
-                $"at {control.transform.position}. Walk beyond x={spawnPoint.position.x + controlWidth * 0.5f:F2} " +
-                "to leave the control collider.");
+                "TEMP RELEASE COLLISION DIAGNOSTIC: CompositeCollider2D bypassed. " +
+                $"tiles={tileCount}, tilemapShapesBefore={tilemapShapesBefore}, " +
+                $"compositeShapesBefore={compositeShapesBefore}, " +
+                $"tilemapShapesAfter={tilemapCollider.shapeCount}, " +
+                $"hasPendingTileChanges={tilemapCollider.hasTilemapChanges}.");
         }
 #endif
     }
