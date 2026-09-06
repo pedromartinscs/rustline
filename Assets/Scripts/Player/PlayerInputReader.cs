@@ -9,17 +9,20 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string actionMapName = "Player";
         [SerializeField] private string moveActionName = "Move";
         [SerializeField] private string jumpActionName = "Jump";
+        [SerializeField] private string crouchActionName = "Crouch";
         [SerializeField] private string pointerPositionActionName = "PointerPosition";
 
         private InputActionMap _actionMap;
         private InputAction _moveAction;
         private InputAction _jumpAction;
+        private InputAction _crouchAction;
         private InputAction _pointerPositionAction;
         private bool _jumpPressed;
         private bool _jumpReleased;
 
         public float MoveX { get; private set; }
         public bool JumpHeld { get; private set; }
+        public bool CrouchHeld { get; private set; }
         public Vector2 PointerScreenPosition { get; private set; }
 
         private void OnEnable()
@@ -34,6 +37,8 @@ namespace Rustline.Gameplay.Player
             _moveAction.canceled += OnMove;
             _jumpAction.performed += OnJumpPerformed;
             _jumpAction.canceled += OnJumpCanceled;
+            _crouchAction.performed += OnCrouch;
+            _crouchAction.canceled += OnCrouch;
             _pointerPositionAction.performed += OnPointerPosition;
             _pointerPositionAction.canceled += OnPointerPosition;
             _actionMap.Enable();
@@ -48,6 +53,8 @@ namespace Rustline.Gameplay.Player
                 _moveAction.canceled -= OnMove;
                 _jumpAction.performed -= OnJumpPerformed;
                 _jumpAction.canceled -= OnJumpCanceled;
+                _crouchAction.performed -= OnCrouch;
+                _crouchAction.canceled -= OnCrouch;
                 _pointerPositionAction.performed -= OnPointerPosition;
                 _pointerPositionAction.canceled -= OnPointerPosition;
                 _actionMap.Disable();
@@ -56,6 +63,7 @@ namespace Rustline.Gameplay.Player
             ClearTransientState();
             MoveX = 0f;
             JumpHeld = false;
+            CrouchHeld = false;
         }
 
         public bool ConsumeJumpPressed()
@@ -83,12 +91,14 @@ namespace Rustline.Gameplay.Player
             _actionMap = inputActions != null ? inputActions.FindActionMap(actionMapName, false) : null;
             _moveAction = _actionMap?.FindAction(moveActionName, false);
             _jumpAction = _actionMap?.FindAction(jumpActionName, false);
+            _crouchAction = _actionMap?.FindAction(crouchActionName, false);
             _pointerPositionAction = _actionMap?.FindAction(pointerPositionActionName, false);
 
-            if (_actionMap == null || _moveAction == null || _jumpAction == null || _pointerPositionAction == null)
+            if (_actionMap == null || _moveAction == null || _jumpAction == null || _crouchAction == null ||
+                _pointerPositionAction == null)
             {
                 Debug.LogError(
-                    "Rustline player input requires Player/Move, Player/Jump, and Player/PointerPosition actions.",
+                    "Rustline player input requires Player/Move, Player/Jump, Player/Crouch, and Player/PointerPosition actions.",
                     this);
                 _actionMap = null;
             }
@@ -113,6 +123,11 @@ namespace Rustline.Gameplay.Player
         {
             JumpHeld = false;
             _jumpReleased = true;
+        }
+
+        private void OnCrouch(InputAction.CallbackContext context)
+        {
+            CrouchHeld = context.ReadValueAsButton();
         }
 
         private void OnPointerPosition(InputAction.CallbackContext context)

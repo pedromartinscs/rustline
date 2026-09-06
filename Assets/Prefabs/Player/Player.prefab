@@ -289,6 +289,7 @@ GameObject:
   - component: {fileID: 2385879683141238295}
   - component: {fileID: 2994246285054152671}
   - component: {fileID: 1662337730154184211}
+  - component: {fileID: 3247302889619819209}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -392,6 +393,7 @@ MonoBehaviour:
   actionMapName: Player
   moveActionName: Move
   jumpActionName: Jump
+  crouchActionName: Crouch
   pointerPositionActionName: PointerPosition
 --- !u!114 &4660431720091408198
 MonoBehaviour:
@@ -841,3 +843,16 @@ MonoBehaviour:
   input: {fileID: 6069468980533504220}
   aimOrigin: {fileID: 9068475594154014997}
   nativePixelPresentation: {fileID: 0}
+--- !u!114 &3247302889619819209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4bc5ea2c23f14d9ea44a36e28ab09cb4, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Player.PlayerEnvironmentProbe2D
+  config: {fileID: 11400000, guid: ffa31f0afb2b55441ad424e0ca03b7fe, type: 2}

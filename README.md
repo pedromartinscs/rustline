@@ -64,9 +64,9 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**M1A — Core movement prototype implemented and Unity-validated.**
+**M1 — Core movement, combat crouch, and wall interaction implemented.**
 
-The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` now provides a playable single-player course for tuning acceleration, reversal, air control, variable jump height, coyote time, jump buffering, falling, landing, animation selection, and pixel-stable camera follow. The core calculations have edit-mode coverage and the generated scene has a focused play-mode smoke test. Movement values are an initial baseline and still require iterative human feel tuning.
+The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` provides a playable single-player course for the accepted core movement plus a clearance-safe 3 units/s combat crouch and controlled wall brace/kick. Its real Tilemap + Composite collision course now includes a low tunnel and wall shaft. Crouch and wall presentation intentionally use existing animation fallbacks until Pedro's authored art is ready; gun firing remains unimplemented.
 
 ## License
 

@@ -8,6 +8,7 @@ namespace Rustline.Gameplay.Player
         [Header("Horizontal movement")]
         [SerializeField, Min(0.01f)] private float maxGroundSpeed = 7f;
         [SerializeField, Min(0.01f)] private float maxBackpedalGroundSpeed = 4f;
+        [SerializeField, Min(0.01f)] private float maxCrouchGroundSpeed = 3f;
         [SerializeField, Min(0.01f)] private float groundAcceleration = 55f;
         [SerializeField, Min(0.01f)] private float groundDeceleration = 70f;
         [SerializeField, Min(0.01f)] private float directionChangeAcceleration = 90f;
@@ -31,6 +32,21 @@ namespace Rustline.Gameplay.Player
         [SerializeField, Range(0f, 1f)] private float minimumGroundNormalY = 0.65f;
         [SerializeField, Min(0f)] private float maximumGroundingUpwardSpeed = 0.1f;
 
+        [Header("Posture collision")]
+        [SerializeField] private Vector2 standingColliderSize = new Vector2(1.05f, 2.75f);
+        [SerializeField] private Vector2 standingColliderOffset = new Vector2(0f, 1.375f);
+        [SerializeField] private Vector2 crouchColliderSize = new Vector2(1.05f, 1.75f);
+        [SerializeField] private Vector2 crouchColliderOffset = new Vector2(0f, 0.875f);
+
+        [Header("Wall interaction")]
+        [SerializeField, Range(0.001f, 0.25f)] private float wallCheckDistance = 0.075f;
+        [SerializeField, Range(0f, 1f)] private float minimumWallNormalX = 0.8f;
+        [SerializeField, Min(0f)] private float maximumWallBraceUpwardSpeed = 0.1f;
+        [SerializeField, Min(0.01f)] private float wallBraceMaxFallSpeed = 4f;
+        [SerializeField, Min(0.01f)] private float wallKickHorizontalSpeed = 8f;
+        [SerializeField, Min(0.01f)] private float wallKickVerticalSpeed = 11.5f;
+        [SerializeField, Min(0f)] private float wallKickLockDuration = 0.12f;
+
         [Header("Presentation")]
         [SerializeField, Min(0f)] private float runAnimationSpeedThreshold = 0.2f;
         [SerializeField, Min(0f)] private float ascendingAnimationThreshold = 0.15f;
@@ -39,6 +55,7 @@ namespace Rustline.Gameplay.Player
 
         public float MaxGroundSpeed => maxGroundSpeed;
         public float MaxBackpedalGroundSpeed => maxBackpedalGroundSpeed;
+        public float MaxCrouchGroundSpeed => maxCrouchGroundSpeed;
         public float GroundAcceleration => groundAcceleration;
         public float GroundDeceleration => groundDeceleration;
         public float DirectionChangeAcceleration => directionChangeAcceleration;
@@ -55,6 +72,17 @@ namespace Rustline.Gameplay.Player
         public float GroundCheckDistance => groundCheckDistance;
         public float MinimumGroundNormalY => minimumGroundNormalY;
         public float MaximumGroundingUpwardSpeed => maximumGroundingUpwardSpeed;
+        public Vector2 StandingColliderSize => standingColliderSize;
+        public Vector2 StandingColliderOffset => standingColliderOffset;
+        public Vector2 CrouchColliderSize => crouchColliderSize;
+        public Vector2 CrouchColliderOffset => crouchColliderOffset;
+        public float WallCheckDistance => wallCheckDistance;
+        public float MinimumWallNormalX => minimumWallNormalX;
+        public float MaximumWallBraceUpwardSpeed => maximumWallBraceUpwardSpeed;
+        public float WallBraceMaxFallSpeed => wallBraceMaxFallSpeed;
+        public float WallKickHorizontalSpeed => wallKickHorizontalSpeed;
+        public float WallKickVerticalSpeed => wallKickVerticalSpeed;
+        public float WallKickLockDuration => wallKickLockDuration;
         public float RunAnimationSpeedThreshold => runAnimationSpeedThreshold;
         public float AscendingAnimationThreshold => ascendingAnimationThreshold;
         public float FacingVelocityThreshold => facingVelocityThreshold;
@@ -62,7 +90,7 @@ namespace Rustline.Gameplay.Player
 
         public bool IsSane(out string reason)
         {
-            if (maxGroundSpeed <= 0f || maxBackpedalGroundSpeed <= 0f ||
+            if (maxGroundSpeed <= 0f || maxBackpedalGroundSpeed <= 0f || maxCrouchGroundSpeed <= 0f ||
                 maxBackpedalGroundSpeed > maxGroundSpeed || maxAirSpeed <= 0f)
             {
                 reason = "Maximum movement speeds must be positive and Backpedal must not exceed forward ground speed.";
@@ -92,6 +120,26 @@ namespace Rustline.Gameplay.Player
             if (groundCheckDistance <= 0f || minimumGroundNormalY < 0f || minimumGroundNormalY > 1f)
             {
                 reason = "Ground-check values are invalid.";
+                return false;
+            }
+
+            float standingBottom = standingColliderOffset.y - standingColliderSize.y * 0.5f;
+            float crouchBottom = crouchColliderOffset.y - crouchColliderSize.y * 0.5f;
+            if (standingColliderSize.x <= 0f || standingColliderSize.y <= 0f ||
+                crouchColliderSize.x <= 0f || crouchColliderSize.y <= 0f ||
+                crouchColliderSize.y >= standingColliderSize.y ||
+                !Mathf.Approximately(standingBottom, crouchBottom))
+            {
+                reason = "Standing and crouch collider shapes must be positive and preserve the same foot anchor.";
+                return false;
+            }
+
+            if (wallCheckDistance <= 0f || minimumWallNormalX < 0f || minimumWallNormalX > 1f ||
+                maximumWallBraceUpwardSpeed < 0f ||
+                wallBraceMaxFallSpeed <= 0f || wallKickHorizontalSpeed <= 0f || wallKickVerticalSpeed <= 0f ||
+                wallKickLockDuration < 0f)
+            {
+                reason = "Wall interaction tuning values are invalid.";
                 return false;
             }
 

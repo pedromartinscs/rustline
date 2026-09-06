@@ -9,6 +9,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
+using UnityEngine.Tilemaps;
 
 namespace Rustline.Tests
 {
@@ -666,11 +667,216 @@ namespace Rustline.Tests
 
                 Assert.That(body.position.x, Is.EqualTo(-27f).Within(0.1f));
                 Assert.That(body.position.y, Is.GreaterThan(-1f), "Failsafe respawn did not recover the player.");
+                Assert.That(motor.IsCrouched, Is.False);
+                Assert.That(motor.IsWallBraced, Is.False);
+                Assert.That(motor.WallKickLockRemaining, Is.Zero);
+                CapsuleCollider2D capsule = motor.GetComponent<CapsuleCollider2D>();
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.75f)));
+                Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 1.375f)));
             }
             finally
             {
                 InputSystem.RemoveDevice(keyboard);
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_CrouchPreservesFeetBlocksStandAndAutoStandsAfterTunnel()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            CapsuleCollider2D capsule = motor.GetComponent<CapsuleCollider2D>();
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                body.position = new Vector2(67f, 0.02f);
+                body.linearVelocity = Vector2.zero;
+                Physics2D.SyncTransforms();
+                for (int index = 0; index < 5; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                float standingBottom = capsule.offset.y - capsule.size.y * 0.5f;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.IsCrouched, Is.True);
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 1.75f)));
+                Assert.That(capsule.offset.y - capsule.size.y * 0.5f,
+                    Is.EqualTo(standingBottom).Within(0.0001f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S, Key.D));
+                InputSystem.Update();
+                for (int index = 0; index < 180 && body.position.x < 72f; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(body.position.x, Is.GreaterThanOrEqualTo(72f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
+                for (int index = 0; index < 8; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(motor.IsCrouched, Is.True,
+                    "Releasing crouch beneath the tunnel forced the standing capsule into its ceiling.");
+
+                for (int index = 0; index < 180 && motor.IsCrouched; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(body.position.x, Is.GreaterThan(77.5f));
+                Assert.That(motor.IsCrouched, Is.False,
+                    "The player did not automatically stand after leaving the low ceiling.");
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.75f)));
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_CrouchJumpRequiresClearanceAndAirborneInputDoesNotShrink()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            CapsuleCollider2D capsule = motor.GetComponent<CapsuleCollider2D>();
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                body.position = new Vector2(67f, 0.02f);
+                body.linearVelocity = Vector2.zero;
+                Physics2D.SyncTransforms();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S));
+                InputSystem.Update();
+                for (int index = 0; index < 5; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(motor.IsCrouched, Is.True);
+                body.position = new Vector2(72f, body.position.y);
+                body.linearVelocity = Vector2.zero;
+                Physics2D.SyncTransforms();
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.IsCrouched, Is.True);
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S, Key.Space));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.IsCrouched, Is.True);
+                Assert.That(body.linearVelocity.y, Is.LessThan(1f),
+                    "A blocked crouch jump expanded or launched through the tunnel ceiling.");
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                for (int index = 0; index < 8; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(motor.IsCrouched, Is.True);
+                body.position = new Vector2(80f, 0.02f);
+                body.linearVelocity = Vector2.zero;
+                Physics2D.SyncTransforms();
+                for (int index = 0; index < 5; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(motor.IsCrouched, Is.False);
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S, Key.Space));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.IsCrouched, Is.False);
+                Assert.That(body.linearVelocity.y, Is.GreaterThan(10f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.IsCrouched, Is.False,
+                    "Airborne crouch input shrank the standing collider.");
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.75f)));
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Player_WallBraceAndKickUseActualWallSideAndPreserveImpulseLock()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            int landEvents = 0;
+            motor.Landed += CountLand;
+            try
+            {
+                body.position = new Vector2(99.4f, -1f);
+                body.linearVelocity = new Vector2(0f, -9f);
+                Physics2D.SyncTransforms();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
+                for (int index = 0; index < 3; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                Assert.That(motor.IsGrounded, Is.False);
+                Assert.That(motor.IsWallBraced, Is.True);
+                Assert.That(motor.WallSide, Is.EqualTo(1));
+                Assert.That(body.linearVelocity.y, Is.InRange(-4.01f, -0.01f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.IsWallBraced, Is.False);
+                Assert.That(body.linearVelocity.x, Is.EqualTo(-8f).Within(0.05f));
+                Assert.That(body.linearVelocity.y, Is.EqualTo(11.5f).Within(0.05f));
+                Assert.That(motor.WallKickLockRemaining, Is.GreaterThan(0f));
+
+                for (int index = 0; index < 3; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    Assert.That(body.linearVelocity.x, Is.EqualTo(-8f).Within(0.05f),
+                        "Held input canceled the away impulse during the wall-kick lock.");
+                    Assert.That(motor.IsWallBraced, Is.False,
+                        "The player immediately reattached to the same wall during lock.");
+                }
+                for (int index = 0; index < 8 && motor.IsWallKicking; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(motor.IsWallKicking, Is.False);
+                Assert.That(body.linearVelocity.x, Is.GreaterThan(-8f),
+                    "Normal air control did not return after the authored wall-kick lock.");
+                Assert.That(landEvents, Is.EqualTo(0), "Wall contact emitted a false Land event.");
+            }
+            finally
+            {
+                motor.Landed -= CountLand;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+
+            void CountLand() => landEvents++;
         }
 
         private static IEnumerator WaitForState(

@@ -21,5 +21,17 @@ namespace Rustline.Tests
                 grounded, horizontalVelocity, verticalVelocity, showingLanding, facingLeft, 0.2f, 0.15f);
             Assert.That(state, Is.EqualTo(expected));
         }
+
+        [TestCase(0f, PlayerAnimationState.CrouchIdle)]
+        [TestCase(1f, PlayerAnimationState.CrouchMove)]
+        [TestCase(-1f, PlayerAnimationState.CrouchMove)]
+        public void Select_CrouchUsesExplicitTemporaryPresentationStates(
+            float horizontalVelocity, PlayerAnimationState expected)
+        {
+            PlayerAnimationState state = PlayerAnimationStateSelector.Select(
+                true, horizontalVelocity, 0f, false, false, 0.2f, 0.15f, true);
+
+            Assert.That(state, Is.EqualTo(expected));
+        }
     }
 }

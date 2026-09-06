@@ -15,6 +15,8 @@ namespace Rustline.Presentation
         private static readonly int JumpStateHash = Animator.StringToHash(nameof(PlayerAnimationState.Jump));
         private static readonly int FallStateHash = Animator.StringToHash(nameof(PlayerAnimationState.Fall));
         private static readonly int LandStateHash = Animator.StringToHash(nameof(PlayerAnimationState.Land));
+        private static readonly int CrouchIdleStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchIdle));
+        private static readonly int CrouchMoveStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchMove));
 
         [SerializeField] private PlayerMovementConfig config;
         [SerializeField] private Animator animator;
@@ -83,7 +85,8 @@ namespace Rustline.Presentation
                     _landingTimeRemaining > 0f,
                     facingLeft,
                     config.RunAnimationSpeedThreshold,
-                    config.AscendingAnimationThreshold);
+                    config.AscendingAnimationThreshold,
+                    _motor.IsCrouched);
 
                 if (_currentState == nextState)
                 {
@@ -125,6 +128,8 @@ namespace Rustline.Presentation
                 case PlayerAnimationState.Jump: return JumpStateHash;
                 case PlayerAnimationState.Fall: return FallStateHash;
                 case PlayerAnimationState.Land: return LandStateHash;
+                case PlayerAnimationState.CrouchIdle: return CrouchIdleStateHash;
+                case PlayerAnimationState.CrouchMove: return CrouchMoveStateHash;
                 default: return IdleStateHash;
             }
         }

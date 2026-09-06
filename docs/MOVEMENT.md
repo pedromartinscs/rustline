@@ -1,25 +1,26 @@
-# M1A Core Movement
+# M1 Movement
 
-M1A is a compact single-player Rigidbody2D controller intended for rapid feel tuning. It contains no combat, networking, roll/dodge, moving-platform, or future-gameplay abstractions.
+M1 is a compact single-player Rigidbody2D controller intended for rapid feel tuning. It contains no gunplay, networking, roll/dodge, or moving-platform system.
 
 ## Controls
 
-- Keyboard: A/D or Left/Right Arrow to move; Space to jump.
-- Gamepad: Left Stick or D-pad to move; South button to jump.
+- Keyboard: A/D or Left/Right Arrow to move; Space to jump; S or Down Arrow to crouch.
+- Gamepad: Left Stick or D-pad to move; South button to jump; downward Left Stick or D-pad to crouch.
 
-The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, and `PointerPosition`. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position`. `PlayerAim2D` converts it through the native-pixel viewport and World Camera into continuous world-space aim, then owns the stable facing hemisphere independently of A/D movement.
+The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, `Crouch`, and `PointerPosition`. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position`. `PlayerAim2D` converts it through the native-pixel viewport and World Camera into continuous world-space aim, then owns the stable facing hemisphere independently of A/D movement.
 
 ## Runtime structure
 
 - `PlayerInputReader` collects Input System callbacks and latches jump press/release edges until the physics step consumes them.
 - `PlayerAim2D` owns the explicit `AimOrigin`, continuous aim direction, valid-aim state, native-pixel pointer conversion, and a 5° facing hysteresis zone around both vertical axes.
-- `PlayerMotor2D` applies horizontal velocity, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 4 units/s backward; air speed remains 7 units/s regardless of aim.
+- `PlayerMotor2D` applies horizontal velocity, posture changes, wall interaction, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 4 units/s backward, crouch uses 3 units/s, and air speed remains 7 units/s regardless of aim.
 - `PlayerGroundProbe2D` casts the stable player CapsuleCollider2D a short distance downward against the `Ground` layer and accepts only sufficiently upward-facing normals. Side-wall contacts do not ground the player.
-- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, or Land from grounded state and actual velocity. Run versus Backpedal uses the same generic velocity-against-facing helper as the motor. It flips only the presentation layers; collision is unchanged. Land presentation never blocks movement.
+- `PlayerEnvironmentProbe2D` reuses the player capsule, a cached `ContactFilter2D`, and fixed hit storage for stand-clearance and near-vertical wall casts.
+- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, Land, Crouch Idle, or Crouch Move from authoritative movement state and actual velocity. Crouch states currently use explicit Idle/Run clip fallbacks until authored crouch art arrives. Wall brace/kick deliberately fall back to Fall/Jump.
 - `PixelCameraFollow2D` smooths in continuous world space, then snaps the rendered camera position to the 1/16-unit pixel grid.
 - `PlayerMovementConfig` stores all important tuning in `Assets/Config/Player/PlayerMovementConfig.asset`.
 
-The prefab root uses a fixed vertical CapsuleCollider2D with size `1.05 × 2.75` and offset `(0, 1.375)`. Its bottom remains at the full-cell bottom-center pivot while excluding the antenna, backpack silhouette, and transparent cell width. The separate `Visual - 48x64 Full Cell` child is presentation-offset to `(0, -0.25, 0)` (four source pixels at 16 PPU); the physics root and collider never change with animation frames.
+The prefab root uses a standing vertical CapsuleCollider2D with size `1.05 × 2.75` and offset `(0, 1.375)`. Its bottom remains at the full-cell bottom-center pivot while excluding the antenna, backpack silhouette, and transparent cell width. The separate `Visual - 48x64 Full Cell` child is presentation-offset to `(0, -0.25, 0)` (four source pixels at 16 PPU); animation frames never change the physics root or collider.
 
 `AimOrigin` is an explicit child of `Visual - 48x64 Full Cell` at local `(0, 2.375, 0)`, exactly 38 source pixels above the shared renderer pivot. Pointer input remains unclamped through Deep Space margins. Aim direction stays continuous; only the left/right facing hemisphere is hysteretic. Inside `abs(normalizedAim.x) <= sin(5°)`, the prior hemisphere is retained, defaulting to right when no prior aim exists.
 
@@ -28,6 +29,14 @@ Ground acceleration, deceleration, direction-change acceleration, and `Mathf.Mov
 Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, and the 5° vertical facing hysteresis. The revised four-frame Backpedal art is accepted; 4 units/s is the current movement-feel target.
 
 MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile` supplies visuals, while a hidden Tilemap of simple Grid collider tiles feeds `TilemapCollider2D` into a `CompositeCollider2D` to avoid per-cell seams.
+
+## Crouch and wall interaction
+
+Combat crouch is grounded-only. Holding crouch changes the capsule to `1.05 × 1.75` at offset `(0, 0.875)`, keeping its lower boundary exactly invariant. Releasing crouch performs an upward capsule cast for the exact missing standing height; a ceiling keeps the player crouched, and standing happens automatically after clearance returns. Airborne crouch input never shrinks a standing capsule. A crouched ground jump restores the standing capsule and uses the normal `12.5` units/s impulse only when that clearance query succeeds.
+
+Wall brace requires an airborne, non-ascending player to hold movement into a detected near-vertical wall. It caps descent at `4` units/s without freezing or climbing. A buffered Jump while braced launches at `8` units/s away and `11.5` units/s upward. The contacted side remains locked for `0.12` seconds; horizontal input cannot cancel the launch during that window and the same wall cannot immediately reattach. Normal air control resumes afterward. Ground contact remains solely the responsibility of `PlayerGroundProbe2D`, so walls cannot emit Land.
+
+MovementLab collision is initialized at player startup by `TilemapCompositeColliderInitializer2D`, which processes pending Tilemap changes and generates merged Composite geometry before simulation. This preserves deterministic Windows Release startup and seam-free collision.
 
 ## Jump presentation
 
@@ -52,6 +61,7 @@ These values are a starting point, not final feel approval.
 | --- | ---: |
 | Maximum ground / air speed | 7 units/s |
 | Maximum grounded Backpedal speed | 4 units/s |
+| Maximum crouched ground speed | 3 units/s |
 | Ground acceleration | 55 units/s² |
 | Ground deceleration | 70 units/s² |
 | Direction-change acceleration | 90 units/s² |
@@ -67,8 +77,13 @@ These values are a starting point, not final feel approval.
 | Ground cast distance | 0.075 units |
 | Minimum ground normal Y | 0.65 |
 | Land presentation duration | 0.22 s |
+| Standing capsule size / offset | 1.05 × 2.75 / (0, 1.375) |
+| Crouch capsule size / offset | 1.05 × 1.75 / (0, 0.875) |
+| Wall brace maximum fall speed | 4 units/s |
+| Wall kick horizontal / vertical speed | 8 / 11.5 units/s |
+| Wall-kick input / same-wall lock | 0.12 s |
 
-Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course is arranged to exercise flat acceleration/reversal, gaps and ledge exits, different platform heights, a drop for buffered landing jumps, and a short step course. Falling below `-12` respawns the diagnostic specimen without introducing health or death systems.
+Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course exercises the original movement cases plus a real Composite-collision low tunnel with open auto-stand space and a deep wall-brace/wall-kick shaft. Falling below `-12` respawns the diagnostic specimen without introducing health or death systems.
 
 ## Deterministic rebuild and validation
 

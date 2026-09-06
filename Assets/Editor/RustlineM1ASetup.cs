@@ -60,6 +60,13 @@ namespace Rustline.Editor
             new CourseBlock(35, -2, 6, 4),
             new CourseBlock(44, -1, 6, 4),
             new CourseBlock(53, 0, 10, 4),
+            // Combat-crouch tunnel: floor, low ceiling, then open stand-up space.
+            new CourseBlock(64, 0, 28, 4),
+            new CourseBlock(69, 3, 9, 1),
+            // Wall-brace tuning shaft: deep side columns and a lower recovery floor.
+            new CourseBlock(92, 0, 1, 8),
+            new CourseBlock(93, -5, 7, 3),
+            new CourseBlock(100, 0, 12, 8),
         };
 
         private static readonly string[] LongwatchDirectionSuffixes =
@@ -144,6 +151,10 @@ namespace Rustline.Editor
             {
                 CreateMovementLab(config, prefab, collisionTile, groundLayer);
             }
+            else
+            {
+                SynchronizeMovementLabCourse(collisionTile);
+            }
             WireMovementLabLongwatchPresentation();
             ConfigureMovementLabIdentityUnlitRendering();
             PutMovementScenesFirstInBuildSettings();
@@ -195,7 +206,10 @@ namespace Rustline.Editor
                 stateMachine.RemoveStateMachine(child.stateMachine);
             }
 
-            string[] stateNames = { "Idle", "Run", "Backpedal", "Jump", "Fall", "Land" };
+            string[] stateNames =
+            {
+                "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+            };
             HashSet<string> requiredStates = new HashSet<string>(stateNames);
             foreach (ChildAnimatorState child in stateMachine.states.ToArray())
             {
@@ -207,8 +221,12 @@ namespace Rustline.Editor
 
             foreach (string stateName in stateNames)
             {
+                // Authored crouch art is pending. These explicit controller states use existing
+                // clips as temporary presentation fallbacks without duplicating or altering art.
+                string clipStateName = stateName == "CrouchIdle" ? "Idle" :
+                    stateName == "CrouchMove" ? "Run" : stateName;
                 AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
-                    BodyAnimationRoot + "/Player_Body_" + stateName + ".anim");
+                    BodyAnimationRoot + "/Player_Body_" + clipStateName + ".anim");
                 Require(clip != null, "Missing accepted layered body animation clip: Player_Body_" + stateName);
                 AnimatorState state = stateMachine.states
                     .Select(child => child.state)
@@ -305,6 +323,8 @@ namespace Rustline.Editor
                 PlayerGroundProbe2D probe = GetOrAddComponent<PlayerGroundProbe2D>(root);
                 SetObjectReference(probe, "config", config);
                 SetInteger(probe, "groundLayers", 1 << groundLayer);
+                PlayerEnvironmentProbe2D environmentProbe = GetOrAddComponent<PlayerEnvironmentProbe2D>(root);
+                SetObjectReference(environmentProbe, "config", config);
                 PlayerMotor2D motor = GetOrAddComponent<PlayerMotor2D>(root);
                 SetObjectReference(motor, "config", config);
 
@@ -729,6 +749,41 @@ namespace Rustline.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
+        private static void SynchronizeMovementLabCourse(TileBase collisionTile)
+        {
+            RuleTile ruleTile = AssetDatabase.LoadAssetAtPath<RuleTile>(RuleTilePath);
+            Require(ruleTile != null, "Accepted M0 IndustrialSurface Rule Tile is missing.");
+            Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            Tilemap visualTilemap = FindTilemap(scene, "Industrial Surface - Visual");
+            Tilemap collisionTilemap = FindTilemap(scene, "Ground Collision - Hidden");
+            Require(visualTilemap != null && collisionTilemap != null,
+                "MovementLab course Tilemaps are missing.");
+
+            Vector3Int[] courseCells = GetCourseCells().ToArray();
+            visualTilemap.ClearAllTiles();
+            collisionTilemap.ClearAllTiles();
+            visualTilemap.SetTiles(
+                courseCells, Enumerable.Repeat<TileBase>(ruleTile, courseCells.Length).ToArray());
+            collisionTilemap.SetTiles(
+                courseCells, Enumerable.Repeat(collisionTile, courseCells.Length).ToArray());
+            visualTilemap.RefreshAllTiles();
+            collisionTilemap.RefreshAllTiles();
+            EditorUtility.SetDirty(visualTilemap);
+            EditorUtility.SetDirty(collisionTilemap);
+
+            GameObject oldLabels = FindGameObject(scene, "Diagnostic Labels");
+            if (oldLabels != null)
+            {
+                UnityEngine.Object.DestroyImmediate(oldLabels);
+            }
+            GameObject root = FindGameObject(scene, "RUSTLINE M1A - MOVEMENT LAB");
+            Require(root != null, "MovementLab root is missing.");
+            CreateLabels(root.transform);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene, ScenePath);
+        }
+
         private static Tilemap CreateTilemap(Transform parent, string name, int sortingOrder)
         {
             GameObject tilemapObject = new GameObject(name);
@@ -801,13 +856,15 @@ namespace Rustline.Editor
             Color warning = new Color32(253, 208, 69, 255);
 
             CreateLabel(labels.transform, "M1A MOVEMENT LAB", new Vector3(-27f, 6.5f, -0.2f), 0.19f, cyan);
-            CreateLabel(labels.transform, "A/D or ARROWS  |  SPACE  |  GAMEPAD STICK/DPAD + SOUTH BUTTON",
+            CreateLabel(labels.transform, "MOVE  |  SPACE JUMP  |  S/DOWN CROUCH",
                 new Vector3(-27f, 5.9f, -0.2f), 0.095f, neutral);
             CreateLabel(labels.transform, "ACCEL / DECEL / REVERSAL", new Vector3(-22.5f, 2f, -0.2f), 0.09f, neutral);
             CreateLabel(labels.transform, "COYOTE GAPS", new Vector3(-8f, 3.2f, -0.2f), 0.09f, warning);
             CreateLabel(labels.transform, "JUMP UP + VARIABLE HEIGHT", new Vector3(13.5f, 4.2f, -0.2f), 0.09f, neutral);
             CreateLabel(labels.transform, "DROP + BUFFER BEFORE LANDING", new Vector3(26.5f, 0f, -0.2f), 0.09f, warning);
             CreateLabel(labels.transform, "STEP COURSE / AIR CONTROL", new Vector3(47.5f, 2.2f, -0.2f), 0.09f, neutral);
+            CreateLabel(labels.transform, "COMBAT CROUCH / AUTO-STAND", new Vector3(74f, 4.4f, -0.2f), 0.09f, warning);
+            CreateLabel(labels.transform, "WALL BRACE / KICK SHAFT", new Vector3(96.5f, 2f, -0.2f), 0.09f, cyan);
         }
 
         private static void CreateLabel(Transform parent, string text, Vector3 position, float size, Color color)
@@ -848,20 +905,37 @@ namespace Rustline.Editor
                 "Player forward/backpedal/air speed defaults changed from 7/4/7.");
             Require(Mathf.Approximately(config.LandPresentationDuration, 0.22f),
                 "Player Land presentation duration must remain 0.22 seconds.");
+            Require(Mathf.Approximately(config.MaxCrouchGroundSpeed, 3f) &&
+                config.StandingColliderSize == new Vector2(1.05f, 2.75f) &&
+                config.StandingColliderOffset == new Vector2(0f, 1.375f) &&
+                config.CrouchColliderSize == new Vector2(1.05f, 1.75f) &&
+                config.CrouchColliderOffset == new Vector2(0f, 0.875f),
+                "Player combat-crouch tuning or foot-anchor collider contract changed.");
+            Require(Mathf.Approximately(config.WallBraceMaxFallSpeed, 4f) &&
+                Mathf.Approximately(config.WallKickHorizontalSpeed, 8f) &&
+                Mathf.Approximately(config.WallKickVerticalSpeed, 11.5f) &&
+                Mathf.Approximately(config.WallKickLockDuration, 0.12f),
+                "Player wall-brace/wall-kick tuning changed from 4/8/11.5/0.12.");
 
             InputActionAsset input = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
             InputActionMap playerMap = input?.FindActionMap("Player", false);
             Require(input != null && input.actionMaps.Count == 1 && playerMap != null,
                 "Input asset must contain only the focused Player action map for M1A.");
-            Require(playerMap.actions.Count == 3 && playerMap.FindAction("Move", false) != null &&
+            Require(playerMap.actions.Count == 4 && playerMap.FindAction("Move", false) != null &&
                 playerMap.FindAction("Jump", false) != null &&
+                playerMap.FindAction("Crouch", false) != null &&
                 playerMap.FindAction("PointerPosition", false) != null,
-                "Player input must contain Move, Jump, and PointerPosition.");
+                "Player input must contain Move, Jump, Crouch, and PointerPosition.");
             Require(playerMap.FindAction("Move").bindings.Any(binding => binding.path == "<Gamepad>/dpad"),
                 "Move must support the gamepad D-pad.");
             Require(playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Keyboard>/space") &&
                 playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Gamepad>/buttonSouth"),
                 "Jump bindings are incomplete.");
+            Require(playerMap.FindAction("Crouch").bindings.Any(binding => binding.path == "<Keyboard>/s") &&
+                playerMap.FindAction("Crouch").bindings.Any(binding => binding.path == "<Keyboard>/downArrow") &&
+                playerMap.FindAction("Crouch").bindings.Any(binding => binding.path == "<Gamepad>/dpad/down") &&
+                playerMap.FindAction("Crouch").bindings.Any(binding => binding.path == "<Gamepad>/leftStick/down"),
+                "Crouch bindings are incomplete.");
             InputAction pointerPosition = playerMap.FindAction("PointerPosition");
             Require(pointerPosition.type == InputActionType.PassThrough &&
                 pointerPosition.expectedControlType == "Vector2" &&
@@ -878,9 +952,24 @@ namespace Rustline.Editor
             Require(collider != null && collider.direction == CapsuleDirection2D.Vertical &&
                 collider.size == new Vector2(1.05f, 2.75f) && collider.offset == new Vector2(0f, 1.375f),
                 "Player collision shape changed from the stable full-cell-relative contract.");
+            AnimatorController gameplayController = AssetDatabase.LoadAssetAtPath<AnimatorController>(ControllerPath);
+            Require(gameplayController != null, "Player gameplay Animator controller is missing.");
+            AnimatorState[] gameplayStates = gameplayController.layers[0].stateMachine.states
+                .Select(child => child.state)
+                .ToArray();
+            AnimatorState crouchIdleState = gameplayStates.FirstOrDefault(state => state.name == "CrouchIdle");
+            AnimatorState crouchMoveState = gameplayStates.FirstOrDefault(state => state.name == "CrouchMove");
+            AnimationClip idleFallback = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_Idle.anim");
+            AnimationClip runFallback = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_Run.anim");
+            Require(gameplayStates.Length == 8 && crouchIdleState?.motion == idleFallback &&
+                crouchMoveState?.motion == runFallback,
+                "Crouch Idle/Move fallback states must remain explicit until authored crouch clips exist.");
             PlayerAim2D playerAim = prefab.GetComponent<PlayerAim2D>();
             PlayerAnimator2D playerAnimator = prefab.GetComponent<PlayerAnimator2D>();
             Require(prefab.GetComponent<PlayerInputReader>() != null && prefab.GetComponent<PlayerGroundProbe2D>() != null &&
+                prefab.GetComponent<PlayerEnvironmentProbe2D>() != null &&
                 prefab.GetComponent<PlayerMotor2D>() != null && prefab.GetComponent<PlayerAnimator2D>() != null &&
                 playerAim != null,
                 "Player prefab movement components are incomplete.");

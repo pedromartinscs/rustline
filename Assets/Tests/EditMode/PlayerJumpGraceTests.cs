@@ -46,5 +46,18 @@ namespace Rustline.Tests
             grace.Tick(true, 0.02f, 0.12f);
             Assert.That(grace.TryConsume(), Is.False);
         }
+
+        [Test]
+        public void BufferedJump_CanBeConsumedByWallBraceWithoutGroundCoyote()
+        {
+            var grace = new PlayerJumpGrace();
+            grace.Buffer(0.12f);
+            grace.Tick(false, 0.02f, 0.12f);
+
+            Assert.That(grace.HasBufferedJump, Is.True);
+            Assert.That(grace.TryConsumeBuffered(), Is.True);
+            Assert.That(grace.HasBufferedJump, Is.False);
+            Assert.That(grace.TryConsume(), Is.False);
+        }
     }
 }

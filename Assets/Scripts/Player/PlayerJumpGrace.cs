@@ -6,6 +6,7 @@ namespace Rustline.Gameplay.Player
     {
         public float CoyoteRemaining { get; private set; }
         public float BufferRemaining { get; private set; }
+        public bool HasBufferedJump => BufferRemaining > 0f;
 
         public void Buffer(float duration)
         {
@@ -23,6 +24,18 @@ namespace Rustline.Gameplay.Player
         public bool TryConsume()
         {
             if (BufferRemaining <= 0f || CoyoteRemaining <= 0f)
+            {
+                return false;
+            }
+
+            BufferRemaining = 0f;
+            CoyoteRemaining = 0f;
+            return true;
+        }
+
+        public bool TryConsumeBuffered()
+        {
+            if (BufferRemaining <= 0f)
             {
                 return false;
             }

@@ -43,12 +43,14 @@ See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract.
 - [x] Coyote time
 - [x] Jump buffering
 - [x] Fall behavior / terminal velocity
+- [x] Grounded combat crouch with clearance-safe standing
+- [x] Wall brace / wall kick
 - [ ] Roll or dodge
 - [ ] Moving-platform behavior if useful
 - [x] Pixel-perfect camera and presentation
 - [x] Controller tuning exposed as data/configuration
 
-M1A core movement is implemented in `Assets/Scenes/MovementLab.unity`. It includes the reusable player prefab, physics-driven animation presentation, a separate visual/collision Tilemap course, pixel-snapped camera follow, failsafe respawn, and automated edit/play-mode validation. Roll/dodge and moving-platform behavior remain intentionally pending, so M1 as a whole is not marked complete.
+M1 movement is implemented in `Assets/Scenes/MovementLab.unity`. It includes the reusable player prefab, physics-driven animation presentation, grounded crouch, wall brace/kick, a separate visual/collision Tilemap course with deterministic Composite geometry initialization, pixel-snapped camera follow, failsafe respawn, and automated edit/play-mode validation. Authored crouch and wall art, roll/dodge, and moving-platform behavior remain pending.
 
 **Exit criterion:** traversing a small room is fun without enemies or weapons.
 
@@ -60,32 +62,33 @@ M1A core movement is implemented in `Assets/Scenes/MovementLab.unity`. It includ
 
 Before integrating the first gun, decompose the accepted player artwork into synchronized full-cell layers.
 
-- [ ] Produce Body-only idle/run/jump/fall/land sheets
-- [ ] Produce matching Unarmed Arms idle/run/jump/fall/land sheets
-- [ ] Preserve exact 48×64 cells, pivots, frame order, and timing
-- [ ] Implement synchronized Body + Arms sprite presentation
-- [ ] Verify that Body + Unarmed Arms reconstructs the current accepted player appearance
-- [ ] Preserve movement physics and animation timing while changing presentation only
+- [x] Produce Body-only idle/run/backpedal/jump/fall/land sheets
+- [x] Produce matching Unarmed Arms idle/run/backpedal/jump/fall/land sheets
+- [x] Preserve exact 48×64 cells, pivots, frame order, and timing
+- [x] Implement synchronized Body + Arms sprite presentation
+- [x] Verify that Body + Unarmed Arms reconstructs the current accepted player appearance
+- [x] Preserve movement physics and animation timing while changing presentation only
 
 See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the production contract.
 
 ### M2B — First weapon presentation package
 
-- [ ] Choose one representative first weapon from [`WEAPONS.md`](WEAPONS.md)
-- [ ] Author 19 right-facing 10-degree aim directions for Idle
-- [ ] Author 19 right-facing 10-degree aim directions for Run
+- [x] Choose the Longwatch DMR as the representative first weapon
+- [x] Author 19 right-facing 10-degree aim directions for Idle
+- [x] Author 19 right-facing 10-degree aim directions for Run
+- [x] Author 19 right-facing 10-degree aim directions for Backpedal
 - [ ] Author 19 right-facing 10-degree aim directions for Fall
 - [ ] Author carry-only weapon presentation for Jump / Land / Roll as those states exist
-- [ ] Mirror the authored right-facing set for the left hemisphere
-- [ ] Keep gameplay aim continuous while visual aim selects the nearest authored direction
+- [x] Mirror the authored right-facing set for the left hemisphere
+- [x] Keep gameplay aim continuous while visual aim selects the nearest authored direction
 - [ ] Disable firing during Jump / Land / Roll; allow aiming/firing in Idle / Run / Fall
 - [ ] Validate the sheet/import/runtime convention before scaling the art pipeline to the remaining arsenal
 
 ### M2C — Gunplay systems
 
-- [ ] Mouse aiming
+- [x] Mouse aiming
 - [ ] Gamepad aiming
-- [ ] Horizontal player facing based on aim direction
+- [x] Horizontal player facing based on aim direction
 - [ ] Primary weapon implementation
 - [ ] Projectile and/or hitscan abstraction
 - [ ] Fire rate / reload

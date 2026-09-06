@@ -5,6 +5,7 @@ using UnityEngine;
 namespace Rustline.Gameplay.Player
 {
     [RequireComponent(typeof(Rigidbody2D), typeof(PlayerInputReader), typeof(PlayerGroundProbe2D))]
+    [RequireComponent(typeof(CapsuleCollider2D), typeof(PlayerEnvironmentProbe2D))]
     [RequireComponent(typeof(PlayerAim2D))]
     public sealed class PlayerMotor2D : MonoBehaviour
     {
@@ -15,6 +16,8 @@ namespace Rustline.Gameplay.Player
         private Rigidbody2D _body;
         private PlayerInputReader _input;
         private PlayerGroundProbe2D _groundProbe;
+        private PlayerEnvironmentProbe2D _environmentProbe;
+        private CapsuleCollider2D _collider;
         private PlayerAim2D _aim;
         private PlayerJumpGrace _jumpGrace;
 
@@ -22,6 +25,11 @@ namespace Rustline.Gameplay.Player
         public event Action<bool> Jumped;
 
         public bool IsGrounded { get; private set; }
+        public bool IsCrouched { get; private set; }
+        public bool IsWallBraced { get; private set; }
+        public bool IsWallKicking => WallKickLockRemaining > 0f;
+        public int WallSide { get; private set; }
+        public float WallKickLockRemaining { get; private set; }
         public Vector2 Velocity => _body != null ? _body.linearVelocity : Vector2.zero;
 
         private void Awake()
@@ -29,6 +37,8 @@ namespace Rustline.Gameplay.Player
             _body = GetComponent<Rigidbody2D>();
             _input = GetComponent<PlayerInputReader>();
             _groundProbe = GetComponent<PlayerGroundProbe2D>();
+            _environmentProbe = GetComponent<PlayerEnvironmentProbe2D>();
+            _collider = GetComponent<CapsuleCollider2D>();
             _aim = GetComponent<PlayerAim2D>();
             _jumpGrace = new PlayerJumpGrace();
         }
@@ -59,9 +69,41 @@ namespace Rustline.Gameplay.Player
 
                 _jumpGrace.Tick(IsGrounded, deltaTime, config.CoyoteTime);
 
-                bool jumped = _jumpGrace.TryConsume();
+                WallKickLockRemaining = Mathf.Max(0f, WallKickLockRemaining - deltaTime);
+                UpdateCrouchPosture();
+
+                int contactedWallSide = _environmentProbe.FindWallSide(_input.MoveX);
+                IsWallBraced = PlayerMovementMath.CanWallBrace(
+                    IsGrounded,
+                    velocity.y,
+                    _input.MoveX,
+                    contactedWallSide,
+                    WallSide,
+                    WallKickLockRemaining,
+                    config);
+                if (IsWallBraced)
+                {
+                    WallSide = contactedWallSide;
+                }
+                else if (WallKickLockRemaining <= 0f)
+                {
+                    WallSide = 0;
+                }
+
+                bool wallKicked = IsWallBraced && _jumpGrace.TryConsumeBuffered();
+                bool canUseGroundJump = !IsCrouched || _environmentProbe.HasStandingClearance();
+                bool jumped = !wallKicked && canUseGroundJump && _jumpGrace.TryConsume();
+                if (wallKicked)
+                {
+                    int kickedWallSide = WallSide;
+                    velocity = PlayerMovementMath.GetWallKickVelocity(kickedWallSide, config);
+                    WallKickLockRemaining = config.WallKickLockDuration;
+                    IsWallBraced = false;
+                    WallSide = kickedWallSide;
+                }
                 if (jumped)
                 {
+                    SetCrouched(false);
                     bool jumpedWhileGrounded = IsGrounded;
                     velocity.y = config.JumpSpeed;
                     IsGrounded = false;
@@ -75,21 +117,30 @@ namespace Rustline.Gameplay.Player
                         config);
                 }
 
-                velocity.x = PlayerMovementMath.CalculateHorizontalVelocity(
-                    velocity.x,
-                    _input.MoveX,
-                    IsGrounded,
-                    _aim != null && _aim.FacingLeft,
-                    config,
-                    deltaTime);
+                if (WallKickLockRemaining <= 0f)
+                {
+                    velocity.x = PlayerMovementMath.CalculateHorizontalVelocity(
+                        velocity.x,
+                        _input.MoveX,
+                        IsGrounded,
+                        _aim != null && _aim.FacingLeft,
+                        IsCrouched,
+                        config,
+                        deltaTime);
+                }
 
-                if (!jumped && !IsGrounded)
+                if (!jumped && !wallKicked && !IsGrounded)
                 {
                     velocity.y = PlayerMovementMath.ApplyGravity(
                         velocity.y,
                         Physics2D.gravity.y,
                         config,
                         deltaTime);
+                }
+
+                if (IsWallBraced)
+                {
+                    velocity.y = PlayerMovementMath.CapWallBraceFallVelocity(velocity.y, config);
                 }
 
                 _body.linearVelocity = velocity;
@@ -105,9 +156,48 @@ namespace Rustline.Gameplay.Player
 
             _body.linearVelocity = Vector2.zero;
             IsGrounded = false;
+            if (_collider == null)
+            {
+                _collider = GetComponent<CapsuleCollider2D>();
+            }
+            if (_collider != null && config != null)
+            {
+                _collider.size = config.StandingColliderSize;
+                _collider.offset = config.StandingColliderOffset;
+            }
+            IsCrouched = false;
+            IsWallBraced = false;
+            WallSide = 0;
+            WallKickLockRemaining = 0f;
             _jumpGrace ??= new PlayerJumpGrace();
             _jumpGrace.Reset();
             _input?.ClearTransientState();
+        }
+
+        private void UpdateCrouchPosture()
+        {
+            if (IsGrounded && _input.CrouchHeld)
+            {
+                SetCrouched(true);
+                return;
+            }
+
+            if (IsCrouched && _environmentProbe.HasStandingClearance())
+            {
+                SetCrouched(false);
+            }
+        }
+
+        private void SetCrouched(bool crouched)
+        {
+            if (_collider == null || config == null || IsCrouched == crouched)
+            {
+                return;
+            }
+
+            _collider.size = crouched ? config.CrouchColliderSize : config.StandingColliderSize;
+            _collider.offset = crouched ? config.CrouchColliderOffset : config.StandingColliderOffset;
+            IsCrouched = crouched;
         }
     }
 }

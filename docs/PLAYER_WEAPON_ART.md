@@ -298,6 +298,7 @@ The current artistic/gameplay direction deliberately distinguishes locomotion st
 - Run
 - Backpedal
 - Fall
+- Crouch Idle / Crouch Move (future authored packages)
 
 These states use the full 19-direction authored aim set for the equipped weapon.
 
@@ -306,6 +307,7 @@ These states use the full 19-direction authored aim set for the equipped weapon.
 - Jump / upward launch phase
 - Land
 - Roll / dodge
+- Wall Brace / Wall Kick
 
 The equipped weapon remains visible, but these states use a single authored carried/locked weapon presentation per animation frame rather than the 19-direction set. Firing is disabled while these states are active.
 
@@ -413,7 +415,7 @@ The Longwatch aim origin is exactly **38 source pixels above** the shared Body/o
 
 While locomotion presentation is Idle, Run, or Backpedal, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, and 4 Backpedal Body frames map one-to-one to their selected-angle overlays. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
 
-Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, or Land the presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. This unsupported-state fallback is intentional until those authored armed packages exist.
+Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, Land, Crouch Idle, or Crouch Move the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch uses explicit Idle/Run Body fallback states pending authored art. Wall brace/kick use Fall/Jump fallback and are modeled as future non-firing states. These fallbacks are intentional until the corresponding authored packages exist.
 
 Mouse/pointer is the only armed-aim acceptance input in this pass. Firing, Fall armed aim, carry states, gamepad aim, inventory, and all weapon gameplay remain deferred.
 

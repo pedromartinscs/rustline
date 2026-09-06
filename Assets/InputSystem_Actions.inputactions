@@ -7,6 +7,7 @@
             "actions": [
                 { "name": "Move", "type": "Value", "id": "351f45ba-b1ce-4b4e-9f9e-42d4491134ca", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
                 { "name": "Jump", "type": "Button", "id": "f1ba2bf2-b391-42d8-80d2-f6776ac45cfb", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "Crouch", "type": "Button", "id": "bb410d41-3e5a-45b7-ae6d-30fb4796b597", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": true },
                 { "name": "PointerPosition", "type": "PassThrough", "id": "54e54971-e5db-4a6c-9f66-1d09680d6582", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true }
             ],
             "bindings": [
@@ -24,6 +25,10 @@
                 { "name": "right", "id": "ebc05986-486e-468f-a2a7-916491cdd988", "path": "<Keyboard>/rightArrow", "interactions": "", "processors": "", "groups": "Keyboard", "action": "Move", "isComposite": false, "isPartOfComposite": true },
                 { "name": "", "id": "eb40ef92-779b-46ca-8219-e36cbdc791b7", "path": "<Keyboard>/space", "interactions": "", "processors": "", "groups": "Keyboard", "action": "Jump", "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "daba6bf3-21b2-45de-8c5b-1d5a22f9e8b7", "path": "<Gamepad>/buttonSouth", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Jump", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "19f45d0a-ee88-4ac8-8f00-a23d72a44ef8", "path": "<Keyboard>/s", "interactions": "", "processors": "", "groups": "Keyboard", "action": "Crouch", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "cd2ef157-d71f-4051-8907-6323a3b3508e", "path": "<Keyboard>/downArrow", "interactions": "", "processors": "", "groups": "Keyboard", "action": "Crouch", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "819a6fe5-6bf2-4c80-aa34-82c222b68690", "path": "<Gamepad>/dpad/down", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Crouch", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "18061ffb-5473-4f3a-9588-58a16084eea0", "path": "<Gamepad>/leftStick/down", "interactions": "Press", "processors": "", "groups": "Gamepad", "action": "Crouch", "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "f1507d13-e230-40f1-9c59-8ed7421af1c3", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "", "action": "PointerPosition", "isComposite": false, "isPartOfComposite": false }
             ]
         }
