@@ -2,6 +2,7 @@ using System.Collections;
 using NUnit.Framework;
 using Rustline.Diagnostics;
 using Rustline.Gameplay.Player;
+using Rustline.Physics;
 using Rustline.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -69,6 +70,27 @@ namespace Rustline.Tests
                     Object.Destroy(temporaryHudObject);
                 }
             }
+        }
+
+        [UnityTest]
+        public IEnumerator GroundCompositeGeometry_IsInitializedOnSceneLoad()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            TilemapCompositeColliderInitializer2D initializer =
+                Object.FindAnyObjectByType<TilemapCompositeColliderInitializer2D>();
+            Assert.That(initializer, Is.Not.Null);
+
+            TilemapCollider2D tilemapCollider = initializer.GetComponent<TilemapCollider2D>();
+            CompositeCollider2D composite = initializer.GetComponent<CompositeCollider2D>();
+            Assert.That(tilemapCollider, Is.Not.Null);
+            Assert.That(composite, Is.Not.Null);
+            Assert.That(tilemapCollider.compositeOperation, Is.EqualTo(Collider2D.CompositeOperation.Merge));
+            Assert.That(composite.pathCount, Is.GreaterThan(0),
+                "CompositeCollider2D has no generated paths after scene initialization.");
+            Assert.That(composite.pointCount, Is.GreaterThan(0),
+                "CompositeCollider2D has no generated points after scene initialization.");
         }
 
         [UnityTest]

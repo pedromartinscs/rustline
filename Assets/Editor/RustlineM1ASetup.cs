@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Rustline.Diagnostics;
 using Rustline.Gameplay.Player;
+using Rustline.Physics;
 using Rustline.Presentation;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -694,6 +695,7 @@ namespace Rustline.Editor
             tilemapCollider.compositeOperation = Collider2D.CompositeOperation.Merge;
             CompositeCollider2D composite = collisionTilemap.gameObject.AddComponent<CompositeCollider2D>();
             composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+            collisionTilemap.gameObject.AddComponent<TilemapCompositeColliderInitializer2D>();
 
             Vector3Int[] courseCells = GetCourseCells().ToArray();
             TileBase[] visualTiles = Enumerable.Repeat<TileBase>(ruleTile, courseCells.Length).ToArray();
@@ -1072,6 +1074,8 @@ namespace Rustline.Editor
                 Require(collider != null && collider.compositeOperation == Collider2D.CompositeOperation.Merge &&
                     collider.GetComponent<CompositeCollider2D>() != null,
                     "MovementLab must use composite Tilemap collision.");
+                Require(collider.GetComponent<TilemapCompositeColliderInitializer2D>() != null,
+                    "MovementLab composite Tilemap collision must initialize geometry deterministically.");
 
                 Camera worldCamera = FindCamera(scene, "World Camera - Native Pixel Follow");
                 Camera driverCamera = FindCamera(scene, "Native Pixel Driver Camera");

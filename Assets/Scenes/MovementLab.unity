@@ -3958,6 +3958,7 @@ GameObject:
   - component: {fileID: 743712624}
   - component: {fileID: 743712623}
   - component: {fileID: 743712622}
+  - component: {fileID: 743712627}
   m_Layer: 6
   m_Name: Ground Collision - Hidden
   m_TagString: Untagged
@@ -4065,6 +4066,18 @@ TilemapCollider2D:
   m_MaximumTileChangeCount: 1000
   m_ExtrusionFactor: 0
   m_UseDelaunayMesh: 0
+--- !u!114 &743712627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 743712620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1c8f4e2a6b7491c9f3d5e7a8b0c2d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Physics.TilemapCompositeColliderInitializer2D
 --- !u!50 &743712624
 Rigidbody2D:
   serializedVersion: 5
