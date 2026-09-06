@@ -4,9 +4,9 @@ Performance is a first-class design constraint for Rustline. The target is not m
 
 ## Performance goals
 
-- **60 FPS is the minimum acceptable gameplay target on weak supported hardware.**
-- **120 FPS should be comfortable on reasonable modern hardware** when the display/runtime is allowed to run that fast.
-- On stronger hardware, prefer low frame time, low power use, and stable pacing over consuming all available GPU/CPU budget unnecessarily.
+- **60 FPS is Rustline's maximum runtime frame rate and target presentation cadence.**
+- Supported hardware should aim to sustain that cap; when hardware load prevents it, the runtime may naturally run below 60 FPS.
+- The 60 FPS ceiling is intentional: prefer stable pacing, thermal/power headroom, and spare CPU/GPU budget over rendering frames the game does not need.
 - Gameplay feel and visual correctness must not be sacrificed for theoretical micro-optimizations.
 
 These are design goals, not claims about current measured performance. Device tiers and concrete minimum specifications will be established later from real profiling.
@@ -91,7 +91,7 @@ Clipboard-based 0.5-second samples then produced the following ranges:
 - active traversal: roughly `35.6–78.7 FPS`, `12.70–28.06 ms AVG`, `17.29–39.46 ms WORST`;
 - all samples: `VSync 0`, `Target -1`, `1086×420`.
 
-That spread is too large to use as a reliable micro-optimization baseline. It is treated as evidence that the short Editor sample window is noisy, not as evidence that movement itself necessarily costs the full difference between the idle and traversal numbers. The instrumentation was therefore stabilized before changing rendering or gameplay settings.
+That spread is too large to use as a reliable micro-optimization baseline. It is treated as evidence that the short Editor sample window is noisy, not as evidence that movement itself necessarily costs the full difference between the idle and traversal numbers. The instrumentation was therefore stabilized before changing rendering or gameplay settings. These `Target -1` readings are historical pre-cap observations and should not be compared directly with the current 60 FPS-capped runtime without explicitly accounting for the policy change.
 
 ## Rendering budget and native-pixel presentation
 
@@ -171,7 +171,7 @@ Depth Texture, Opaque Texture, MSAA, Renderer2D depth/stencil, and SRP Batcher r
 
 ### Shipping quality policy
 
-The benchmark still resolves and forces `Very Low` by exact name, while Standalone still defaults to `Ultra`. The profiles differ in VSync and other generic quality fields, and the repository does not define a shipping frame-pacing policy. The default mapping therefore remains unchanged rather than inventing one. Expensive rendering capabilities Rustline cannot currently display are disabled in the shared URP asset, making that part of the runtime policy deterministic across quality levels. A future shipping-settings milestone must choose VSync/target-frame-rate policy explicitly before changing the Standalone default.
+The benchmark still resolves and forces `Very Low` by exact name, while Standalone still defaults to `Ultra`. Rustline now defines frame pacing independently of those quality profiles: `RustlineFramePacing` runs before scene load, forces `QualitySettings.vSyncCount = 0`, and sets `Application.targetFrameRate = 60`. This makes 60 FPS the explicit maximum gameplay/render cadence in Editor Play Mode and standalone players regardless of a 60/120/144/240 Hz display; under load the runtime may naturally run below the cap. Expensive rendering capabilities Rustline cannot currently display remain disabled in the shared URP asset. Any future uncapped/high-refresh experiment must opt out deliberately rather than silently changing the shipping policy.
 
 ## Baseline test discipline
 
@@ -179,7 +179,7 @@ For quick Pedro ↔ Echo iteration in `MovementLab`:
 
 1. Use the same Unity version and the same MovementLab scene, then press `H` or `F3` to show the HUD.
 2. Let the scene run for several seconds before reading values.
-3. Record whether VSync or a target frame-rate cap is active.
+3. Confirm the normal runtime policy reports `VSync 0` and `Target 60`; document any deliberate diagnostic override.
 4. Compare idle/standing measurements under the same conditions first.
 5. Click the HUD to copy the current completed sample rather than taking a screenshot.
 6. When useful, repeat while continuously traversing the course to include animation, Rigidbody2D movement, camera following, and Tilemap rendering.
