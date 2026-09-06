@@ -19,7 +19,7 @@ namespace Rustline.Diagnostics
             _motor = GetComponent<PlayerMotor2D>();
 
 #if !UNITY_EDITOR
-            ConfigureReleaseTilemapCollisionWithoutComposite();
+            ForceReleaseCompositeGeometry();
 #endif
         }
 
@@ -36,7 +36,7 @@ namespace Rustline.Diagnostics
         }
 
 #if !UNITY_EDITOR
-        private static void ConfigureReleaseTilemapCollisionWithoutComposite()
+        private static void ForceReleaseCompositeGeometry()
         {
             TilemapCollider2D tilemapCollider = Object.FindAnyObjectByType<TilemapCollider2D>();
             if (tilemapCollider == null)
@@ -48,30 +48,35 @@ namespace Rustline.Diagnostics
 
             Tilemap tilemap = tilemapCollider.GetComponent<Tilemap>();
             CompositeCollider2D composite = tilemapCollider.GetComponent<CompositeCollider2D>();
+            if (composite == null)
+            {
+                Debug.LogWarning(
+                    "TEMP RELEASE COLLISION DIAGNOSTIC: TilemapCollider2D has no CompositeCollider2D.");
+                return;
+            }
 
             int tileCount = tilemap != null ? tilemap.GetUsedTilesCount() : -1;
             int tilemapShapesBefore = tilemapCollider.shapeCount;
-            int compositeShapesBefore = composite != null ? composite.shapeCount : -1;
+            int compositeShapesBefore = composite.shapeCount;
+            int compositePathsBefore = composite.pathCount;
+            int compositePointsBefore = composite.pointCount;
+            bool pendingBefore = tilemapCollider.hasTilemapChanges;
 
-            tilemapCollider.compositeOperation = Collider2D.CompositeOperation.None;
-            if (composite != null)
-            {
-                composite.enabled = false;
-            }
+            composite.enabled = true;
+            tilemapCollider.compositeOperation = Collider2D.CompositeOperation.Merge;
 
-            if (tilemapCollider.hasTilemapChanges)
-            {
-                tilemapCollider.ProcessTilemapChanges();
-            }
-
+            tilemapCollider.ProcessTilemapChanges();
+            composite.GenerateGeometry();
             Physics2D.SyncTransforms();
 
             Debug.Log(
-                "TEMP RELEASE COLLISION DIAGNOSTIC: CompositeCollider2D bypassed. " +
-                $"tiles={tileCount}, tilemapShapesBefore={tilemapShapesBefore}, " +
-                $"compositeShapesBefore={compositeShapesBefore}, " +
-                $"tilemapShapesAfter={tilemapCollider.shapeCount}, " +
-                $"hasPendingTileChanges={tilemapCollider.hasTilemapChanges}.");
+                "TEMP RELEASE COLLISION DIAGNOSTIC: forced composite geometry. " +
+                $"tiles={tileCount}, pendingBefore={pendingBefore}, " +
+                $"tilemapShapesBefore={tilemapShapesBefore}, tilemapShapesAfter={tilemapCollider.shapeCount}, " +
+                $"compositeShapesBefore={compositeShapesBefore}, compositeShapesAfter={composite.shapeCount}, " +
+                $"compositePathsBefore={compositePathsBefore}, compositePathsAfter={composite.pathCount}, " +
+                $"compositePointsBefore={compositePointsBefore}, compositePointsAfter={composite.pointCount}, " +
+                $"pendingAfter={tilemapCollider.hasTilemapChanges}.");
         }
 #endif
     }
