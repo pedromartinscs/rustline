@@ -63,8 +63,7 @@ namespace Rustline.Gameplay.Player
             float lockRemaining,
             PlayerMovementConfig config)
         {
-            if (grounded || wallSide == 0 || verticalVelocity > config.MaximumWallBraceUpwardSpeed ||
-                Mathf.Abs(horizontalInput) < config.InputDeadZone)
+            if (!CanAttemptWallBrace(grounded, verticalVelocity, horizontalInput, config) || wallSide == 0)
             {
                 return false;
             }
@@ -75,6 +74,17 @@ namespace Rustline.Gameplay.Player
             }
 
             return Mathf.Sign(horizontalInput) == wallSide;
+        }
+
+        public static bool CanAttemptWallBrace(
+            bool grounded,
+            float verticalVelocity,
+            float horizontalInput,
+            PlayerMovementConfig config)
+        {
+            return !grounded &&
+                   verticalVelocity <= config.MaximumWallBraceUpwardSpeed &&
+                   Mathf.Abs(horizontalInput) >= config.InputDeadZone;
         }
 
         public static float CapWallBraceFallVelocity(float verticalVelocity, PlayerMovementConfig config)

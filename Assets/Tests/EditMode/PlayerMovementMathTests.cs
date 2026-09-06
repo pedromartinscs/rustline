@@ -159,6 +159,18 @@ namespace Rustline.Tests
                 "The brief same-wall lock must not falsely describe the opposite wall as the same wall.");
         }
 
+        [TestCase(true, -2f, 1f, false)]
+        [TestCase(false, -2f, 0.09f, false)]
+        [TestCase(false, 0.11f, 1f, false)]
+        [TestCase(false, 0.1f, 1f, true)]
+        [TestCase(false, -2f, -1f, true)]
+        public void WallProbeEligibility_RejectsImpossibleBraceStates(
+            bool grounded, float verticalVelocity, float input, bool expected)
+        {
+            Assert.That(PlayerMovementMath.CanAttemptWallBrace(
+                grounded, verticalVelocity, input, _config), Is.EqualTo(expected));
+        }
+
         [Test]
         public void WallBrace_CapsDescentWithoutFreezingIt()
         {

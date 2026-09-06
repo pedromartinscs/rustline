@@ -69,6 +69,28 @@ namespace Rustline.Editor
             new CourseBlock(100, 0, 12, 8),
         };
 
+        private static readonly DiagnosticLabel[] DiagnosticLabels =
+        {
+            new DiagnosticLabel("M1A MOVEMENT LAB", new Vector3(-27f, 6.5f, -0.2f), 0.19f,
+                new Color32(32, 237, 229, 255)),
+            new DiagnosticLabel("MOVE  |  SPACE JUMP  |  S/DOWN CROUCH", new Vector3(-27f, 5.9f, -0.2f), 0.095f,
+                new Color32(201, 187, 177, 255)),
+            new DiagnosticLabel("ACCEL / DECEL / REVERSAL", new Vector3(-22.5f, 2f, -0.2f), 0.09f,
+                new Color32(201, 187, 177, 255)),
+            new DiagnosticLabel("COYOTE GAPS", new Vector3(-8f, 3.2f, -0.2f), 0.09f,
+                new Color32(253, 208, 69, 255)),
+            new DiagnosticLabel("JUMP UP + VARIABLE HEIGHT", new Vector3(13.5f, 4.2f, -0.2f), 0.09f,
+                new Color32(201, 187, 177, 255)),
+            new DiagnosticLabel("DROP + BUFFER BEFORE LANDING", new Vector3(26.5f, 0f, -0.2f), 0.09f,
+                new Color32(253, 208, 69, 255)),
+            new DiagnosticLabel("STEP COURSE / AIR CONTROL", new Vector3(47.5f, 2.2f, -0.2f), 0.09f,
+                new Color32(201, 187, 177, 255)),
+            new DiagnosticLabel("COMBAT CROUCH / AUTO-STAND", new Vector3(74f, 4.4f, -0.2f), 0.09f,
+                new Color32(253, 208, 69, 255)),
+            new DiagnosticLabel("WALL BRACE / KICK SHAFT", new Vector3(96.5f, 2f, -0.2f), 0.09f,
+                new Color32(32, 237, 229, 255)),
+        };
+
         private static readonly string[] LongwatchDirectionSuffixes =
         {
             "p90", "p80", "p70", "p60", "p50", "p40", "p30", "p20", "p10", "0",
@@ -95,6 +117,22 @@ namespace Rustline.Editor
             internal int Top { get; }
             internal int Width { get; }
             internal int Depth { get; }
+        }
+
+        private readonly struct DiagnosticLabel
+        {
+            internal DiagnosticLabel(string text, Vector3 position, float size, Color color)
+            {
+                Text = text;
+                Position = position;
+                Size = size;
+                Color = color;
+            }
+
+            internal string Text { get; }
+            internal Vector3 Position { get; }
+            internal float Size { get; }
+            internal Color Color { get; }
         }
 
         [MenuItem("Tools/Rustline/Rebuild M1A Movement Lab")]
@@ -759,29 +797,54 @@ namespace Rustline.Editor
             Require(visualTilemap != null && collisionTilemap != null,
                 "MovementLab course Tilemaps are missing.");
 
-            Vector3Int[] courseCells = GetCourseCells().ToArray();
-            visualTilemap.ClearAllTiles();
-            collisionTilemap.ClearAllTiles();
-            visualTilemap.SetTiles(
-                courseCells, Enumerable.Repeat<TileBase>(ruleTile, courseCells.Length).ToArray());
-            collisionTilemap.SetTiles(
-                courseCells, Enumerable.Repeat(collisionTile, courseCells.Length).ToArray());
-            visualTilemap.RefreshAllTiles();
-            collisionTilemap.RefreshAllTiles();
-            EditorUtility.SetDirty(visualTilemap);
-            EditorUtility.SetDirty(collisionTilemap);
-
-            GameObject oldLabels = FindGameObject(scene, "Diagnostic Labels");
-            if (oldLabels != null)
-            {
-                UnityEngine.Object.DestroyImmediate(oldLabels);
-            }
             GameObject root = FindGameObject(scene, "RUSTLINE M1A - MOVEMENT LAB");
             Require(root != null, "MovementLab root is missing.");
-            CreateLabels(root.transform);
+            Vector3Int[] courseCells = GetCourseCells().ToArray();
+            bool changed = SynchronizeTilemap(visualTilemap, courseCells, ruleTile);
+            changed |= SynchronizeTilemap(collisionTilemap, courseCells, collisionTile);
+            changed |= SynchronizeLabels(scene, root.transform);
 
-            EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene, ScenePath);
+            if (changed)
+            {
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene, ScenePath);
+            }
+        }
+
+        private static bool SynchronizeTilemap(
+            Tilemap tilemap,
+            IReadOnlyList<Vector3Int> desiredCells,
+            TileBase desiredTile)
+        {
+            var desiredCellSet = new HashSet<Vector3Int>(desiredCells);
+            bool changed = false;
+            foreach (Vector3Int cell in tilemap.cellBounds.allPositionsWithin)
+            {
+                if (tilemap.HasTile(cell) && !desiredCellSet.Contains(cell))
+                {
+                    tilemap.SetTile(cell, null);
+                    changed = true;
+                }
+            }
+
+            for (int index = 0; index < desiredCells.Count; index++)
+            {
+                Vector3Int cell = desiredCells[index];
+                if (tilemap.GetTile(cell) != desiredTile)
+                {
+                    tilemap.SetTile(cell, desiredTile);
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                tilemap.RefreshAllTiles();
+                EditorUtility.SetDirty(tilemap);
+                EditorUtility.SetDirty(tilemap.GetComponent<TilemapRenderer>());
+            }
+
+            return changed;
         }
 
         private static Tilemap CreateTilemap(Transform parent, string name, int sortingOrder)
@@ -851,20 +914,11 @@ namespace Rustline.Editor
         {
             GameObject labels = new GameObject("Diagnostic Labels");
             labels.transform.SetParent(parent, false);
-            Color cyan = new Color32(32, 237, 229, 255);
-            Color neutral = new Color32(201, 187, 177, 255);
-            Color warning = new Color32(253, 208, 69, 255);
-
-            CreateLabel(labels.transform, "M1A MOVEMENT LAB", new Vector3(-27f, 6.5f, -0.2f), 0.19f, cyan);
-            CreateLabel(labels.transform, "MOVE  |  SPACE JUMP  |  S/DOWN CROUCH",
-                new Vector3(-27f, 5.9f, -0.2f), 0.095f, neutral);
-            CreateLabel(labels.transform, "ACCEL / DECEL / REVERSAL", new Vector3(-22.5f, 2f, -0.2f), 0.09f, neutral);
-            CreateLabel(labels.transform, "COYOTE GAPS", new Vector3(-8f, 3.2f, -0.2f), 0.09f, warning);
-            CreateLabel(labels.transform, "JUMP UP + VARIABLE HEIGHT", new Vector3(13.5f, 4.2f, -0.2f), 0.09f, neutral);
-            CreateLabel(labels.transform, "DROP + BUFFER BEFORE LANDING", new Vector3(26.5f, 0f, -0.2f), 0.09f, warning);
-            CreateLabel(labels.transform, "STEP COURSE / AIR CONTROL", new Vector3(47.5f, 2.2f, -0.2f), 0.09f, neutral);
-            CreateLabel(labels.transform, "COMBAT CROUCH / AUTO-STAND", new Vector3(74f, 4.4f, -0.2f), 0.09f, warning);
-            CreateLabel(labels.transform, "WALL BRACE / KICK SHAFT", new Vector3(96.5f, 2f, -0.2f), 0.09f, cyan);
+            for (int index = 0; index < DiagnosticLabels.Length; index++)
+            {
+                DiagnosticLabel label = DiagnosticLabels[index];
+                CreateLabel(labels.transform, label.Text, label.Position, label.Size, label.Color);
+            }
         }
 
         private static void CreateLabel(Transform parent, string text, Vector3 position, float size, Color color)
@@ -882,6 +936,137 @@ namespace Rustline.Editor
             MeshRenderer renderer = labelObject.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = textMesh.font.material;
             renderer.sortingOrder = 100;
+        }
+
+        private static bool SynchronizeLabels(Scene scene, Transform parent)
+        {
+            GameObject labelsObject = FindGameObject(scene, "Diagnostic Labels");
+            bool changed = false;
+            if (labelsObject == null)
+            {
+                labelsObject = new GameObject("Diagnostic Labels");
+                labelsObject.transform.SetParent(parent, false);
+                changed = true;
+            }
+            else if (labelsObject.transform.parent != parent)
+            {
+                labelsObject.transform.SetParent(parent, false);
+                changed = true;
+            }
+
+            Transform labels = labelsObject.transform;
+            var retainedLabels = new HashSet<Transform>();
+            for (int specIndex = 0; specIndex < DiagnosticLabels.Length; specIndex++)
+            {
+                DiagnosticLabel spec = DiagnosticLabels[specIndex];
+                Transform existing = null;
+                for (int childIndex = 0; childIndex < labels.childCount; childIndex++)
+                {
+                    Transform child = labels.GetChild(childIndex);
+                    if (child.name == spec.Text && !retainedLabels.Contains(child))
+                    {
+                        existing = child;
+                        break;
+                    }
+                }
+
+                if (existing == null)
+                {
+                    CreateLabel(labels, spec.Text, spec.Position, spec.Size, spec.Color);
+                    existing = labels.GetChild(labels.childCount - 1);
+                    changed = true;
+                }
+
+                retainedLabels.Add(existing);
+                changed |= SynchronizeLabel(existing, spec);
+            }
+
+            for (int childIndex = labels.childCount - 1; childIndex >= 0; childIndex--)
+            {
+                Transform child = labels.GetChild(childIndex);
+                if (!retainedLabels.Contains(child))
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool SynchronizeLabel(Transform labelTransform, DiagnosticLabel spec)
+        {
+            bool changed = false;
+            if (labelTransform.position != spec.Position)
+            {
+                labelTransform.position = spec.Position;
+                changed = true;
+            }
+
+            TextMesh textMesh = labelTransform.GetComponent<TextMesh>();
+            if (textMesh == null)
+            {
+                textMesh = labelTransform.gameObject.AddComponent<TextMesh>();
+                changed = true;
+            }
+
+            if (textMesh.text != spec.Text)
+            {
+                textMesh.text = spec.Text;
+                changed = true;
+            }
+            if (textMesh.anchor != TextAnchor.MiddleCenter)
+            {
+                textMesh.anchor = TextAnchor.MiddleCenter;
+                changed = true;
+            }
+            if (textMesh.alignment != TextAlignment.Center)
+            {
+                textMesh.alignment = TextAlignment.Center;
+                changed = true;
+            }
+            if (!Mathf.Approximately(textMesh.characterSize, spec.Size))
+            {
+                textMesh.characterSize = spec.Size;
+                changed = true;
+            }
+            if (textMesh.fontSize != 32)
+            {
+                textMesh.fontSize = 32;
+                changed = true;
+            }
+            if (textMesh.color != spec.Color)
+            {
+                textMesh.color = spec.Color;
+                changed = true;
+            }
+
+            MeshRenderer renderer = labelTransform.GetComponent<MeshRenderer>();
+            if (renderer == null)
+            {
+                renderer = labelTransform.gameObject.AddComponent<MeshRenderer>();
+                changed = true;
+            }
+            Material fontMaterial = textMesh.font != null ? textMesh.font.material : null;
+            if (renderer.sharedMaterial != fontMaterial)
+            {
+                renderer.sharedMaterial = fontMaterial;
+                changed = true;
+            }
+            if (renderer.sortingOrder != 100)
+            {
+                renderer.sortingOrder = 100;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                EditorUtility.SetDirty(labelTransform);
+                EditorUtility.SetDirty(textMesh);
+                EditorUtility.SetDirty(renderer);
+            }
+
+            return changed;
         }
 
         private static void PutMovementScenesFirstInBuildSettings()

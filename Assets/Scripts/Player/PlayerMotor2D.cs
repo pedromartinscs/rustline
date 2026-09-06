@@ -70,9 +70,15 @@ namespace Rustline.Gameplay.Player
                 _jumpGrace.Tick(IsGrounded, deltaTime, config.CoyoteTime);
 
                 WallKickLockRemaining = Mathf.Max(0f, WallKickLockRemaining - deltaTime);
-                UpdateCrouchPosture();
+                bool hasStandingClearance = UpdateCrouchPosture(_jumpGrace.HasBufferedJump);
 
-                int contactedWallSide = _environmentProbe.FindWallSide(_input.MoveX);
+                int contactedWallSide = PlayerMovementMath.CanAttemptWallBrace(
+                    IsGrounded,
+                    velocity.y,
+                    _input.MoveX,
+                    config)
+                    ? _environmentProbe.FindWallSide(_input.MoveX)
+                    : 0;
                 IsWallBraced = PlayerMovementMath.CanWallBrace(
                     IsGrounded,
                     velocity.y,
@@ -91,7 +97,7 @@ namespace Rustline.Gameplay.Player
                 }
 
                 bool wallKicked = IsWallBraced && _jumpGrace.TryConsumeBuffered();
-                bool canUseGroundJump = !IsCrouched || _environmentProbe.HasStandingClearance();
+                bool canUseGroundJump = !IsCrouched || hasStandingClearance;
                 bool jumped = !wallKicked && canUseGroundJump && _jumpGrace.TryConsume();
                 if (wallKicked)
                 {
@@ -174,18 +180,27 @@ namespace Rustline.Gameplay.Player
             _input?.ClearTransientState();
         }
 
-        private void UpdateCrouchPosture()
+        private bool UpdateCrouchPosture(bool hasBufferedJump)
         {
             if (IsGrounded && _input.CrouchHeld)
             {
                 SetCrouched(true);
-                return;
             }
 
-            if (IsCrouched && _environmentProbe.HasStandingClearance())
+            bool shouldAttemptStand = IsCrouched && (!IsGrounded || !_input.CrouchHeld);
+            bool needsStandingClearance = shouldAttemptStand || IsCrouched && hasBufferedJump;
+            if (!needsStandingClearance)
+            {
+                return false;
+            }
+
+            bool hasStandingClearance = _environmentProbe.HasStandingClearance();
+            if (shouldAttemptStand && hasStandingClearance)
             {
                 SetCrouched(false);
             }
+
+            return hasStandingClearance;
         }
 
         private void SetCrouched(bool crouched)

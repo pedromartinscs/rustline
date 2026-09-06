@@ -816,7 +816,30 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator Player_WallBraceAndKickUseActualWallSideAndPreserveImpulseLock()
+        public IEnumerator Player_RightWallBraceAndKickUseActualWallSideAndPreserveImpulseLock()
+        {
+            yield return VerifyWallBraceAndKick(
+                wallSide: 1,
+                startingX: 99.4f,
+                inputKey: Key.D,
+                expectedKickVelocityX: -8f);
+        }
+
+        [UnityTest]
+        public IEnumerator Player_LeftWallBraceAndKickUseActualWallSideAndPreserveImpulseLock()
+        {
+            yield return VerifyWallBraceAndKick(
+                wallSide: -1,
+                startingX: 93.6f,
+                inputKey: Key.A,
+                expectedKickVelocityX: 8f);
+        }
+
+        private static IEnumerator VerifyWallBraceAndKick(
+            int wallSide,
+            float startingX,
+            Key inputKey,
+            float expectedKickVelocityX)
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -828,10 +851,10 @@ namespace Rustline.Tests
             motor.Landed += CountLand;
             try
             {
-                body.position = new Vector2(99.4f, -1f);
+                body.position = new Vector2(startingX, -1f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
-                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(inputKey));
                 InputSystem.Update();
                 for (int index = 0; index < 3; index++)
                 {
@@ -840,21 +863,21 @@ namespace Rustline.Tests
 
                 Assert.That(motor.IsGrounded, Is.False);
                 Assert.That(motor.IsWallBraced, Is.True);
-                Assert.That(motor.WallSide, Is.EqualTo(1));
+                Assert.That(motor.WallSide, Is.EqualTo(wallSide));
                 Assert.That(body.linearVelocity.y, Is.InRange(-4.01f, -0.01f));
 
-                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(inputKey, Key.Space));
                 InputSystem.Update();
                 yield return new WaitForFixedUpdate();
                 Assert.That(motor.IsWallBraced, Is.False);
-                Assert.That(body.linearVelocity.x, Is.EqualTo(-8f).Within(0.05f));
+                Assert.That(body.linearVelocity.x, Is.EqualTo(expectedKickVelocityX).Within(0.05f));
                 Assert.That(body.linearVelocity.y, Is.EqualTo(11.5f).Within(0.05f));
                 Assert.That(motor.WallKickLockRemaining, Is.GreaterThan(0f));
 
                 for (int index = 0; index < 3; index++)
                 {
                     yield return new WaitForFixedUpdate();
-                    Assert.That(body.linearVelocity.x, Is.EqualTo(-8f).Within(0.05f),
+                    Assert.That(body.linearVelocity.x, Is.EqualTo(expectedKickVelocityX).Within(0.05f),
                         "Held input canceled the away impulse during the wall-kick lock.");
                     Assert.That(motor.IsWallBraced, Is.False,
                         "The player immediately reattached to the same wall during lock.");
@@ -864,7 +887,7 @@ namespace Rustline.Tests
                     yield return new WaitForFixedUpdate();
                 }
                 Assert.That(motor.IsWallKicking, Is.False);
-                Assert.That(body.linearVelocity.x, Is.GreaterThan(-8f),
+                Assert.That(body.linearVelocity.x * wallSide, Is.GreaterThan(expectedKickVelocityX * wallSide),
                     "Normal air control did not return after the authored wall-kick lock.");
                 Assert.That(landEvents, Is.EqualTo(0), "Wall contact emitted a false Land event.");
             }
