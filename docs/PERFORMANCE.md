@@ -71,7 +71,10 @@ raw sample parent/child structure, reports direct hierarchy children separately,
 self time without summing overlapping inclusive scopes, and treats Main/Render/worker thread
 durations as overlapping. Its `Editor-only` value is only `EditorLoop` minus outermost nested
 `PlayerLoop` time, so it is a conservative triage estimate rather than proof of avoidable Editor
-cost. Classification thresholds and limitations are written into each report.
+cost. Per-thread `frameTimeMs` is reported only as frame-span metadata; `RENDER_THREAD` requires
+captured `RenderLoop - Gfx.PresentFrame` hierarchy evidence. `Semaphore.WaitForSignal` is reported
+as generic synchronization and never treated as proof of present/GPU waiting. Classification
+thresholds and limitations are written into each report.
 
 If `Profiler.CollectEditorStats` is dominant, repeat with only the CPU module enabled or profile a
 Development Player before attributing the hitch to Rustline. Enable allocation callstacks only for

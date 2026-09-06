@@ -69,7 +69,11 @@ namespace Rustline.Editor.Diagnostics
         public double EditorLoopMs;
         public double PlayerLoopMs;
         public double EditorOnlyMs;
-        public double RenderThreadMs;
+        public double RenderThreadFrameSpanMs;
+        public double RenderThreadActiveWorkMs;
+        public double RenderLoopMs;
+        public double RenderPresentFrameMs;
+        public bool RenderThreadActiveWorkAvailable;
         public long GcAllocatedBytes;
         public int GcAllocSampleCount;
         public double GcTimeMs;
@@ -81,6 +85,8 @@ namespace Rustline.Editor.Diagnostics
         public readonly List<SpikeContributor> PlayerLoopContributors = new List<SpikeContributor>();
         public readonly List<SpikeContributor> EditorLoopContributors = new List<SpikeContributor>();
         public readonly List<SpikeContributor> WaitContributors = new List<SpikeContributor>();
+        public readonly List<SpikeContributor> GenericSynchronizationContributors =
+            new List<SpikeContributor>();
         public readonly List<SpikeContributor> RenderThreadContributors = new List<SpikeContributor>();
         public readonly List<SpikeContributor> OtherThreads = new List<SpikeContributor>();
         public readonly Dictionary<string, double> RustlineMarkers =
@@ -100,7 +106,8 @@ namespace Rustline.Editor.Diagnostics
             double gcMs,
             double physics2DMs,
             double rustlineMs,
-            double profilerOverheadMs)
+            double profilerOverheadMs,
+            bool hasRenderThreadWorkEvidence = false)
         {
             MainThreadMs = mainThreadMs;
             EditorOnlyMs = editorOnlyMs;
@@ -111,6 +118,7 @@ namespace Rustline.Editor.Diagnostics
             Physics2DMs = physics2DMs;
             RustlineMs = rustlineMs;
             ProfilerOverheadMs = profilerOverheadMs;
+            HasRenderThreadWorkEvidence = hasRenderThreadWorkEvidence;
         }
 
         public double MainThreadMs { get; }
@@ -122,6 +130,7 @@ namespace Rustline.Editor.Diagnostics
         public double Physics2DMs { get; }
         public double RustlineMs { get; }
         public double ProfilerOverheadMs { get; }
+        public bool HasRenderThreadWorkEvidence { get; }
     }
 
     public readonly struct SpikeDistribution
@@ -190,7 +199,9 @@ namespace Rustline.Editor.Diagnostics
 
             return frames
                 .OrderByDescending(frame => frame.MainThreadMs)
-                .ThenByDescending(frame => frame.RenderThreadMs)
+                .ThenByDescending(frame => frame.RenderThreadActiveWorkAvailable
+                    ? frame.RenderThreadActiveWorkMs
+                    : -1.0)
                 .ThenBy(frame => frame.FrameIndex)
                 .Take(count)
                 .ToList();
@@ -271,6 +282,62 @@ namespace Rustline.Editor.Diagnostics
             return totals;
         }
 
+        public static bool IsPresentWaitSample(string sampleName)
+        {
+            if (string.IsNullOrEmpty(sampleName))
+            {
+                return false;
+            }
+
+            return sampleName.IndexOf("WaitForPresent", StringComparison.OrdinalIgnoreCase) >= 0
+                || sampleName.IndexOf("WaitForLastPresent", StringComparison.OrdinalIgnoreCase) >= 0
+                || sampleName.IndexOf("WaitForTargetFPS", StringComparison.OrdinalIgnoreCase) >= 0
+                || sampleName.IndexOf("Gfx.PresentFrame", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static bool IsGenericSynchronizationSample(string sampleName)
+        {
+            return !string.IsNullOrEmpty(sampleName)
+                && sampleName.IndexOf(
+                    "Semaphore.WaitForSignal",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        public static bool TryDeriveRenderThreadActiveWork(
+            SpikeSampleNode threadRoot,
+            out double renderLoopMs,
+            out double presentFrameMs,
+            out double activeWorkMs)
+        {
+            renderLoopMs = 0.0;
+            presentFrameMs = 0.0;
+            activeWorkMs = 0.0;
+
+            SpikeSampleNode renderLoop = FindFirst(threadRoot, "RenderLoop");
+            if (renderLoop == null)
+            {
+                return false;
+            }
+
+            bool hasPresentFrame = ContainsNamedSample(renderLoop, "Gfx.PresentFrame");
+            if (!hasPresentFrame)
+            {
+                return false;
+            }
+
+            renderLoopMs = renderLoop.DurationMs;
+            presentFrameMs = SumOutermostNamedSamples(renderLoop, "Gfx.PresentFrame");
+            if (presentFrameMs > renderLoopMs)
+            {
+                renderLoopMs = 0.0;
+                presentFrameMs = 0.0;
+                return false;
+            }
+
+            activeWorkMs = Math.Max(0.0, renderLoopMs - presentFrameMs);
+            return true;
+        }
+
         public static SpikeClassification Classify(SpikeClassificationInput input)
         {
             double basis = Math.Max(input.MainThreadMs, MeaningfulMinimumMs);
@@ -318,7 +385,8 @@ namespace Rustline.Editor.Diagnostics
                 return SpikeClassification.PlayerLoopCpu;
             }
 
-            if (input.RenderThreadMs >= Math.Max(2.0, basis * 0.75))
+            if (input.HasRenderThreadWorkEvidence
+                && input.RenderThreadMs >= Math.Max(2.0, basis * 0.75))
             {
                 return SpikeClassification.RenderThread;
             }
@@ -391,18 +459,20 @@ namespace Rustline.Editor.Diagnostics
 
             report.AppendLine();
             report.AppendLine("TOP 10 WORST FRAMES");
-            report.AppendLine("Frame | Main ms | EditorLoop | PlayerLoop | Editor-only* | Render thread | GC bytes | Classification");
+            report.AppendLine("Frame | Main ms | EditorLoop | PlayerLoop | Editor-only* | Render active* | GC bytes | Classification");
             foreach (SpikeFrameSummary frame in worstFrames)
             {
                 report.AppendLine(string.Format(
                     CultureInfo.InvariantCulture,
-                    "{0,5} | {1,7:F3} | {2,10:F3} | {3,10:F3} | {4,12:F3} | {5,13:F3} | {6,8} | {7}",
+                    "{0,5} | {1,7:F3} | {2,10:F3} | {3,10:F3} | {4,12:F3} | {5,14} | {6,8} | {7}",
                     frame.FrameIndex,
                     frame.MainThreadMs,
                     frame.EditorLoopMs,
                     frame.PlayerLoopMs,
                     frame.EditorOnlyMs,
-                    frame.RenderThreadMs,
+                    frame.RenderThreadActiveWorkAvailable
+                        ? frame.RenderThreadActiveWorkMs.ToString("F3", CultureInfo.InvariantCulture)
+                        : "N/A",
                     frame.GcAllocatedBytes,
                     ClassificationLabel(frame.Classification)));
             }
@@ -426,7 +496,12 @@ namespace Rustline.Editor.Diagnostics
 
             report.AppendLine();
             report.AppendLine("RENDER THREAD AND GC SUMMARY");
-            report.AppendLine($"- Maximum Render Thread duration in the top frames: {FormatMs(worstFrames.Max(frame => frame.RenderThreadMs))}; this overlaps main-thread wall time.");
+            List<SpikeFrameSummary> renderEvidenceFrames = worstFrames
+                .Where(frame => frame.RenderThreadActiveWorkAvailable)
+                .ToList();
+            report.AppendLine(renderEvidenceFrames.Count > 0
+                ? $"- Maximum derived Render Thread active work in the top frames: {FormatMs(renderEvidenceFrames.Max(frame => frame.RenderThreadActiveWorkMs))}."
+                : "- Derived Render Thread active work: unavailable in all top frames because the required RenderLoop + Gfx.PresentFrame hierarchy evidence was absent.");
             report.AppendLine($"- GC.Alloc metadata across top frames: {worstFrames.Sum(frame => frame.GcAllocatedBytes)} bytes in {worstFrames.Sum(frame => frame.GcAllocSampleCount)} samples.");
             report.AppendLine($"- Maximum GC self-time evidence in a top frame: {FormatMs(worstFrames.Max(frame => frame.GcTimeMs))}.");
 
@@ -462,11 +537,14 @@ namespace Rustline.Editor.Diagnostics
             report.AppendLine("- RawFrameDataView sample parent/child structure is preserved. Direct-child totals are listed only at one hierarchy level.");
             report.AppendLine("- Self time is inclusive sample time minus immediate-child inclusive time, clamped to zero. Aggregated self times are additive and do not include parent/child overlap.");
             report.AppendLine("- Editor-only* is EditorLoop inclusive time minus only outermost nested PlayerLoop samples. It is a conservative estimate, not a claim that all remaining work is avoidable.");
-            report.AppendLine("- Main, render, and worker thread durations overlap in wall-clock time and are never added together.");
+            report.AppendLine("- Raw per-thread frameTimeMs is retained only as frame-span metadata. It is not active Render Thread work and cannot trigger RENDER_THREAD.");
+            report.AppendLine("- Render Thread active work is available only when the same captured hierarchy contains RenderLoop and nested Gfx.PresentFrame; the approximation is RenderLoop minus Gfx.PresentFrame.");
+            report.AppendLine("- Main, render, and worker thread evidence overlaps in wall-clock time and is never added together.");
             report.AppendLine("- Percentiles use linear interpolation between adjacent sorted observations.");
             report.AppendLine("- Meaningful evidence is >= max(1.0 ms, 20% of main-thread time); dominant evidence is >= max(1.0 ms, 35%).");
             report.AppendLine("- MIXED requires at least two non-overlapping specific evidence groups at the meaningful threshold, or meaningful Editor-only and PlayerLoop time together.");
-            report.AppendLine("- RENDER_THREAD is used only when no main-thread category dominates and render-thread duration is >= max(2.0 ms, 75% of main-thread time).");
+            report.AppendLine("- RENDER_THREAD requires derived hierarchy evidence, no dominant main-thread category, and active work >= max(2.0 ms, 75% of main-thread time).");
+            report.AppendLine("- Semaphore.WaitForSignal self-time >= 0.1 ms is shown as generic synchronization evidence only. It never contributes to PRESENT_WAIT or another automatic root-cause classification; inspect Timeline to determine what was awaited.");
             report.AppendLine("- Classification is diagnostic triage, not proof of causality. Confirm candidates in the Profiler Timeline before changing product code.");
             report.AppendLine("- GC bytes come only from GC.Alloc sample metadata when the capture exposes it; zero can mean none recorded or metadata unavailable.");
             report.AppendLine("- This analyzer reads CPU capture data. Render-thread and present waits are indirect graphics evidence; it does not claim GPU duration or GPU causality.");
@@ -510,6 +588,29 @@ namespace Rustline.Editor.Diagnostics
             }
         }
 
+        private static bool ContainsNamedSample(SpikeSampleNode node, string sampleName)
+        {
+            if (node == null)
+            {
+                return false;
+            }
+
+            if (string.Equals(node.Name, sampleName, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            for (int i = 0; i < node.Children.Count; i++)
+            {
+                if (ContainsNamedSample(node.Children[i], sampleName))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static void AppendHeader(StringBuilder report, SpikeReportContext context)
         {
             report.AppendLine($"Unity: {context.UnityVersion}");
@@ -536,7 +637,10 @@ namespace Rustline.Editor.Diagnostics
             report.AppendLine();
             report.AppendLine($"Frame {frame.FrameIndex} - {ClassificationLabel(frame.Classification)}");
             report.AppendLine($"  Main {FormatMs(frame.MainThreadMs)}; EditorLoop {FormatMs(frame.EditorLoopMs)}; PlayerLoop {FormatMs(frame.PlayerLoopMs)}; Editor-only {FormatMs(frame.EditorOnlyMs)}");
-            report.AppendLine($"  Render Thread {FormatMs(frame.RenderThreadMs)} (overlapping thread duration; not additive)");
+            report.AppendLine($"  Render Thread frame-span metadata: {FormatMs(frame.RenderThreadFrameSpanMs)} (not active work; never classification evidence)");
+            report.AppendLine(frame.RenderThreadActiveWorkAvailable
+                ? $"  Derived Render Thread active work: {FormatMs(frame.RenderThreadActiveWorkMs)} = RenderLoop {FormatMs(frame.RenderLoopMs)} - Gfx.PresentFrame {FormatMs(frame.RenderPresentFrameMs)}"
+                : "  Derived Render Thread active work: unavailable (insufficient RenderLoop + nested Gfx.PresentFrame hierarchy evidence)");
             report.AppendLine($"  GC.Alloc metadata: {frame.GcAllocatedBytes} bytes across {frame.GcAllocSampleCount} samples; GC time evidence {FormatMs(frame.GcTimeMs)}");
             report.AppendLine($"  Classification reason: {BuildClassificationReason(frame)}");
             report.AppendLine($"  Rustline aggregate self-time evidence: {FormatMs(frame.RustlineTimeMs)}. Compare this with the {FormatMs(frame.MainThreadMs)} main-thread hitch before attributing the spike to game code.");
@@ -546,9 +650,14 @@ namespace Rustline.Editor.Diagnostics
                 : $"  Rustline marker evidence met the documented meaningful threshold ({FormatMs(meaningful)}); expand its captured children before inferring causality.");
             AppendContributors(report, "  PlayerLoop direct children (one-level inclusive totals)", frame.PlayerLoopContributors, 8);
             AppendContributors(report, "  EditorLoop direct children (one-level inclusive totals)", frame.EditorLoopContributors, 8);
-            AppendContributors(report, "  Wait/present self-time markers", frame.WaitContributors, 8);
+            AppendContributors(report, "  Specific present/frame-pacing self-time markers", frame.WaitContributors, 8);
+            AppendContributors(report, "  Generic synchronization evidence", frame.GenericSynchronizationContributors, 8);
+            if (frame.GenericSynchronizationContributors.Count > 0)
+            {
+                report.AppendLine("    Inspect Timeline around generic synchronization samples; the analyzer does not infer which thread or resource was awaited.");
+            }
             AppendContributors(report, "  Render Thread direct children", frame.RenderThreadContributors, 8);
-            AppendContributors(report, "  Other significant threads", frame.OtherThreads, 8);
+            AppendContributors(report, "  Other thread frame-span metadata (not active work)", frame.OtherThreads, 8);
             report.AppendLine("  Rustline custom markers (summed inclusive occurrences):");
             foreach (string markerName in customMarkerNames)
             {
@@ -620,13 +729,13 @@ namespace Rustline.Editor.Diagnostics
                 case SpikeClassification.ProfilerOverhead:
                     return $"Profiler collection self-time evidence {FormatMs(frame.ProfilerOverheadMs)} dominated; the capture may be perturbing the frame.";
                 case SpikeClassification.PresentWait:
-                    return $"Wait/present self-time evidence {FormatMs(frame.PresentWaitMs)} dominated the main thread.";
+                    return $"Specific present/frame-pacing self-time evidence {FormatMs(frame.PresentWaitMs)} dominated the main thread.";
                 case SpikeClassification.EditorLoop:
                     return $"Conservative Editor-only estimate {FormatMs(frame.EditorOnlyMs)} dominated while PlayerLoop was {FormatMs(frame.PlayerLoopMs)}.";
                 case SpikeClassification.PlayerLoopCpu:
                     return $"PlayerLoop {FormatMs(frame.PlayerLoopMs)} dominated and no more specific captured category met the dominant threshold.";
                 case SpikeClassification.RenderThread:
-                    return $"Render Thread duration {FormatMs(frame.RenderThreadMs)} was large relative to Main Thread {FormatMs(frame.MainThreadMs)}, with no dominant main-thread category.";
+                    return $"Derived Render Thread active work {FormatMs(frame.RenderThreadActiveWorkMs)} was large relative to Main Thread {FormatMs(frame.MainThreadMs)}, with no dominant main-thread category.";
                 case SpikeClassification.Mixed:
                     return "At least two documented evidence groups were significant; the capture does not support a single dominant cause.";
                 default:
@@ -650,8 +759,9 @@ namespace Rustline.Editor.Diagnostics
                 case SpikeClassification.EditorLoop:
                     return "Open the reported frame indices in CPU Timeline and expand the dominant EditorLoop children. Correlate asset import, Inspector/UI repaint, compilation, and Editor callbacks before considering runtime changes.";
                 case SpikeClassification.PresentWait:
+                    return "Inspect the exact present or frame-pacing marker in Timeline, then cross-check a Development Player. A present wait or WaitForTargetFPS sample does not by itself prove GPU saturation.";
                 case SpikeClassification.RenderThread:
-                    return "Cross-check the same scenario in a Development Player and inspect CPU Timeline plus GPU Usage if supported. Present/driver waits can correlate with, but do not by themselves prove, GPU saturation.";
+                    return "Inspect RenderLoop and its non-present children in Timeline, then cross-check the same scenario in a Development Player and GPU Usage if supported.";
                 case SpikeClassification.Gc:
                     return "Repeat a short capture with GC allocation call stacks enabled, then inspect the reported GC.Alloc/GC.Collect frames. Keep Deep Profile off unless the call stacks are still insufficient.";
                 case SpikeClassification.RustlineScript:

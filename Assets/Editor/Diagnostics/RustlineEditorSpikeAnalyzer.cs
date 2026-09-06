@@ -20,6 +20,7 @@ namespace Rustline.Editor.Diagnostics
         private const int MaximumThreadIndices = 256;
         private const int DetailedFrameCount = 10;
         private const double RelevantWorkerThreadMs = 1.0;
+        private const double ReportableSynchronizationMs = 0.1;
 
         public static readonly string[] RustlineMarkerNames =
         {
@@ -278,10 +279,17 @@ namespace Rustline.Editor.Diagnostics
                     frame.ProfilerOverheadMs += pair.Value;
                 }
 
-                if (IsPresentWaitSample(pair.Key))
+                if (RustlineEditorSpikeAnalysis.IsPresentWaitSample(pair.Key))
                 {
                     frame.PresentWaitMs += pair.Value;
                     frame.WaitContributors.Add(new SpikeContributor(pair.Key, pair.Value));
+                }
+
+                if (RustlineEditorSpikeAnalysis.IsGenericSynchronizationSample(pair.Key)
+                    && pair.Value >= ReportableSynchronizationMs)
+                {
+                    frame.GenericSynchronizationContributors.Add(
+                        new SpikeContributor($"Main Thread: {pair.Key}", pair.Value));
                 }
 
                 if (pair.Key.StartsWith("Rustline.", StringComparison.Ordinal))
@@ -318,10 +326,30 @@ namespace Rustline.Editor.Diagnostics
                     string threadName = string.IsNullOrEmpty(raw.threadName)
                         ? $"Thread {threadIndex}"
                         : raw.threadName;
-                    if (threadName.IndexOf("Render Thread", StringComparison.OrdinalIgnoreCase) >= 0)
+                    bool isRenderThread =
+                        threadName.IndexOf("Render Thread", StringComparison.OrdinalIgnoreCase) >= 0
+                        || threadName.IndexOf("RenderThread", StringComparison.OrdinalIgnoreCase) >= 0;
+                    if (isRenderThread)
                     {
-                        frame.RenderThreadMs = Math.Max(frame.RenderThreadMs, raw.frameTimeMs);
+                        frame.RenderThreadFrameSpanMs = Math.Max(
+                            frame.RenderThreadFrameSpanMs,
+                            raw.frameTimeMs);
                         SpikeSampleNode renderRoot = ReadSampleTree(raw, null);
+                        AddOtherThreadWaitEvidence(frame, renderRoot, threadName);
+                        if (RustlineEditorSpikeAnalysis.TryDeriveRenderThreadActiveWork(
+                                renderRoot,
+                                out double renderLoopMs,
+                                out double presentFrameMs,
+                                out double activeWorkMs)
+                            && (!frame.RenderThreadActiveWorkAvailable
+                                || activeWorkMs > frame.RenderThreadActiveWorkMs))
+                        {
+                            frame.RenderThreadActiveWorkAvailable = true;
+                            frame.RenderThreadActiveWorkMs = activeWorkMs;
+                            frame.RenderLoopMs = renderLoopMs;
+                            frame.RenderPresentFrameMs = presentFrameMs;
+                        }
+
                         SpikeSampleNode renderContributorRoot = renderRoot != null
                             && renderRoot.Children.Count == 1
                                 ? renderRoot.Children[0]
@@ -332,11 +360,19 @@ namespace Rustline.Editor.Diagnostics
                     else if (raw.frameTimeMs >= RelevantWorkerThreadMs)
                     {
                         frame.OtherThreads.Add(new SpikeContributor(threadName, raw.frameTimeMs));
+                        AddOtherThreadWaitEvidence(
+                            frame,
+                            ReadSampleTree(raw, null),
+                            threadName);
                     }
                 }
             }
 
             frame.RenderThreadContributors.Sort((left, right) =>
+                right.Milliseconds.CompareTo(left.Milliseconds));
+            frame.WaitContributors.Sort((left, right) =>
+                right.Milliseconds.CompareTo(left.Milliseconds));
+            frame.GenericSynchronizationContributors.Sort((left, right) =>
                 right.Milliseconds.CompareTo(left.Milliseconds));
             frame.OtherThreads.Sort((left, right) =>
                 right.Milliseconds.CompareTo(left.Milliseconds));
@@ -349,12 +385,13 @@ namespace Rustline.Editor.Diagnostics
                     frame.MainThreadMs,
                     frame.EditorOnlyMs,
                     frame.PlayerLoopMs,
-                    frame.RenderThreadMs,
+                    frame.RenderThreadActiveWorkMs,
                     frame.PresentWaitMs,
                     frame.GcTimeMs,
                     frame.Physics2DTimeMs,
                     frame.RustlineTimeMs,
-                    frame.ProfilerOverheadMs));
+                    frame.ProfilerOverheadMs,
+                    frame.RenderThreadActiveWorkAvailable));
         }
 
         private static bool ContainsNamedSample(SpikeSampleNode node, string sampleName)
@@ -416,12 +453,34 @@ namespace Rustline.Editor.Diagnostics
                 || sampleName.IndexOf("ProfileEditor", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private static bool IsPresentWaitSample(string sampleName)
+        private static void AddOtherThreadWaitEvidence(
+            SpikeFrameSummary frame,
+            SpikeSampleNode root,
+            string threadName)
         {
-            return sampleName.IndexOf("WaitForPresent", StringComparison.OrdinalIgnoreCase) >= 0
-                || sampleName.IndexOf("WaitForTargetFPS", StringComparison.OrdinalIgnoreCase) >= 0
-                || sampleName.IndexOf("PresentFrame", StringComparison.OrdinalIgnoreCase) >= 0
-                || sampleName.IndexOf("Semaphore.WaitForSignal", StringComparison.OrdinalIgnoreCase) >= 0;
+            Dictionary<string, double> selfTimes =
+                RustlineEditorSpikeAnalysis.AggregateSelfTimes(root);
+            foreach (KeyValuePair<string, double> pair in selfTimes)
+            {
+                if (pair.Value < ReportableSynchronizationMs)
+                {
+                    continue;
+                }
+
+                if (RustlineEditorSpikeAnalysis.IsPresentWaitSample(pair.Key))
+                {
+                    // Keep other-thread present evidence visible without adding overlapping
+                    // thread time to the main-thread PresentWait classification input.
+                    frame.WaitContributors.Add(
+                        new SpikeContributor($"{threadName}: {pair.Key}", pair.Value));
+                }
+
+                if (RustlineEditorSpikeAnalysis.IsGenericSynchronizationSample(pair.Key))
+                {
+                    frame.GenericSynchronizationContributors.Add(
+                        new SpikeContributor($"{threadName}: {pair.Key}", pair.Value));
+                }
+            }
         }
 
         private static SpikeReportContext CreateReportContext(IReadOnlyList<int> frameIndices)

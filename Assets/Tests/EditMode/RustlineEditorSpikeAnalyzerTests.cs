@@ -105,13 +105,102 @@ namespace Rustline.Tests
         {
             Assert.That(Classify(editor: 9.0), Is.EqualTo(SpikeClassification.EditorLoop));
             Assert.That(Classify(player: 9.0), Is.EqualTo(SpikeClassification.PlayerLoopCpu));
-            Assert.That(Classify(render: 16.0), Is.EqualTo(SpikeClassification.RenderThread));
+            Assert.That(
+                Classify(render: 16.0, hasRenderEvidence: true),
+                Is.EqualTo(SpikeClassification.RenderThread));
             Assert.That(
                 Classify(editor: 5.0, player: 6.0),
                 Is.EqualTo(SpikeClassification.Mixed));
             Assert.That(
                 Classify(gc: 5.0, physics: 5.0),
                 Is.EqualTo(SpikeClassification.Mixed));
+        }
+
+        [Test]
+        public void SemaphoreWait_IsGenericSynchronizationAndNeverPresentEvidence()
+        {
+            const string sampleName = "Semaphore.WaitForSignal";
+            SpikeFrameSummary frame = Frame(5, 20.0);
+            frame.GenericSynchronizationContributors.Add(
+                new SpikeContributor($"Main Thread: {sampleName}", 18.0));
+
+            Assert.That(
+                RustlineEditorSpikeAnalysis.IsPresentWaitSample(sampleName),
+                Is.False);
+            Assert.That(
+                RustlineEditorSpikeAnalysis.IsGenericSynchronizationSample(sampleName),
+                Is.True);
+            Assert.That(
+                Classify(),
+                Is.EqualTo(SpikeClassification.Unclassified));
+            Assert.That(
+                frame.GenericSynchronizationContributors[0].Milliseconds,
+                Is.EqualTo(18.0));
+        }
+
+        [Test]
+        public void GenuinePresentMarkers_RemainPresentEvidence()
+        {
+            Assert.That(
+                RustlineEditorSpikeAnalysis.IsPresentWaitSample(
+                    "Gfx.WaitForPresentOnGfxThread"),
+                Is.True);
+            Assert.That(
+                RustlineEditorSpikeAnalysis.IsPresentWaitSample(
+                    "GraphicsAPI.WaitForLastPresent"),
+                Is.True);
+            Assert.That(
+                Classify(present: 8.0),
+                Is.EqualTo(SpikeClassification.PresentWait));
+        }
+
+        [Test]
+        public void RenderThreadFrameSpanAlone_CannotTriggerRenderClassification()
+        {
+            SpikeFrameSummary frame = Frame(7, 20.0);
+            frame.RenderThreadFrameSpanMs = 100.0;
+            SpikeSampleNode thread = new SpikeSampleNode("Render Thread", 100.0);
+            SpikeSampleNode renderLoop = new SpikeSampleNode("RenderLoop", 80.0);
+            renderLoop.Children.Add(new SpikeSampleNode("RenderPipeline.Draw", 80.0));
+            thread.Children.Add(renderLoop);
+
+            bool available = RustlineEditorSpikeAnalysis.TryDeriveRenderThreadActiveWork(
+                thread,
+                out _,
+                out _,
+                out double activeWorkMs);
+
+            Assert.That(available, Is.False);
+            Assert.That(activeWorkMs, Is.Zero);
+            Assert.That(
+                Classify(
+                    render: frame.RenderThreadFrameSpanMs,
+                    hasRenderEvidence: available),
+                Is.EqualTo(SpikeClassification.Unclassified));
+        }
+
+        [Test]
+        public void RenderThreadHierarchy_CanDeriveQualifyingActiveWork()
+        {
+            SpikeSampleNode thread = new SpikeSampleNode("Render Thread", 30.0);
+            SpikeSampleNode renderLoop = new SpikeSampleNode("RenderLoop", 20.0);
+            renderLoop.Children.Add(new SpikeSampleNode("RenderPipeline.Draw", 16.0));
+            renderLoop.Children.Add(new SpikeSampleNode("Gfx.PresentFrame", 4.0));
+            thread.Children.Add(renderLoop);
+
+            bool available = RustlineEditorSpikeAnalysis.TryDeriveRenderThreadActiveWork(
+                thread,
+                out double renderLoopMs,
+                out double presentFrameMs,
+                out double activeWorkMs);
+
+            Assert.That(available, Is.True);
+            Assert.That(renderLoopMs, Is.EqualTo(20.0));
+            Assert.That(presentFrameMs, Is.EqualTo(4.0));
+            Assert.That(activeWorkMs, Is.EqualTo(16.0));
+            Assert.That(
+                Classify(render: activeWorkMs, hasRenderEvidence: available),
+                Is.EqualTo(SpikeClassification.RenderThread));
         }
 
         [Test]
@@ -122,6 +211,9 @@ namespace Rustline.Tests
             frame.PlayerLoopMs = 10.0;
             frame.EditorOnlyMs = 6.0;
             frame.RustlineMarkers["Rustline.Player.Aim"] = 0.125;
+            frame.RenderThreadFrameSpanMs = 80.0;
+            frame.GenericSynchronizationContributors.Add(
+                new SpikeContributor("Render Thread: Semaphore.WaitForSignal", 12.0));
             frame.Classification = SpikeClassification.Mixed;
 
             string report = RustlineEditorSpikeAnalysis.BuildReport(
@@ -140,7 +232,11 @@ namespace Rustline.Tests
             Assert.That(report, Does.Contain("Rustline.Player.Aim: 0.125 ms"));
             Assert.That(report, Does.Contain("Rustline.Player.Motor: missing/not recorded"));
             Assert.That(report, Does.Contain("Editor-only*"));
-            Assert.That(report, Does.Contain("thread durations overlap"));
+            Assert.That(report, Does.Contain("Semaphore.WaitForSignal: 12.000 ms"));
+            Assert.That(report, Does.Contain("generic synchronization samples"));
+            Assert.That(report, Does.Contain("does not infer which thread or resource was awaited"));
+            Assert.That(report, Does.Contain("frame-span metadata: 80.000 ms"));
+            Assert.That(report, Does.Contain("Derived Render Thread active work: unavailable"));
         }
 
         private static SpikeFrameSummary Frame(int index, double mainThreadMs)
@@ -156,8 +252,10 @@ namespace Rustline.Tests
             double editor = 0.0,
             double player = 0.0,
             double render = 0.0,
+            double present = 0.0,
             double gc = 0.0,
-            double physics = 0.0)
+            double physics = 0.0,
+            bool hasRenderEvidence = false)
         {
             return RustlineEditorSpikeAnalysis.Classify(
                 new SpikeClassificationInput(
@@ -165,11 +263,12 @@ namespace Rustline.Tests
                     editor,
                     player,
                     render,
-                    0.0,
+                    present,
                     gc,
                     physics,
                     0.0,
-                    0.0));
+                    0.0,
+                    hasRenderEvidence));
         }
     }
 }
