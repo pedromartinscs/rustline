@@ -42,7 +42,7 @@ The material collision-data change was the gunplay range expansion:
 
 The builder updated those Tilemap cells with `SetTile` / `RefreshAllTiles` and saved the scene, but it did not explicitly run the TilemapCollider2D/Composite generation path before save/export.
 
-Unity documents that TilemapCollider2D normally processes Tilemap collider changes during **LateUpdate**; `ProcessTilemapChanges()` is the API for immediate processing. Therefore Editor Play Mode can naturally hide a stale-build-state problem by giving the Tilemap collider its normal update cycle before inspection. The repository alone cannot prove Unity's internal Player exporter behavior, so do not describe that internal mechanism as established fact. What *is* established is that build output was allowed to depend on unvalidated collider-generation timing after authored Tilemap changes. citeturn428900search9turn228858search1
+Unity's TilemapCollider2D documentation states that collider changes are normally processed during **LateUpdate** and that `ProcessTilemapChanges()` is the immediate-processing API. Editor Play Mode can therefore process pending collider work before a human inspects the scene. The repository alone does **not** prove Unity's internal Player-export mechanism, so that exporter behavior is not treated as established fact here. What is established from the source history is that authored collision cells were changed and saved without an explicit collider/composite bake or a build-time non-empty-geometry gate.
 
 ## Current deterministic contract
 
@@ -73,7 +73,7 @@ The builder/validator must reject empty geometry.
 
 ### Player-build bake and fail-closed guard
 
-`ReleaseCollisionBuildGuard : IProcessSceneWithReport` runs on the actual Scene copy Unity is processing for a Player build. Unity's build API explicitly provides this per-scene callback during Player builds. citeturn415328search0
+`ReleaseCollisionBuildGuard : IProcessSceneWithReport` runs on the Scene instance Unity passes through its per-scene Player-build processing callback. The guard is Editor-only and does not become runtime gameplay code.
 
 For every `TilemapCompositeColliderInitializer2D` it:
 

@@ -71,6 +71,11 @@ namespace Rustline.Editor
                     $"'{scene.path}' on '{initializer.gameObject.name}'. The Player build was " +
                     "aborted instead of shipping a floor-through regression.");
             }
+
+            Debug.Log(
+                $"RUSTLINE_RELEASE_COLLISION_BAKED scene='{scene.path}' object='{initializer.gameObject.name}' " +
+                $"tilemapShapes={tilemapCollider.shapeCount} compositePaths={composite.pathCount} " +
+                $"compositePoints={composite.pointCount}");
         }
     }
 }
