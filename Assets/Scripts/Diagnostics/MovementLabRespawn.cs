@@ -1,4 +1,5 @@
 using Rustline.Gameplay.Player;
+using Rustline.Gameplay.Weapons;
 using UnityEngine;
 
 namespace Rustline.Diagnostics
@@ -11,11 +12,13 @@ namespace Rustline.Diagnostics
 
         private Rigidbody2D _body;
         private PlayerMotor2D _motor;
+        private PlayerWeaponController2D _weapon;
 
         private void Awake()
         {
             _body = GetComponent<Rigidbody2D>();
             _motor = GetComponent<PlayerMotor2D>();
+            _weapon = GetComponent<PlayerWeaponController2D>();
         }
 
         private void FixedUpdate()
@@ -28,6 +31,7 @@ namespace Rustline.Diagnostics
             _body.position = spawnPoint.position;
             _body.rotation = 0f;
             _motor.ResetAfterRespawn();
+            _weapon?.ResetTransientState();
         }
     }
 }

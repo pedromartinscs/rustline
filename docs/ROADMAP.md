@@ -81,7 +81,7 @@ See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the production contract.
 - [ ] Author carry-only weapon presentation for Jump / Land / Roll as those states exist
 - [x] Mirror the authored right-facing set for the left hemisphere
 - [x] Keep gameplay aim continuous while visual aim selects the nearest authored direction
-- [ ] Disable firing during Jump / Land / Roll; allow aiming/firing in Idle / Run / Fall
+- [x] Gate first-pass firing to authored Idle / Run / Backpedal presentation; block Jump / Fall / Land / crouch / wall states
 - [ ] Validate the sheet/import/runtime convention before scaling the art pipeline to the remaining arsenal
 
 ### M2C — Gunplay systems
@@ -89,13 +89,16 @@ See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the production contract.
 - [x] Mouse aiming
 - [ ] Gamepad aiming
 - [x] Horizontal player facing based on aim direction
-- [ ] Primary weapon implementation
-- [ ] Projectile and/or hitscan abstraction
-- [ ] Fire rate / reload
+- [x] Primary Longwatch DMR firing
+- [x] Continuous-aim Longwatch hitscan and first-obstruction resolution
+- [x] Semi-automatic fire-rate gate
+- [ ] Reload
 - [ ] Recoil
 - [ ] Muzzle flash
-- [ ] Impact feedback
+- [x] Prototype target impact feedback
 - [ ] Camera feedback where appropriate
+
+The first gunplay slice uses mouse-left primary fire, a config-driven `0.25 s` shot interval, `80` unit range, and `40` prototype damage. Hitscan uses `PlayerAim2D.ContinuousAimDirection`, never the quantized Longwatch visual pose, and resolves the nearest Ground or CombatTarget hit through an explicit allocation-free query. MovementLab supplies clear, angled, and Ground-occluded diagnostic targets plus a reused prototype trace and target flash. Ammo, reload, production recoil/muzzle/impact art, combat audio, gamepad aim, inventory, enemy health/death, and unsupported-state Longwatch art remain pending.
 
 **Exit criterion:** shooting targets while moving feels deliberate and responsive, and the authored directional weapon presentation remains visually coherent across locomotion/facing changes.
 

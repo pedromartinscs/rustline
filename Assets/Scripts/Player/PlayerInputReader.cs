@@ -10,15 +10,19 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string moveActionName = "Move";
         [SerializeField] private string jumpActionName = "Jump";
         [SerializeField] private string crouchActionName = "Crouch";
+        [SerializeField] private string fireActionName = "Fire";
         [SerializeField] private string pointerPositionActionName = "PointerPosition";
 
         private InputActionMap _actionMap;
         private InputAction _moveAction;
         private InputAction _jumpAction;
         private InputAction _crouchAction;
+        private InputAction _fireAction;
         private InputAction _pointerPositionAction;
         private bool _jumpPressed;
         private bool _jumpReleased;
+        private bool _firePressed;
+        private bool _fireHeld;
 
         public float MoveX { get; private set; }
         public bool JumpHeld { get; private set; }
@@ -39,6 +43,8 @@ namespace Rustline.Gameplay.Player
             _jumpAction.canceled += OnJumpCanceled;
             _crouchAction.performed += OnCrouch;
             _crouchAction.canceled += OnCrouch;
+            _fireAction.performed += OnFirePerformed;
+            _fireAction.canceled += OnFireCanceled;
             _pointerPositionAction.performed += OnPointerPosition;
             _pointerPositionAction.canceled += OnPointerPosition;
             _actionMap.Enable();
@@ -55,6 +61,8 @@ namespace Rustline.Gameplay.Player
                 _jumpAction.canceled -= OnJumpCanceled;
                 _crouchAction.performed -= OnCrouch;
                 _crouchAction.canceled -= OnCrouch;
+                _fireAction.performed -= OnFirePerformed;
+                _fireAction.canceled -= OnFireCanceled;
                 _pointerPositionAction.performed -= OnPointerPosition;
                 _pointerPositionAction.canceled -= OnPointerPosition;
                 _actionMap.Disable();
@@ -64,6 +72,7 @@ namespace Rustline.Gameplay.Player
             MoveX = 0f;
             JumpHeld = false;
             CrouchHeld = false;
+            _fireHeld = false;
         }
 
         public bool ConsumeJumpPressed()
@@ -80,10 +89,18 @@ namespace Rustline.Gameplay.Player
             return value;
         }
 
+        public bool ConsumeFirePressed()
+        {
+            bool value = _firePressed;
+            _firePressed = false;
+            return value;
+        }
+
         public void ClearTransientState()
         {
             _jumpPressed = false;
             _jumpReleased = false;
+            _firePressed = false;
         }
 
         private void ResolveActions()
@@ -92,13 +109,14 @@ namespace Rustline.Gameplay.Player
             _moveAction = _actionMap?.FindAction(moveActionName, false);
             _jumpAction = _actionMap?.FindAction(jumpActionName, false);
             _crouchAction = _actionMap?.FindAction(crouchActionName, false);
+            _fireAction = _actionMap?.FindAction(fireActionName, false);
             _pointerPositionAction = _actionMap?.FindAction(pointerPositionActionName, false);
 
             if (_actionMap == null || _moveAction == null || _jumpAction == null || _crouchAction == null ||
-                _pointerPositionAction == null)
+                _fireAction == null || _pointerPositionAction == null)
             {
                 Debug.LogError(
-                    "Rustline player input requires Player/Move, Player/Jump, Player/Crouch, and Player/PointerPosition actions.",
+                    "Rustline player input requires Player/Move, Player/Jump, Player/Crouch, Player/Fire, and Player/PointerPosition actions.",
                     this);
                 _actionMap = null;
             }
@@ -128,6 +146,21 @@ namespace Rustline.Gameplay.Player
         private void OnCrouch(InputAction.CallbackContext context)
         {
             CrouchHeld = context.ReadValueAsButton();
+        }
+
+        private void OnFirePerformed(InputAction.CallbackContext context)
+        {
+            if (!_fireHeld)
+            {
+                _firePressed = true;
+            }
+
+            _fireHeld = true;
+        }
+
+        private void OnFireCanceled(InputAction.CallbackContext context)
+        {
+            _fireHeld = false;
         }
 
         private void OnPointerPosition(InputAction.CallbackContext context)

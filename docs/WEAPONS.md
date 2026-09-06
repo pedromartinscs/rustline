@@ -90,6 +90,9 @@ Current production status:
 - right-facing Backpedal is authored at all 19 angles with exactly four `80×96` frames in each `320×96` sheet;
 - runtime Backpedal integration uses the same sole Body Animator clock, with a 4 units/s grounded cap versus 7 units/s forward;
 - generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
+- mouse-left primary fire now drives a semi-automatic Longwatch hitscan from the exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
+- firing is currently allowed only during Idle, Run, and Backpedal, where authored Longwatch presentation exists; Jump, Fall, Land, crouch, Wall Brace, and Wall Kick are deliberately blocked pending appropriate art;
+- MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short-lived one-source-pixel trace, and target hit flash feedback;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
 - Fall aim and Jump/Land/Roll carry art remain deferred.
@@ -104,7 +107,7 @@ This staged validation is intentional. Do not multiply an unproven art/runtime c
 - Strong silhouettes matter more than micro-detail.
 - Weapons within a family should share visual language without becoming silhouette clones.
 - A weapon is not considered production-ready merely because a standalone gun sprite exists; its player presentation package must follow the discrete aim/carry system in `PLAYER_WEAPON_ART.md`.
-- Muzzle, casing-ejection, projectile, reload, and impact metadata/effects may be added when the first weapon gameplay implementation begins; they are not prerequisites for validating the Idle armed-presentation pipeline.
+- Exact per-frame/per-direction muzzle metadata, production muzzle flash, casing ejection, projectiles, reload, audio, recoil, and production impact effects remain deferred. The first hitscan and its temporary trace originate at `AimOriginWorld` rather than pretending authored muzzle metadata exists.
 
 ## Initial production order
 
@@ -115,9 +118,10 @@ Do not generate all twenty complete weapon packages before validating the pipeli
 3. Produce its right-facing 19-direction Idle presentation. **Done.**
 4. Validate import, pivot, 360° mirrored visual aim, animation synchronization, and armed presenter ownership in Unity. **Automated Idle validation done.**
 5. Expand the accepted Longwatch contract to Run. **Authored, integrated, and human-approved.**
-6. Expand the accepted Longwatch contract to four-frame Backpedal. **Authored and integrated; human visual approval pending.**
-7. Expand to Fall aim and non-firing carry states after the current visual gate.
-8. Freeze the reusable weapon art/import/runtime convention.
-9. Expand into the remaining roster in controlled batches.
+6. Expand the accepted Longwatch contract to four-frame Backpedal. **Authored, integrated, and human-approved.**
+7. Validate the first real semi-automatic continuous-aim hitscan against diagnostic targets. **Implemented in MovementLab.**
+8. Expand to Fall aim and non-firing carry states after the current visual gate.
+9. Freeze the reusable weapon art/import/runtime convention.
+10. Expand into the remaining roster in controlled batches.
 
 A long weapon remains the correct first stress test because angular, clipping, hand-placement, and pivot errors are easier to see than with a compact pistol.

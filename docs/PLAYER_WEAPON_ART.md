@@ -292,15 +292,15 @@ The Longwatch Idle, Run, and Backpedal packages are authored, deterministically 
 
 The current artistic/gameplay direction deliberately distinguishes locomotion states.
 
-### Aim-capable and fire-capable
+### Current first-shot fire-capable states
 
 - Idle
 - Run
 - Backpedal
-- Fall
-- Crouch Idle / Crouch Move (future authored packages)
 
 These states use the full 19-direction authored aim set for the equipped weapon.
+
+Fall and Crouch Idle / Crouch Move remain intended future aim/fire-capable states, but firing is temporarily blocked until their authored Longwatch packages exist.
 
 ### Weapon visible, but no aim/fire pose set
 
@@ -417,7 +417,7 @@ While locomotion presentation is Idle, Run, or Backpedal, the Longwatch presente
 
 Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, Land, Crouch Idle, or Crouch Move the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch uses explicit Idle/Run Body fallback states pending authored art. Wall brace/kick use Fall/Jump fallback and are modeled as future non-firing states. These fallbacks are intentional until the corresponding authored packages exist.
 
-Mouse/pointer is the only armed-aim acceptance input in this pass. Firing, Fall armed aim, carry states, gamepad aim, inventory, and all weapon gameplay remain deferred.
+Mouse/pointer remains the only armed-aim input. Mouse-left now fires the first semi-automatic Longwatch hitscan during Idle, Run, and Backpedal. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Prototype trace feedback begins at `AimOriginWorld` because exact muzzle metadata is not yet authored. Fall armed aim, carry states, crouch armed art, gamepad aim, ammo/reload, inventory, production recoil/muzzle effects, and enemy health remain deferred.
 
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 

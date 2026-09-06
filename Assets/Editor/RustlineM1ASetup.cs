@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using Rustline.Diagnostics;
 using Rustline.Gameplay.Player;
+using Rustline.Gameplay.Weapons;
 using Rustline.Physics;
 using Rustline.Presentation;
 using UnityEditor;
@@ -26,6 +27,7 @@ namespace Rustline.Editor
         private const string ScenePath = "Assets/Scenes/MovementLab.unity";
         private const string ArtShowcasePath = "Assets/Scenes/ArtShowcase.unity";
         private const string ConfigPath = "Assets/Config/Player/PlayerMovementConfig.asset";
+        private const string LongwatchDefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
         private const string PhysicsMaterialPath = "Assets/Config/Player/PlayerFrictionless.physicsMaterial2D";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string JumpDustSpritePath = "Assets/Art/Effects/Movement/player_jump_dust.png";
@@ -67,6 +69,9 @@ namespace Rustline.Editor
             new CourseBlock(92, 0, 1, 8),
             new CourseBlock(93, -5, 7, 3),
             new CourseBlock(100, 0, 12, 8),
+            // Longwatch firing range floor and a full-height Ground occluder.
+            new CourseBlock(112, 0, 60, 4),
+            new CourseBlock(150, 5, 1, 5),
         };
 
         private static readonly DiagnosticLabel[] DiagnosticLabels =
@@ -89,6 +94,15 @@ namespace Rustline.Editor
                 new Color32(253, 208, 69, 255)),
             new DiagnosticLabel("WALL BRACE / KICK SHAFT", new Vector3(96.5f, 2f, -0.2f), 0.09f,
                 new Color32(32, 237, 229, 255)),
+            new DiagnosticLabel("LONGWATCH FIRING RANGE", new Vector3(140f, 8f, -0.2f), 0.11f,
+                new Color32(254, 212, 55, 255)),
+        };
+
+        private static readonly CombatTargetSpec[] CombatTargets =
+        {
+            new CombatTargetSpec("Target - Clear Horizontal", new Vector3(124f, 2.125f, -0.1f)),
+            new CombatTargetSpec("Target - Continuous +7 Degrees", new Vector3(138f, 3.1f, -0.1f)),
+            new CombatTargetSpec("Target - Occluded By Ground", new Vector3(156f, 2.125f, -0.1f)),
         };
 
         private static readonly string[] LongwatchDirectionSuffixes =
@@ -135,6 +149,18 @@ namespace Rustline.Editor
             internal Color Color { get; }
         }
 
+        private readonly struct CombatTargetSpec
+        {
+            internal CombatTargetSpec(string name, Vector3 position)
+            {
+                Name = name;
+                Position = position;
+            }
+
+            internal string Name { get; }
+            internal Vector3 Position { get; }
+        }
+
         [MenuItem("Tools/Rustline/Rebuild M1A Movement Lab")]
         public static void RebuildFromMenu()
         {
@@ -174,24 +200,34 @@ namespace Rustline.Editor
         private static void BuildAndValidate()
         {
             EnsureFolder("Assets/Config/Player");
+            EnsureFolder("Assets/Config/Weapons");
             EnsureFolder("Assets/Prefabs/Player");
             EnsureFolder("Assets/Prefabs/Effects/Movement");
             int groundLayer = EnsureGroundLayer();
+            int combatTargetLayer = EnsureLayer("CombatTarget", 7);
             ConfigureRenderer2DDefaultMaterial();
 
             PlayerMovementConfig config = CreateConfig();
+            WeaponDefinition2D longwatchDefinition = CreateLongwatchDefinition();
             PhysicsMaterial2D physicsMaterial = CreatePhysicsMaterial();
             AnimatorController controller = CreateGameplayController();
             Tile collisionTile = CreateCollisionTile();
             PlayerJumpDustFx2D jumpDustPrefab = CreateJumpDustPrefab();
-            GameObject prefab = CreatePlayerPrefab(config, physicsMaterial, controller, jumpDustPrefab, groundLayer);
+            GameObject prefab = CreatePlayerPrefab(
+                config,
+                longwatchDefinition,
+                physicsMaterial,
+                controller,
+                jumpDustPrefab,
+                groundLayer,
+                combatTargetLayer);
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
             {
-                CreateMovementLab(config, prefab, collisionTile, groundLayer);
+                CreateMovementLab(config, prefab, collisionTile, groundLayer, combatTargetLayer);
             }
             else
             {
-                SynchronizeMovementLabCourse(collisionTile);
+                SynchronizeMovementLabCourse(collisionTile, combatTargetLayer);
             }
             WireMovementLabLongwatchPresentation();
             ConfigureMovementLabIdentityUnlitRendering();
@@ -213,6 +249,28 @@ namespace Rustline.Editor
 
             EditorUtility.SetDirty(config);
             return config;
+        }
+
+        private static WeaponDefinition2D CreateLongwatchDefinition()
+        {
+            WeaponDefinition2D definition = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
+            if (definition == null)
+            {
+                definition = ScriptableObject.CreateInstance<WeaponDefinition2D>();
+                definition.name = "Longwatch DMR";
+                AssetDatabase.CreateAsset(definition, LongwatchDefinitionPath);
+            }
+
+            SerializedObject serialized = new SerializedObject(definition);
+            serialized.FindProperty("weaponId").stringValue = "longwatch_dmr";
+            serialized.FindProperty("displayName").stringValue = "Longwatch DMR";
+            serialized.FindProperty("fireMode").enumValueIndex = (int)WeaponFireMode2D.SemiAutomatic;
+            serialized.FindProperty("shotInterval").floatValue = 0.25f;
+            serialized.FindProperty("range").floatValue = 80f;
+            serialized.FindProperty("damage").intValue = 40;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            return definition;
         }
 
         private static PhysicsMaterial2D CreatePhysicsMaterial()
@@ -303,10 +361,12 @@ namespace Rustline.Editor
 
         private static GameObject CreatePlayerPrefab(
             PlayerMovementConfig config,
+            WeaponDefinition2D longwatchDefinition,
             PhysicsMaterial2D physicsMaterial,
             RuntimeAnimatorController controller,
             PlayerJumpDustFx2D jumpDustPrefab,
-            int groundLayer)
+            int groundLayer,
+            int combatTargetLayer)
         {
             InputActionAsset inputActions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
             Require(inputActions != null, "Input action asset is missing: " + InputPath);
@@ -358,6 +418,7 @@ namespace Rustline.Editor
 
                 PlayerInputReader input = GetOrAddComponent<PlayerInputReader>(root);
                 SetObjectReference(input, "inputActions", inputActions);
+                SetString(input, "fireActionName", "Fire");
                 PlayerGroundProbe2D probe = GetOrAddComponent<PlayerGroundProbe2D>(root);
                 SetObjectReference(probe, "config", config);
                 SetInteger(probe, "groundLayers", 1 << groundLayer);
@@ -438,6 +499,25 @@ namespace Rustline.Editor
                     longwatchRunFrames,
                     bodyBackpedalFrames,
                     longwatchBackpedalFrames);
+
+                GameObject traceObject = GetOrCreateChild(root.transform, "Prototype Longwatch Shot Trace");
+                LineRenderer traceRenderer = GetOrAddComponent<LineRenderer>(traceObject);
+                ConfigureLineRenderer(traceRenderer, unlitMaterial, 2, true, 30);
+                traceRenderer.SetPosition(0, Vector3.zero);
+                traceRenderer.SetPosition(1, Vector3.zero);
+                traceRenderer.enabled = false;
+                PrototypeWeaponShotFeedback2D shotFeedback =
+                    GetOrAddComponent<PrototypeWeaponShotFeedback2D>(traceObject);
+                SetObjectReference(shotFeedback, "traceRenderer", traceRenderer);
+
+                PlayerWeaponController2D weaponController = GetOrAddComponent<PlayerWeaponController2D>(root);
+                SetObjectReference(weaponController, "input", input);
+                SetObjectReference(weaponController, "playerAim", playerAim);
+                SetObjectReference(weaponController, "playerAnimator", presentation);
+                SetObjectReference(weaponController, "playerMotor", motor);
+                SetObjectReference(weaponController, "weaponDefinition", longwatchDefinition);
+                SetInteger(weaponController, "hitLayers", (1 << groundLayer) | (1 << combatTargetLayer));
+                SetObjectReference(weaponController, "shotFeedback", shotFeedback);
 
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Require(prefab != null, "Failed to create the player prefab.");
@@ -726,7 +806,8 @@ namespace Rustline.Editor
             PlayerMovementConfig config,
             GameObject playerPrefab,
             TileBase collisionTile,
-            int groundLayer)
+            int groundLayer,
+            int combatTargetLayer)
         {
             RuleTile ruleTile = AssetDatabase.LoadAssetAtPath<RuleTile>(RuleTilePath);
             Require(ruleTile != null, "Accepted M0 IndustrialSurface Rule Tile is missing.");
@@ -783,11 +864,12 @@ namespace Rustline.Editor
             SetObjectReference(respawn, "spawnPoint", spawn.transform);
             SetFloat(respawn, "failureHeight", -12f);
 
+            SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
             CreateCamera(root.transform, player.transform);
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
-        private static void SynchronizeMovementLabCourse(TileBase collisionTile)
+        private static void SynchronizeMovementLabCourse(TileBase collisionTile, int combatTargetLayer)
         {
             RuleTile ruleTile = AssetDatabase.LoadAssetAtPath<RuleTile>(RuleTilePath);
             Require(ruleTile != null, "Accepted M0 IndustrialSurface Rule Tile is missing.");
@@ -803,6 +885,7 @@ namespace Rustline.Editor
             bool changed = SynchronizeTilemap(visualTilemap, courseCells, ruleTile);
             changed |= SynchronizeTilemap(collisionTilemap, courseCells, collisionTile);
             changed |= SynchronizeLabels(scene, root.transform);
+            changed |= SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
 
             if (changed)
             {
@@ -845,6 +928,170 @@ namespace Rustline.Editor
             }
 
             return changed;
+        }
+
+        private static bool SynchronizeShootingRange(
+            Scene scene,
+            Transform parent,
+            int combatTargetLayer)
+        {
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
+            GameObject rangeRoot = FindGameObject(scene, "Longwatch Shooting Range");
+            bool changed = false;
+            if (rangeRoot == null)
+            {
+                rangeRoot = new GameObject("Longwatch Shooting Range");
+                rangeRoot.transform.SetParent(parent, false);
+                changed = true;
+            }
+            else if (rangeRoot.transform.parent != parent)
+            {
+                rangeRoot.transform.SetParent(parent, false);
+                changed = true;
+            }
+
+            var retainedTargets = new HashSet<GameObject>();
+            for (int index = 0; index < CombatTargets.Length; index++)
+            {
+                CombatTargetSpec spec = CombatTargets[index];
+                Transform existing = rangeRoot.transform.Find(spec.Name);
+                GameObject target = existing != null ? existing.gameObject : new GameObject(spec.Name);
+                if (existing == null)
+                {
+                    target.transform.SetParent(rangeRoot.transform, false);
+                    changed = true;
+                }
+
+                retainedTargets.Add(target);
+                if (target.transform.position != spec.Position)
+                {
+                    target.transform.position = spec.Position;
+                    changed = true;
+                }
+                if (target.layer != combatTargetLayer)
+                {
+                    target.layer = combatTargetLayer;
+                    changed = true;
+                }
+
+                BoxCollider2D targetCollider = target.GetComponent<BoxCollider2D>();
+                if (targetCollider == null)
+                {
+                    targetCollider = target.AddComponent<BoxCollider2D>();
+                    changed = true;
+                }
+                if (!targetCollider.isTrigger)
+                {
+                    targetCollider.isTrigger = true;
+                    changed = true;
+                }
+                if (targetCollider.size != new Vector2(1f, 1.5f))
+                {
+                    targetCollider.size = new Vector2(1f, 1.5f);
+                    changed = true;
+                }
+
+                LineRenderer targetRenderer = target.GetComponent<LineRenderer>();
+                if (targetRenderer == null)
+                {
+                    targetRenderer = target.AddComponent<LineRenderer>();
+                    changed = true;
+                }
+                changed |= ConfigureLineRenderer(targetRenderer, unlitMaterial, 5, false, 20);
+                changed |= SetLinePosition(targetRenderer, 0, new Vector3(-0.5f, -0.75f));
+                changed |= SetLinePosition(targetRenderer, 1, new Vector3(0.5f, -0.75f));
+                changed |= SetLinePosition(targetRenderer, 2, new Vector3(0.5f, 0.75f));
+                changed |= SetLinePosition(targetRenderer, 3, new Vector3(-0.5f, 0.75f));
+                changed |= SetLinePosition(targetRenderer, 4, new Vector3(-0.5f, -0.75f));
+                Color targetColor = RustlinePalette.GetColor(14);
+                if (targetRenderer.startColor != targetColor || targetRenderer.endColor != targetColor)
+                {
+                    targetRenderer.startColor = targetColor;
+                    targetRenderer.endColor = targetColor;
+                    changed = true;
+                }
+                if (!targetRenderer.enabled)
+                {
+                    targetRenderer.enabled = true;
+                    changed = true;
+                }
+
+                DiagnosticCombatTarget2D receiver = target.GetComponent<DiagnosticCombatTarget2D>();
+                if (receiver == null)
+                {
+                    receiver = target.AddComponent<DiagnosticCombatTarget2D>();
+                    changed = true;
+                }
+                SetObjectReference(receiver, "targetRenderer", targetRenderer);
+            }
+
+            for (int index = rangeRoot.transform.childCount - 1; index >= 0; index--)
+            {
+                GameObject child = rangeRoot.transform.GetChild(index).gameObject;
+                if (!retainedTargets.Contains(child))
+                {
+                    UnityEngine.Object.DestroyImmediate(child);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool ConfigureLineRenderer(
+            LineRenderer renderer,
+            Material material,
+            int positionCount,
+            bool useWorldSpace,
+            int sortingOrder)
+        {
+            bool changed = false;
+            if (renderer.sharedMaterial != material)
+            {
+                renderer.sharedMaterial = material;
+                changed = true;
+            }
+            if (renderer.positionCount != positionCount)
+            {
+                renderer.positionCount = positionCount;
+                changed = true;
+            }
+            if (renderer.useWorldSpace != useWorldSpace)
+            {
+                renderer.useWorldSpace = useWorldSpace;
+                changed = true;
+            }
+            if (!Mathf.Approximately(renderer.startWidth, PrototypeWeaponShotFeedback2D.TraceWidth) ||
+                !Mathf.Approximately(renderer.endWidth, PrototypeWeaponShotFeedback2D.TraceWidth))
+            {
+                renderer.startWidth = PrototypeWeaponShotFeedback2D.TraceWidth;
+                renderer.endWidth = PrototypeWeaponShotFeedback2D.TraceWidth;
+                changed = true;
+            }
+            if (renderer.sortingOrder != sortingOrder)
+            {
+                renderer.sortingOrder = sortingOrder;
+                changed = true;
+            }
+            if (renderer.loop)
+            {
+                renderer.loop = false;
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        private static bool SetLinePosition(LineRenderer renderer, int index, Vector3 position)
+        {
+            if (renderer.GetPosition(index) == position)
+            {
+                return false;
+            }
+
+            renderer.SetPosition(index, position);
+            return true;
         }
 
         private static Tilemap CreateTilemap(Transform parent, string name, int sortingOrder)
@@ -1106,11 +1353,12 @@ namespace Rustline.Editor
             InputActionMap playerMap = input?.FindActionMap("Player", false);
             Require(input != null && input.actionMaps.Count == 1 && playerMap != null,
                 "Input asset must contain only the focused Player action map for M1A.");
-            Require(playerMap.actions.Count == 4 && playerMap.FindAction("Move", false) != null &&
+            Require(playerMap.actions.Count == 5 && playerMap.FindAction("Move", false) != null &&
                 playerMap.FindAction("Jump", false) != null &&
                 playerMap.FindAction("Crouch", false) != null &&
+                playerMap.FindAction("Fire", false) != null &&
                 playerMap.FindAction("PointerPosition", false) != null,
-                "Player input must contain Move, Jump, Crouch, and PointerPosition.");
+                "Player input must contain Move, Jump, Crouch, Fire, and PointerPosition.");
             Require(playerMap.FindAction("Move").bindings.Any(binding => binding.path == "<Gamepad>/dpad"),
                 "Move must support the gamepad D-pad.");
             Require(playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Keyboard>/space") &&
@@ -1121,6 +1369,11 @@ namespace Rustline.Editor
                 playerMap.FindAction("Crouch").bindings.Any(binding => binding.path == "<Gamepad>/dpad/down") &&
                 playerMap.FindAction("Crouch").bindings.Any(binding => binding.path == "<Gamepad>/leftStick/down"),
                 "Crouch bindings are incomplete.");
+            InputAction fire = playerMap.FindAction("Fire");
+            Require(fire.type == InputActionType.Button && fire.expectedControlType == "Button" &&
+                fire.bindings.Count == 1 && fire.bindings[0].path == "<Mouse>/leftButton" &&
+                fire.bindings[0].interactions == "Press",
+                "Fire must be a Button action bound only to mouse-left with Press semantics.");
             InputAction pointerPosition = playerMap.FindAction("PointerPosition");
             Require(pointerPosition.type == InputActionType.PassThrough &&
                 pointerPosition.expectedControlType == "Vector2" &&
@@ -1160,6 +1413,28 @@ namespace Rustline.Editor
                 "Player prefab movement components are incomplete.");
             Require(playerAnimator.PlayerAim == playerAim,
                 "Player animator must consume the generic aim-facing source.");
+            WeaponDefinition2D longwatchDefinition =
+                AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
+            string weaponReason = "asset is missing";
+            Require(longwatchDefinition != null && longwatchDefinition.IsSane(out weaponReason),
+                "Longwatch definition is missing or invalid: " + weaponReason);
+            Require(longwatchDefinition.WeaponId == "longwatch_dmr" &&
+                longwatchDefinition.DisplayName == "Longwatch DMR" &&
+                longwatchDefinition.FireMode == WeaponFireMode2D.SemiAutomatic &&
+                Mathf.Approximately(longwatchDefinition.ShotInterval, 0.25f) &&
+                Mathf.Approximately(longwatchDefinition.Range, 80f) &&
+                longwatchDefinition.Damage == 40,
+                "Longwatch prototype definition changed from semi-auto / 0.25 s / 80 u / 40 damage.");
+            PlayerWeaponController2D weaponController = prefab.GetComponent<PlayerWeaponController2D>();
+            PrototypeWeaponShotFeedback2D shotFeedback =
+                prefab.GetComponentInChildren<PrototypeWeaponShotFeedback2D>(true);
+            Require(weaponController != null && weaponController.WeaponDefinition == longwatchDefinition &&
+                weaponController.HitLayers == ((1 << 6) | (1 << 7)) &&
+                weaponController.ShotFeedback == shotFeedback && shotFeedback != null &&
+                shotFeedback.TraceRenderer != null &&
+                Mathf.Approximately(shotFeedback.TraceRenderer.startWidth, 1f / 16f) &&
+                Mathf.Approximately(shotFeedback.TraceRenderer.endWidth, 1f / 16f),
+                "Player prefab Longwatch gameplay or prototype trace wiring is incomplete.");
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Require(armsPresenter != null && armsPresenter.MappingCount == 18 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
@@ -1350,6 +1625,25 @@ namespace Rustline.Editor
                     "MovementLab must use composite Tilemap collision.");
                 Require(collider.GetComponent<TilemapCompositeColliderInitializer2D>() != null,
                     "MovementLab composite Tilemap collision must initialize geometry deterministically.");
+
+                Require(LayerMask.NameToLayer("Ground") == 6 &&
+                    LayerMask.NameToLayer("CombatTarget") == 7,
+                    "Ground and CombatTarget must remain on layers 6 and 7 respectively.");
+                GameObject rangeRoot = FindGameObject(scene, "Longwatch Shooting Range");
+                Require(rangeRoot != null && rangeRoot.transform.childCount == CombatTargets.Length,
+                    "MovementLab Longwatch shooting range is missing or contains unexpected targets.");
+                for (int index = 0; index < CombatTargets.Length; index++)
+                {
+                    CombatTargetSpec spec = CombatTargets[index];
+                    Transform targetTransform = rangeRoot.transform.Find(spec.Name);
+                    BoxCollider2D targetCollider = targetTransform?.GetComponent<BoxCollider2D>();
+                    DiagnosticCombatTarget2D target = targetTransform?.GetComponent<DiagnosticCombatTarget2D>();
+                    Require(targetTransform != null && targetTransform.gameObject.layer == 7 &&
+                        targetTransform.position == spec.Position && targetCollider != null &&
+                        targetCollider.isTrigger && targetCollider.size == new Vector2(1f, 1.5f) &&
+                        target != null && target.TargetRenderer != null,
+                        "MovementLab CombatTarget setup mismatch for " + spec.Name + ".");
+                }
 
                 Camera worldCamera = FindCamera(scene, "World Camera - Native Pixel Follow");
                 Camera driverCamera = FindCamera(scene, "Native Pixel Driver Camera");
@@ -1593,6 +1887,15 @@ namespace Rustline.Editor
             SerializedProperty property = serialized.FindProperty(propertyName);
             Require(property != null, $"Serialized property {propertyName} is missing on {target.GetType().Name}.");
             property.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static void SetString(UnityEngine.Object target, string propertyName, string value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            Require(property != null, $"Serialized property {propertyName} is missing on {target.GetType().Name}.");
+            property.stringValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
