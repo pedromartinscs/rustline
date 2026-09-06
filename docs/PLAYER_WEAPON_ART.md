@@ -355,7 +355,7 @@ BodySpriteRenderer      = Body animation sprite
 ArmsWeaponSpriteRenderer = selected 80×96 weapon overlay sprite
 ```
 
-The renderer transform does not move when switching between unarmed and Longwatch artwork; sprite pivots encode the shared body reference.
+The renderer transform does not move when switching between unarmed and Longwatch artwork; sprite pivots encode the shared body reference. Gun Feel v1 may temporarily offset the Longwatch overlay from that exact cached baseline after a resolved shot, but it restores the baseline exactly and never moves the Body or player root.
 
 If a future weapon requires more sophisticated overlap, source art may later be split into rear-arm / weapon / front-arm visual layers. Do not introduce that complexity until a real visual need appears.
 
@@ -417,7 +417,7 @@ While locomotion presentation is Idle, Run, or Backpedal, the Longwatch presente
 
 Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, Land, Crouch Idle, or Crouch Move the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch uses explicit Idle/Run Body fallback states pending authored art. Wall brace/kick use Fall/Jump fallback and are modeled as future non-firing states. These fallbacks are intentional until the corresponding authored packages exist.
 
-Mouse/pointer remains the only armed-aim input. Mouse-left now fires the first semi-automatic Longwatch hitscan during Idle, Run, and Backpedal. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Prototype trace feedback begins at `AimOriginWorld` because exact muzzle metadata is not yet authored. Fall armed aim, carry states, crouch armed art, gamepad aim, ammo/reload, inventory, production recoil/muzzle effects, and enemy health remain deferred.
+Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, and Backpedal. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. Its reused 3-unit distal tracer still derives from the resolved `AimOriginWorld` path because exact muzzle metadata is not yet authored, and a compact deterministic mark appears only at a resolved obstruction. Fall armed aim, carry states, crouch armed art, gamepad aim, ammo/reload, inventory, authored muzzle flash, production recoil/impact art, combat audio, and enemy health remain deferred.
 
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 

@@ -83,7 +83,7 @@ These values are a starting point, not final feel approval.
 | Wall kick horizontal / vertical speed | 8 / 11.5 units/s |
 | Wall-kick input / same-wall lock | 0.12 s |
 
-Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course exercises the original movement cases plus a real Composite-collision low tunnel with open auto-stand space and a deep wall-brace/wall-kick shaft. Falling below `-12` respawns the diagnostic specimen without introducing health or death systems.
+Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course exercises the original movement cases plus a real Composite-collision low tunnel with open auto-stand space and a deep wall-brace/wall-kick shaft. The shaft keeps the left wall at x=92, has exactly five open cells at x=93..97, and begins its right wall at x=98 so repeated alternating kicks are practical without changing wall-kick tuning. Falling below `-12` respawns the diagnostic specimen without introducing health or death systems.
 
 ## Deterministic rebuild and validation
 

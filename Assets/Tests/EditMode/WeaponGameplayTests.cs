@@ -102,5 +102,29 @@ namespace Rustline.Tests
             Assert.That(result.HitDistance, Is.EqualTo(8f));
             Assert.That(result.Damage, Is.EqualTo(40));
         }
+
+        [Test]
+        public void LongwatchRecoilCurve_UsesContinuousDirectionAndReturnsExactlyToZero()
+        {
+            Vector2 direction = new Vector2(
+                Mathf.Cos(7f * Mathf.Deg2Rad),
+                Mathf.Sin(7f * Mathf.Deg2Rad));
+
+            Vector2 initial = LongwatchRecoilPresenter2D.EvaluateOffset(
+                direction,
+                0f,
+                LongwatchRecoilPresenter2D.RecoveryDuration,
+                LongwatchRecoilPresenter2D.RecoilDistanceWorldUnits);
+            Vector2 recovered = LongwatchRecoilPresenter2D.EvaluateOffset(
+                direction,
+                LongwatchRecoilPresenter2D.RecoveryDuration,
+                LongwatchRecoilPresenter2D.RecoveryDuration,
+                LongwatchRecoilPresenter2D.RecoilDistanceWorldUnits);
+
+            Assert.That(Vector2.Dot(initial, direction), Is.LessThan(0f));
+            Assert.That(initial.magnitude,
+                Is.EqualTo(LongwatchRecoilPresenter2D.RecoilDistanceWorldUnits).Within(0.000001f));
+            Assert.That(recovered, Is.EqualTo(Vector2.zero));
+        }
     }
 }

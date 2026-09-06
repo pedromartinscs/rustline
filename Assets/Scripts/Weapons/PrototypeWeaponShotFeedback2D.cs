@@ -11,13 +11,23 @@ namespace Rustline.Gameplay.Weapons
     {
         public const float TraceDuration = 0.06f;
         public const float TraceWidth = 1f / 16f;
+        public const float TraceLength = 3f;
+        public const float ImpactDuration = 0.08f;
+        public const float ImpactLength = 2f / 16f;
 
         [SerializeField] private LineRenderer traceRenderer;
+        [SerializeField] private LineRenderer impactRenderer;
 
-        private float _hideTime;
+        private float _traceHideTime;
+        private float _impactHideTime;
 
         public LineRenderer TraceRenderer => traceRenderer;
+        public LineRenderer ImpactRenderer => impactRenderer;
         public bool IsVisible => traceRenderer != null && traceRenderer.enabled;
+        public bool IsImpactVisible => impactRenderer != null && impactRenderer.enabled;
+        public Vector2 TraceStart => traceRenderer != null ? traceRenderer.GetPosition(0) : Vector2.zero;
+        public Vector2 TraceEnd => traceRenderer != null ? traceRenderer.GetPosition(1) : Vector2.zero;
+        public Vector2 ImpactPoint => impactRenderer != null ? impactRenderer.GetPosition(1) : Vector2.zero;
 
         private void Awake()
         {
@@ -31,9 +41,14 @@ namespace Rustline.Gameplay.Weapons
 
         private void Update()
         {
-            if (IsVisible && Time.time >= _hideTime)
+            if (IsVisible && Time.time >= _traceHideTime)
             {
-                Hide();
+                traceRenderer.enabled = false;
+            }
+
+            if (IsImpactVisible && Time.time >= _impactHideTime)
+            {
+                impactRenderer.enabled = false;
             }
         }
 
@@ -51,10 +66,35 @@ namespace Rustline.Gameplay.Weapons
                     : RustlinePalette.GetColor(20);
             traceRenderer.startColor = color;
             traceRenderer.endColor = color;
-            traceRenderer.SetPosition(0, result.Origin);
+            float visibleLength = Mathf.Min(TraceLength, result.HitDistance);
+            traceRenderer.SetPosition(0, result.EndPoint - result.Direction * visibleLength);
             traceRenderer.SetPosition(1, result.EndPoint);
             traceRenderer.enabled = true;
-            _hideTime = Time.time + TraceDuration;
+            _traceHideTime = Time.time + TraceDuration;
+
+            if (impactRenderer == null || !result.Hit)
+            {
+                if (impactRenderer != null)
+                {
+                    impactRenderer.enabled = false;
+                }
+
+                return;
+            }
+
+            Vector2 normal = result.HitNormal.sqrMagnitude > 0f
+                ? result.HitNormal.normalized
+                : -result.Direction;
+            Vector2 tangent = new Vector2(-normal.y, normal.x);
+            Vector2 tip = result.EndPoint + normal * ImpactLength;
+            Vector2 wing = tangent * (ImpactLength * 0.5f);
+            impactRenderer.startColor = color;
+            impactRenderer.endColor = color;
+            impactRenderer.SetPosition(0, tip + wing);
+            impactRenderer.SetPosition(1, result.EndPoint);
+            impactRenderer.SetPosition(2, tip - wing);
+            impactRenderer.enabled = true;
+            _impactHideTime = Time.time + ImpactDuration;
         }
 
         public void Hide()
@@ -62,6 +102,11 @@ namespace Rustline.Gameplay.Weapons
             if (traceRenderer != null)
             {
                 traceRenderer.enabled = false;
+            }
+
+            if (impactRenderer != null)
+            {
+                impactRenderer.enabled = false;
             }
         }
     }

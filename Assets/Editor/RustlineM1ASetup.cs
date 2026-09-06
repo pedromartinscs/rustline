@@ -67,8 +67,8 @@ namespace Rustline.Editor
             new CourseBlock(69, 3, 9, 1),
             // Wall-brace tuning shaft: deep side columns and a lower recovery floor.
             new CourseBlock(92, 0, 1, 8),
-            new CourseBlock(93, -5, 7, 3),
-            new CourseBlock(100, 0, 12, 8),
+            new CourseBlock(93, -5, 5, 3),
+            new CourseBlock(98, 0, 14, 8),
             // Longwatch firing range floor and a full-height Ground occluder.
             new CourseBlock(112, 0, 60, 4),
             new CourseBlock(150, 5, 1, 5),
@@ -510,6 +510,15 @@ namespace Rustline.Editor
                     GetOrAddComponent<PrototypeWeaponShotFeedback2D>(traceObject);
                 SetObjectReference(shotFeedback, "traceRenderer", traceRenderer);
 
+                GameObject impactObject = GetOrCreateChild(traceObject.transform, "Impact");
+                LineRenderer impactRenderer = GetOrAddComponent<LineRenderer>(impactObject);
+                ConfigureLineRenderer(impactRenderer, unlitMaterial, 3, true, 31);
+                impactRenderer.SetPosition(0, Vector3.zero);
+                impactRenderer.SetPosition(1, Vector3.zero);
+                impactRenderer.SetPosition(2, Vector3.zero);
+                impactRenderer.enabled = false;
+                SetObjectReference(shotFeedback, "impactRenderer", impactRenderer);
+
                 PlayerWeaponController2D weaponController = GetOrAddComponent<PlayerWeaponController2D>(root);
                 SetObjectReference(weaponController, "input", input);
                 SetObjectReference(weaponController, "playerAim", playerAim);
@@ -518,6 +527,12 @@ namespace Rustline.Editor
                 SetObjectReference(weaponController, "weaponDefinition", longwatchDefinition);
                 SetInteger(weaponController, "hitLayers", (1 << groundLayer) | (1 << combatTargetLayer));
                 SetObjectReference(weaponController, "shotFeedback", shotFeedback);
+
+                LongwatchRecoilPresenter2D recoilPresenter =
+                    GetOrAddComponent<LongwatchRecoilPresenter2D>(root);
+                SetObjectReference(recoilPresenter, "weaponController", weaponController);
+                SetObjectReference(recoilPresenter, "longwatchPresenter", longwatchPresenter);
+                SetObjectReference(recoilPresenter, "armsWeaponTransform", armsVisual.transform);
 
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Require(prefab != null, "Failed to create the player prefab.");
@@ -735,12 +750,22 @@ namespace Rustline.Editor
             }
 
             PlayerAim2D playerAim = FindInScene<PlayerAim2D>(scene);
+            PlayerWeaponController2D weaponController = FindInScene<PlayerWeaponController2D>(scene);
             NativePixelPresentation nativePresentation = FindInScene<NativePixelPresentation>(scene);
             Require(playerAim != null,
                 "MovementLab player is missing the generic aim component.");
             Require(nativePresentation != null,
                 "MovementLab is missing its native-pixel presentation.");
+            Require(weaponController != null,
+                "MovementLab player is missing the Longwatch weapon controller.");
             SetObjectReference(playerAim, "nativePixelPresentation", nativePresentation);
+
+            PixelCameraFollow2D cameraFollow = nativePresentation.WorldCamera.GetComponent<PixelCameraFollow2D>();
+            Require(cameraFollow != null, "MovementLab world camera is missing pixel follow.");
+            LongwatchCameraImpulse2D cameraImpulse =
+                GetOrAddComponent<LongwatchCameraImpulse2D>(nativePresentation.WorldCamera.gameObject);
+            SetObjectReference(cameraImpulse, "weaponController", weaponController);
+            SetObjectReference(cameraImpulse, "cameraFollow", cameraFollow);
             PrefabUtility.RemoveUnusedOverrides(
                 new[] { playerAim.transform.root.gameObject },
                 InteractionMode.AutomatedAction);
@@ -1543,9 +1568,16 @@ namespace Rustline.Editor
                 weaponController.HitLayers == ((1 << 6) | (1 << 7)) &&
                 weaponController.ShotFeedback == shotFeedback && shotFeedback != null &&
                 shotFeedback.TraceRenderer != null &&
+                shotFeedback.ImpactRenderer != null &&
                 Mathf.Approximately(shotFeedback.TraceRenderer.startWidth, 1f / 16f) &&
                 Mathf.Approximately(shotFeedback.TraceRenderer.endWidth, 1f / 16f),
                 "Player prefab Longwatch gameplay or prototype trace wiring is incomplete.");
+            LongwatchRecoilPresenter2D recoilPresenter = prefab.GetComponent<LongwatchRecoilPresenter2D>();
+            Require(recoilPresenter != null && recoilPresenter.WeaponController == weaponController &&
+                recoilPresenter.LongwatchPresenter == prefab.GetComponent<PlayerLongwatchAimPresenter2D>() &&
+                recoilPresenter.ArmsWeaponTransform == prefab.transform.Find(
+                    "Visual - 48x64 Full Cell/ArmsWeaponSpriteRenderer"),
+                "Player prefab Longwatch presentation recoil wiring is incomplete.");
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Require(armsPresenter != null && armsPresenter.MappingCount == 18 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
@@ -1779,8 +1811,13 @@ namespace Rustline.Editor
                 Require(worldCamera != null && worldCamera.orthographic && !worldCamera.allowHDR &&
                     !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera"),
                     "MovementLab logical world camera configuration is invalid.");
-                Require(worldCamera.GetComponent<PixelCameraFollow2D>() != null,
-                    "MovementLab camera follow is missing.");
+                PixelCameraFollow2D cameraFollow = worldCamera.GetComponent<PixelCameraFollow2D>();
+                LongwatchCameraImpulse2D cameraImpulse = worldCamera.GetComponent<LongwatchCameraImpulse2D>();
+                PlayerWeaponController2D weaponController = FindInScene<PlayerWeaponController2D>(scene);
+                Require(cameraFollow != null && cameraImpulse != null &&
+                    cameraImpulse.CameraFollow == cameraFollow &&
+                    cameraImpulse.WeaponController == weaponController,
+                    "MovementLab camera follow or Longwatch camera impulse wiring is missing.");
                 Require(driverCamera != null && driverCamera.orthographic &&
                     driverCamera.cullingMask == 0 &&
                     !driverCamera.allowHDR && !driverCamera.allowMSAA &&

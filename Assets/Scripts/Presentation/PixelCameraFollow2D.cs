@@ -11,6 +11,10 @@ namespace Rustline.Presentation
 
         private Vector3 _continuousPosition;
         private Vector3 _smoothVelocity;
+        private Vector2 _presentationOffset;
+
+        public Vector3 ContinuousFollowPosition => _continuousPosition;
+        public Vector2 PresentationOffset => _presentationOffset;
 
         private void OnEnable()
         {
@@ -39,9 +43,18 @@ namespace Rustline.Presentation
 
             float scale = pixelsPerUnit;
             transform.position = new Vector3(
-                Mathf.Round(_continuousPosition.x * scale) / scale,
-                Mathf.Round(_continuousPosition.y * scale) / scale,
+                Mathf.Round((_continuousPosition.x + _presentationOffset.x) * scale) / scale,
+                Mathf.Round((_continuousPosition.y + _presentationOffset.y) * scale) / scale,
                 _continuousPosition.z);
+        }
+
+        /// <summary>
+        /// Adds presentation-only camera feedback before final native-pixel snapping.
+        /// The followed position remains independent, so clearing the offset cannot drift it.
+        /// </summary>
+        public void SetPresentationOffset(Vector2 value)
+        {
+            _presentationOffset = value;
         }
     }
 }

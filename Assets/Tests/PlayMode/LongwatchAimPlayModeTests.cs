@@ -262,6 +262,12 @@ namespace Rustline.Tests
                 Assert.That(armed.Selection.AuthoredAngleDegrees, Is.EqualTo(-50));
                 AssertArmedMatchesRunBodyFrame(armed, bodyRenderer, armsRenderer, 3);
 
+                // This portion verifies locomotion independence, not stationary-screen-pointer
+                // parallax while both player and camera continue moving. Freeze the already
+                // resolved continuous world aim so frame scheduling cannot move it across a
+                // quantization boundary during the later deceleration waits.
+                armed.PlayerAim.enabled = false;
+
                 SetAnimatorFrame(animator, "Run", 5, 6);
                 yield return null;
                 Assert.That(armed.Selection.AuthoredAngleDegrees, Is.EqualTo(-50));
@@ -301,6 +307,7 @@ namespace Rustline.Tests
             }
             finally
             {
+                armed.PlayerAim.enabled = true;
                 animator.speed = 1f;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();

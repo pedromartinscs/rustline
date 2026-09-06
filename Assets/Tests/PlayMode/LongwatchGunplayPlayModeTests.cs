@@ -17,6 +17,8 @@ namespace Rustline.Tests
         private PlayerMotor2D _motor;
         private PlayerAim2D _aim;
         private PlayerLongwatchAimPresenter2D _presenter;
+        private LongwatchRecoilPresenter2D _recoil;
+        private LongwatchCameraImpulse2D _cameraImpulse;
         private Rigidbody2D _body;
 
         [UnityTest]
@@ -28,6 +30,9 @@ namespace Rustline.Tests
             PlayerAim2D aim = _aim;
             Rigidbody2D body = _body;
             DiagnosticCombatTarget2D target = FindTarget("Target - Clear Horizontal");
+            LongwatchRecoilPresenter2D recoil = _recoil;
+            LongwatchCameraImpulse2D cameraImpulse = _cameraImpulse;
+            PrototypeWeaponShotFeedback2D feedback = weapon.ShotFeedback;
             Mouse mouse = InputSystem.AddDevice<Mouse>();
             try
             {
@@ -35,6 +40,9 @@ namespace Rustline.Tests
                 SetAim(aim, Vector2.right);
                 target.ResetDiagnostics();
                 weapon.ResetTransientState();
+                Vector3 recoilBaseline = recoil.BaselineLocalPosition;
+                LineRenderer traceObject = feedback.TraceRenderer;
+                LineRenderer impactObject = feedback.ImpactRenderer;
 
                 yield return Click(mouse);
 
@@ -46,7 +54,32 @@ namespace Rustline.Tests
                 Assert.That(target.AccumulatedDamage, Is.EqualTo(40));
                 Assert.That(target.LastHitDirection, Is.EqualTo(Vector2.right));
                 Assert.That(weapon.ShotFeedback.IsVisible, Is.True);
+                Assert.That(feedback.IsImpactVisible, Is.True);
+                Assert.That(feedback.TraceEnd, Is.EqualTo(weapon.LastShotResult.EndPoint));
+                Assert.That(Vector2.Distance(feedback.TraceStart, feedback.TraceEnd),
+                    Is.EqualTo(PrototypeWeaponShotFeedback2D.TraceLength).Within(0.0001f));
+                Assert.That(feedback.ImpactPoint, Is.EqualTo(weapon.LastShotResult.EndPoint));
+                Assert.That(recoil.ImpulseCount, Is.EqualTo(1));
+                Assert.That(cameraImpulse.ImpulseCount, Is.EqualTo(1));
+                Assert.That(Vector2.Dot(recoil.CurrentOffset, weapon.LastShotResult.Direction), Is.LessThan(0f));
+                Assert.That(Vector2.Dot(cameraImpulse.CurrentOffset, weapon.LastShotResult.Direction), Is.LessThan(0f));
+                Assert.That(recoil.CurrentOffset.magnitude,
+                    Is.LessThanOrEqualTo(LongwatchRecoilPresenter2D.RecoilDistanceWorldUnits + 0.000001f));
+                Assert.That(cameraImpulse.CurrentOffset.magnitude,
+                    Is.LessThanOrEqualTo(LongwatchCameraImpulse2D.ImpulseDistanceWorldUnits + 0.000001f));
+                Vector3 cameraPosition = cameraImpulse.transform.position;
+                Assert.That(cameraPosition.x * 16f, Is.EqualTo(Mathf.Round(cameraPosition.x * 16f)));
+                Assert.That(cameraPosition.y * 16f, Is.EqualTo(Mathf.Round(cameraPosition.y * 16f)));
                 Assert.That(motor.IsGrounded, Is.True);
+
+                yield return new WaitForSeconds(0.12f);
+                yield return null;
+                Assert.That(recoil.ArmsWeaponTransform.localPosition, Is.EqualTo(recoilBaseline));
+                Assert.That(cameraImpulse.CurrentOffset, Is.EqualTo(Vector2.zero));
+                Assert.That(feedback.IsVisible, Is.False);
+                Assert.That(feedback.IsImpactVisible, Is.False);
+                Assert.That(feedback.TraceRenderer, Is.SameAs(traceObject));
+                Assert.That(feedback.ImpactRenderer, Is.SameAs(impactObject));
             }
             finally
             {
@@ -71,13 +104,31 @@ namespace Rustline.Tests
             weapon.ResetTransientState();
 
             Assert.That(presenter.Selection.AuthoredAngleDegrees, Is.EqualTo(10));
+            Vector2 playerPositionBefore = body.position;
+            Vector2 playerVelocityBefore = body.linearVelocity;
             Assert.That(weapon.TryFire(Time.time), Is.True);
 
+            Assert.That(body.position, Is.EqualTo(playerPositionBefore));
+            Assert.That(body.linearVelocity, Is.EqualTo(playerVelocityBefore));
             Assert.That(weapon.LastShotResult.Direction.x, Is.EqualTo(direction.x).Within(0.000001f));
             Assert.That(weapon.LastShotResult.Direction.y, Is.EqualTo(direction.y).Within(0.000001f));
             Assert.That(weapon.LastShotResult.HitCollider, Is.SameAs(target.GetComponent<Collider2D>()));
             Assert.That(target.LastHitDirection.x, Is.EqualTo(direction.x).Within(0.000001f));
             Assert.That(target.LastHitDirection.y, Is.EqualTo(direction.y).Within(0.000001f));
+            Assert.That(_recoil.LastShotDirection.x, Is.EqualTo(direction.x).Within(0.000001f));
+            Assert.That(_recoil.LastShotDirection.y, Is.EqualTo(direction.y).Within(0.000001f));
+            Assert.That(_cameraImpulse.LastShotDirection.x, Is.EqualTo(direction.x).Within(0.000001f));
+            Assert.That(_cameraImpulse.LastShotDirection.y, Is.EqualTo(direction.y).Within(0.000001f));
+            Vector2 tracerDirection = (_weapon.ShotFeedback.TraceEnd - _weapon.ShotFeedback.TraceStart).normalized;
+            Assert.That(tracerDirection.x, Is.EqualTo(direction.x).Within(0.000001f));
+            Assert.That(tracerDirection.y, Is.EqualTo(direction.y).Within(0.000001f));
+
+            WeaponShotResult2D immutableResult = weapon.LastShotResult;
+            SetAim(aim, DirectionAtDegrees(-17f));
+            Assert.That(weapon.LastShotResult.Direction, Is.EqualTo(immutableResult.Direction));
+            Assert.That(_recoil.IsRecoiling, Is.True);
+            Assert.That(presenter.Selection.AuthoredAngleDegrees, Is.EqualTo(10),
+                "A shot or recoil reset Longwatch selection before its normal presentation update.");
         }
 
         [UnityTest]
@@ -100,6 +151,26 @@ namespace Rustline.Tests
             Assert.That(weapon.LastShotResult.HitReceiverNotified, Is.False);
             Assert.That(weapon.LastShotResult.EndPoint.x, Is.LessThan(151f));
             Assert.That(target.HitsTaken, Is.Zero);
+            Assert.That(weapon.ShotFeedback.IsImpactVisible, Is.True);
+            Assert.That(weapon.ShotFeedback.ImpactPoint, Is.EqualTo(weapon.LastShotResult.EndPoint));
+        }
+
+        [UnityTest]
+        public IEnumerator Miss_UsesShortDistalTraceAndNoImpact()
+        {
+            yield return LoadRange();
+            yield return PlaceGrounded(_body, 116f);
+            SetAim(_aim, Vector2.up);
+            _weapon.ResetTransientState();
+
+            Assert.That(_weapon.TryFire(Time.time), Is.True);
+
+            Assert.That(_weapon.LastShotResult.Hit, Is.False);
+            Assert.That(_weapon.LastShotResult.EndPoint,
+                Is.EqualTo(_weapon.LastShotResult.Origin + Vector2.up * 80f));
+            Assert.That(Vector2.Distance(_weapon.ShotFeedback.TraceStart, _weapon.ShotFeedback.TraceEnd),
+                Is.EqualTo(PrototypeWeaponShotFeedback2D.TraceLength).Within(0.0001f));
+            Assert.That(_weapon.ShotFeedback.IsImpactVisible, Is.False);
         }
 
         [UnityTest]
@@ -170,6 +241,8 @@ namespace Rustline.Tests
                 yield return WaitForState(playerAnimator, PlayerAnimationState.Jump, 60);
                 yield return Click(mouse);
                 Assert.That(weapon.ShotCount, Is.Zero);
+                Assert.That(_recoil.ImpulseCount, Is.Zero);
+                Assert.That(_cameraImpulse.ImpulseCount, Is.Zero);
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
@@ -182,6 +255,8 @@ namespace Rustline.Tests
                 yield return WaitForState(playerAnimator, PlayerAnimationState.CrouchIdle, 30);
                 yield return Click(mouse);
                 Assert.That(weapon.ShotCount, Is.Zero);
+                Assert.That(_recoil.ImpulseCount, Is.Zero);
+                Assert.That(_cameraImpulse.ImpulseCount, Is.Zero);
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
@@ -199,6 +274,38 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
+        public IEnumerator JumpImmediatelyAfterShot_RestoresSharedOverlayBaseline()
+        {
+            yield return LoadRange();
+            PlayerAnimator2D playerAnimator = _weapon.GetComponent<PlayerAnimator2D>();
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            try
+            {
+                yield return PlaceGrounded(_body, 116f);
+                SetAim(_aim, Vector2.right);
+                Vector3 baseline = _recoil.BaselineLocalPosition;
+
+                Assert.That(_weapon.TryFire(Time.time), Is.True);
+                Assert.That(_recoil.CurrentOffset, Is.Not.EqualTo(Vector2.zero));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space));
+                InputSystem.Update();
+                yield return WaitForState(playerAnimator, PlayerAnimationState.Jump, 60);
+                yield return null;
+
+                Assert.That(_presenter.OwnsRenderer, Is.False);
+                Assert.That(_recoil.IsRecoiling, Is.False);
+                Assert.That(_recoil.ArmsWeaponTransform.localPosition, Is.EqualTo(baseline));
+            }
+            finally
+            {
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator WallBraceAndKick_CannotFire()
         {
             yield return LoadRange();
@@ -209,7 +316,7 @@ namespace Rustline.Tests
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
             try
             {
-                body.position = new Vector2(99.4f, -1f);
+                body.position = new Vector2(97.4f, -1f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
                 SetAim(aim, Vector2.right);
@@ -231,6 +338,8 @@ namespace Rustline.Tests
                 Assert.That(motor.IsWallKicking, Is.True);
                 Assert.That(weapon.TryFire(Time.time), Is.False);
                 Assert.That(weapon.ShotCount, Is.Zero);
+                Assert.That(_recoil.ImpulseCount, Is.Zero);
+                Assert.That(_cameraImpulse.ImpulseCount, Is.Zero);
             }
             finally
             {
@@ -271,12 +380,20 @@ namespace Rustline.Tests
                 QueueMouse(mouse, true);
                 yield return null;
                 Assert.That(weapon.ShotCount, Is.EqualTo(2), "Cooldown allowed a rapid re-press.");
+                Assert.That(_recoil.ImpulseCount, Is.EqualTo(2));
+                Assert.That(_cameraImpulse.ImpulseCount, Is.EqualTo(2));
 
                 QueueMouse(mouse, false);
                 yield return new WaitForSeconds(0.26f);
                 QueueMouse(mouse, true);
                 yield return null;
                 Assert.That(weapon.ShotCount, Is.EqualTo(3));
+                Assert.That(_recoil.ImpulseCount, Is.EqualTo(3));
+                Assert.That(_cameraImpulse.ImpulseCount, Is.EqualTo(3));
+
+                yield return new WaitForSeconds(0.12f);
+                Assert.That(_recoil.CurrentOffset, Is.EqualTo(Vector2.zero));
+                Assert.That(_cameraImpulse.CurrentOffset, Is.EqualTo(Vector2.zero));
             }
             finally
             {
@@ -332,11 +449,15 @@ namespace Rustline.Tests
             _motor = _weapon?.GetComponent<PlayerMotor2D>();
             _aim = _weapon?.GetComponent<PlayerAim2D>();
             _presenter = _weapon?.GetComponent<PlayerLongwatchAimPresenter2D>();
+            _recoil = _weapon?.GetComponent<LongwatchRecoilPresenter2D>();
+            _cameraImpulse = Object.FindAnyObjectByType<LongwatchCameraImpulse2D>();
             _body = _weapon?.GetComponent<Rigidbody2D>();
             Assert.That(_weapon, Is.Not.Null);
             Assert.That(_motor, Is.Not.Null);
             Assert.That(_aim, Is.Not.Null);
             Assert.That(_presenter, Is.Not.Null);
+            Assert.That(_recoil, Is.Not.Null);
+            Assert.That(_cameraImpulse, Is.Not.Null);
             Assert.That(_body, Is.Not.Null);
         }
 

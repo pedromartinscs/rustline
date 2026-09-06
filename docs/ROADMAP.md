@@ -93,12 +93,12 @@ See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the production contract.
 - [x] Continuous-aim Longwatch hitscan and first-obstruction resolution
 - [x] Semi-automatic fire-rate gate
 - [ ] Reload
-- [ ] Recoil
+- [x] Prototype presentation-only Longwatch recoil
 - [ ] Muzzle flash
 - [x] Prototype target impact feedback
-- [ ] Camera feedback where appropriate
+- [x] Restrained deterministic Longwatch camera impulse
 
-The first gunplay slice uses mouse-left primary fire, a config-driven `0.25 s` shot interval, `80` unit range, and `40` prototype damage. Hitscan uses `PlayerAim2D.ContinuousAimDirection`, never the quantized Longwatch visual pose, and resolves the nearest Ground or CombatTarget hit through an explicit allocation-free query. MovementLab supplies clear, angled, and Ground-occluded diagnostic targets plus a reused prototype trace and target flash. Ammo, reload, production recoil/muzzle/impact art, combat audio, gamepad aim, inventory, enemy health/death, and unsupported-state Longwatch art remain pending.
+The first gunplay slice uses mouse-left primary fire, a config-driven `0.25 s` shot interval, `80` unit range, and `40` prototype damage. Hitscan uses `PlayerAim2D.ContinuousAimDirection`, never the quantized Longwatch visual pose, and resolves the nearest Ground or CombatTarget hit through an explicit allocation-free query. Gun Feel v1 consumes that one authoritative shot result for a 1.5-source-pixel overlay recoil, deterministic one-pixel camera impulse, reused short distal tracer, compact obstruction impact, and the existing target flash. Ammo, reload, authored muzzle metadata and flash, production recoil/impact art, combat audio, gamepad aim, inventory, enemy health/death, and unsupported-state Longwatch art remain pending.
 
 **Exit criterion:** shooting targets while moving feels deliberate and responsive, and the authored directional weapon presentation remains visually coherent across locomotion/facing changes.
 

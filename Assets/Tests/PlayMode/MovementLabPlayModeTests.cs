@@ -95,6 +95,15 @@ namespace Rustline.Tests
                 "CompositeCollider2D has no generated paths after scene initialization.");
             Assert.That(composite.pointCount, Is.GreaterThan(0),
                 "CompositeCollider2D has no generated points after scene initialization.");
+
+            Tilemap collisionTilemap = initializer.GetComponent<Tilemap>();
+            Assert.That(collisionTilemap.HasTile(new Vector3Int(92, -1, 0)), Is.True);
+            for (int x = 93; x <= 97; x++)
+            {
+                Assert.That(collisionTilemap.HasTile(new Vector3Int(x, -1, 0)), Is.False,
+                    "The wall-kick shaft must retain exactly five open cells (x=93..97).");
+            }
+            Assert.That(collisionTilemap.HasTile(new Vector3Int(98, -1, 0)), Is.True);
         }
 
         [UnityTest]
@@ -855,7 +864,7 @@ namespace Rustline.Tests
         {
             yield return VerifyWallBraceAndKick(
                 wallSide: 1,
-                startingX: 99.4f,
+                startingX: 97.4f,
                 inputKey: Key.D,
                 expectedKickVelocityX: -8f);
         }
@@ -868,6 +877,61 @@ namespace Rustline.Tests
                 startingX: 93.6f,
                 inputKey: Key.A,
                 expectedKickVelocityX: 8f);
+        }
+
+        [UnityTest]
+        public IEnumerator Player_AlternatesWallKicksAcrossFiveCellShaft()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
+            int landEvents = 0;
+            motor.Landed += CountLand;
+            try
+            {
+                body.position = new Vector2(97.4f, -3.5f);
+                body.linearVelocity = new Vector2(0f, -9f);
+                Physics2D.SyncTransforms();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
+                InputSystem.Update();
+                yield return WaitForWallBrace(motor, 1, 20);
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(body.linearVelocity.x, Is.EqualTo(-8f).Within(0.05f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.Space));
+                InputSystem.Update();
+                yield return WaitForWallBrace(motor, -1, 100);
+                Assert.That(body.position.x, Is.InRange(93.45f, 93.75f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.Space));
+                InputSystem.Update();
+                yield return new WaitForFixedUpdate();
+                Assert.That(body.linearVelocity.x, Is.EqualTo(8f).Within(0.05f));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
+                InputSystem.Update();
+                yield return WaitForWallBrace(motor, 1, 100);
+                Assert.That(body.position.x, Is.InRange(97.25f, 97.55f));
+                Assert.That(landEvents, Is.Zero, "Alternating shaft wall contact emitted a false Land event.");
+            }
+            finally
+            {
+                motor.Landed -= CountLand;
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                InputSystem.RemoveDevice(keyboard);
+            }
+
+            void CountLand() => landEvents++;
         }
 
         private static IEnumerator VerifyWallBraceAndKick(
@@ -935,6 +999,26 @@ namespace Rustline.Tests
             }
 
             void CountLand() => landEvents++;
+        }
+
+        private static IEnumerator WaitForWallBrace(
+            PlayerMotor2D motor,
+            int expectedWallSide,
+            int maximumFixedFrames)
+        {
+            for (int index = 0; index < maximumFixedFrames; index++)
+            {
+                yield return new WaitForFixedUpdate();
+                if (motor.IsWallBraced && motor.WallSide == expectedWallSide)
+                {
+                    yield break;
+                }
+            }
+
+            Assert.Fail(
+                "Player did not brace wall side " + expectedWallSide +
+                $". position={motor.transform.position}, velocity={motor.Velocity}, " +
+                $"grounded={motor.IsGrounded}, wallSide={motor.WallSide}.");
         }
 
         private static IEnumerator WaitForState(

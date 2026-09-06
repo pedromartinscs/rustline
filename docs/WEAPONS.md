@@ -92,7 +92,7 @@ Current production status:
 - generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
 - mouse-left primary fire now drives a semi-automatic Longwatch hitscan from the exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
 - firing is currently allowed only during Idle, Run, and Backpedal, where authored Longwatch presentation exists; Jump, Fall, Land, crouch, Wall Brace, and Wall Kick are deliberately blocked pending appropriate art;
-- MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short-lived one-source-pixel trace, and target hit flash feedback;
+- MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short distal one-source-pixel tracer streak, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
 - Fall aim and Jump/Land/Roll carry art remain deferred.
@@ -107,7 +107,7 @@ This staged validation is intentional. Do not multiply an unproven art/runtime c
 - Strong silhouettes matter more than micro-detail.
 - Weapons within a family should share visual language without becoming silhouette clones.
 - A weapon is not considered production-ready merely because a standalone gun sprite exists; its player presentation package must follow the discrete aim/carry system in `PLAYER_WEAPON_ART.md`.
-- Exact per-frame/per-direction muzzle metadata, production muzzle flash, casing ejection, projectiles, reload, audio, recoil, and production impact effects remain deferred. The first hitscan and its temporary trace originate at `AimOriginWorld` rather than pretending authored muzzle metadata exists.
+- Exact per-frame/per-direction muzzle metadata, production muzzle flash, casing ejection, projectiles, reload, audio, and production recoil/impact art remain deferred. Gun Feel v1 uses reusable programmer-art recoil, tracer, and impact presentation; its hitscan still originates at `AimOriginWorld` rather than pretending authored muzzle metadata exists.
 
 ## Initial production order
 
