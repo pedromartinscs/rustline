@@ -87,11 +87,46 @@ namespace Rustline.Tests
             CompositeCollider2D composite = initializer.GetComponent<CompositeCollider2D>();
             Assert.That(tilemapCollider, Is.Not.Null);
             Assert.That(composite, Is.Not.Null);
+            Assert.That(tilemapCollider.enabled, Is.True);
             Assert.That(tilemapCollider.compositeOperation, Is.EqualTo(Collider2D.CompositeOperation.Merge));
+            Assert.That(composite.enabled, Is.True);
+            Assert.That(composite.geometryType, Is.EqualTo(CompositeCollider2D.GeometryType.Polygons));
             Assert.That(composite.pathCount, Is.GreaterThan(0),
                 "CompositeCollider2D has no generated paths after scene initialization.");
             Assert.That(composite.pointCount, Is.GreaterThan(0),
                 "CompositeCollider2D has no generated points after scene initialization.");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_SpawnRemainsSupportedThroughCompositeStartupPasses()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            TilemapCompositeColliderInitializer2D initializer =
+                Object.FindAnyObjectByType<TilemapCompositeColliderInitializer2D>();
+            Assert.That(motor, Is.Not.Null);
+            Assert.That(initializer, Is.Not.Null);
+
+            Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            CompositeCollider2D composite = initializer.GetComponent<CompositeCollider2D>();
+            Assert.That(body, Is.Not.Null);
+            Assert.That(composite, Is.Not.Null);
+
+            // This explicitly spans the defensive Start + first two FixedUpdate regeneration
+            // window used to protect Windows Player builds from empty startup Composite geometry.
+            for (int index = 0; index < 10; index++)
+            {
+                yield return new WaitForFixedUpdate();
+            }
+
+            Assert.That(composite.pathCount, Is.GreaterThan(0));
+            Assert.That(composite.pointCount, Is.GreaterThan(0));
+            Assert.That(body.position.y, Is.GreaterThan(-0.2f),
+                "Player fell through the spawn floor during Composite startup initialization.");
+            Assert.That(motor.IsGrounded, Is.True,
+                "Player was not grounded after the Release collision startup window.");
         }
 
         [UnityTest]

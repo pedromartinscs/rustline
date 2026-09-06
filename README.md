@@ -48,6 +48,7 @@ See:
 - [`docs/PALETTE.md`](docs/PALETTE.md) — canonical production palette
 - [`docs/TILESET_SPEC.md`](docs/TILESET_SPEC.md) — structural atlas layout and connectivity contract
 - [`docs/MOVEMENT.md`](docs/MOVEMENT.md) — M1A controller architecture, controls, and initial tuning
+- [`docs/RELEASE_COLLISION.md`](docs/RELEASE_COLLISION.md) — release-critical Tilemap/Composite startup contract and regression history
 
 ## Development approach
 
@@ -66,7 +67,7 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 **M1 — Core movement, combat crouch, and wall interaction implemented.**
 
-The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` provides a playable single-player course for the accepted core movement plus a clearance-safe 3 units/s combat crouch and controlled wall brace/kick. Its real Tilemap + Composite collision course now includes a low tunnel and wall shaft. Crouch and wall presentation intentionally use existing animation fallbacks until Pedro's authored art is ready; gun firing remains unimplemented.
+The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` provides the accepted movement course, combat crouch, wall brace/kick, the release-hardened Tilemap + Composite collision path, and the first functional Longwatch DMR hitscan range. Crouch and wall presentation intentionally use existing animation fallbacks until authored art is ready.
 
 ## License
 

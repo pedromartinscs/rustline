@@ -834,6 +834,10 @@ namespace Rustline.Editor
             tilemapCollider.compositeOperation = Collider2D.CompositeOperation.Merge;
             CompositeCollider2D composite = collisionTilemap.gameObject.AddComponent<CompositeCollider2D>();
             composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+
+            // RELEASE-CRITICAL: Windows Player builds can start with empty Composite geometry even
+            // when Editor Play Mode is correct. This initializer and its multi-stage startup
+            // regeneration are a non-negotiable collision contract. See docs/RELEASE_COLLISION.md.
             collisionTilemap.gameObject.AddComponent<TilemapCompositeColliderInitializer2D>();
 
             Vector3Int[] courseCells = GetCourseCells().ToArray();
@@ -882,7 +886,11 @@ namespace Rustline.Editor
             GameObject root = FindGameObject(scene, "RUSTLINE M1A - MOVEMENT LAB");
             Require(root != null, "MovementLab root is missing.");
             Vector3Int[] courseCells = GetCourseCells().ToArray();
-            bool changed = SynchronizeTilemap(visualTilemap, courseCells, ruleTile);
+
+            // Repair the Release collision contract on every deterministic rebuild instead of
+            // assuming an older scene still has the required Rigidbody/Composite/initializer.
+            bool changed = SynchronizeCompositeCollisionContract(collisionTilemap);
+            changed |= SynchronizeTilemap(visualTilemap, courseCells, ruleTile);
             changed |= SynchronizeTilemap(collisionTilemap, courseCells, collisionTile);
             changed |= SynchronizeLabels(scene, root.transform);
             changed |= SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
@@ -892,6 +900,72 @@ namespace Rustline.Editor
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
+        }
+
+        private static bool SynchronizeCompositeCollisionContract(Tilemap collisionTilemap)
+        {
+            bool changed = false;
+
+            Rigidbody2D terrainBody = collisionTilemap.GetComponent<Rigidbody2D>();
+            if (terrainBody == null)
+            {
+                terrainBody = collisionTilemap.gameObject.AddComponent<Rigidbody2D>();
+                changed = true;
+            }
+            if (terrainBody.bodyType != RigidbodyType2D.Static)
+            {
+                terrainBody.bodyType = RigidbodyType2D.Static;
+                changed = true;
+            }
+
+            TilemapCollider2D tilemapCollider = collisionTilemap.GetComponent<TilemapCollider2D>();
+            if (tilemapCollider == null)
+            {
+                tilemapCollider = collisionTilemap.gameObject.AddComponent<TilemapCollider2D>();
+                changed = true;
+            }
+            if (!tilemapCollider.enabled)
+            {
+                tilemapCollider.enabled = true;
+                changed = true;
+            }
+            if (tilemapCollider.compositeOperation != Collider2D.CompositeOperation.Merge)
+            {
+                tilemapCollider.compositeOperation = Collider2D.CompositeOperation.Merge;
+                changed = true;
+            }
+
+            CompositeCollider2D composite = collisionTilemap.GetComponent<CompositeCollider2D>();
+            if (composite == null)
+            {
+                composite = collisionTilemap.gameObject.AddComponent<CompositeCollider2D>();
+                changed = true;
+            }
+            if (!composite.enabled)
+            {
+                composite.enabled = true;
+                changed = true;
+            }
+            if (composite.geometryType != CompositeCollider2D.GeometryType.Polygons)
+            {
+                composite.geometryType = CompositeCollider2D.GeometryType.Polygons;
+                changed = true;
+            }
+
+            TilemapCompositeColliderInitializer2D initializer =
+                collisionTilemap.GetComponent<TilemapCompositeColliderInitializer2D>();
+            if (initializer == null)
+            {
+                collisionTilemap.gameObject.AddComponent<TilemapCompositeColliderInitializer2D>();
+                changed = true;
+            }
+            else if (!initializer.enabled)
+            {
+                initializer.enabled = true;
+                changed = true;
+            }
+
+            return changed;
         }
 
         private static bool SynchronizeTilemap(
@@ -1620,11 +1694,20 @@ namespace Rustline.Editor
                 }
 
                 TilemapCollider2D collider = FindInScene<TilemapCollider2D>(scene);
-                Require(collider != null && collider.compositeOperation == Collider2D.CompositeOperation.Merge &&
-                    collider.GetComponent<CompositeCollider2D>() != null,
-                    "MovementLab must use composite Tilemap collision.");
-                Require(collider.GetComponent<TilemapCompositeColliderInitializer2D>() != null,
-                    "MovementLab composite Tilemap collision must initialize geometry deterministically.");
+                CompositeCollider2D composite = collider?.GetComponent<CompositeCollider2D>();
+                Rigidbody2D terrainBody = collider?.GetComponent<Rigidbody2D>();
+                TilemapCompositeColliderInitializer2D collisionInitializer =
+                    collider?.GetComponent<TilemapCompositeColliderInitializer2D>();
+                Require(collider != null && collider.enabled &&
+                    collider.compositeOperation == Collider2D.CompositeOperation.Merge &&
+                    composite != null && composite.enabled &&
+                    composite.geometryType == CompositeCollider2D.GeometryType.Polygons &&
+                    terrainBody != null && terrainBody.bodyType == RigidbodyType2D.Static,
+                    "MovementLab Release collision contract requires enabled TilemapCollider2D Merge -> " +
+                    "CompositeCollider2D Polygons on a static Rigidbody2D.");
+                Require(collisionInitializer != null && collisionInitializer.enabled,
+                    "MovementLab Release collision contract requires the enabled " +
+                    "TilemapCompositeColliderInitializer2D startup guard. See docs/RELEASE_COLLISION.md.");
 
                 Require(LayerMask.NameToLayer("Ground") == 6 &&
                     LayerMask.NameToLayer("CombatTarget") == 7,
