@@ -3,6 +3,7 @@
     "rootNamespace": "Rustline.Tests",
     "references": [
         "Rustline.Runtime",
+        "Rustline.EditorDiagnostics",
         "Unity.InputSystem",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.RenderPipelines.Universal.2D.Runtime"

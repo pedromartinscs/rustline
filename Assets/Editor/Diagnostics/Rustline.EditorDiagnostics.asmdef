@@ -1,0 +1,16 @@
+{
+    "name": "Rustline.EditorDiagnostics",
+    "rootNamespace": "Rustline.Editor.Diagnostics",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

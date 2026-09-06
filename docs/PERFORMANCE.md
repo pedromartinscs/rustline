@@ -47,6 +47,37 @@ The HUD is created only when `MovementLab` starts and is compiled only for the U
 
 Editor FPS is useful for quick comparisons but is not a final benchmark because Editor overhead can distort results. Later milestone/performance gates should also use standalone Development Builds and Unity Profiler captures on representative hardware.
 
+### Editor stutter capture workflow
+
+Use the Editor spike analyzer to triage recurring Play Mode hitches without adding another
+per-frame recorder to Rustline:
+
+1. Open `MovementLab`, then open **Window > Analysis > Profiler**.
+2. Target the **Unity Editor** so `EditorLoop` and its nested `PlayerLoop` are both captured.
+3. Enable CPU profiling. Keep **Deep Profile OFF** and **Managed Allocation Callstacks OFF**
+   for the first capture.
+4. Disable unrelated Profiler modules where practical; enabled modules can add collection work.
+5. Enter Play Mode, play normally for approximately 20–30 seconds, and intentionally reproduce
+   the perceived stutter.
+6. Stop Profiler recording without leaving Play Mode if practical. This prevents the report
+   operation itself from entering the capture and preserves the initialized native-pixel header
+   values.
+7. Run **Rustline > Diagnostics > Analyze Recent Editor Spikes**.
+8. Send `Temp/RustlineDiagnostics/editor-spike-report.txt` to Echo. A compact distribution and
+   worst-frame summary is also copied to the clipboard.
+
+The analyzer reads at most the latest 500 valid CPU frames already held by the Profiler. It keeps
+raw sample parent/child structure, reports direct hierarchy children separately, derives additive
+self time without summing overlapping inclusive scopes, and treats Main/Render/worker thread
+durations as overlapping. Its `Editor-only` value is only `EditorLoop` minus outermost nested
+`PlayerLoop` time, so it is a conservative triage estimate rather than proof of avoidable Editor
+cost. Classification thresholds and limitations are written into each report.
+
+If `Profiler.CollectEditorStats` is dominant, repeat with only the CPU module enabled or profile a
+Development Player before attributing the hitch to Rustline. Enable allocation callstacks only for
+a focused second capture when GC evidence warrants it; do not enable Deep Profile for the first
+investigation.
+
 ### Early instrumented observations
 
 An initial Editor observation at `1086×420` showed approximately `104.5 FPS` / `9.56 ms AVG`, with `VSync 0` and `Target -1`. That reading was captured using screenshot software and included a `117.45 ms WORST` sample, so it is **not accepted as a clean worst-frame baseline**.
