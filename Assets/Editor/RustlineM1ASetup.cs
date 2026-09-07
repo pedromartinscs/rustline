@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Rustline.Diagnostics;
+using Rustline.Gameplay.Combat;
 using Rustline.Gameplay.Player;
 using Rustline.Gameplay.Weapons;
 using Rustline.Physics;
@@ -67,8 +68,8 @@ namespace Rustline.Editor
             new CourseBlock(69, 3, 9, 1),
             // Wall-brace tuning shaft: deep side columns and a lower recovery floor.
             new CourseBlock(92, 0, 1, 8),
-            new CourseBlock(93, -5, 5, 3),
-            new CourseBlock(98, 0, 14, 8),
+            new CourseBlock(93, -5, 4, 3),
+            new CourseBlock(97, 0, 15, 8),
             // Longwatch firing range floor and a full-height Ground occluder.
             new CourseBlock(112, 0, 60, 4),
             new CourseBlock(150, 5, 1, 5),
@@ -96,7 +97,11 @@ namespace Rustline.Editor
                 new Color32(32, 237, 229, 255)),
             new DiagnosticLabel("LONGWATCH FIRING RANGE", new Vector3(140f, 8f, -0.2f), 0.11f,
                 new Color32(254, 212, 55, 255)),
+            new DiagnosticLabel("FIRST COMBAT ENTITY", new Vector3(164f, 4.25f, -0.2f), 0.1f,
+                new Color32(32, 237, 229, 255)),
         };
+
+        private static readonly Vector3 PrototypeEnemySpawnPosition = new Vector3(164f, 0.02f, -0.1f);
 
         private static readonly CombatTargetSpec[] CombatTargets =
         {
@@ -899,6 +904,7 @@ namespace Rustline.Editor
             SetFloat(respawn, "failureHeight", -12f);
 
             SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
+            SynchronizePrototypeEnemyEncounter(scene, root.transform, combatTargetLayer);
             CreateCamera(root.transform, player.transform);
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
@@ -932,6 +938,7 @@ namespace Rustline.Editor
 
             changed |= SynchronizeLabels(scene, root.transform);
             changed |= SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
+            changed |= SynchronizePrototypeEnemyEncounter(scene, root.transform, combatTargetLayer);
 
             if (changed)
             {
@@ -1171,6 +1178,214 @@ namespace Rustline.Editor
                     changed = true;
                 }
             }
+
+            return changed;
+        }
+
+        private static bool SynchronizePrototypeEnemyEncounter(
+            Scene scene,
+            Transform parent,
+            int combatTargetLayer)
+        {
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
+
+            GameObject encounterObject = FindGameObject(scene, "First Combat Entity Encounter");
+            bool changed = false;
+            if (encounterObject == null)
+            {
+                encounterObject = new GameObject("First Combat Entity Encounter");
+                encounterObject.transform.SetParent(parent, false);
+                changed = true;
+            }
+            else if (encounterObject.transform.parent != parent)
+            {
+                encounterObject.transform.SetParent(parent, false);
+                changed = true;
+            }
+
+            MovementLabPrototypeEnemyEncounter2D encounter =
+                encounterObject.GetComponent<MovementLabPrototypeEnemyEncounter2D>();
+            if (encounter == null)
+            {
+                encounter = encounterObject.AddComponent<MovementLabPrototypeEnemyEncounter2D>();
+                changed = true;
+            }
+
+            Transform enemyTransform = encounterObject.transform.Find("Prototype Ground Enemy");
+            GameObject enemyObject;
+            if (enemyTransform == null)
+            {
+                enemyObject = new GameObject("Prototype Ground Enemy");
+                enemyObject.transform.SetParent(encounterObject.transform, false);
+                changed = true;
+            }
+            else
+            {
+                enemyObject = enemyTransform.gameObject;
+            }
+
+            if (enemyObject.transform.position != PrototypeEnemySpawnPosition)
+            {
+                enemyObject.transform.position = PrototypeEnemySpawnPosition;
+                changed = true;
+            }
+
+            Rigidbody2D enemyBody = enemyObject.GetComponent<Rigidbody2D>();
+            if (enemyBody == null)
+            {
+                enemyBody = enemyObject.AddComponent<Rigidbody2D>();
+                changed = true;
+            }
+            if (enemyBody.bodyType != RigidbodyType2D.Kinematic)
+            {
+                enemyBody.bodyType = RigidbodyType2D.Kinematic;
+                changed = true;
+            }
+            if (!Mathf.Approximately(enemyBody.gravityScale, 0f))
+            {
+                enemyBody.gravityScale = 0f;
+                changed = true;
+            }
+            if (enemyBody.constraints != RigidbodyConstraints2D.FreezeRotation)
+            {
+                enemyBody.constraints = RigidbodyConstraints2D.FreezeRotation;
+                changed = true;
+            }
+
+            CombatHealth2D health = enemyObject.GetComponent<CombatHealth2D>();
+            if (health == null)
+            {
+                health = enemyObject.AddComponent<CombatHealth2D>();
+                changed = true;
+            }
+            if (health.MaximumHealth != 100)
+            {
+                SetInteger(health, "maximumHealth", 100);
+                changed = true;
+            }
+
+            PrototypeGroundEnemy2D enemy = enemyObject.GetComponent<PrototypeGroundEnemy2D>();
+            if (enemy == null)
+            {
+                enemy = enemyObject.AddComponent<PrototypeGroundEnemy2D>();
+                changed = true;
+            }
+
+            Transform visualTransform = enemyObject.transform.Find("Programmer Art Presentation");
+            GameObject visualObject;
+            if (visualTransform == null)
+            {
+                visualObject = new GameObject("Programmer Art Presentation");
+                visualObject.transform.SetParent(enemyObject.transform, false);
+                changed = true;
+            }
+            else
+            {
+                visualObject = visualTransform.gameObject;
+            }
+            if (visualObject.transform.localPosition != Vector3.zero)
+            {
+                visualObject.transform.localPosition = Vector3.zero;
+                changed = true;
+            }
+
+            LineRenderer silhouette = visualObject.GetComponent<LineRenderer>();
+            if (silhouette == null)
+            {
+                silhouette = visualObject.AddComponent<LineRenderer>();
+                changed = true;
+            }
+            changed |= ConfigureLineRenderer(silhouette, unlitMaterial, 7, false, 20);
+            changed |= SetLinePosition(silhouette, 0, new Vector3(-0.6f, 0f));
+            changed |= SetLinePosition(silhouette, 1, new Vector3(-0.6f, 1.8f));
+            changed |= SetLinePosition(silhouette, 2, new Vector3(-0.3f, 2.5f));
+            changed |= SetLinePosition(silhouette, 3, new Vector3(0.3f, 2.5f));
+            changed |= SetLinePosition(silhouette, 4, new Vector3(0.6f, 1.8f));
+            changed |= SetLinePosition(silhouette, 5, new Vector3(0.6f, 0f));
+            changed |= SetLinePosition(silhouette, 6, new Vector3(-0.6f, 0f));
+            Color aliveColor = RustlinePalette.GetColor(19);
+            if (silhouette.startColor != aliveColor || silhouette.endColor != aliveColor)
+            {
+                silhouette.startColor = aliveColor;
+                silhouette.endColor = aliveColor;
+                changed = true;
+            }
+            if (!silhouette.enabled)
+            {
+                silhouette.enabled = true;
+                changed = true;
+            }
+
+            PrototypeGroundEnemyPresenter2D presenter =
+                visualObject.GetComponent<PrototypeGroundEnemyPresenter2D>();
+            if (presenter == null)
+            {
+                presenter = visualObject.AddComponent<PrototypeGroundEnemyPresenter2D>();
+                changed = true;
+            }
+
+            Transform hitboxTransform = enemyObject.transform.Find("Hitbox");
+            GameObject hitboxObject;
+            if (hitboxTransform == null)
+            {
+                hitboxObject = new GameObject("Hitbox");
+                hitboxObject.transform.SetParent(enemyObject.transform, false);
+                changed = true;
+            }
+            else
+            {
+                hitboxObject = hitboxTransform.gameObject;
+            }
+            Vector3 hitboxLocalPosition = new Vector3(0f, 1.25f, 0f);
+            if (hitboxObject.transform.localPosition != hitboxLocalPosition)
+            {
+                hitboxObject.transform.localPosition = hitboxLocalPosition;
+                changed = true;
+            }
+            if (hitboxObject.layer != combatTargetLayer)
+            {
+                hitboxObject.layer = combatTargetLayer;
+                changed = true;
+            }
+
+            BoxCollider2D hitCollider = hitboxObject.GetComponent<BoxCollider2D>();
+            if (hitCollider == null)
+            {
+                hitCollider = hitboxObject.AddComponent<BoxCollider2D>();
+                changed = true;
+            }
+            if (!hitCollider.isTrigger)
+            {
+                hitCollider.isTrigger = true;
+                changed = true;
+            }
+            Vector2 hitboxSize = new Vector2(1.2f, 2.5f);
+            if (hitCollider.size != hitboxSize)
+            {
+                hitCollider.size = hitboxSize;
+                changed = true;
+            }
+
+            WeaponHitbox2D weaponHitbox = hitboxObject.GetComponent<WeaponHitbox2D>();
+            if (weaponHitbox == null)
+            {
+                weaponHitbox = hitboxObject.AddComponent<WeaponHitbox2D>();
+                changed = true;
+            }
+
+            SetObjectReference(weaponHitbox, "health", health);
+            SetObjectReference(presenter, "health", health);
+            SetObjectReference(presenter, "silhouetteRenderer", silhouette);
+            SetObjectReference(enemy, "health", health);
+            SetObjectReference(enemy, "body", enemyBody);
+            SetObjectReference(enemy, "weaponHitCollider", hitCollider);
+            SetFloat(enemy, "patrolSpeed", PrototypeGroundEnemy2D.DefaultPatrolSpeed);
+            SetFloat(enemy, "patrolHalfDistance", PrototypeGroundEnemy2D.DefaultPatrolHalfDistance);
+            SetInteger(enemy, "initialDirection", 1);
+            SetFloat(enemy, "hitPauseDuration", PrototypeGroundEnemy2D.DefaultHitPauseDuration);
+            SetObjectReference(encounter, "enemy", enemy);
+            SetFloat(encounter, "resetDelay", MovementLabPrototypeEnemyEncounter2D.DefaultResetDelay);
 
             return changed;
         }
@@ -1803,6 +2018,36 @@ namespace Rustline.Editor
                         target != null && target.TargetRenderer != null,
                         "MovementLab CombatTarget setup mismatch for " + spec.Name + ".");
                 }
+
+                MovementLabPrototypeEnemyEncounter2D encounter =
+                    FindInScene<MovementLabPrototypeEnemyEncounter2D>(scene);
+                PrototypeGroundEnemy2D enemy = encounter?.Enemy;
+                CombatHealth2D enemyHealth = enemy?.Health;
+                Rigidbody2D enemyBody = enemy?.Body;
+                Collider2D enemyHitCollider = enemy?.WeaponHitCollider;
+                WeaponHitbox2D enemyHitbox = enemyHitCollider?.GetComponent<WeaponHitbox2D>();
+                PrototypeGroundEnemyPresenter2D enemyPresenter =
+                    enemy?.GetComponentInChildren<PrototypeGroundEnemyPresenter2D>(true);
+                Require(encounter != null && enemy != null &&
+                    enemy.transform.position == PrototypeEnemySpawnPosition &&
+                    enemyHealth != null && enemyHealth.MaximumHealth == 100 &&
+                    enemyBody != null && enemyBody.bodyType == RigidbodyType2D.Kinematic &&
+                    Mathf.Approximately(enemyBody.gravityScale, 0f) &&
+                    enemyHitCollider != null && enemyHitCollider.gameObject.layer == 7 &&
+                    enemyHitCollider.isTrigger && enemyHitCollider.enabled &&
+                    enemyHitbox != null && enemyHitbox.gameObject == enemyHitCollider.gameObject &&
+                    enemyHitbox.transform.parent == enemy.transform &&
+                    enemyHitbox.Health == enemyHealth &&
+                    enemyPresenter != null && enemyPresenter.Health == enemyHealth &&
+                    Mathf.Approximately(enemy.PatrolSpeed, PrototypeGroundEnemy2D.DefaultPatrolSpeed) &&
+                    Mathf.Approximately(
+                        enemy.PatrolHalfDistance,
+                        PrototypeGroundEnemy2D.DefaultPatrolHalfDistance) &&
+                    enemy.InitialDirection == 1 &&
+                    Mathf.Approximately(
+                        encounter.ResetDelay,
+                        MovementLabPrototypeEnemyEncounter2D.DefaultResetDelay),
+                    "MovementLab first combat entity hierarchy, tuning, or explicit hitbox routing is invalid.");
 
                 Camera worldCamera = FindCamera(scene, "World Camera - Native Pixel Follow");
                 Camera driverCamera = FindCamera(scene, "Native Pixel Driver Camera");

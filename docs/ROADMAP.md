@@ -98,7 +98,7 @@ See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the production contract.
 - [x] Prototype target impact feedback
 - [x] Restrained deterministic Longwatch camera impulse
 
-The first gunplay slice uses mouse-left primary fire, a config-driven `0.25 s` shot interval, `80` unit range, and `40` prototype damage. Hitscan uses `PlayerAim2D.ContinuousAimDirection`, never the quantized Longwatch visual pose, and resolves the nearest Ground or CombatTarget hit through an explicit allocation-free query. Gun Feel v1 consumes that one authoritative shot result for a 1.5-source-pixel overlay recoil, deterministic one-pixel camera impulse, reused short distal tracer, compact obstruction impact, and the existing target flash. Ammo, reload, authored muzzle metadata and flash, production recoil/impact art, combat audio, gamepad aim, inventory, enemy health/death, and unsupported-state Longwatch art remain pending.
+The first gunplay slice uses mouse-left primary fire, a config-driven `0.25 s` shot interval, `80` unit range, and `40` prototype damage. Hitscan uses `PlayerAim2D.ContinuousAimDirection`, never the quantized Longwatch visual pose, and resolves the nearest Ground or CombatTarget hit through an explicit allocation-free query. Gun Feel v1 consumes that one authoritative shot result for a 1.5-source-pixel overlay recoil, deterministic one-pixel camera impulse, reused short distal tracer, compact obstruction impact, and the existing target flash. Ammo, reload, authored muzzle metadata and flash, production recoil/impact art, combat audio, gamepad aim, inventory, and unsupported-state Longwatch art remain pending. M3A now consumes this unchanged weapon result through an explicit hitbox-to-health route.
 
 **Exit criterion:** shooting targets while moving feels deliberate and responsive, and the authored directional weapon presentation remains visually coherent across locomotion/facing changes.
 
@@ -106,13 +106,20 @@ The first gunplay slice uses mouse-left primary fire, a config-driven `0.25 s` s
 
 **Goal:** create the first repeatable PvE combat encounter.
 
-- [ ] Health/damage model
-- [ ] Ground enemy
+- [x] Reusable health/damage model
+- [x] First killable ground enemy prototype
+- [x] Enemy hit reaction and death
+- [x] Repeatable MovementLab prototype encounter/reset
 - [ ] Flying enemy
-- [ ] Enemy damage / hit reactions
+- [ ] Enemy attacks
+- [ ] Player health
 - [ ] Player death/restart
-- [ ] Basic encounter spawning
+- [ ] Production enemy art
+- [ ] Advanced enemy AI
+- [ ] Broader encounter spawning
 - [ ] First-pass combat audio
+
+M3A is a narrow combat proof point, not completion of M3. The first programmer-art ground enemy has `100` health, follows a deterministic horizontal patrol, flashes and briefly pauses when damaged, dies after three normal `40`-damage Longwatch hits, then is reset in place by a MovementLab-only controller. Generic `CombatHealth2D` receives weapon-independent `DamageInfo2D`; the raycast-hit child collider carries `WeaponHitbox2D` with an explicit serialized reference to health on the enemy root. Enemy attacks, player health/death, production art, advanced ground AI, the flying enemy, combat audio, and a broader spawning system remain pending. See [`COMBAT.md`](COMBAT.md).
 
 **Exit criterion:** a short room can be traversed and cleared repeatedly without debug intervention.
 

@@ -98,12 +98,16 @@ namespace Rustline.Tests
 
             Tilemap collisionTilemap = initializer.GetComponent<Tilemap>();
             Assert.That(collisionTilemap.HasTile(new Vector3Int(92, -1, 0)), Is.True);
-            for (int x = 93; x <= 97; x++)
+            for (int x = 93; x <= 96; x++)
             {
                 Assert.That(collisionTilemap.HasTile(new Vector3Int(x, -1, 0)), Is.False,
-                    "The wall-kick shaft must retain exactly five open cells (x=93..97).");
+                    "The wall-kick shaft must retain exactly four open cells (x=93..96).");
             }
-            Assert.That(collisionTilemap.HasTile(new Vector3Int(98, -1, 0)), Is.True);
+            Assert.That(collisionTilemap.HasTile(new Vector3Int(97, -1, 0)), Is.True);
+            Assert.That(collisionTilemap.HasTile(new Vector3Int(111, -1, 0)), Is.True,
+                "The shaft right block must still end immediately before x=112.");
+            Assert.That(collisionTilemap.HasTile(new Vector3Int(112, -1, 0)), Is.True,
+                "The Longwatch firing-range floor must still begin at x=112.");
         }
 
         [UnityTest]
@@ -864,7 +868,7 @@ namespace Rustline.Tests
         {
             yield return VerifyWallBraceAndKick(
                 wallSide: 1,
-                startingX: 97.4f,
+                startingX: 96.4f,
                 inputKey: Key.D,
                 expectedKickVelocityX: -8f);
         }
@@ -880,7 +884,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator Player_AlternatesWallKicksAcrossFiveCellShaft()
+        public IEnumerator Player_AlternatesWallKicksAcrossFourCellShaft()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -892,7 +896,7 @@ namespace Rustline.Tests
             motor.Landed += CountLand;
             try
             {
-                body.position = new Vector2(97.4f, -3.5f);
+                body.position = new Vector2(96.4f, -3.5f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D));
@@ -911,7 +915,13 @@ namespace Rustline.Tests
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A));
                 InputSystem.Update();
-                yield return new WaitForFixedUpdate();
+                for (int index = 0; index < 50 && body.position.y > -3.5f; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+                Assert.That(motor.IsWallBraced, Is.True);
+                Assert.That(body.position.y, Is.LessThanOrEqualTo(-3.5f),
+                    "The second four-cell-shaft kick was not staged low enough to meet the opposite wall.");
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.Space));
                 InputSystem.Update();
                 yield return new WaitForFixedUpdate();
@@ -920,7 +930,7 @@ namespace Rustline.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
                 InputSystem.Update();
                 yield return WaitForWallBrace(motor, 1, 100);
-                Assert.That(body.position.x, Is.InRange(97.25f, 97.55f));
+                Assert.That(body.position.x, Is.InRange(96.25f, 96.55f));
                 Assert.That(landEvents, Is.Zero, "Alternating shaft wall contact emitted a false Land event.");
             }
             finally
