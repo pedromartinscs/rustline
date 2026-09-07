@@ -4,6 +4,10 @@ Rustline is developed as a sequence of proof points. Each milestone should be pl
 
 Rustline is currently a **single-player project**. Multiplayer, networking, server authority, prediction/reconciliation, matchmaking, network persistence, and multiplayer backend architecture are outside the project scope unless the project direction is explicitly changed in the future.
 
+## Active asset production push
+
+The current cross-milestone art-production order is tracked in [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md). It closes crouch/wall presentation first, completes unsupported Longwatch locomotion art second, replaces the M3A programmer-art ground enemy third, and finishes production muzzle/impact/audio presentation fourth. Treat that order as the working plan rather than a permanent milestone rewrite; native-scale in-engine approval remains the gate between dependent art packages.
+
 ## M0 — Visual foundation
 
 **Goal:** establish a redistributable visual baseline and integrate it correctly into Unity before production gameplay work begins.
