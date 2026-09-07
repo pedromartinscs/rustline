@@ -139,7 +139,7 @@ The gameplay direction may be mathematically continuous for mouse/gamepad target
 
 The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, Backpedal, and Fall are aim/fire-capable presentation states. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
 
-The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing Idle, Run, and Backpedal sets are authored and integrated for all 19 directions: Idle uses two `80×96` cells per `160×96` sheet, Run uses six per `480×96`, and Backpedal uses exactly four per `320×96`. All use the common armed pivot and explicit AimOrigin 38 source pixels above the renderer pivot. Mouse-driven 360° mirroring, generic aim-facing, and Body-clock synchronization are automated. Run and the corrected origin are human-approved; Backpedal approval remains pending.
+The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing Idle, Run, and Backpedal sets are authored and integrated for all 19 directions: Idle uses two `80×96` cells per `160×96` sheet, Run uses six per `480×96`, and Backpedal uses exactly four per `320×96`. All use the common armed pivot and explicit AimOrigin 38 source pixels above the renderer pivot. Mouse-driven 360° mirroring, generic aim-facing, and Body-clock synchronization are automated. Run, the corrected origin, and the revised four-frame Backpedal presentation are human-approved.
 
 This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
 
@@ -174,6 +174,8 @@ For highly constrained modular assets such as structural tiles, generative outpu
 Third-party packs may be studied for broad design principles, genre conventions, modularity, and readability, but Rustline assets should not be produced by modifying or redistributing those third-party source files.
 
 Once an original Rustline visual baseline exists, prefer Rustline's own artwork as the reference source for future generations.
+
+The active production sequence for the current player, Longwatch, ground-enemy, and combat-FX push is tracked in [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md).
 
 ## Initial asset checklist
 
