@@ -1996,7 +1996,7 @@ namespace Rustline.Editor
                 EditorBuildSettings.scenes[0].enabled && EditorBuildSettings.scenes[1].path == ArtShowcasePath &&
                 EditorBuildSettings.scenes[1].enabled, "MovementLab and ArtShowcase must lead the build settings.");
 
-            ValidateScene(reopenMovementLabFromDisk);
+            ValidateScene(reopenMovementLabFromDisk, config);
             RustlineM0ArtSetup.ValidateAllOrThrow();
 
             string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
@@ -2009,7 +2009,7 @@ namespace Rustline.Editor
                 "Networking or multiplayer packages are present.");
         }
 
-        private static void ValidateScene(bool reopenFromDisk)
+        private static void ValidateScene(bool reopenFromDisk, PlayerMovementConfig config)
         {
             Scene scene;
             bool openedForValidation;
