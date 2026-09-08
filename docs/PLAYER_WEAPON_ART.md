@@ -295,6 +295,24 @@ The standalone weapon concept is a design reference. The final production author
 
 The Longwatch Idle, Run, Backpedal, and Crouch packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run and Crouch each supply 6, and Backpedal supplies exactly 4. Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, 5° vertical facing hysteresis, renderer ownership, and Body-clock frame synchronization. The corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved. The accepted Backpedal solution keeps the right foot visually ahead while alternating short backward steps, preserving a convincing four-frame cycle. The four-frame contract remains unchanged; playback is tuned to 7.0 fps while grounded Backpedal remains 4 units/s. Longwatch crouch integration is automated and complete, but still requires separate human native-scale visual approval. Fall aim and Jump/Land/Roll carry art remain deferred.
 
+## Longwatch muzzle metadata authoring
+
+Exact per-frame muzzle coordinates are being prepared as **offline-generated art metadata**, rather than maintained manually in Unity.
+
+The canonical authoring reference is:
+
+```text
+ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png
+```
+
+It overlays Longwatch Idle frame 0 for all 19 authored right-facing directions and contains one blue muzzle marker per direction plus a single red radial-ordering anchor. The composite is used only to seed direction-specific extraction; clean pixel signatures must come from each isolated production Idle frame 0 so neighboring overlaid angles cannot contaminate matching.
+
+The planned Python/Pillow generator and JSON contract are specified in [`WEAPON_MUZZLE_METADATA.md`](WEAPON_MUZZLE_METADATA.md). Generated coordinates will be relative to the canonical armed pivot `(24,8)` and will later be imported into compact Unity runtime data; runtime gameplay will not inspect PNGs or perform image matching.
+
+Longwatch Crouch `m70`, `m80`, and `m90` are a deliberate exception: the muzzle leaves the 80×96 authored cell at those downward poses. They are therefore treated as unsupported muzzle poses rather than generator failures. The approved future presentation rule is to clamp those crouch visuals to `m60`; invalid-angle firing and red-crosshair feedback remain separate follow-up runtime work.
+
+At this stage the reference/scaffold is versioned, but generated per-frame metadata and runtime muzzle consumption are **not yet implemented**. Existing hitscan/tracer behavior therefore continues to use the current `AimOriginWorld` path until that later integration is explicitly completed.
+
 ## Aim/fire locomotion rules
 
 The current artistic/gameplay direction deliberately distinguishes locomotion states.
