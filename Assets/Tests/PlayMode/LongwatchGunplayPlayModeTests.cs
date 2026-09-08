@@ -174,7 +174,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator RunAndBackpedal_CanFireWithoutResettingAnimationOrOverlay()
+        public IEnumerator AuthoredGroundedStates_CanFireWithoutResettingAnimationOrOverlay()
         {
             yield return LoadRange();
             PlayerWeaponController2D weapon = _weapon;
@@ -211,6 +211,32 @@ namespace Rustline.Tests
                 yield return null;
                 Assert.That(body.linearVelocity.x, Is.EqualTo(-4f).Within(0.08f));
                 AssertFirePreservesPresentation(weapon, presenter, playerAnimator, animator, bodyRenderer, armsRenderer);
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
+                InputSystem.Update();
+                yield return PlaceGrounded(body, 116f);
+                Vector2 crouchDirection = DirectionAtDegrees(7f);
+                SetAim(aim, crouchDirection);
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S));
+                InputSystem.Update();
+                yield return WaitForState(playerAnimator, PlayerAnimationState.CrouchIdle, 30);
+                Assert.That(presenter.OwnsRenderer, Is.True);
+                AssertFirePreservesPresentation(weapon, presenter, playerAnimator, animator, bodyRenderer, armsRenderer);
+                Assert.That(weapon.LastShotResult.Direction.x,
+                    Is.EqualTo(crouchDirection.x).Within(0.000001f));
+                Assert.That(weapon.LastShotResult.Direction.y,
+                    Is.EqualTo(crouchDirection.y).Within(0.000001f));
+                Assert.That(presenter.Selection.AuthoredAngleDegrees, Is.EqualTo(10));
+
+                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S, Key.D));
+                InputSystem.Update();
+                yield return WaitForState(playerAnimator, PlayerAnimationState.CrouchMove, 30);
+                Assert.That(presenter.OwnsRenderer, Is.True);
+                AssertFirePreservesPresentation(weapon, presenter, playerAnimator, animator, bodyRenderer, armsRenderer);
+                Assert.That(weapon.LastShotResult.Direction.x,
+                    Is.EqualTo(crouchDirection.x).Within(0.000001f));
+                Assert.That(weapon.LastShotResult.Direction.y,
+                    Is.EqualTo(crouchDirection.y).Within(0.000001f));
             }
             finally
             {
@@ -221,7 +247,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator JumpAndCrouch_ClicksAreDroppedAndNeverFireLater()
+        public IEnumerator JumpClick_IsDroppedAndNeverFiresLater()
         {
             yield return LoadRange();
             PlayerWeaponController2D weapon = _weapon;
@@ -250,19 +276,6 @@ namespace Rustline.Tests
                 yield return null;
                 Assert.That(weapon.ShotCount, Is.Zero, "Rejected jump click was buffered.");
 
-                InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.S));
-                InputSystem.Update();
-                yield return WaitForState(playerAnimator, PlayerAnimationState.CrouchIdle, 30);
-                yield return Click(mouse);
-                Assert.That(weapon.ShotCount, Is.Zero);
-                Assert.That(_recoil.ImpulseCount, Is.Zero);
-                Assert.That(_cameraImpulse.ImpulseCount, Is.Zero);
-
-                InputSystem.QueueStateEvent(keyboard, new KeyboardState());
-                InputSystem.Update();
-                yield return WaitForState(playerAnimator, PlayerAnimationState.Idle, 30);
-                yield return null;
-                Assert.That(weapon.ShotCount, Is.Zero, "Rejected crouch click was buffered.");
             }
             finally
             {

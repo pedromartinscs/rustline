@@ -78,6 +78,34 @@ namespace Rustline.Presentation
         }
     }
 
+    [Serializable]
+    public struct LongwatchCrouchAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+        [SerializeField] private Sprite frame1;
+        [SerializeField] private Sprite frame2;
+        [SerializeField] private Sprite frame3;
+        [SerializeField] private Sprite frame4;
+        [SerializeField] private Sprite frame5;
+
+        public int AngleDegrees => angleDegrees;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            switch (frameIndex)
+            {
+                case 0: return frame0;
+                case 1: return frame1;
+                case 2: return frame2;
+                case 3: return frame3;
+                case 4: return frame4;
+                case 5: return frame5;
+                default: throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
+    }
+
     /// <summary>
     /// Owns the shared overlay renderer while the prototype Longwatch is in an
     /// authored aim-capable state. Body remains Animator-driven; its displayed
@@ -101,6 +129,8 @@ namespace Rustline.Presentation
         [SerializeField] private LongwatchRunAimPose[] runAimPoses = Array.Empty<LongwatchRunAimPose>();
         [SerializeField] private Sprite[] bodyBackpedalFrames = Array.Empty<Sprite>();
         [SerializeField] private LongwatchBackpedalAimPose[] backpedalAimPoses = Array.Empty<LongwatchBackpedalAimPose>();
+        [SerializeField] private Sprite[] bodyCrouchFrames = Array.Empty<Sprite>();
+        [SerializeField] private LongwatchCrouchAimPose[] crouchAimPoses = Array.Empty<LongwatchCrouchAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -122,6 +152,8 @@ namespace Rustline.Presentation
         public int RunAimPoseCount => runAimPoses?.Length ?? 0;
         public int BodyBackpedalFrameCount => bodyBackpedalFrames?.Length ?? 0;
         public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
+        public int BodyCrouchFrameCount => bodyCrouchFrames?.Length ?? 0;
+        public int CrouchAimPoseCount => crouchAimPoses?.Length ?? 0;
         public bool OwnsRenderer => _ownsRenderer;
         public bool HasValidAim => playerAim != null && playerAim.HasValidAim;
         public LongwatchAimSelection Selection => _selection;
@@ -167,6 +199,9 @@ namespace Rustline.Presentation
                         break;
                     case PlayerAnimationState.Backpedal:
                         armsWeaponSpriteRenderer.sprite = backpedalAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        break;
+                    case PlayerAnimationState.CrouchMove:
+                        armsWeaponSpriteRenderer.sprite = crouchAimPoses[directionIndex].GetFrame(bodyFrameIndex);
                         break;
                 }
             }
@@ -215,6 +250,16 @@ namespace Rustline.Presentation
             return bodyBackpedalFrames[index];
         }
 
+        public LongwatchCrouchAimPose GetCrouchAimPose(int index)
+        {
+            return crouchAimPoses[index];
+        }
+
+        public Sprite GetBodyCrouchFrame(int index)
+        {
+            return bodyCrouchFrames[index];
+        }
+
         private bool CanOwnRenderer()
         {
             if (!_configurationValid)
@@ -224,7 +269,8 @@ namespace Rustline.Presentation
 
             PlayerAnimationState? state = playerAnimator.CurrentState;
             return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run ||
-                   state == PlayerAnimationState.Backpedal;
+                   state == PlayerAnimationState.Backpedal || state == PlayerAnimationState.CrouchIdle ||
+                   state == PlayerAnimationState.CrouchMove;
         }
 
         private bool TryResolveDisplayedBodyFrame(
@@ -257,6 +303,18 @@ namespace Rustline.Presentation
                 if (displayedBody == bodyBackpedalFrames[index])
                 {
                     bodyState = PlayerAnimationState.Backpedal;
+                    frameIndex = index;
+                    return true;
+                }
+            }
+
+            for (int index = 0; index < bodyCrouchFrames.Length; index++)
+            {
+                if (displayedBody == bodyCrouchFrames[index])
+                {
+                    // Crouch Idle and both forward/reverse Crouch Move presentations share
+                    // this single authored six-frame set. The displayed Body sprite is the clock.
+                    bodyState = PlayerAnimationState.CrouchMove;
                     frameIndex = index;
                     return true;
                 }
@@ -298,7 +356,9 @@ namespace Rustline.Presentation
                    bodyRunFrames != null && bodyRunFrames.Length == 6 &&
                    runAimPoses != null && runAimPoses.Length == 19 &&
                    bodyBackpedalFrames != null && bodyBackpedalFrames.Length == 4 &&
-                   backpedalAimPoses != null && backpedalAimPoses.Length == 19;
+                   backpedalAimPoses != null && backpedalAimPoses.Length == 19 &&
+                   bodyCrouchFrames != null && bodyCrouchFrames.Length == 6 &&
+                   crouchAimPoses != null && crouchAimPoses.Length == 19;
         }
 
         private void AcquireRenderer()

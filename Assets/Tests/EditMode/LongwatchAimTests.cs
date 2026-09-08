@@ -19,6 +19,8 @@ namespace Rustline.Tests
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
         private const string LongwatchBackpedalRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
+        private const string LongwatchCrouchRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
 
@@ -103,6 +105,7 @@ namespace Rustline.Tests
             LongwatchIdleAimPose idle = default;
             LongwatchRunAimPose run = default;
             LongwatchBackpedalAimPose backpedal = default;
+            LongwatchCrouchAimPose crouch = default;
 
             Assert.Throws<ArgumentOutOfRangeException>(() => idle.GetFrame(-1));
             Assert.Throws<ArgumentOutOfRangeException>(() => idle.GetFrame(2));
@@ -110,6 +113,8 @@ namespace Rustline.Tests
             Assert.Throws<ArgumentOutOfRangeException>(() => run.GetFrame(6));
             Assert.Throws<ArgumentOutOfRangeException>(() => backpedal.GetFrame(-1));
             Assert.Throws<ArgumentOutOfRangeException>(() => backpedal.GetFrame(4));
+            Assert.Throws<ArgumentOutOfRangeException>(() => crouch.GetFrame(-1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => crouch.GetFrame(6));
         }
 
         [Test]
@@ -291,6 +296,44 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void AllLongwatchCrouchSheets_MatchAuthoredSixFrameContract()
+        {
+            string[] importedGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { LongwatchCrouchRoot });
+            Assert.That(importedGuids, Has.Length.EqualTo(19),
+                "Longwatch Crouch folder must contain only the expected 19 direction textures.");
+
+            int totalSprites = 0;
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string baseName = "player_salvager_longwatch_dmr_crouch_aim_" +
+                    DirectionSuffixes[directionIndex];
+                string path = LongwatchCrouchRoot + "/" + baseName + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                Assert.That(texture, Is.Not.Null, "Missing direction sheet: " + path);
+                Assert.That(texture.width, Is.EqualTo(480), path);
+                Assert.That(texture.height, Is.EqualTo(96), path);
+
+                AssertLongwatchImporter(path);
+                List<Sprite> sprites = LoadSprites(path);
+                Assert.That(sprites, Has.Count.EqualTo(6), path);
+                totalSprites += sprites.Count;
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    Sprite sprite = sprites[frameIndex];
+                    Assert.That(sprite.name, Is.EqualTo(baseName + "_" + frameIndex));
+                    Assert.That(sprite.rect, Is.EqualTo(new Rect(frameIndex * 80, 0, 80, 96)));
+                    Assert.That(Vector2.Distance(sprite.pivot, new Vector2(24f, 8f)),
+                        Is.LessThan(0.001f));
+                    Assert.That(sprite.pixelsPerUnit, Is.EqualTo(16f));
+                }
+
+                AssertSourcePixels(path);
+            }
+
+            Assert.That(totalSprites, Is.EqualTo(114));
+        }
+
+        [Test]
         public void PlayerPrefab_ContainsCompleteLongwatchPoseMapping()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
@@ -303,6 +346,8 @@ namespace Rustline.Tests
             Assert.That(presenter.RunAimPoseCount, Is.EqualTo(19));
             Assert.That(presenter.BodyBackpedalFrameCount, Is.EqualTo(4));
             Assert.That(presenter.BackpedalAimPoseCount, Is.EqualTo(19));
+            Assert.That(presenter.BodyCrouchFrameCount, Is.EqualTo(6));
+            Assert.That(presenter.CrouchAimPoseCount, Is.EqualTo(19));
             PlayerAim2D playerAim = prefab.GetComponent<PlayerAim2D>();
             Assert.That(playerAim, Is.Not.Null);
             Assert.That(presenter.PlayerAim, Is.SameAs(playerAim));
@@ -313,6 +358,12 @@ namespace Rustline.Tests
             HashSet<Sprite> mappedIdleSprites = new HashSet<Sprite>();
             HashSet<Sprite> mappedRunSprites = new HashSet<Sprite>();
             HashSet<Sprite> mappedBackpedalSprites = new HashSet<Sprite>();
+            HashSet<Sprite> mappedCrouchSprites = new HashSet<Sprite>();
+            for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+            {
+                Assert.That(presenter.GetBodyCrouchFrame(frameIndex).name,
+                    Is.EqualTo("player_salvager_body_crouch_" + frameIndex));
+            }
             for (int index = 0; index < DirectionAngles.Length; index++)
             {
                 LongwatchIdleAimPose idlePose = presenter.GetIdleAimPose(index);
@@ -341,11 +392,22 @@ namespace Rustline.Tests
                         Does.EndWith("_" + DirectionSuffixes[index] + "_" + frameIndex));
                     Assert.That(mappedBackpedalSprites.Add(frame), Is.True);
                 }
+
+                LongwatchCrouchAimPose crouchPose = presenter.GetCrouchAimPose(index);
+                Assert.That(crouchPose.AngleDegrees, Is.EqualTo(DirectionAngles[index]));
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    Sprite frame = crouchPose.GetFrame(frameIndex);
+                    Assert.That(frame.name,
+                        Does.EndWith("_" + DirectionSuffixes[index] + "_" + frameIndex));
+                    Assert.That(mappedCrouchSprites.Add(frame), Is.True);
+                }
             }
 
             Assert.That(mappedIdleSprites, Has.Count.EqualTo(38));
             Assert.That(mappedRunSprites, Has.Count.EqualTo(114));
             Assert.That(mappedBackpedalSprites, Has.Count.EqualTo(76));
+            Assert.That(mappedCrouchSprites, Has.Count.EqualTo(114));
         }
 
         [Test]

@@ -29,6 +29,8 @@ namespace Rustline.Editor
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
         private const string LongwatchBackpedalAimRoot =
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
+        private const string LongwatchCrouchAimRoot =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
@@ -148,6 +150,8 @@ namespace Rustline.Editor
             internal string RunAssetPath => LongwatchRunAimRoot + "/" + RunFileName + ".png";
             internal string BackpedalFileName => "player_salvager_longwatch_dmr_backpedal_aim_" + Suffix;
             internal string BackpedalAssetPath => LongwatchBackpedalAimRoot + "/" + BackpedalFileName + ".png";
+            internal string CrouchFileName => "player_salvager_longwatch_dmr_crouch_aim_" + Suffix;
+            internal string CrouchAssetPath => LongwatchCrouchAimRoot + "/" + CrouchFileName + ".png";
         }
 
         private sealed class PreviewAsset
@@ -268,7 +272,7 @@ namespace Rustline.Editor
                 logicalRowsRunTopToBottom: true);
         }
 
-        private static void ConfigureLongwatchAimSheets()
+        internal static void ConfigureLongwatchAimSheets()
         {
             foreach (LongwatchDirectionSpec direction in LongwatchDirections)
             {
@@ -294,6 +298,14 @@ namespace Rustline.Editor
                     96,
                     4,
                     index => direction.BackpedalFileName + "_" + index,
+                    new Vector2(0.3f, 8f / 96f),
+                    logicalRowsRunTopToBottom: false);
+                ConfigureFixedGrid(
+                    direction.CrouchAssetPath,
+                    80,
+                    96,
+                    6,
+                    index => direction.CrouchFileName + "_" + index,
                     new Vector2(0.3f, 8f / 96f),
                     logicalRowsRunTopToBottom: false);
             }
@@ -989,6 +1001,7 @@ namespace Rustline.Editor
             ValidateLongwatchIdleAimSheets();
             ValidateLongwatchRunAimSheets();
             ValidateLongwatchBackpedalAimSheets();
+            ValidateLongwatchCrouchAimSheets();
 
             ValidateImporter(JumpDustPath);
             ValidateSpriteGrid(
@@ -1300,6 +1313,48 @@ namespace Rustline.Editor
 
             Require(importedSpriteCount == 76,
                 "Longwatch Backpedal aim package must import exactly 76 sprites.");
+        }
+
+        private static void ValidateLongwatchCrouchAimSheets()
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absoluteRoot = Path.Combine(projectRoot, LongwatchCrouchAimRoot);
+            Require(Directory.Exists(absoluteRoot), "Longwatch Crouch aim source folder is missing.");
+            string[] actualPngs = Directory.GetFiles(absoluteRoot, "*.png", SearchOption.TopDirectoryOnly);
+            Require(actualPngs.Length == LongwatchDirections.Length,
+                "Longwatch Crouch aim folder must contain exactly the 19 expected direction PNGs.");
+
+            HashSet<string> expectedFiles = new HashSet<string>(
+                LongwatchDirections.Select(direction => direction.CrouchFileName + ".png"),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string actualPath in actualPngs)
+            {
+                Require(expectedFiles.Contains(Path.GetFileName(actualPath)),
+                    "Unexpected Longwatch Crouch aim direction file: " + Path.GetFileName(actualPath));
+            }
+
+            int importedSpriteCount = 0;
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
+            {
+                ValidateImporter(direction.CrouchAssetPath);
+                ValidateSpriteGrid(
+                    direction.CrouchAssetPath,
+                    80,
+                    96,
+                    6,
+                    false,
+                    index => direction.CrouchFileName + "_" + index,
+                    new Vector2(24f, 8f));
+                ValidateSourcePixels(direction.CrouchAssetPath);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.CrouchAssetPath);
+                Require(texture != null && texture.width == 480 && texture.height == 96,
+                    direction.CrouchAssetPath + " must remain exactly 480x96 (six 80x96 cells).");
+                importedSpriteCount += LoadSprites(direction.CrouchAssetPath).Count();
+            }
+
+            Require(importedSpriteCount == 114,
+                "Longwatch Crouch aim package must import exactly 114 sprites.");
         }
 
         private static void ValidateImporter(string path)

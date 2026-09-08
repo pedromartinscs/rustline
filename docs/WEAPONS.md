@@ -75,6 +75,7 @@ ArtSource/Concepts/Longwatch_DMR_concept.png
 ArtSource/Concepts/Longwatch_DMR_zero_degrees_concept.png
 ArtSource/Characters/Player/player_salvager_idle_armed.xcf
 ArtSource/Characters/Player/player_salvager_run_armed.xcf
+ArtSource/Characters/Player/player_salvager_crouch_armed.xcf
 ```
 
 Current production status:
@@ -89,13 +90,14 @@ Current production status:
 - runtime Run integration uses the sole Body Animator as its six-frame clock and keeps aim-facing independent of movement direction;
 - right-facing Backpedal is authored at all 19 angles with exactly four `80×96` frames in each `320×96` sheet;
 - runtime Backpedal integration uses the same sole Body Animator clock, with a 4 units/s grounded cap versus 7 units/s forward;
+- right-facing Crouch is authored at all 19 angles with six `80×96` frames in each `480×96` sheet; Crouch Idle reuses frame 0 and forward/reverse movement follows the displayed Body frame;
 - generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
 - mouse-left primary fire now drives a semi-automatic Longwatch hitscan from the exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
-- firing is currently allowed only during Idle, Run, and Backpedal, where authored Longwatch presentation exists; Jump, Fall, Land, crouch, Wall Brace, and Wall Kick are deliberately blocked pending appropriate art;
+- firing is allowed during Idle, Run, Backpedal, Crouch Idle, and Crouch Move, where authored Longwatch presentation exists; Jump, Fall, Land, Wall Brace, and Wall Kick remain deliberately blocked pending appropriate art;
 - MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short distal one-source-pixel tracer streak, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
-- Fall aim and Jump/Land/Roll carry art remain deferred.
+- Fall aim and Jump/Land/Roll carry art remain deferred; Longwatch crouch integration is complete but awaits human native-scale visual approval.
 
 This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
 
@@ -120,8 +122,9 @@ Do not generate all twenty complete weapon packages before validating the pipeli
 5. Expand the accepted Longwatch contract to Run. **Authored, integrated, and human-approved.**
 6. Expand the accepted Longwatch contract to four-frame Backpedal. **Authored, integrated, and human-approved.**
 7. Validate the first real semi-automatic continuous-aim hitscan against diagnostic targets. **Implemented in MovementLab.**
-8. Expand to Fall aim and non-firing carry states after the current visual gate.
-9. Freeze the reusable weapon art/import/runtime convention.
-10. Expand into the remaining roster in controlled batches.
+8. Expand to Crouch. **Authored and integrated from one six-frame set per direction; human native-scale approval remains open.**
+9. Expand to Fall aim and non-firing carry states after the current visual gate.
+10. Freeze the reusable weapon art/import/runtime convention.
+11. Expand into the remaining roster in controlled batches.
 
 A long weapon remains the correct first stress test because angular, clipping, hand-placement, and pivot errors are easier to see than with a compact pistol.

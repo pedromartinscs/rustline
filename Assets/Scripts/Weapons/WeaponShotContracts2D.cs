@@ -93,7 +93,9 @@ namespace Rustline.Gameplay.Weapons
 
             return state == PlayerAnimationState.Idle ||
                    state == PlayerAnimationState.Run ||
-                   state == PlayerAnimationState.Backpedal;
+                   state == PlayerAnimationState.Backpedal ||
+                   state == PlayerAnimationState.CrouchIdle ||
+                   state == PlayerAnimationState.CrouchMove;
         }
     }
 

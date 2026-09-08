@@ -197,10 +197,10 @@ namespace Rustline.Tests
             Assert.That(armsVisual.localPosition, Is.EqualTo(Vector3.zero));
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
+            Assert.That(animator, Is.Not.Null);
             Assert.That(bodyRenderer.sortingOrder, Is.EqualTo(10));
             Assert.That(armsRenderer.sortingOrder, Is.EqualTo(11));
             Assert.That(player.GetComponentsInChildren<Animator>(true), Has.Length.EqualTo(1));
-            Assert.That(animator, Is.Not.Null);
 
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
             Mouse mouse = InputSystem.AddDevice<Mouse>();
@@ -763,6 +763,7 @@ namespace Rustline.Tests
             Transform armsVisual = visual?.Find("ArmsWeaponSpriteRenderer");
             SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
             SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+            Animator animator = bodyVisual?.GetComponent<Animator>();
 
             Assert.That(body, Is.Not.Null);
             Assert.That(capsule, Is.Not.Null);
@@ -776,6 +777,7 @@ namespace Rustline.Tests
             Assert.That(armsVisual, Is.Not.Null);
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
+            Assert.That(animator, Is.Not.Null);
             Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(24));
             Assert.That(motor.GetComponentsInChildren<Animator>(true), Has.Length.EqualTo(1));
 
@@ -803,15 +805,16 @@ namespace Rustline.Tests
                     yield return new WaitForFixedUpdate();
                 }
 
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
+                yield return null;
                 SetCrouchHeldForTest(input, true);
                 yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchIdle, 30);
                 yield return null;
 
                 Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_crouch_0"));
-                Assert.That(unarmedPresenter.OwnsRenderer, Is.True);
-                Assert.That(longwatchPresenter.OwnsRenderer, Is.False,
-                    "Longwatch took overlay ownership during unsupported crouch presentation.");
-                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+                Assert.That(unarmedPresenter.OwnsRenderer, Is.False);
+                Assert.That(longwatchPresenter.OwnsRenderer, Is.True);
+                AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
                 Sprite heldIdleBody = bodyRenderer.sprite;
                 Sprite heldIdleArms = armsRenderer.sprite;
                 for (int index = 0; index < 30; index++)
@@ -820,12 +823,24 @@ namespace Rustline.Tests
                     Assert.That(bodyRenderer.sprite, Is.SameAs(heldIdleBody),
                         "Crouch Idle introduced animation instead of holding authored frame 0.");
                     Assert.That(armsRenderer.sprite, Is.SameAs(heldIdleArms));
+                    AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
                     AssertCrouchVisualTransformsUnchanged(
                         visual, bodyVisual, armsVisual,
                         visualPosition, visualRotation, visualScale,
                         bodyPosition, bodyRotation, bodyScale,
                         armsPosition, armsRotation, armsScale);
                 }
+
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld,
+                    new Vector2(1f, 1f));
+                for (int index = 0; index < 30 && armsRenderer.sprite == heldIdleArms; index++)
+                {
+                    yield return null;
+                }
+                Assert.That(bodyRenderer.sprite, Is.SameAs(heldIdleBody));
+                Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_crouch_0"));
+                Assert.That(armsRenderer.sprite, Is.Not.SameAs(heldIdleArms));
+                AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
 
                 Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.375f)));
                 Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 1.1875f)));
@@ -849,6 +864,7 @@ namespace Rustline.Tests
                     {
                         reverseSequence.Add(frameName);
                         lastReverseFrame = frameName;
+                        AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
                     }
                 }
                 Assert.That(reverseSequence, Is.EqualTo(new[]
@@ -876,8 +892,7 @@ namespace Rustline.Tests
                     reachedCrouchSpeedCap |= Mathf.Abs(Mathf.Abs(body.linearVelocity.x) - 3f) < 0.08f;
                     Assert.That(bodyRenderer.sprite.name, Does.StartWith("player_salvager_body_crouch_"));
                     observedBodyFrames.Add(bodyRenderer.sprite.name);
-                    AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
-                    Assert.That(longwatchPresenter.OwnsRenderer, Is.False);
+                    AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
                     AssertCrouchVisualTransformsUnchanged(
                         visual, bodyVisual, armsVisual,
                         visualPosition, visualRotation, visualScale,
@@ -899,13 +914,46 @@ namespace Rustline.Tests
                 yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchIdle, 60);
                 yield return null;
                 Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_crouch_0"));
-                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+                AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
 
                 Set(gamepad.leftStick, Vector2.right);
                 yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchMove, 30);
-                yield return null;
-                Assert.That(bodyRenderer.sprite.name, Does.StartWith("player_salvager_body_crouch_"));
-                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+                var forwardSequence = new List<string>();
+                string lastForwardFrame = null;
+                for (int index = 0; index < 180 && forwardSequence.Count < 6; index++)
+                {
+                    yield return null;
+                    string frameName = bodyRenderer.sprite.name;
+                    if (frameName != lastForwardFrame)
+                    {
+                        forwardSequence.Add(frameName);
+                        lastForwardFrame = frameName;
+                        AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
+                    }
+                }
+                Assert.That(forwardSequence, Is.EqualTo(new[]
+                {
+                    "player_salvager_body_crouch_0",
+                    "player_salvager_body_crouch_1",
+                    "player_salvager_body_crouch_2",
+                    "player_salvager_body_crouch_3",
+                    "player_salvager_body_crouch_4",
+                    "player_salvager_body_crouch_5",
+                }), "Forward Crouch Move did not play the authored cycle 0 -> 5.");
+
+                animator.speed = 0f;
+                Sprite bodyBeforeDirectionalAim = bodyRenderer.sprite;
+                Sprite armsBeforeDirectionalAim = armsRenderer.sprite;
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld,
+                    new Vector2(1f, 1f));
+                for (int index = 0; index < 30 && armsRenderer.sprite == armsBeforeDirectionalAim; index++)
+                {
+                    yield return null;
+                }
+                Assert.That(bodyRenderer.sprite, Is.SameAs(bodyBeforeDirectionalAim),
+                    "Changing aim direction within one facing hemisphere changed the crouch Body frame.");
+                Assert.That(armsRenderer.sprite, Is.Not.SameAs(armsBeforeDirectionalAim));
+                AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
 
                 QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.left);
                 for (int index = 0; index < 30 && !bodyRenderer.flipX; index++)
@@ -914,6 +962,7 @@ namespace Rustline.Tests
                 }
                 Assert.That(bodyRenderer.flipX, Is.True);
                 Assert.That(armsRenderer.flipX, Is.True);
+                AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
 
                 QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
                 for (int index = 0; index < 30 && bodyRenderer.flipX; index++)
@@ -922,6 +971,7 @@ namespace Rustline.Tests
                 }
                 Assert.That(bodyRenderer.flipX, Is.False);
                 Assert.That(armsRenderer.flipX, Is.False);
+                AssertOwnedLayers(unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
 
                 SetCrouchHeldForTest(input, false);
                 Set(gamepad.leftStick, Vector2.zero);
@@ -940,6 +990,7 @@ namespace Rustline.Tests
             }
             finally
             {
+                animator.speed = 1f;
                 SetCrouchHeldForTest(input, false);
                 Set(gamepad.leftStick, Vector2.zero);
                 InputSystem.RemoveDevice(mouse);
@@ -1382,6 +1433,18 @@ namespace Rustline.Tests
                         longwatchPresenter.Selection.DirectionIndex);
                     Assert.That(armsRenderer.sprite, Is.SameAs(backpedalPose.GetFrame(frameIndex)),
                         "Longwatch overlay lagged or diverged from the displayed Body Backpedal frame.");
+                    return;
+                }
+            }
+
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyCrouchFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyCrouchFrame(frameIndex))
+                {
+                    LongwatchCrouchAimPose crouchPose = longwatchPresenter.GetCrouchAimPose(
+                        longwatchPresenter.Selection.DirectionIndex);
+                    Assert.That(armsRenderer.sprite, Is.SameAs(crouchPose.GetFrame(frameIndex)),
+                        "Longwatch overlay lagged or diverged from the displayed Body Crouch frame.");
                     return;
                 }
             }

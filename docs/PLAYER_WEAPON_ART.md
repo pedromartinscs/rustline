@@ -259,6 +259,8 @@ frames     = x 0, 80, 160, 240
 
 Production folder is `Aim/Backpedal`, filenames follow `player_salvager_longwatch_dmr_backpedal_aim_<direction>.png`, and the 19 sheets contain exactly **76 final Backpedal armed sprites**. The Body and Unarmed Arms Backpedal sheets are each exactly `192×64`, four horizontal `48×64` frames. Four frames are the authored animation contract, not an import or storage optimization; do not duplicate, interpolate, or reorder them. The Backpedal playback rate is 7.0 fps, a small visual-cadence increase chosen after the 4 units/s movement-speed pass.
 
+The Longwatch Crouch package is one authoritative six-frame set per direction. Each of the 19 directions is one `480×96` PNG containing six horizontal `80×96` cells, stored in `Aim/Crouch` as `player_salvager_longwatch_dmr_crouch_aim_<direction>.png`, for **114 final crouch armed sprites**. Crouch Idle reuses armed frame 0 and never advances a breathing cycle. Forward Crouch Move follows displayed Body frames 0..5 one-to-one. Presentation-only crouch backpedal uses the same armed sprites as the Body Animator displays the shared crouch cycle in reverse, 5..0; there is no separately authored Longwatch CrouchBackpedal package.
+
 For the current Run and Backpedal packages and future Fall aim-capable art, preserve the same principles:
 
 - one authored sprite for every `animation frame × aim direction` combination;
@@ -278,6 +280,7 @@ ArtSource/Characters/Player/player_salvager_idle_armed.xcf
 ArtSource/Characters/Player/player_salvager_run_armed.xcf
 ArtSource/Characters/Player/player_salvager_backpedal.xcf
 ArtSource/Characters/Player/player_salvager_backpedal_armed.xcf
+ArtSource/Characters/Player/player_salvager_crouch_armed.xcf
 ```
 
 Versioned concept/reference art includes:
@@ -290,7 +293,7 @@ ArtSource/Concepts/Player_concept.png
 
 The standalone weapon concept is a design reference. The final production authority for hand placement, silhouette, palette, and per-angle pixel cleanup is the authored Arms/Weapon overlay artwork.
 
-The Longwatch Idle, Run, and Backpedal packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run supplies 6, and Backpedal supplies exactly 4. Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, 5° vertical facing hysteresis, renderer ownership, and Body-clock frame synchronization. The corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved. The accepted Backpedal solution keeps the right foot visually ahead while alternating short backward steps, preserving a convincing four-frame cycle. The four-frame contract remains unchanged; playback is tuned to 7.0 fps while grounded Backpedal remains 4 units/s. Fall aim and Jump/Land/Roll carry art remain deferred.
+The Longwatch Idle, Run, Backpedal, and Crouch packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run and Crouch each supply 6, and Backpedal supplies exactly 4. Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, 5° vertical facing hysteresis, renderer ownership, and Body-clock frame synchronization. The corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved. The accepted Backpedal solution keeps the right foot visually ahead while alternating short backward steps, preserving a convincing four-frame cycle. The four-frame contract remains unchanged; playback is tuned to 7.0 fps while grounded Backpedal remains 4 units/s. Longwatch crouch integration is automated and complete, but still requires separate human native-scale visual approval. Fall aim and Jump/Land/Roll carry art remain deferred.
 
 ## Aim/fire locomotion rules
 
@@ -301,10 +304,12 @@ The current artistic/gameplay direction deliberately distinguishes locomotion st
 - Idle
 - Run
 - Backpedal
+- Crouch Idle
+- Crouch Move
 
 These states use the full 19-direction authored aim set for the equipped weapon.
 
-Fall and Crouch Idle / Crouch Move remain intended future aim/fire-capable states, but firing is temporarily blocked until their authored Longwatch packages exist.
+Fall remains an intended future aim/fire-capable state, but firing is blocked until its authored Longwatch package exists.
 
 ### Weapon visible, but no aim/fire pose set
 
@@ -420,11 +425,11 @@ The Longwatch aim origin is exactly **38 source pixels above** the shared Body/o
 
 `LongwatchAimMath` mirrors left-hemisphere vectors conceptually into the right-authored hemisphere, retains continuous angle/direction data, and quantizes only the displayed pose to the nearest 10 degrees. Exact vertical input retains the last facing hemisphere and zero-length input retains the last valid selection. No final weapon sprite is rotated at runtime.
 
-While locomotion presentation is Idle, Run, or Backpedal, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, and 4 Backpedal Body frames map one-to-one to their selected-angle overlays. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
+While locomotion presentation is Idle, Run, Backpedal, Crouch Idle, or Crouch Move, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, 4 Backpedal, and 6 shared Crouch Body frames map one-to-one to their selected-angle overlays. Crouch Idle holds shared frame 0; crouch backpedal naturally follows reverse Body playback 5..0. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
 
-Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, Land, Crouch Idle, or Crouch Move the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle now holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames. Longwatch crouch overlays remain pending, so firing remains blocked in both crouch states. Wall brace/kick use Fall/Jump fallback and are modeled as future non-firing states.
+Idle, Run, Backpedal, Crouch Idle, and Crouch Move share one continuous selection and ownership path. On Jump, Fall, or Land the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall brace/kick use Fall/Jump fallback and remain non-firing states.
 
-Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, and Backpedal. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. Its reused 3-unit distal tracer still derives from the resolved `AimOriginWorld` path because exact muzzle metadata is not yet authored, and a compact deterministic mark appears only at a resolved obstruction. M3A adds generic health and one programmer-art killable enemy without changing this weapon-art or gun-feel contract. Fall armed aim, carry states, crouch armed art, gamepad aim, ammo/reload, inventory, authored muzzle flash, production recoil/impact art, combat audio, and player health remain deferred.
+Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, and Crouch Move. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. Its reused 3-unit distal tracer still derives from the resolved `AimOriginWorld` path because exact muzzle metadata is not yet authored, and a compact deterministic mark appears only at a resolved obstruction. M3A adds generic health and one programmer-art killable enemy without changing this weapon-art or gun-feel contract. Fall armed aim, carry states, gamepad aim, ammo/reload, inventory, authored muzzle flash, production recoil/impact art, combat audio, and player health remain deferred.
 
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 
@@ -441,13 +446,14 @@ Completed foundations:
 Implemented validation milestones:
 
 6. Import/slice all Longwatch Idle direction sheets as **80×96** cells with pivot `(24,8)` / normalized `(0.30, 0.083333333...)`. **Done.**
-7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere. **Done for mouse/pointer Idle, Run, and Backpedal validation.**
-8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or jump semantics. **Done for Idle, Run, and Backpedal, with intentional unarmed fallback for unsupported states.**
-9. Automate validation of all 19 directions, both Idle frames, all six Run frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; Run, the corrected origin, and revised four-frame Backpedal are human-approved as recorded below.**
+7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere. **Done for mouse/pointer Idle, Run, Backpedal, and Crouch validation.**
+8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or jump semantics. **Done for Idle, Run, Backpedal, Crouch Idle, and Crouch Move, with intentional unarmed fallback for unsupported states.**
+9. Automate validation of all 19 directions, both Idle frames, all six Run and Crouch frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; Run, the corrected origin, and revised four-frame Backpedal are human-approved as recorded below. Crouch awaits human native-scale approval.**
 10. Correct the Longwatch pointer aim origin to 38 source pixels / 2.375 Unity units above the shared renderer pivot. **Done and human-approved.**
 11. Add grounded armed Backpedal with four authored frames at all 19 directions, driven by generic aim-facing and a 4 units/s cap. **Implemented and human-approved; movement-speed feel tuning continues at 4 units/s.**
-12. Expand the Longwatch package to Fall aim and Jump/Land/Roll carry poses only after the current visual gate.
-13. Freeze the reusable armed import/presenter contract, then scale to additional weapons.
+12. Add grounded armed Crouch using one six-frame set at all 19 directions, with Crouch Idle reusing frame 0 and reverse movement following the displayed Body frame. **Implemented; human native-scale approval remains open.**
+13. Expand the Longwatch package to Fall aim and Jump/Land/Roll carry poses only after the current visual gate.
+14. Freeze the reusable armed import/presenter contract, then scale to additional weapons.
 
 ## Non-negotiable pixel-art rules
 

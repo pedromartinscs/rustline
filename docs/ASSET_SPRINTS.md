@@ -39,7 +39,7 @@ Acceptance notes:
 - Wall art must preserve the existing Wall Brace / Wall Kick mechanics and timing. Presentation must not change the 4 units/s brace descent cap, 8 / 11.5 kick velocity, or 0.12 s lock.
 - Crouch frame counts become the authoritative N used by the armed crouch packages in Sprint 2.
 - Crouch Idle statically reuses frame 0 and intentionally has no breathing animation; Crouch Move loops frames 0..5 at the initial 7 fps visual tuning. Standing Idle remains the only breathing idle.
-- Longwatch crouch presentation is not part of this completed unarmed/body package. Its presenter releases ownership and firing remains blocked in both crouch states.
+- Longwatch crouch presentation now uses the completed six-frame directional package. Its presenter owns the shared overlay and firing is enabled in both crouch states.
 - Wall frame counts become the authoritative carry-frame counts used by the armed wall package in Sprint 2.
 
 ## Asset Sprint 2 — Complete Longwatch locomotion presentation
@@ -49,8 +49,8 @@ Goal: remove unsupported-state Longwatch presentation fallbacks and complete the
 - [ ] 7. Longwatch Fall aim — 19 right-facing authored sprites
 - [ ] 8. Longwatch Jump carry — 3 sprites
 - [ ] 9. Longwatch Land carry — 2 sprites
-- [ ] 10. Longwatch Crouch Idle — 19 × 1, following the static authored Body frame 0
-- [ ] 11. Longwatch Crouch Move — 19 × 6, following authored Body frames 0..5
+- [x] 10. Longwatch Crouch Idle — frame 0 of the shared 19 × 6 package, following static authored Body frame 0
+- [x] 11. Longwatch Crouch Move — shared 19 × 6 package, following displayed Body frames one-to-one
 - [ ] 12. Longwatch Wall carry — one carried/locked weapon presentation per approved wall animation frame
 
 Presentation policy:
@@ -58,6 +58,8 @@ Presentation policy:
 - Fall and Crouch Idle / Crouch Move are aim/fire-capable states and therefore use the 19-direction authored set.
 - Jump, Land, Wall Brace, and Wall Kick keep the weapon visible through carry-only presentation and remain non-firing states.
 - Body animation remains the authoritative frame clock; weapon art follows the approved locomotion frame one-to-one.
+- Longwatch crouch uses one six-frame set per direction. Crouch Idle holds frame 0, forward movement follows 0..5, and presentation-only crouch backpedal reuses the same sprites through reverse Body playback 5..0.
+- Automated crouch import/runtime integration is complete; human native-scale visual approval remains a separate open gate.
 - The reusable armed import/presenter contract should be considered ready to scale to the remaining arsenal only after these packages are imported, validated, and human-approved in-engine.
 
 ## Asset Sprint 3 — Production ground enemy

@@ -43,6 +43,8 @@ namespace Rustline.Editor
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Run";
         private const string LongwatchBackpedalAimRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
+        private const string LongwatchCrouchAimRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string CollisionTilePath = "Assets/Art/Environment/Tiles/Generated/MovementCollisionTile.asset";
         private const string RuleTilePath = "Assets/Art/Environment/Tiles/Generated/IndustrialSurfaceRuleTile.asset";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
@@ -217,6 +219,7 @@ namespace Rustline.Editor
             int groundLayer = EnsureGroundLayer();
             int combatTargetLayer = EnsureLayer("CombatTarget", 7);
             ConfigureRenderer2DDefaultMaterial();
+            RustlineM0ArtSetup.ConfigureLongwatchAimSheets();
 
             PlayerMovementConfig config = CreateConfig();
             WeaponDefinition2D longwatchDefinition = CreateLongwatchDefinition();
@@ -391,20 +394,25 @@ namespace Rustline.Editor
                 BodySpriteRoot + "/player_salvager_body_run.png");
             List<Sprite> bodyBackpedalFrames = LoadSpritesByFrameIndex(
                 BodySpriteRoot + "/player_salvager_body_backpedal.png");
+            List<Sprite> bodyCrouchFrames = LoadSpritesByFrameIndex(
+                BodySpriteRoot + "/player_salvager_body_crouch.png");
             List<Sprite> longwatchIdleFrames = LoadLongwatchAimFrames(
                 LongwatchIdleAimRoot, "idle", 2);
             List<Sprite> longwatchRunFrames = LoadLongwatchAimFrames(
                 LongwatchRunAimRoot, "run", 6);
             List<Sprite> longwatchBackpedalFrames = LoadLongwatchAimFrames(
                 LongwatchBackpedalAimRoot, "backpedal", 4);
+            List<Sprite> longwatchCrouchFrames = LoadLongwatchAimFrames(
+                LongwatchCrouchAimRoot, "crouch", 6);
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
             Require(bodyFrames.Count == 24 && armsFrames.Count == 24,
                 "The player prefab requires all 24 unique Body and Unarmed Arms frames.");
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
-                bodyBackpedalFrames.Count == 4 && longwatchIdleFrames.Count == 38 &&
-                longwatchRunFrames.Count == 114 && longwatchBackpedalFrames.Count == 76,
-                "The Longwatch presenter requires complete Idle, Run, and Backpedal Body/armed frames.");
+                bodyBackpedalFrames.Count == 4 && bodyCrouchFrames.Count == 6 &&
+                longwatchIdleFrames.Count == 38 && longwatchRunFrames.Count == 114 &&
+                longwatchBackpedalFrames.Count == 76 && longwatchCrouchFrames.Count == 114,
+                "The Longwatch presenter requires complete Idle, Run, Backpedal, and Crouch Body/armed frames.");
 
             bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath) != null;
             GameObject root = editingExistingPrefab
@@ -511,7 +519,9 @@ namespace Rustline.Editor
                     bodyRunFrames,
                     longwatchRunFrames,
                     bodyBackpedalFrames,
-                    longwatchBackpedalFrames);
+                    longwatchBackpedalFrames,
+                    bodyCrouchFrames,
+                    longwatchCrouchFrames);
 
                 GameObject traceObject = GetOrCreateChild(root.transform, "Prototype Longwatch Shot Trace");
                 LineRenderer traceRenderer = GetOrAddComponent<LineRenderer>(traceObject);
@@ -685,7 +695,9 @@ namespace Rustline.Editor
             IReadOnlyList<Sprite> bodyRunFrames,
             IReadOnlyList<Sprite> longwatchRunFrames,
             IReadOnlyList<Sprite> bodyBackpedalFrames,
-            IReadOnlyList<Sprite> longwatchBackpedalFrames)
+            IReadOnlyList<Sprite> longwatchBackpedalFrames,
+            IReadOnlyList<Sprite> bodyCrouchFrames,
+            IReadOnlyList<Sprite> longwatchCrouchFrames)
         {
             SerializedObject serialized = new SerializedObject(presenter);
             serialized.FindProperty("playerAim").objectReferenceValue = playerAim;
@@ -748,6 +760,26 @@ namespace Rustline.Editor
                 {
                     pose.FindPropertyRelative("frame" + frameIndex).objectReferenceValue =
                         longwatchBackpedalFrames[directionIndex * 4 + frameIndex];
+                }
+            }
+
+            SerializedProperty crouchBodyFrames = serialized.FindProperty("bodyCrouchFrames");
+            crouchBodyFrames.arraySize = bodyCrouchFrames.Count;
+            for (int index = 0; index < bodyCrouchFrames.Count; index++)
+            {
+                crouchBodyFrames.GetArrayElementAtIndex(index).objectReferenceValue = bodyCrouchFrames[index];
+            }
+
+            SerializedProperty crouchPoses = serialized.FindProperty("crouchAimPoses");
+            crouchPoses.arraySize = LongwatchDirectionAngles.Length;
+            for (int directionIndex = 0; directionIndex < LongwatchDirectionAngles.Length; directionIndex++)
+            {
+                SerializedProperty pose = crouchPoses.GetArrayElementAtIndex(directionIndex);
+                pose.FindPropertyRelative("angleDegrees").intValue = LongwatchDirectionAngles[directionIndex];
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    pose.FindPropertyRelative("frame" + frameIndex).objectReferenceValue =
+                        longwatchCrouchFrames[directionIndex * 6 + frameIndex];
                 }
             }
 
@@ -1924,8 +1956,17 @@ namespace Rustline.Editor
                 longwatchPresenter.BodyIdleFrameCount == 2 && longwatchPresenter.IdleAimPoseCount == 19 &&
                 longwatchPresenter.BodyRunFrameCount == 6 && longwatchPresenter.RunAimPoseCount == 19 &&
                 longwatchPresenter.BodyBackpedalFrameCount == 4 &&
-                longwatchPresenter.BackpedalAimPoseCount == 19,
-                "Player prefab Longwatch Idle/Run/Backpedal presenter wiring is incomplete.");
+                longwatchPresenter.BackpedalAimPoseCount == 19 &&
+                longwatchPresenter.BodyCrouchFrameCount == 6 &&
+                longwatchPresenter.CrouchAimPoseCount == 19,
+                "Player prefab Longwatch Idle/Run/Backpedal/Crouch presenter wiring is incomplete.");
+            for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+            {
+                Sprite bodyCrouchFrame = longwatchPresenter.GetBodyCrouchFrame(frameIndex);
+                Require(bodyCrouchFrame != null &&
+                    bodyCrouchFrame.name == "player_salvager_body_crouch_" + frameIndex,
+                    "Longwatch presenter Body crouch frame mismatch at frame " + frameIndex + ".");
+            }
             for (int index = 0; index < LongwatchDirectionAngles.Length; index++)
             {
                 LongwatchIdleAimPose idlePose = longwatchPresenter.GetIdleAimPose(index);
@@ -1955,6 +1996,17 @@ namespace Rustline.Editor
                     Require(frame != null &&
                         frame.name.EndsWith("_" + LongwatchDirectionSuffixes[index] + "_" + frameIndex),
                         $"Longwatch Backpedal presenter pose mismatch at direction {index}, frame {frameIndex}.");
+                }
+
+                LongwatchCrouchAimPose crouchPose = longwatchPresenter.GetCrouchAimPose(index);
+                Require(crouchPose.AngleDegrees == LongwatchDirectionAngles[index],
+                    "Longwatch Crouch presenter angle mismatch at direction " + index + ".");
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    Sprite frame = crouchPose.GetFrame(frameIndex);
+                    Require(frame != null &&
+                        frame.name.EndsWith("_" + LongwatchDirectionSuffixes[index] + "_" + frameIndex),
+                        $"Longwatch Crouch presenter pose mismatch at direction {index}, frame {frameIndex}.");
                 }
             }
             PlayerJumpDustFx2D jumpDustPrefab = AssetDatabase.LoadAssetAtPath<PlayerJumpDustFx2D>(JumpDustPrefabPath);
