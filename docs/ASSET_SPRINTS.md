@@ -26,8 +26,8 @@ Do not multiply an unapproved locomotion pose across weapon directions. Crouch a
 
 Goal: remove the remaining player movement fallbacks before expanding armed presentation.
 
-- [ ] 1. Crouch Body
-- [ ] 2. Crouch Unarmed Arms
+- [x] 1. Crouch Body — six authored frames integrated from `player_salvager_body_crouch.png`
+- [x] 2. Crouch Unarmed Arms — six matching frames integrated from `player_salvager_arms_crouch.png`
 - [ ] 3. Approve crouch in-engine at native gameplay scale
 - [ ] 4. Wall Brace Body / Unarmed Arms
 - [ ] 5. Wall Kick Body / Unarmed Arms
@@ -38,6 +38,8 @@ Acceptance notes:
 - Crouch must preserve the existing grounded-only mechanics, 3 units/s crouch speed, collider behavior, stand-clearance logic, and aim-facing semantics.
 - Wall art must preserve the existing Wall Brace / Wall Kick mechanics and timing. Presentation must not change the 4 units/s brace descent cap, 8 / 11.5 kick velocity, or 0.12 s lock.
 - Crouch frame counts become the authoritative N used by the armed crouch packages in Sprint 2.
+- Crouch Idle statically reuses frame 0 and intentionally has no breathing animation; Crouch Move loops frames 0..5 at the initial 7 fps visual tuning. Standing Idle remains the only breathing idle.
+- Longwatch crouch presentation is not part of this completed unarmed/body package. Its presenter releases ownership and firing remains blocked in both crouch states.
 - Wall frame counts become the authoritative carry-frame counts used by the armed wall package in Sprint 2.
 
 ## Asset Sprint 2 — Complete Longwatch locomotion presentation
@@ -47,8 +49,8 @@ Goal: remove unsupported-state Longwatch presentation fallbacks and complete the
 - [ ] 7. Longwatch Fall aim — 19 right-facing authored sprites
 - [ ] 8. Longwatch Jump carry — 3 sprites
 - [ ] 9. Longwatch Land carry — 2 sprites
-- [ ] 10. Longwatch Crouch Idle — 19 × N, where N is the approved Crouch Idle frame count
-- [ ] 11. Longwatch Crouch Move — 19 × N, where N is the approved Crouch Move frame count
+- [ ] 10. Longwatch Crouch Idle — 19 × 1, following the static authored Body frame 0
+- [ ] 11. Longwatch Crouch Move — 19 × 6, following authored Body frames 0..5
 - [ ] 12. Longwatch Wall carry — one carried/locked weapon presentation per approved wall animation frame
 
 Presentation policy:

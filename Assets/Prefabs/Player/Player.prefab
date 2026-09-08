@@ -815,6 +815,18 @@ MonoBehaviour:
     armsSprite: {fileID: -1202656841264047008, guid: 560e2e742335dec42b4e2a4b459fc077, type: 3}
   - bodySprite: {fileID: 5363521786687209104, guid: 0a2b19989805f054d8d884d4ffca2ef6, type: 3}
     armsSprite: {fileID: -5598587385480291362, guid: 560e2e742335dec42b4e2a4b459fc077, type: 3}
+  - bodySprite: {fileID: 1279255975476240457, guid: 2e177b38b59905349be658f285a832b4, type: 3}
+    armsSprite: {fileID: 7070188314170808428, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
+  - bodySprite: {fileID: 3626700471293237379, guid: 2e177b38b59905349be658f285a832b4, type: 3}
+    armsSprite: {fileID: 572823239607088194, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
+  - bodySprite: {fileID: 7034211569108922568, guid: 2e177b38b59905349be658f285a832b4, type: 3}
+    armsSprite: {fileID: -7326396334444087598, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
+  - bodySprite: {fileID: -9217804993339968691, guid: 2e177b38b59905349be658f285a832b4, type: 3}
+    armsSprite: {fileID: 1977702170211390968, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
+  - bodySprite: {fileID: -8089605364335945012, guid: 2e177b38b59905349be658f285a832b4, type: 3}
+    armsSprite: {fileID: -8532235562473994697, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
+  - bodySprite: {fileID: -4216503289844374570, guid: 2e177b38b59905349be658f285a832b4, type: 3}
+    armsSprite: {fileID: 462722929035812072, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
   ownsRenderer: 1
 --- !u!114 &2385879683141238295
 MonoBehaviour:

@@ -57,6 +57,7 @@ player_salvager_body_backpedal.png
 player_salvager_body_jump.png
 player_salvager_body_fall.png
 player_salvager_body_land.png
+player_salvager_body_crouch.png
 
 player_salvager_arms_idle.png
 player_salvager_arms_run.png
@@ -64,6 +65,7 @@ player_salvager_arms_backpedal.png
 player_salvager_arms_jump.png
 player_salvager_arms_fall.png
 player_salvager_arms_land.png
+player_salvager_arms_crouch.png
 ```
 
 Future roll/dodge artwork follows the same convention:
@@ -74,6 +76,8 @@ player_salvager_arms_roll.png
 ```
 
 Each Body/Unarmed Arms pair preserves the source sheet's frame count, frame order, **48×64** cell dimensions, pivot, and timing.
+
+The crouch pair is one authoritative six-frame sheet per layer, not separate Idle and Move artwork. `CrouchIdle` statically reuses crouch frame 0 with no breathing, while `CrouchMove` loops frames 0..5 at an initial 7 fps. The accepted two-frame breathing motion remains exclusive to standing Idle.
 
 ## Armed overlay geometry
 
@@ -399,6 +403,8 @@ Player_Body_Backpedal.anim
 Player_Body_Jump.anim
 Player_Body_Fall.anim
 Player_Body_Land.anim
+Player_Body_CrouchIdle.anim
+Player_Body_CrouchMove.anim
 ```
 
 `Player_Body_Jump.anim` is a non-looping takeoff sequence with Body keys at `0.00`, `0.10`, and `0.26` seconds. Frame 1 is a 100 ms Y-anchored compression pose; Frame 2 is a 160 ms leg-extension pose with cubic ease-out catch-up to the root's current normal Visual position; Frame 3 is held while locomotion remains Jump. X movement, physical impulse, and camera root-follow are unchanged.
@@ -415,7 +421,7 @@ The Longwatch aim origin is exactly **38 source pixels above** the shared Body/o
 
 While locomotion presentation is Idle, Run, or Backpedal, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, and 4 Backpedal Body frames map one-to-one to their selected-angle overlays. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
 
-Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, Land, Crouch Idle, or Crouch Move the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch uses explicit Idle/Run Body fallback states pending authored art. Wall brace/kick use Fall/Jump fallback and are modeled as future non-firing states. These fallbacks are intentional until the corresponding authored packages exist.
+Idle, Run, and Backpedal share one continuous selection and ownership path. On Jump, Fall, Land, Crouch Idle, or Crouch Move the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle now holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames. Longwatch crouch overlays remain pending, so firing remains blocked in both crouch states. Wall brace/kick use Fall/Jump fallback and are modeled as future non-firing states.
 
 Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, and Backpedal. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. Its reused 3-unit distal tracer still derives from the resolved `AimOriginWorld` path because exact muzzle metadata is not yet authored, and a compact deterministic mark appears only at a resolved obstruction. M3A adds generic health and one programmer-art killable enemy without changing this weapon-art or gun-feel contract. Fall armed aim, carry states, crouch armed art, gamepad aim, ammo/reload, inventory, authored muzzle flash, production recoil/impact art, combat audio, and player health remain deferred.
 

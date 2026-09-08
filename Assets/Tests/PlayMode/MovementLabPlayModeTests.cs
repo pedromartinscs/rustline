@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Rustline.Diagnostics;
 using Rustline.Gameplay.Player;
@@ -729,6 +730,183 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
+        public IEnumerator Player_CrouchPresentationUsesStaticIdleAndSynchronizedMoveCycle()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+
+            PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
+            Assert.That(motor, Is.Not.Null);
+            Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            CapsuleCollider2D capsule = motor.GetComponent<CapsuleCollider2D>();
+            PlayerInputReader input = motor.GetComponent<PlayerInputReader>();
+            PlayerAnimator2D playerAnimator = motor.GetComponent<PlayerAnimator2D>();
+            PlayerUnarmedArmsPresenter2D unarmedPresenter =
+                motor.GetComponent<PlayerUnarmedArmsPresenter2D>();
+            PlayerLongwatchAimPresenter2D longwatchPresenter =
+                motor.GetComponent<PlayerLongwatchAimPresenter2D>();
+            NativePixelPresentation nativePresentation = Object.FindAnyObjectByType<NativePixelPresentation>();
+            Transform visual = motor.transform.Find("Visual - 48x64 Full Cell");
+            Transform bodyVisual = visual?.Find("BodySpriteRenderer");
+            Transform armsVisual = visual?.Find("ArmsWeaponSpriteRenderer");
+            SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
+            SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+
+            Assert.That(body, Is.Not.Null);
+            Assert.That(capsule, Is.Not.Null);
+            Assert.That(input, Is.Not.Null);
+            Assert.That(playerAnimator, Is.Not.Null);
+            Assert.That(unarmedPresenter, Is.Not.Null);
+            Assert.That(longwatchPresenter, Is.Not.Null);
+            Assert.That(nativePresentation, Is.Not.Null);
+            Assert.That(visual, Is.Not.Null);
+            Assert.That(bodyVisual, Is.Not.Null);
+            Assert.That(armsVisual, Is.Not.Null);
+            Assert.That(bodyRenderer, Is.Not.Null);
+            Assert.That(armsRenderer, Is.Not.Null);
+            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(24));
+            Assert.That(motor.GetComponentsInChildren<Animator>(true), Has.Length.EqualTo(1));
+
+            Vector3 visualPosition = visual.localPosition;
+            Quaternion visualRotation = visual.localRotation;
+            Vector3 visualScale = visual.localScale;
+            Vector3 bodyPosition = bodyVisual.localPosition;
+            Quaternion bodyRotation = bodyVisual.localRotation;
+            Vector3 bodyScale = bodyVisual.localScale;
+            Vector3 armsPosition = armsVisual.localPosition;
+            Quaternion armsRotation = armsVisual.localRotation;
+            Vector3 armsScale = armsVisual.localScale;
+
+            Mouse mouse = InputSystem.AddDevice<Mouse>();
+            Gamepad gamepad = InputSystem.AddDevice<Gamepad>();
+            try
+            {
+                body.position = new Vector2(82f, 0.02f);
+                body.linearVelocity = Vector2.zero;
+                Physics2D.SyncTransforms();
+                for (int index = 0; index < 8; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                }
+
+                SetCrouchHeldForTest(input, true);
+                yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchIdle, 30);
+                yield return null;
+
+                Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_crouch_0"));
+                Assert.That(unarmedPresenter.OwnsRenderer, Is.True);
+                Assert.That(longwatchPresenter.OwnsRenderer, Is.False,
+                    "Longwatch took overlay ownership during unsupported crouch presentation.");
+                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+                Sprite heldIdleBody = bodyRenderer.sprite;
+                Sprite heldIdleArms = armsRenderer.sprite;
+                for (int index = 0; index < 30; index++)
+                {
+                    yield return null;
+                    Assert.That(bodyRenderer.sprite, Is.SameAs(heldIdleBody),
+                        "Crouch Idle introduced animation instead of holding authored frame 0.");
+                    Assert.That(armsRenderer.sprite, Is.SameAs(heldIdleArms));
+                    AssertCrouchVisualTransformsUnchanged(
+                        visual, bodyVisual, armsVisual,
+                        visualPosition, visualRotation, visualScale,
+                        bodyPosition, bodyRotation, bodyScale,
+                        armsPosition, armsRotation, armsScale);
+                }
+
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 1.75f)));
+                Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 0.875f)));
+
+                Set(gamepad.leftStick, Vector2.left);
+                InputSystem.Update();
+                yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchMove, 30);
+
+                HashSet<string> observedBodyFrames = new HashSet<string>();
+                bool reachedCrouchSpeedCap = false;
+                float maximumObservedCrouchSpeed = 0f;
+                for (int index = 0; index < 120 &&
+                    (observedBodyFrames.Count < 6 || !reachedCrouchSpeedCap); index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                    Assert.That(Mathf.Abs(body.linearVelocity.x), Is.LessThanOrEqualTo(3.01f),
+                        "Crouch visual integration changed the physical speed cap.");
+                    maximumObservedCrouchSpeed = Mathf.Max(
+                        maximumObservedCrouchSpeed, Mathf.Abs(body.linearVelocity.x));
+                    reachedCrouchSpeedCap |= Mathf.Abs(Mathf.Abs(body.linearVelocity.x) - 3f) < 0.08f;
+                    Assert.That(bodyRenderer.sprite.name, Does.StartWith("player_salvager_body_crouch_"));
+                    observedBodyFrames.Add(bodyRenderer.sprite.name);
+                    AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+                    Assert.That(longwatchPresenter.OwnsRenderer, Is.False);
+                    AssertCrouchVisualTransformsUnchanged(
+                        visual, bodyVisual, armsVisual,
+                        visualPosition, visualRotation, visualScale,
+                        bodyPosition, bodyRotation, bodyScale,
+                        armsPosition, armsRotation, armsScale);
+                }
+
+                Assert.That(observedBodyFrames, Has.Count.EqualTo(6),
+                    "Crouch Move did not present all six authored frames within two cycles.");
+                for (int index = 0; index < 6; index++)
+                {
+                    Assert.That(observedBodyFrames, Does.Contain("player_salvager_body_crouch_" + index));
+                }
+                Assert.That(reachedCrouchSpeedCap, Is.True,
+                    "Crouch movement never reached its 3 u/s cap; maximum observed magnitude was " +
+                    maximumObservedCrouchSpeed + ".");
+
+                Set(gamepad.leftStick, Vector2.zero);
+                yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchIdle, 60);
+                yield return null;
+                Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_crouch_0"));
+                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+
+                Set(gamepad.leftStick, Vector2.right);
+                yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchMove, 30);
+                yield return null;
+                Assert.That(bodyRenderer.sprite.name, Does.StartWith("player_salvager_body_crouch_"));
+                AssertLayers(unarmedPresenter, bodyRenderer, armsRenderer);
+
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.left);
+                for (int index = 0; index < 30 && !bodyRenderer.flipX; index++)
+                {
+                    yield return null;
+                }
+                Assert.That(bodyRenderer.flipX, Is.True);
+                Assert.That(armsRenderer.flipX, Is.True);
+
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
+                for (int index = 0; index < 30 && bodyRenderer.flipX; index++)
+                {
+                    yield return null;
+                }
+                Assert.That(bodyRenderer.flipX, Is.False);
+                Assert.That(armsRenderer.flipX, Is.False);
+
+                SetCrouchHeldForTest(input, false);
+                Set(gamepad.leftStick, Vector2.zero);
+                for (int index = 0; index < 90 &&
+                    (playerAnimator.CurrentState == PlayerAnimationState.CrouchIdle ||
+                     playerAnimator.CurrentState == PlayerAnimationState.CrouchMove); index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    yield return null;
+                }
+                Assert.That(motor.IsCrouched, Is.False);
+                Assert.That(playerAnimator.CurrentState,
+                    Is.Not.EqualTo(PlayerAnimationState.CrouchIdle).And.Not.EqualTo(PlayerAnimationState.CrouchMove));
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.75f)));
+                Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 1.375f)));
+            }
+            finally
+            {
+                SetCrouchHeldForTest(input, false);
+                Set(gamepad.leftStick, Vector2.zero);
+                InputSystem.RemoveDevice(mouse);
+                InputSystem.RemoveDevice(gamepad);
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Player_CrouchPreservesFeetBlocksStandAndAutoStandsAfterTunnel()
         {
             SceneManager.LoadScene("MovementLab");
@@ -1052,6 +1230,56 @@ namespace Rustline.Tests
             }
 
             Assert.Fail("Animator did not enter state " + state + ".");
+        }
+
+        private static IEnumerator WaitForPresentationState(
+            PlayerAnimator2D playerAnimator,
+            PlayerAnimationState expectedState,
+            int maximumFrames)
+        {
+            for (int index = 0; index < maximumFrames; index++)
+            {
+                yield return new WaitForFixedUpdate();
+                yield return null;
+                if (playerAnimator.CurrentState == expectedState)
+                {
+                    yield break;
+                }
+            }
+
+            Assert.Fail("Player presentation did not enter state " + expectedState + ".");
+        }
+
+        private static void SetCrouchHeldForTest(PlayerInputReader input, bool value)
+        {
+            typeof(PlayerInputReader).GetProperty(nameof(PlayerInputReader.CrouchHeld))
+                ?.GetSetMethod(true)
+                ?.Invoke(input, new object[] { value });
+        }
+
+        private static void AssertCrouchVisualTransformsUnchanged(
+            Transform visual,
+            Transform bodyVisual,
+            Transform armsVisual,
+            Vector3 visualPosition,
+            Quaternion visualRotation,
+            Vector3 visualScale,
+            Vector3 bodyPosition,
+            Quaternion bodyRotation,
+            Vector3 bodyScale,
+            Vector3 armsPosition,
+            Quaternion armsRotation,
+            Vector3 armsScale)
+        {
+            Assert.That(visual.localPosition, Is.EqualTo(visualPosition));
+            Assert.That(visual.localRotation, Is.EqualTo(visualRotation));
+            Assert.That(visual.localScale, Is.EqualTo(visualScale));
+            Assert.That(bodyVisual.localPosition, Is.EqualTo(bodyPosition));
+            Assert.That(bodyVisual.localRotation, Is.EqualTo(bodyRotation));
+            Assert.That(bodyVisual.localScale, Is.EqualTo(bodyScale));
+            Assert.That(armsVisual.localPosition, Is.EqualTo(armsPosition));
+            Assert.That(armsVisual.localRotation, Is.EqualTo(armsRotation));
+            Assert.That(armsVisual.localScale, Is.EqualTo(armsScale));
         }
 
         private static void AssertStateAndLayers(

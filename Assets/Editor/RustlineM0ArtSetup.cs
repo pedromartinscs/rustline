@@ -44,6 +44,16 @@ namespace Rustline.Editor
         private const string SpriteUnlitMaterialGuid = "9dfc825aed78fcd4ba02077103263b40";
         private const float JumpClipSampleRate = 50f;
 
+        private static readonly string[] ShowcaseStateOrder =
+        {
+            "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+        };
+
+        private static readonly float[] ShowcaseXPositions =
+        {
+            -21f, -15f, -9f, -3f, 3f, 9f, 15f, 21f,
+        };
+
         private static readonly float[] JumpTakeoffKeyframeTimes = { 0f, 0.1f, 0.26f };
 
         private static readonly SheetSpec[] PlayerSheets =
@@ -54,12 +64,14 @@ namespace Rustline.Editor
             new SheetSpec(BodySpriteRoot, "player_salvager_body_jump", 3),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_fall", 1),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_land", 2),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_crouch", 6),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_idle", 2),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_run", 6),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_backpedal", 4),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_jump", 3),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_fall", 1),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_land", 2),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_crouch", 6),
         };
 
         private static readonly LongwatchDirectionSpec[] LongwatchDirections =
@@ -393,6 +405,8 @@ namespace Rustline.Editor
             AddPreview(previews, "Jump", "jump", JumpClipSampleRate, false, JumpTakeoffKeyframeTimes);
             AddPreview(previews, "Fall", "fall", 1f, false);
             AddPreview(previews, "Land", "land", 8f, true);
+            AddPreview(previews, "CrouchIdle", "crouch", 1f, false, null, 1);
+            AddPreview(previews, "CrouchMove", "crouch", 7f, true);
             return previews;
         }
 
@@ -402,15 +416,18 @@ namespace Rustline.Editor
             string stateId,
             float frameRate,
             bool loop,
-            IReadOnlyList<float> keyframeTimes = null)
+            IReadOnlyList<float> keyframeTimes = null,
+            int frameLimit = int.MaxValue)
         {
             string bodySheetPath = BodySpriteRoot + "/player_salvager_body_" + stateId + ".png";
             string armsSheetPath = UnarmedArmsSpriteRoot + "/player_salvager_arms_" + stateId + ".png";
             List<Sprite> bodyFrames = LoadSprites(bodySheetPath)
                 .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                .Take(frameLimit)
                 .ToList();
             List<Sprite> armsFrames = LoadSprites(armsSheetPath)
                 .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                .Take(frameLimit)
                 .ToList();
             Require(bodyFrames.Count > 0, "No frames found for " + bodySheetPath);
             Require(bodyFrames.Count == armsFrames.Count, label + " body/arms frame counts differ.");
@@ -566,20 +583,39 @@ namespace Rustline.Editor
         private static void MigrateShowcasePlayerSpecimens(IReadOnlyDictionary<string, PreviewAsset> previews)
         {
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            foreach (PreviewAsset preview in previews.Values)
+            for (int index = 0; index < ShowcaseStateOrder.Length; index++)
             {
+                PreviewAsset preview = previews[ShowcaseStateOrder[index]];
                 GameObject specimen = FindGameObject(scene, "Player_" + preview.Label + "_Specimen");
+                GameObject labelsRoot = FindGameObject(scene, "Diagnostic Labels");
+                Require(labelsRoot != null, "ArtShowcase diagnostic labels root is missing.");
                 if (specimen == null)
                 {
                     GameObject specimensRoot = FindGameObject(scene, "Player Animation Specimens - 48x64 Cells");
-                    GameObject labelsRoot = FindGameObject(scene, "Diagnostic Labels");
-                    Require(specimensRoot != null && labelsRoot != null,
-                        "ArtShowcase player specimen roots are missing.");
+                    Require(specimensRoot != null, "ArtShowcase player specimen root is missing.");
                     specimen = new GameObject("Player_" + preview.Label + "_Specimen");
                     specimen.transform.SetParent(specimensRoot.transform, false);
-                    specimen.transform.position = new Vector3(20f, 6f, 0f);
-                    CreateLabel(labelsRoot.transform, preview.Label.ToUpperInvariant(),
-                        new Vector3(20f, 10.65f, -0.2f), 0.16f, new Color32(253, 208, 69, 255));
+                }
+
+                specimen.transform.position = new Vector3(ShowcaseXPositions[index], 6f, 0f);
+                string labelText = preview.Label.ToUpperInvariant();
+                GameObject label = FindGameObject(scene, "Label - " + labelText);
+                if (label == null)
+                {
+                    CreateLabel(labelsRoot.transform, labelText,
+                        new Vector3(ShowcaseXPositions[index], 10.65f, -0.2f), 0.13f,
+                        new Color32(253, 208, 69, 255));
+                }
+                else
+                {
+                    label.transform.position = new Vector3(ShowcaseXPositions[index], 10.65f, -0.2f);
+                    TextMesh labelTextMesh = label.GetComponent<TextMesh>();
+                    if (labelTextMesh != null)
+                    {
+                        labelTextMesh.characterSize = 0.13f;
+                        EditorUtility.SetDirty(labelTextMesh);
+                    }
+                    EditorUtility.SetDirty(label.transform);
                 }
 
                 SpriteRenderer legacyRenderer = specimen.GetComponent<SpriteRenderer>();
@@ -757,15 +793,12 @@ namespace Rustline.Editor
         {
             GameObject specimensRoot = new GameObject("Player Animation Specimens - 48x64 Cells");
             specimensRoot.transform.SetParent(parent, false);
-            string[] order = { "Idle", "Run", "Backpedal", "Jump", "Fall", "Land" };
-            float[] xPositions = { -20f, -12f, -4f, 4f, 12f, 20f };
-
-            for (int index = 0; index < order.Length; index++)
+            for (int index = 0; index < ShowcaseStateOrder.Length; index++)
             {
-                PreviewAsset preview = previews[order[index]];
+                PreviewAsset preview = previews[ShowcaseStateOrder[index]];
                 GameObject specimen = new GameObject("Player_" + preview.Label + "_Specimen");
                 specimen.transform.SetParent(specimensRoot.transform, false);
-                specimen.transform.position = new Vector3(xPositions[index], 6f, 0f);
+                specimen.transform.position = new Vector3(ShowcaseXPositions[index], 6f, 0f);
 
                 GameObject bodyObject = new GameObject("BodySpriteRenderer");
                 bodyObject.transform.SetParent(specimen.transform, false);
@@ -788,8 +821,8 @@ namespace Rustline.Editor
                 CreateLabel(
                     labelsRoot,
                     preview.Label.ToUpperInvariant(),
-                    new Vector3(xPositions[index], 10.65f, -0.2f),
-                    0.16f,
+                    new Vector3(ShowcaseXPositions[index], 10.65f, -0.2f),
+                    0.13f,
                     new Color32(253, 208, 69, 255));
             }
         }
@@ -962,7 +995,7 @@ namespace Rustline.Editor
             Require(jumpDust != null && jumpDust.width == 144 && jumpDust.height == 64,
                 "Jump dust must remain exactly 144x64 (three 48x64 full cells).");
 
-            string[] layeredStates = { "idle", "run", "backpedal", "jump", "fall", "land" };
+            string[] layeredStates = { "idle", "run", "backpedal", "jump", "fall", "land", "crouch" };
             foreach (string state in layeredStates)
             {
                 string bodyPath = BodySpriteRoot + "/player_salvager_body_" + state + ".png";
@@ -1001,17 +1034,19 @@ namespace Rustline.Editor
                 }
             }
 
-            Dictionary<string, (int frameCount, float frameRate, bool loop)> clipSpecs =
-                new Dictionary<string, (int frameCount, float frameRate, bool loop)>
+            Dictionary<string, (int frameCount, float frameRate, bool loop, string spriteState)> clipSpecs =
+                new Dictionary<string, (int frameCount, float frameRate, bool loop, string spriteState)>
                 {
-                    { "Player_Body_Idle", (2, 0.5f, true) },
-                    { "Player_Body_Run", (6, 10f, true) },
-                    { "Player_Body_Backpedal", (4, 7f, true) },
-                    { "Player_Body_Jump", (3, JumpClipSampleRate, false) },
-                    { "Player_Body_Fall", (1, 1f, false) },
-                    { "Player_Body_Land", (2, 8f, true) },
+                    { "Player_Body_Idle", (2, 0.5f, true, "idle") },
+                    { "Player_Body_Run", (6, 10f, true, "run") },
+                    { "Player_Body_Backpedal", (4, 7f, true, "backpedal") },
+                    { "Player_Body_Jump", (3, JumpClipSampleRate, false, "jump") },
+                    { "Player_Body_Fall", (1, 1f, false, "fall") },
+                    { "Player_Body_Land", (2, 8f, true, "land") },
+                    { "Player_Body_CrouchIdle", (1, 1f, false, "crouch") },
+                    { "Player_Body_CrouchMove", (6, 7f, true, "crouch") },
                 };
-            foreach (KeyValuePair<string, (int frameCount, float frameRate, bool loop)> clipSpec in clipSpecs)
+            foreach (KeyValuePair<string, (int frameCount, float frameRate, bool loop, string spriteState)> clipSpec in clipSpecs)
             {
                 AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(BodyAnimationRoot + "/" + clipSpec.Key + ".anim");
                 Require(clip != null, "Animation clip missing: " + clipSpec.Key);
@@ -1022,11 +1057,10 @@ namespace Rustline.Editor
                 ObjectReferenceKeyframe[] keyframes = AnimationUtility.GetObjectReferenceCurve(clip, bindings[0]);
                 Require(keyframes.Length == clipSpec.Value.frameCount,
                     clipSpec.Key + " must contain exactly one key per source frame.");
-                string stateId = clipSpec.Key.Substring("Player_Body_".Length).ToLowerInvariant();
                 for (int index = 0; index < keyframes.Length; index++)
                 {
                     Require(keyframes[index].value != null &&
-                            keyframes[index].value.name == "player_salvager_body_" + stateId + "_" + index,
+                            keyframes[index].value.name == "player_salvager_body_" + clipSpec.Value.spriteState + "_" + index,
                         clipSpec.Key + " sprite order mismatch at frame " + index + ".");
                 }
                 AnimationClipSettings clipSettings = AnimationUtility.GetAnimationClipSettings(clip);
@@ -1041,6 +1075,12 @@ namespace Rustline.Editor
                         Require(Mathf.Abs(keyframes[index].time - JumpTakeoffKeyframeTimes[index]) < 0.0001f,
                             "Player_Body_Jump key time mismatch at frame " + index + ".");
                     }
+                }
+
+                if (clipSpec.Key == "Player_Body_CrouchIdle")
+                {
+                    Require(clip.wrapMode == WrapMode.ClampForever && keyframes[0].time == 0f,
+                        "Player_Body_CrouchIdle must statically hold authored crouch frame 0.");
                 }
             }
 

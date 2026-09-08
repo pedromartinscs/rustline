@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Rustline.Presentation;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace Rustline.Tests
@@ -16,6 +17,8 @@ namespace Rustline.Tests
         private const string JumpDustPath = "Assets/Art/Effects/Movement/player_jump_dust.png";
         private const string JumpDustPrefabPath = "Assets/Prefabs/Effects/Movement/PlayerJumpDust.prefab";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
+        private const string GameplayControllerPath =
+            "Assets/Art/Characters/Player/Animations/PlayerGameplay.controller";
 
         [TestCase("idle", 2)]
         [TestCase("run", 6)]
@@ -23,6 +26,7 @@ namespace Rustline.Tests
         [TestCase("jump", 3)]
         [TestCase("fall", 1)]
         [TestCase("land", 2)]
+        [TestCase("crouch", 6)]
         public void LayeredSheets_MatchCanonicalImportAndCellContract(string state, int expectedFrames)
         {
             string bodyPath = BodyRoot + "/player_salvager_body_" + state + ".png";
@@ -52,7 +56,7 @@ namespace Rustline.Tests
             Assert.That(prefab, Is.Not.Null);
             PlayerUnarmedArmsPresenter2D presenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Assert.That(presenter, Is.Not.Null);
-            Assert.That(presenter.MappingCount, Is.EqualTo(18));
+            Assert.That(presenter.MappingCount, Is.EqualTo(24));
 
             HashSet<Sprite> bodySprites = new HashSet<Sprite>();
             HashSet<Sprite> armsSprites = new HashSet<Sprite>();
@@ -74,8 +78,67 @@ namespace Rustline.Tests
                 }
             }
 
-            Assert.That(bodySprites, Has.Count.EqualTo(18));
-            Assert.That(armsSprites, Has.Count.EqualTo(18));
+            Assert.That(bodySprites, Has.Count.EqualTo(24));
+            Assert.That(armsSprites, Has.Count.EqualTo(24));
+        }
+
+        [Test]
+        public void CrouchClips_UseAuthoredSheetWithStaticIdleAndSevenFpsLoopingMove()
+        {
+            List<Sprite> crouchSprites = LoadSprites(BodyRoot + "/player_salvager_body_crouch.png");
+            AnimationClip idleClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_CrouchIdle.anim");
+            AnimationClip moveClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_CrouchMove.anim");
+
+            Assert.That(crouchSprites, Has.Count.EqualTo(6));
+            Assert.That(idleClip, Is.Not.Null);
+            Assert.That(idleClip.frameRate, Is.EqualTo(1f));
+            Assert.That(idleClip.wrapMode, Is.EqualTo(WrapMode.ClampForever));
+            Assert.That(AnimationUtility.GetAnimationClipSettings(idleClip).loopTime, Is.False);
+            Assert.That(AnimationUtility.GetCurveBindings(idleClip), Is.Empty,
+                "Crouch Idle must not animate a transform or any non-sprite property.");
+            ObjectReferenceKeyframe[] idleKeys = GetSpriteKeys(idleClip);
+            Assert.That(idleKeys, Has.Length.EqualTo(1));
+            Assert.That(idleKeys[0].time, Is.Zero);
+            Assert.That(idleKeys[0].value, Is.SameAs(crouchSprites[0]));
+
+            Assert.That(moveClip, Is.Not.Null);
+            Assert.That(moveClip.frameRate, Is.EqualTo(7f));
+            Assert.That(AnimationUtility.GetAnimationClipSettings(moveClip).loopTime, Is.True);
+            Assert.That(AnimationUtility.GetCurveBindings(moveClip), Is.Empty,
+                "Crouch Move must not animate a transform or any non-sprite property.");
+            ObjectReferenceKeyframe[] moveKeys = GetSpriteKeys(moveClip);
+            Assert.That(moveKeys, Has.Length.EqualTo(6));
+            for (int index = 0; index < moveKeys.Length; index++)
+            {
+                Assert.That(moveKeys[index].time, Is.EqualTo(index / 7f).Within(0.0001f));
+                Assert.That(moveKeys[index].value, Is.SameAs(crouchSprites[index]));
+            }
+        }
+
+        [Test]
+        public void GameplayController_MapsEveryLogicalStateToItsMatchingBodyClip()
+        {
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(GameplayControllerPath);
+            Assert.That(controller, Is.Not.Null);
+            AnimatorState[] states = controller.layers[0].stateMachine.states
+                .Select(child => child.state)
+                .ToArray();
+            string[] expectedStateNames =
+            {
+                "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+            };
+
+            Assert.That(states, Has.Length.EqualTo(expectedStateNames.Length));
+            foreach (string stateName in expectedStateNames)
+            {
+                AnimatorState state = states.Single(candidate => candidate.name == stateName);
+                AnimationClip expectedClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                    BodyAnimationRoot + "/Player_Body_" + stateName + ".anim");
+                Assert.That(state.motion, Is.SameAs(expectedClip),
+                    "Gameplay state retained an obsolete presentation fallback: " + stateName);
+            }
         }
 
         [Test]
@@ -237,6 +300,15 @@ namespace Rustline.Tests
                 .ToList();
         }
 
+        private static ObjectReferenceKeyframe[] GetSpriteKeys(AnimationClip clip)
+        {
+            EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            Assert.That(bindings, Has.Length.EqualTo(1));
+            Assert.That(bindings[0].type, Is.EqualTo(typeof(SpriteRenderer)));
+            Assert.That(bindings[0].propertyName, Is.EqualTo("m_Sprite"));
+            return AnimationUtility.GetObjectReferenceCurve(clip, bindings[0]);
+        }
+
         private static IEnumerable<(string state, int count)> StateSpecs()
         {
             yield return ("idle", 2);
@@ -245,6 +317,7 @@ namespace Rustline.Tests
             yield return ("jump", 3);
             yield return ("fall", 1);
             yield return ("land", 2);
+            yield return ("crouch", 6);
         }
     }
 }

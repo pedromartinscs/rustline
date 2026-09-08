@@ -16,7 +16,7 @@ The existing `InputSystem_Actions` asset contains one focused `Player` map with 
 - `PlayerMotor2D` applies horizontal velocity, posture changes, wall interaction, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 4 units/s backward, crouch uses 3 units/s, and air speed remains 7 units/s regardless of aim.
 - `PlayerGroundProbe2D` casts the stable player CapsuleCollider2D a short distance downward against the `Ground` layer and accepts only sufficiently upward-facing normals. Side-wall contacts do not ground the player.
 - `PlayerEnvironmentProbe2D` reuses the player capsule, a cached `ContactFilter2D`, and fixed hit storage for stand-clearance and near-vertical wall casts.
-- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, Land, Crouch Idle, or Crouch Move from authoritative movement state and actual velocity. Crouch states currently use explicit Idle/Run clip fallbacks until authored crouch art arrives. Wall brace/kick deliberately fall back to Fall/Jump.
+- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, Land, Crouch Idle, or Crouch Move from authoritative movement state and actual velocity. Crouch uses its dedicated authored Body/Unarmed Arms package. Wall brace/kick deliberately fall back to Fall/Jump.
 - `PixelCameraFollow2D` smooths in continuous world space, then snaps the rendered camera position to the 1/16-unit pixel grid.
 - `PlayerMovementConfig` stores all important tuning in `Assets/Config/Player/PlayerMovementConfig.asset`.
 
@@ -33,6 +33,10 @@ MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile`
 ## Crouch and wall interaction
 
 Combat crouch is grounded-only. Holding crouch changes the capsule to `1.05 × 1.75` at offset `(0, 0.875)`, keeping its lower boundary exactly invariant. Releasing crouch performs an upward capsule cast for the exact missing standing height; a ceiling keeps the player crouched, and standing happens automatically after clearance returns. Airborne crouch input never shrinks a standing capsule. A crouched ground jump restores the standing capsule and uses the normal `12.5` units/s impulse only when that clearance query succeeds.
+
+The canonical crouch presentation comes from the single six-frame sheets `player_salvager_body_crouch.png` and `player_salvager_arms_crouch.png`. `CrouchIdle` statically holds authored frame 0; `CrouchMove` loops authored frames 0..5 at the initial human-tunable rate of 7 fps. Crouch intentionally has no breathing animation. Only the normal standing Idle keeps its accepted two-frame breathing motion. Body remains the sole Animator clock and the unarmed overlay follows the displayed Body frame one-to-one.
+
+Longwatch crouch art is still pending. During `CrouchIdle` and `CrouchMove`, the Longwatch presenter releases overlay ownership so the authored unarmed crouch arms remain visible, and crouched firing remains blocked.
 
 Wall brace requires an airborne, non-ascending player to hold movement into a detected near-vertical wall. It caps descent at `4` units/s without freezing or climbing. A buffered Jump while braced launches at `8` units/s away and `11.5` units/s upward. The contacted side remains locked for `0.12` seconds; horizontal input cannot cancel the launch during that window and the same wall cannot immediately reattach. Normal air control resumes afterward. Ground contact remains solely the responsibility of `PlayerGroundProbe2D`, so walls cannot emit Land.
 

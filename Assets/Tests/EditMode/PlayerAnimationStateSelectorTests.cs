@@ -25,7 +25,7 @@ namespace Rustline.Tests
         [TestCase(0f, PlayerAnimationState.CrouchIdle)]
         [TestCase(1f, PlayerAnimationState.CrouchMove)]
         [TestCase(-1f, PlayerAnimationState.CrouchMove)]
-        public void Select_CrouchUsesExplicitTemporaryPresentationStates(
+        public void Select_CrouchUsesDedicatedPresentationStates(
             float horizontalVelocity, PlayerAnimationState expected)
         {
             PlayerAnimationState state = PlayerAnimationStateSelector.Select(

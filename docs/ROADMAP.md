@@ -25,12 +25,12 @@ The current cross-milestone art-production order is tracked in [`ASSET_SPRINTS.m
 Current M0 art work:
 
 - Canonical player cell is 48×64.
-- Idle, run, jump, fall, and land sprite sheets are versioned.
+- Idle, run, backpedal, jump, fall, land, and six-frame crouch Body/Unarmed Arms sprite sheets are versioned.
 - Rustline Canonical 28 is the production palette.
 - The structural tile atlas contract is fixed at 128×96 with 48 slots of 16×16; canonical N/E/S/W connectivity occupies slots 00–15.
 - Unity is bootstrapped with the Universal 2D template, URP 2D Renderer, Input System, Tilemap Extras, and Test Framework.
 - Production PNG imports now use 16 PPU, Point filtering, no mipmaps or compression, Full Rect meshes, and deterministic fixed-cell slicing.
-- `Assets/Scenes/ArtShowcase.unity` presents the five current player states, all 16 canonical tiles, and Rule Tile adjacency structures for visual acceptance.
+- `Assets/Scenes/ArtShowcase.unity` presents the current layered player states, including static Crouch Idle and the six-frame 7 fps Crouch Move cycle, plus all 16 canonical tiles and Rule Tile adjacency structures for visual acceptance.
 
 See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract.
 
@@ -54,7 +54,7 @@ See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract.
 - [x] Pixel-perfect camera and presentation
 - [x] Controller tuning exposed as data/configuration
 
-M1 movement is implemented in `Assets/Scenes/MovementLab.unity`. It includes the reusable player prefab, physics-driven animation presentation, grounded crouch, wall brace/kick, a separate visual/collision Tilemap course with deterministic Composite geometry initialization, pixel-snapped camera follow, failsafe respawn, and automated edit/play-mode validation. Authored crouch and wall art, roll/dodge, and moving-platform behavior remain pending.
+M1 movement is implemented in `Assets/Scenes/MovementLab.unity`. It includes the reusable player prefab, physics-driven animation presentation, grounded crouch, wall brace/kick, a separate visual/collision Tilemap course with deterministic Composite geometry initialization, pixel-snapped camera follow, failsafe respawn, and automated edit/play-mode validation. Authored six-frame Body/Unarmed Arms crouch presentation is integrated: Crouch Idle statically holds frame 0 with no breathing and Crouch Move loops frames 0..5 at 7 fps. Longwatch crouch overlays, authored wall art, roll/dodge, and moving-platform behavior remain pending; crouched firing remains blocked.
 
 **Exit criterion:** traversing a small room is fun without enemies or weapons.
 
@@ -68,6 +68,7 @@ Before integrating the first gun, decompose the accepted player artwork into syn
 
 - [x] Produce Body-only idle/run/backpedal/jump/fall/land sheets
 - [x] Produce matching Unarmed Arms idle/run/backpedal/jump/fall/land sheets
+- [x] Produce and integrate matching six-frame Body/Unarmed Arms crouch sheets
 - [x] Preserve exact 48×64 cells, pivots, frame order, and timing
 - [x] Implement synchronized Body + Arms sprite presentation
 - [x] Verify that Body + Unarmed Arms reconstructs the current accepted player appearance

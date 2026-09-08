@@ -322,12 +322,8 @@ namespace Rustline.Editor
 
             foreach (string stateName in stateNames)
             {
-                // Authored crouch art is pending. These explicit controller states use existing
-                // clips as temporary presentation fallbacks without duplicating or altering art.
-                string clipStateName = stateName == "CrouchIdle" ? "Idle" :
-                    stateName == "CrouchMove" ? "Run" : stateName;
                 AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
-                    BodyAnimationRoot + "/Player_Body_" + clipStateName + ".anim");
+                    BodyAnimationRoot + "/Player_Body_" + stateName + ".anim");
                 Require(clip != null, "Missing accepted layered body animation clip: Player_Body_" + stateName);
                 AnimatorState state = stateMachine.states
                     .Select(child => child.state)
@@ -391,8 +387,8 @@ namespace Rustline.Editor
                 LongwatchBackpedalAimRoot, "backpedal", 4);
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
-            Require(bodyFrames.Count == 18 && armsFrames.Count == 18,
-                "The player prefab requires all 18 Body and Unarmed Arms frames.");
+            Require(bodyFrames.Count == 24 && armsFrames.Count == 24,
+                "The player prefab requires all 24 unique Body and Unarmed Arms frames.");
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
                 bodyBackpedalFrames.Count == 4 && longwatchIdleFrames.Count == 38 &&
                 longwatchRunFrames.Count == 114 && longwatchBackpedalFrames.Count == 76,
@@ -623,8 +619,8 @@ namespace Rustline.Editor
 
         private static List<Sprite> LoadLayeredPlayerFrames(string spriteRoot, string layerId)
         {
-            string[] states = { "idle", "run", "backpedal", "jump", "fall", "land" };
-            List<Sprite> frames = new List<Sprite>(18);
+            string[] states = { "idle", "run", "backpedal", "jump", "fall", "land", "crouch" };
+            List<Sprite> frames = new List<Sprite>(24);
             foreach (string state in states)
             {
                 string path = spriteRoot + "/player_salvager_" + layerId + "_" + state + ".png";
@@ -1746,15 +1742,20 @@ namespace Rustline.Editor
             AnimatorState[] gameplayStates = gameplayController.layers[0].stateMachine.states
                 .Select(child => child.state)
                 .ToArray();
-            AnimatorState crouchIdleState = gameplayStates.FirstOrDefault(state => state.name == "CrouchIdle");
-            AnimatorState crouchMoveState = gameplayStates.FirstOrDefault(state => state.name == "CrouchMove");
-            AnimationClip idleFallback = AssetDatabase.LoadAssetAtPath<AnimationClip>(
-                BodyAnimationRoot + "/Player_Body_Idle.anim");
-            AnimationClip runFallback = AssetDatabase.LoadAssetAtPath<AnimationClip>(
-                BodyAnimationRoot + "/Player_Body_Run.anim");
-            Require(gameplayStates.Length == 8 && crouchIdleState?.motion == idleFallback &&
-                crouchMoveState?.motion == runFallback,
-                "Crouch Idle/Move fallback states must remain explicit until authored crouch clips exist.");
+            string[] expectedGameplayStateNames =
+            {
+                "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+            };
+            Require(gameplayStates.Length == expectedGameplayStateNames.Length,
+                "Player gameplay Animator must contain exactly the eight locomotion states.");
+            foreach (string stateName in expectedGameplayStateNames)
+            {
+                AnimatorState state = gameplayStates.FirstOrDefault(candidate => candidate.name == stateName);
+                AnimationClip expectedClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                    BodyAnimationRoot + "/Player_Body_" + stateName + ".anim");
+                Require(state != null && expectedClip != null && state.motion == expectedClip,
+                    "Gameplay Animator state must use its matching Body clip: " + stateName + ".");
+            }
             PlayerAim2D playerAim = prefab.GetComponent<PlayerAim2D>();
             PlayerAnimator2D playerAnimator = prefab.GetComponent<PlayerAnimator2D>();
             Require(prefab.GetComponent<PlayerInputReader>() != null && prefab.GetComponent<PlayerGroundProbe2D>() != null &&
@@ -1794,7 +1795,7 @@ namespace Rustline.Editor
                     "Visual - 48x64 Full Cell/ArmsWeaponSpriteRenderer"),
                 "Player prefab Longwatch presentation recoil wiring is incomplete.");
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
-            Require(armsPresenter != null && armsPresenter.MappingCount == 18 && armsPresenter.OwnsRenderer,
+            Require(armsPresenter != null && armsPresenter.MappingCount == 24 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
             PlayerLongwatchAimPresenter2D longwatchPresenter =
                 prefab.GetComponent<PlayerLongwatchAimPresenter2D>();
