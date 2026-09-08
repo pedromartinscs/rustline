@@ -14,6 +14,7 @@ namespace Rustline.Presentation
     {
         private const string PenumbraPassName = "Rustline Logical Penumbra";
         private const string PresentPassName = "Rustline Native Pixel Present";
+        private static readonly Color PresentationClearColor = ((Color)RustlinePalette.DeepSpace).linear;
 
         private static Camera s_DriverCamera;
         private static RenderTexture s_WorldTarget;
@@ -22,6 +23,8 @@ namespace Rustline.Presentation
         private static Material s_PresentationMaterial;
         private static NativePixelViewport s_Viewport;
         private static bool s_PenumbraEnabled;
+        private static RenderTargetInfo s_WorldTargetInfo;
+        private static RenderTargetInfo s_ResolvedTargetInfo;
 
         private NativePixelPresentPass _pass;
 
@@ -48,6 +51,23 @@ namespace Rustline.Presentation
             s_PresentationMaterial = presentationMaterial;
             s_Viewport = viewport;
             s_PenumbraEnabled = penumbraEnabled;
+            // NativePixelPresentation replaces, rather than resizes, its persistent
+            // targets. Refresh import metadata on configuration, not every frame.
+            s_WorldTargetInfo = CreateRenderTargetInfo(worldTarget);
+            s_ResolvedTargetInfo = CreateRenderTargetInfo(resolvedTarget);
+        }
+
+        private static RenderTargetInfo CreateRenderTargetInfo(RenderTexture target)
+        {
+            return target == null ? default : new RenderTargetInfo
+            {
+                format = target.graphicsFormat,
+                width = target.width,
+                height = target.height,
+                bindMS = target.bindTextureMS,
+                msaaSamples = Mathf.Max(target.antiAliasing, 1),
+                volumeDepth = target.volumeDepth
+            };
         }
 
         public static void Clear(Camera driverCamera)
@@ -64,6 +84,8 @@ namespace Rustline.Presentation
             s_PresentationMaterial = null;
             s_Viewport = default;
             s_PenumbraEnabled = false;
+            s_WorldTargetInfo = default;
+            s_ResolvedTargetInfo = default;
         }
 
         public override void Create()
@@ -113,18 +135,18 @@ namespace Rustline.Presentation
                 }
 
                 EnsureHandle(ref _worldHandle, s_WorldTarget, "Rustline World - Imported");
-                EnsureHandle(ref _resolvedHandle, s_ResolvedTarget, "Rustline Penumbra - Imported");
 
                 TextureHandle worldSource = renderGraph.ImportTexture(
                     _worldHandle,
-                    CreateRenderTargetInfo(s_WorldTarget));
+                    s_WorldTargetInfo);
                 TextureHandle selectedSource = worldSource;
 
                 if (s_PenumbraEnabled)
                 {
+                    EnsureHandle(ref _resolvedHandle, s_ResolvedTarget, "Rustline Penumbra - Imported");
                     TextureHandle resolvedTarget = renderGraph.ImportTexture(
                         _resolvedHandle,
-                        CreateRenderTargetInfo(s_ResolvedTarget));
+                        s_ResolvedTargetInfo);
                     RecordPenumbraPass(renderGraph, worldSource, resolvedTarget);
                     selectedSource = resolvedTarget;
                 }
@@ -182,7 +204,7 @@ namespace Rustline.Presentation
                     passData.material = s_PresentationMaterial;
                     // Raster commands write linear values to the sRGB backbuffer. Supplying
                     // authored display-space #01020B directly would be encoded again.
-                    passData.clearColor = ((Color)RustlinePalette.DeepSpace).linear;
+                    passData.clearColor = PresentationClearColor;
                     passData.viewport = new Rect(
                         s_Viewport.OutputOffsetX,
                         s_Viewport.OutputOffsetY,
@@ -206,19 +228,6 @@ namespace Rustline.Presentation
                             1);
                     });
                 }
-            }
-
-            private static RenderTargetInfo CreateRenderTargetInfo(RenderTexture target)
-            {
-                return new RenderTargetInfo
-                {
-                    format = target.graphicsFormat,
-                    width = target.width,
-                    height = target.height,
-                    bindMS = target.bindTextureMS,
-                    msaaSamples = Mathf.Max(target.antiAliasing, 1),
-                    volumeDepth = target.volumeDepth
-                };
             }
 
             private static void EnsureHandle(

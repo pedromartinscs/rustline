@@ -167,6 +167,9 @@ namespace Rustline.Presentation
 
             penumbraEnabled = enabled;
             ApplyPenumbraState();
+            // A toggle can occur after LateUpdate. Refresh before the first enabled
+            // render even when the player/camera moved while the pass was disabled.
+            UpdatePenumbraParameters();
         }
 
         private void ApplyCanonicalCameraClearColors()
@@ -257,7 +260,7 @@ namespace Rustline.Presentation
 
         private void UpdatePenumbraParameters()
         {
-            if (_penumbraMaterial == null || playerTarget == null || worldCamera == null)
+            if (!penumbraEnabled || _penumbraMaterial == null || playerTarget == null || worldCamera == null)
             {
                 return;
             }

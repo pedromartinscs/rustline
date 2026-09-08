@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Reflection;
 using NUnit.Framework;
 using Rustline.Presentation;
 using UnityEngine;
@@ -10,6 +11,60 @@ namespace Rustline.Tests
 {
     public sealed class NativePixelPresentationPlayModeTests
     {
+        [UnityTest]
+        public IEnumerator Penumbra_MovementWhileOffRefreshesImmediatelyOnEnableAndAfterTargetRecreation()
+        {
+            SceneManager.LoadScene("MovementLab");
+            yield return null;
+            yield return null;
+
+            NativePixelPresentation presentation = Object.FindAnyObjectByType<NativePixelPresentation>();
+            FieldInfo materialField = typeof(NativePixelPresentation).GetField(
+                "_penumbraMaterial", BindingFlags.Instance | BindingFlags.NonPublic);
+            Material material = (Material)materialField.GetValue(presentation);
+            Vector4 initialCenter = material.GetVector("_PlayerPixelCenter");
+            presentation.SetPenumbraEnabled(false);
+            presentation.PlayerTarget.position += new Vector3(3f, 1f, 0f);
+            yield return null;
+            yield return null;
+            Assert.That(material.GetVector("_PlayerPixelCenter"), Is.EqualTo(initialCenter),
+                "The disabled effect should not update unused material parameters.");
+
+            // No frame boundary: a late toggle must be correct for the next render.
+            presentation.SetPenumbraEnabled(true);
+            AssertCurrentPenumbraCenter(presentation, material);
+            RenderTexture original = presentation.WorldTarget;
+            presentation.enabled = false;
+            Assert.That(RustlineNativePixelPresentFeature.IsConfigured, Is.False);
+            presentation.enabled = true;
+            Assert.That(presentation.WorldTarget, Is.Not.SameAs(original));
+            material = (Material)materialField.GetValue(presentation);
+            AssertCurrentPenumbraCenter(presentation, material);
+            RenderTexture physicalTarget = CreatePhysicalProbe(presentation);
+            try
+            {
+                yield return null;
+                yield return null;
+                AssertPlayerRegionHasVisibleContent(presentation.ResolvedTarget, presentation,
+                    "Recreated targets failed to render through the cached RenderGraph imports.");
+            }
+            finally
+            {
+                presentation.ProcessingCamera.targetTexture = null;
+                physicalTarget.Release();
+                Object.Destroy(physicalTarget);
+            }
+        }
+
+        private static void AssertCurrentPenumbraCenter(NativePixelPresentation presentation, Material material)
+        {
+            Vector3 viewportPosition = presentation.WorldCamera.WorldToViewportPoint(
+                presentation.PlayerTarget.position);
+            Assert.That(material.GetVector("_PlayerPixelCenter"), Is.EqualTo(new Vector4(
+                viewportPosition.x * presentation.Viewport.LogicalWidth,
+                viewportPosition.y * presentation.Viewport.LogicalHeight, 0f, 0f)));
+        }
+
         [UnityTest]
         public IEnumerator MovementLab_AllocatesAndTogglesNativeLogicalPresentation()
         {
@@ -98,34 +153,21 @@ namespace Rustline.Tests
             NativePixelPresentation presentation = Object.FindAnyObjectByType<NativePixelPresentation>();
             Assert.That(presentation, Is.Not.Null);
 
-            AssertPlayerRegionHasVisibleContent(
-                presentation.WorldTarget,
-                presentation,
-                "The World Camera target remained uniformly Deep Space near the player (stage A).");
-            AssertPlayerRegionHasVisibleContent(
-                presentation.ResolvedTarget,
-                presentation,
-                "The RenderGraph penumbra pass did not receive visible world pixels (stage B).");
-
-            RenderTexture physicalTarget = new RenderTexture(
-                Mathf.Max(Screen.width, 1),
-                Mathf.Max(Screen.height, 1),
-                16,
-                RenderTextureFormat.ARGB32,
-                RenderTextureReadWrite.sRGB);
-            physicalTarget.Create();
-
-            // Redirect the RenderGraph driver camera's physical output to a probe RT. The
-            // renderer feature then exercises the same final presentation pass as the display.
-            presentation.ProcessingCamera.targetTexture = physicalTarget;
-
-            if (presentation.PenumbraEnabled)
-            {
-                presentation.TogglePenumbra();
-            }
-
+            RenderTexture physicalTarget = CreatePhysicalProbe(presentation);
             try
             {
+                yield return null;
+                yield return null;
+                AssertPlayerRegionHasVisibleContent(
+                    presentation.WorldTarget,
+                    presentation,
+                    "The World Camera target remained uniformly Deep Space near the player (stage A).");
+                AssertPlayerRegionHasVisibleContent(
+                    presentation.ResolvedTarget,
+                    presentation,
+                    "The RenderGraph penumbra pass did not receive visible world pixels (stage B).");
+
+                presentation.SetPenumbraEnabled(false);
                 yield return null;
                 yield return null;
                 AssertPhysicalPlayerRegionHasVisibleContent(
@@ -177,6 +219,18 @@ namespace Rustline.Tests
             Assert.That(target.sRGB, Is.True);
             Assert.That(target.wrapMode, Is.EqualTo(TextureWrapMode.Clamp));
             Assert.That(target.anisoLevel, Is.EqualTo(0));
+        }
+
+        private static RenderTexture CreatePhysicalProbe(NativePixelPresentation presentation)
+        {
+            RenderTexture target = new RenderTexture(
+                Mathf.Max(Screen.width, 1), Mathf.Max(Screen.height, 1), 16,
+                RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            target.Create();
+            // Batch PlayMode has no visible Game View. Give the driver an offscreen
+            // destination before checking stage B too, so its RenderGraph actually runs.
+            presentation.ProcessingCamera.targetTexture = target;
+            return target;
         }
 
         private static void AssertDarknessLookup(Texture2D lookup)

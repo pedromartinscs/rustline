@@ -65,9 +65,9 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**M1 — Core movement, combat crouch, and wall interaction implemented.**
+**M1 movement, initial Longwatch gunplay, and the M3A repeatable combat prototype are implemented.**
 
-The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` provides the accepted movement course, combat crouch, wall brace/kick, the release-hardened Tilemap + Composite collision path, and the first functional Longwatch DMR hitscan range. Crouch and wall presentation intentionally use existing animation fallbacks until authored art is ready.
+The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` provides the accepted movement course, combat crouch, wall brace/kick, the release-hardened Tilemap + Composite collision path, the Longwatch DMR hitscan range, and a killable patrol enemy that resets in place. Crouch uses authored six-frame Body/Unarmed Arms art, including reversed playback when backpedaling. Wall presentation retains Jump/Fall fallbacks; unsupported Longwatch locomotion art and production enemy art remain pending.
 
 ## License
 

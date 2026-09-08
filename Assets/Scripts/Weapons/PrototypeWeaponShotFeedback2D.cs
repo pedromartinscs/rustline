@@ -20,6 +20,8 @@ namespace Rustline.Gameplay.Weapons
 
         private float _traceHideTime;
         private float _impactHideTime;
+        private bool _traceActive;
+        private bool _impactActive;
 
         public LineRenderer TraceRenderer => traceRenderer;
         public LineRenderer ImpactRenderer => impactRenderer;
@@ -41,14 +43,28 @@ namespace Rustline.Gameplay.Weapons
 
         private void Update()
         {
-            if (IsVisible && Time.time >= _traceHideTime)
+            if (!_traceActive && !_impactActive)
             {
-                traceRenderer.enabled = false;
+                return;
             }
 
-            if (IsImpactVisible && Time.time >= _impactHideTime)
+            float now = Time.time;
+            if (_traceActive && now >= _traceHideTime)
             {
-                impactRenderer.enabled = false;
+                _traceActive = false;
+                if (traceRenderer != null)
+                {
+                    traceRenderer.enabled = false;
+                }
+            }
+
+            if (_impactActive && now >= _impactHideTime)
+            {
+                _impactActive = false;
+                if (impactRenderer != null)
+                {
+                    impactRenderer.enabled = false;
+                }
             }
         }
 
@@ -70,10 +86,12 @@ namespace Rustline.Gameplay.Weapons
             traceRenderer.SetPosition(0, result.EndPoint - result.Direction * visibleLength);
             traceRenderer.SetPosition(1, result.EndPoint);
             traceRenderer.enabled = true;
+            _traceActive = true;
             _traceHideTime = Time.time + TraceDuration;
 
             if (impactRenderer == null || !result.Hit)
             {
+                _impactActive = false;
                 if (impactRenderer != null)
                 {
                     impactRenderer.enabled = false;
@@ -94,11 +112,14 @@ namespace Rustline.Gameplay.Weapons
             impactRenderer.SetPosition(1, result.EndPoint);
             impactRenderer.SetPosition(2, tip - wing);
             impactRenderer.enabled = true;
+            _impactActive = true;
             _impactHideTime = Time.time + ImpactDuration;
         }
 
         public void Hide()
         {
+            _traceActive = false;
+            _impactActive = false;
             if (traceRenderer != null)
             {
                 traceRenderer.enabled = false;

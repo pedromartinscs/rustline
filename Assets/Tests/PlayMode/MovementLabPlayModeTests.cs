@@ -33,6 +33,8 @@ namespace Rustline.Tests
             }
 
             Assert.That(hud.IsVisible, Is.False);
+            Assert.That(hud.GetComponent<DiagnosticGuiView>(), Is.Null,
+                "A hidden HUD must not register IMGUI before its first use.");
 
             yield return null;
             yield return null;
@@ -53,6 +55,15 @@ namespace Rustline.Tests
                 yield return null;
                 Release(keyboard.hKey);
                 Assert.That(hud.IsVisible, Is.True);
+                DiagnosticGuiView view = hud.GetComponent<DiagnosticGuiView>();
+                Assert.That(view, Is.Not.Null);
+                Assert.That(view.enabled, Is.True);
+                Assert.That(view.useGUILayout, Is.False);
+                hud.enabled = false;
+                Assert.That(view.enabled, Is.False,
+                    "Disabling the diagnostic owner must also unregister its GUI.");
+                hud.enabled = true;
+                Assert.That(view.enabled, Is.True);
                 yield return null;
                 Assert.That(hud.SampleFrameCount, Is.GreaterThan(0));
 
@@ -60,6 +71,7 @@ namespace Rustline.Tests
                 yield return null;
                 Release(keyboard.hKey);
                 Assert.That(hud.IsVisible, Is.False);
+                Assert.That(view.enabled, Is.False);
                 Assert.That(hud.SampleFrameCount, Is.EqualTo(0));
                 yield return null;
                 Assert.That(hud.SampleFrameCount, Is.EqualTo(0));
@@ -781,7 +793,9 @@ namespace Rustline.Tests
             Gamepad gamepad = InputSystem.AddDevice<Gamepad>();
             try
             {
-                body.position = new Vector2(82f, 0.02f);
+                // Keep the animation-only traversal on open floor. Its full reverse
+                // cycles can otherwise move under the precision ceiling before standing.
+                body.position = new Vector2(-22f, 0.02f);
                 body.linearVelocity = Vector2.zero;
                 Physics2D.SyncTransforms();
                 for (int index = 0; index < 8; index++)
@@ -816,6 +830,10 @@ namespace Rustline.Tests
                 Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.375f)));
                 Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 1.1875f)));
 
+                QueueWorldAim(mouse, nativePresentation, longwatchPresenter.AimOriginWorld, Vector2.right);
+                yield return null;
+                Assert.That(bodyRenderer.flipX, Is.False,
+                    "The reverse-cycle test requires right-facing aim before moving left.");
                 Set(gamepad.leftStick, Vector2.left);
                 InputSystem.Update();
                 yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchMove, 30);

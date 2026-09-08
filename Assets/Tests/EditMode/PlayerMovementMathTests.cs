@@ -34,14 +34,22 @@ namespace Rustline.Tests
             Assert.That(result, Is.EqualTo(3f).Within(0.0001f));
         }
 
-        [Test]
-        public void CrouchCollider_PreservesStandingFootAnchor()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void CrouchCollider_PreservesStandingFootAnchor(bool useSavedAsset)
         {
-            float standingBottom = _config.StandingColliderOffset.y - _config.StandingColliderSize.y * 0.5f;
-            float crouchBottom = _config.CrouchColliderOffset.y - _config.CrouchColliderSize.y * 0.5f;
+            PlayerMovementConfig config = useSavedAsset
+                ? AssetDatabase.LoadAssetAtPath<PlayerMovementConfig>(
+                    "Assets/Config/Player/PlayerMovementConfig.asset")
+                : _config;
+            Assert.That(config, Is.Not.Null);
+            float standingBottom = config.StandingColliderOffset.y - config.StandingColliderSize.y * 0.5f;
+            float crouchBottom = config.CrouchColliderOffset.y - config.CrouchColliderSize.y * 0.5f;
 
-            Assert.That(_config.StandingColliderSize, Is.EqualTo(new Vector2(1.05f, 2.75f)));
-            Assert.That(_config.CrouchColliderSize, Is.EqualTo(new Vector2(1.05f, 1.75f)));
+            Assert.That(config.StandingColliderSize, Is.EqualTo(new Vector2(1.05f, 2.75f)));
+            Assert.That(config.StandingColliderOffset, Is.EqualTo(new Vector2(0f, 1.375f)));
+            Assert.That(config.CrouchColliderSize, Is.EqualTo(new Vector2(1.05f, 2.375f)));
+            Assert.That(config.CrouchColliderOffset, Is.EqualTo(new Vector2(0f, 1.1875f)));
             Assert.That(crouchBottom, Is.EqualTo(standingBottom).Within(0.0001f));
         }
 

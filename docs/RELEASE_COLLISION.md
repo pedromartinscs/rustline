@@ -2,6 +2,8 @@
 
 This document is a **release-critical guardrail**. Read it before changing MovementLab course generation, Tilemap collision, CompositeCollider2D setup, scene rebuild logic, or build processing.
 
+September 8 audit: the saved MovementLab scene still contained the old whole-cell crouch ceiling after commit `2bf22f9` changed its builder/config contract. Running the existing M1A rebuild synchronized the approved precision ceiling and baked the floor Composite. A non-development Windows Release smoke then verified 9 Composite paths / 48 points, supported spawn, traversal, jump/landing, passage under the precision ceiling, blocked standing inside it, and automatic standing after exit. The initializer and build guard algorithms were preserved. See `PERFORMANCE_AUDIT_2026_09.md` for the associated test-fixture corrections.
+
 ## Symptom
 
 The recurring failure is specific:

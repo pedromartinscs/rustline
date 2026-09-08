@@ -12,13 +12,15 @@ namespace Rustline.Presentation
         private Vector3 _continuousPosition;
         private Vector3 _smoothVelocity;
         private Vector2 _presentationOffset;
+        private Transform _cameraTransform;
 
         public Vector3 ContinuousFollowPosition => _continuousPosition;
         public Vector2 PresentationOffset => _presentationOffset;
 
         private void OnEnable()
         {
-            _continuousPosition = transform.position;
+            _cameraTransform = transform;
+            _continuousPosition = _cameraTransform.position;
         }
 
         private void LateUpdate()
@@ -28,10 +30,12 @@ namespace Rustline.Presentation
                 return;
             }
 
+            Vector3 targetPosition = target.position;
+            Vector3 cameraPosition = _cameraTransform.position;
             Vector3 destination = new Vector3(
-                target.position.x + offset.x,
-                target.position.y + offset.y,
-                transform.position.z);
+                targetPosition.x + offset.x,
+                targetPosition.y + offset.y,
+                cameraPosition.z);
 
             _continuousPosition = Vector3.SmoothDamp(
                 _continuousPosition,
@@ -42,10 +46,17 @@ namespace Rustline.Presentation
                 Time.unscaledDeltaTime);
 
             float scale = pixelsPerUnit;
-            transform.position = new Vector3(
+            Vector3 snappedPosition = new Vector3(
                 Mathf.Round((_continuousPosition.x + _presentationOffset.x) * scale) / scale,
                 Mathf.Round((_continuousPosition.y + _presentationOffset.y) * scale) / scale,
                 _continuousPosition.z);
+
+            // Continue smoothing below pixel resolution, but do not dirty the camera
+            // Transform until its exact rendered position changes (including recoil).
+            if (!snappedPosition.Equals(cameraPosition))
+            {
+                _cameraTransform.position = snappedPosition;
+            }
         }
 
         /// <summary>

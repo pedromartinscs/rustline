@@ -405,13 +405,14 @@ Player_Body_Fall.anim
 Player_Body_Land.anim
 Player_Body_CrouchIdle.anim
 Player_Body_CrouchMove.anim
+Player_Body_CrouchBackpedal.anim
 ```
 
 `Player_Body_Jump.anim` is a non-looping takeoff sequence with Body keys at `0.00`, `0.10`, and `0.26` seconds. Frame 1 is a 100 ms Y-anchored compression pose; Frame 2 is a 160 ms leg-extension pose with cubic ease-out catch-up to the root's current normal Visual position; Frame 3 is held while locomotion remains Jump. X movement, physical impulse, and camera root-follow are unchanged.
 
 Jump dust is separate production art at `Assets/Art/Effects/Movement/player_jump_dust.png`: three 48×64 bottom-center-pivot cells. A grounded jump spawns its serialized one-shot prefab at the takeoff world position and facing; coyote jumps do not spawn dust.
 
-The runtime deliberately uses one Animator on `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite and maps it to the matching Unarmed Arms sprite. A future equipped-weapon presenter takes ownership of `ArmsWeaponSpriteRenderer` while armed and returns ownership when unequipped; do not add a second Animator merely for armed aiming.
+The runtime deliberately uses one Animator on `BodySpriteRenderer`. `PlayerUnarmedArmsPresenter2D` observes the final displayed Body sprite and maps it to the matching Unarmed Arms sprite. `PlayerLongwatchAimPresenter2D` takes ownership of `ArmsWeaponSpriteRenderer` in supported armed states and returns ownership for unsupported states; do not add a second Animator merely for armed aiming. Crouch Backpedal reverses the same six crouch frames at 7 fps, while forward Crouch Move plays frames 0..5 and Crouch Idle holds frame 0.
 
 Weapon-independent `PlayerAim2D` is wired on the Player prefab. It owns `Player/PointerPosition`, the scene-specific `NativePixelPresentation` reference, unclamped physical-to-logical viewport conversion, continuous World Camera aim, valid-aim retention, the explicit AimOrigin transform, and the authoritative facing hemisphere. `PlayerLongwatchAimPresenter2D` consumes that state and contains no input or viewport reconstruction.
 
@@ -442,7 +443,7 @@ Implemented validation milestones:
 6. Import/slice all Longwatch Idle direction sheets as **80×96** cells with pivot `(24,8)` / normalized `(0.30, 0.083333333...)`. **Done.**
 7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere. **Done for mouse/pointer Idle, Run, and Backpedal validation.**
 8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or jump semantics. **Done for Idle, Run, and Backpedal, with intentional unarmed fallback for unsupported states.**
-9. Automate validation of all 19 directions, both Idle frames, all six Run frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; human native-scale approval remains pending.**
+9. Automate validation of all 19 directions, both Idle frames, all six Run frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; Run, the corrected origin, and revised four-frame Backpedal are human-approved as recorded below.**
 10. Correct the Longwatch pointer aim origin to 38 source pixels / 2.375 Unity units above the shared renderer pivot. **Done and human-approved.**
 11. Add grounded armed Backpedal with four authored frames at all 19 directions, driven by generic aim-facing and a 4 units/s cap. **Implemented and human-approved; movement-speed feel tuning continues at 4 units/s.**
 12. Expand the Longwatch package to Fall aim and Jump/Land/Roll carry poses only after the current visual gate.

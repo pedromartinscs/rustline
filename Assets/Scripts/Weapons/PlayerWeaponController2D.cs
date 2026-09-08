@@ -103,21 +103,29 @@ namespace Rustline.Gameplay.Weapons
                 _hits,
                 weaponDefinition.Range);
             RaycastHit2D nearestHit = default;
+            Collider2D nearestCollider = null;
             float nearestDistance = float.PositiveInfinity;
             for (int index = 0; index < hitCount; index++)
             {
                 RaycastHit2D candidate = _hits[index];
-                if (candidate.collider == null || candidate.collider == _playerCollider ||
-                    candidate.collider.transform.IsChildOf(transform) || candidate.distance >= nearestDistance)
+                if (candidate.distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                Collider2D candidateCollider = candidate.collider;
+                if (candidateCollider == null || candidateCollider == _playerCollider ||
+                    candidateCollider.transform.IsChildOf(transform))
                 {
                     continue;
                 }
 
                 nearestHit = candidate;
+                nearestCollider = candidateCollider;
                 nearestDistance = candidate.distance;
             }
 
-            if (nearestHit.collider == null)
+            if (nearestCollider == null)
             {
                 result = new WeaponShotResult2D(
                     weaponDefinition,
@@ -141,8 +149,8 @@ namespace Rustline.Gameplay.Weapons
                 nearestHit.normal,
                 nearestHit.distance,
                 weaponDefinition.Damage,
-                nearestHit.collider);
-            IWeaponHitReceiver2D receiver = nearestHit.collider.GetComponent<IWeaponHitReceiver2D>();
+                nearestCollider);
+            IWeaponHitReceiver2D receiver = nearestCollider.GetComponent<IWeaponHitReceiver2D>();
             bool receiverNotified = receiver != null;
             receiver?.ReceiveHit(in hitInfo);
             result = new WeaponShotResult2D(
@@ -151,7 +159,7 @@ namespace Rustline.Gameplay.Weapons
                 direction,
                 nearestHit.point,
                 true,
-                nearestHit.collider,
+                nearestCollider,
                 nearestHit.normal,
                 nearestHit.distance,
                 weaponDefinition.Damage,

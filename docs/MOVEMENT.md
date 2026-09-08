@@ -1,13 +1,13 @@
 # M1 Movement
 
-M1 is a compact single-player Rigidbody2D controller intended for rapid feel tuning. It contains no gunplay, networking, roll/dodge, or moving-platform system.
+M1 is a compact single-player Rigidbody2D controller intended for rapid feel tuning. Gunplay and combat live in separate weapon/combat components; networking, roll/dodge, and moving platforms remain outside the current movement implementation.
 
 ## Controls
 
 - Keyboard: A/D or Left/Right Arrow to move; Space to jump; S or Down Arrow to crouch.
 - Gamepad: Left Stick or D-pad to move; South button to jump; downward Left Stick or D-pad to crouch.
 
-The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, `Crouch`, and `PointerPosition`. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position`. `PlayerAim2D` converts it through the native-pixel viewport and World Camera into continuous world-space aim, then owns the stable facing hemisphere independently of A/D movement.
+The existing `InputSystem_Actions` asset contains one focused `Player` map with `Move`, `Jump`, `Crouch`, `PointerPosition`, and `Fire`. `PointerPosition` is a Vector2 PassThrough binding to `<Pointer>/position`. `PlayerAim2D` converts it through the native-pixel viewport and World Camera into continuous world-space aim, then owns the stable facing hemisphere independently of A/D movement. `Fire` supplies the separate weapon controller's semi-automatic input edge.
 
 ## Runtime structure
 

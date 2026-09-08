@@ -40,6 +40,7 @@ namespace Rustline.Diagnostics
         private GUIStyle shadowStyle;
         private GUIStyle hintStyle;
         private GUIStyle hintShadowStyle;
+        private DiagnosticGuiView guiView;
 
         public bool IsVisible => hudVisible;
         public int SampleFrameCount => frameCount;
@@ -113,7 +114,31 @@ namespace Rustline.Diagnostics
             ResetSample();
         }
 
-        private void OnGUI()
+        private void OnEnable()
+        {
+            if (guiView != null)
+            {
+                guiView.enabled = hudVisible;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (guiView != null)
+            {
+                guiView.enabled = false;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (guiView != null)
+            {
+                Destroy(guiView);
+            }
+        }
+
+        private void DrawHud()
         {
             if (!hudVisible)
             {
@@ -208,6 +233,17 @@ namespace Rustline.Diagnostics
         private void SetHudVisible(bool visible)
         {
             hudVisible = visible;
+            if (visible && guiView == null)
+            {
+                guiView = gameObject.AddComponent<DiagnosticGuiView>();
+                guiView.Initialize(DrawHud);
+            }
+
+            if (guiView != null)
+            {
+                guiView.enabled = visible && isActiveAndEnabled;
+            }
+
             ResetSample();
             if (!hudVisible)
             {

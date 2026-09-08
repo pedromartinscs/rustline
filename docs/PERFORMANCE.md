@@ -43,7 +43,7 @@ The original 0.5-second window proved too sensitive to Unity Editor scheduling a
 
 Clicking the performance readout copies the current metrics directly to the system clipboard. This is the preferred quick-sharing workflow during Pedro ↔ Echo performance iteration because taking screenshots or invoking screen-capture software can perturb frame timing and contaminate the sample being measured.
 
-The HUD is created only when `MovementLab` starts and is compiled only for the Unity Editor or Development Builds. It is not intended to ship in normal release builds.
+The HUD is created only when `MovementLab` starts and is compiled only for the Unity Editor or Development Builds. It is not intended to ship in normal release builds. Its input/sampling component has no `OnGUI`; a separate `DiagnosticGuiView` is created on first show and enabled only while visible. This removes hidden IMGUI event setup as well as hidden sampling. The view uses fixed rectangles with `useGUILayout = false`. The standalone benchmark similarly creates its summary view only after measurement has finished.
 
 Editor FPS is useful for quick comparisons but is not a final benchmark because Editor overhead can distort results. Later milestone/performance gates should also use standalone Development Builds and Unity Profiler captures on representative hardware.
 
@@ -157,7 +157,10 @@ The September 2026 pass retained a small set of structurally verifiable changes:
 - stable source texture and orientation bindings are set only when materials, targets, or the
   Penumbra selection change; RenderGraph callbacks retain texture dependencies but only clear,
   set viewports, and draw;
-- native-pixel material parameters are exact-dirty-checked, and the player/camera-derived penumbra values are not recomputed in a stationary frame;
+- native-pixel material parameters are exact-dirty-checked; player/camera-derived penumbra inputs are skipped entirely while the effect is off and refreshed immediately on re-enable, including late toggles;
+- persistent render-target import metadata is refreshed by feature configuration on target/viewport/toggle changes, avoiding six native texture-property reads per imported target per frame; target recreation must continue to call `Configure`;
+- camera follow keeps its continuous SmoothDamp state advancing below pixel resolution but only writes a changed exact snapped Transform position; recoil and re-enable behavior remain intact;
+- shot feedback Update returns on managed active flags while idle; public visibility accessors still report actual renderer state. Hitscan resolves collider references once per nearer candidate and reuses the selected reference;
 - aim conversion skips its two camera-space conversions only when every current conversion input is exactly unchanged; an exact aim revision prevents Longwatch from repeating angle quantization for an unchanged resolved aim;
 - Animator state names are cached as hashes, renderer facing writes happen only on an actual facing change, and Longwatch validates immutable configuration once per enable and scans Body frames only after its Body/direction cache misses;
 - the active URP asset disables unused HDR, Terrain Holes, LOD Cross Fade, 3D main/additional lights and shadows, mixed lighting, 3D light cookies, both lens-flare systems, and Adaptive Performance. Volume updates are `Via Scripting`; current cameras have post-processing off and the repository contains no authored runtime Volume.

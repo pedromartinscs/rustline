@@ -205,6 +205,8 @@ Schema version 2 records Unity/build state, system/graphics information, request
 
 ## Final decision gate after Benchmark Stabilization 1
 
+Historical gate: the later full A/A control recorded in `PERFORMANCE_LOG.md` completed with a block max/min ratio of `1.004777`. The instructions below describe the stabilization decision at that time; new performance comparisons still require a nearby A/A control and review of drift/noise.
+
 Run exactly one full `control-off` A/A first. Review chronological block means, signed and absolute A-B deltas, allocation metrics, GC counts, and any optional CPU/GPU diagnostics.
 
 If A/A is reasonably stable, run the Penumbra A/B and retain this harness for future optimization work. If identical OFF blocks still change by many milliseconds or large multiples comparable to the previous run, stop benchmark-engineering work for now. Keep the harness as a coarse diagnostic, document the environment limitation, keep Experiment 3A because it is structurally cheaper and visually correct without claiming a measured speedup, and return project focus to gameplay/content/assets.

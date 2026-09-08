@@ -36,6 +36,7 @@ namespace Rustline.Diagnostics.Benchmarking
         private bool _completed;
         private string _summary;
         private GUIStyle _summaryStyle;
+        private DiagnosticGuiView _summaryView;
         private string _abortReason;
         private ProfilerRecorder _gcAllocatedInFrameRecorder;
         private bool _gcAllocationRecorderAvailable;
@@ -727,6 +728,9 @@ namespace Rustline.Diagnostics.Benchmarking
 
             string reportDirectory = BenchmarkReportWriter.WriteAll(_report, out _summary);
             _completed = true;
+            // No IMGUI component exists during warmup or measured blocks.
+            _summaryView = gameObject.AddComponent<DiagnosticGuiView>();
+            _summaryView.Initialize(DrawSummary);
             UnityEngine.Debug.Log(_summary);
             UnityEngine.Debug.Log($"Rustline benchmark reports written to: {reportDirectory}");
 
@@ -753,6 +757,10 @@ namespace Rustline.Diagnostics.Benchmarking
         private void OnDestroy()
         {
             DisposeMeasurementDiagnostics();
+            if (_summaryView != null)
+            {
+                Destroy(_summaryView);
+            }
         }
 
         private void Update()
@@ -774,7 +782,7 @@ namespace Rustline.Diagnostics.Benchmarking
             }
         }
 
-        private void OnGUI()
+        private void DrawSummary()
         {
             if (!_completed)
             {
