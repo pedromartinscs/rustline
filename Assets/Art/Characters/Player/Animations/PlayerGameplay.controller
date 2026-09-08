@@ -1,3 +1,5 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
 --- !u!1102 &3846912764011122334
 AnimatorState:
   serializedVersion: 6
@@ -24,8 +26,6 @@ AnimatorState:
   m_MirrorParameter: 
   m_CycleOffsetParameter: 
   m_TimeParameter: 
-%YAML 1.1
-%TAG !u! tag:unity3d.com,2011:
 --- !u!1102 &-8565087424862557114
 AnimatorState:
   serializedVersion: 6
