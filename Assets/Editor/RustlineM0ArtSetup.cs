@@ -407,6 +407,8 @@ namespace Rustline.Editor
             AddPreview(previews, "Land", "land", 8f, true);
             AddPreview(previews, "CrouchIdle", "crouch", 1f, false, null, 1);
             AddPreview(previews, "CrouchMove", "crouch", 7f, true);
+            // Same authored crouch sheet, deliberately reversed for crouched backpedal.
+            AddPreview(previews, "CrouchBackpedal", "crouch", 7f, true, reverseFrames: true);
             return previews;
         }
 
@@ -417,7 +419,8 @@ namespace Rustline.Editor
             float frameRate,
             bool loop,
             IReadOnlyList<float> keyframeTimes = null,
-            int frameLimit = int.MaxValue)
+            int frameLimit = int.MaxValue,
+            bool reverseFrames = false)
         {
             string bodySheetPath = BodySpriteRoot + "/player_salvager_body_" + stateId + ".png";
             string armsSheetPath = UnarmedArmsSpriteRoot + "/player_salvager_arms_" + stateId + ".png";
@@ -429,6 +432,12 @@ namespace Rustline.Editor
                 .OrderBy(sprite => ParseTrailingIndex(sprite.name))
                 .Take(frameLimit)
                 .ToList();
+            if (reverseFrames)
+            {
+                bodyFrames.Reverse();
+                armsFrames.Reverse();
+            }
+
             Require(bodyFrames.Count > 0, "No frames found for " + bodySheetPath);
             Require(bodyFrames.Count == armsFrames.Count, label + " body/arms frame counts differ.");
             Require(keyframeTimes == null || keyframeTimes.Count == bodyFrames.Count,
@@ -1045,6 +1054,7 @@ namespace Rustline.Editor
                     { "Player_Body_Land", (2, 8f, true, "land") },
                     { "Player_Body_CrouchIdle", (1, 1f, false, "crouch") },
                     { "Player_Body_CrouchMove", (6, 7f, true, "crouch") },
+                    { "Player_Body_CrouchBackpedal", (6, 7f, true, "crouch") },
                 };
             foreach (KeyValuePair<string, (int frameCount, float frameRate, bool loop, string spriteState)> clipSpec in clipSpecs)
             {
@@ -1059,8 +1069,12 @@ namespace Rustline.Editor
                     clipSpec.Key + " must contain exactly one key per source frame.");
                 for (int index = 0; index < keyframes.Length; index++)
                 {
+                    int expectedSpriteIndex = clipSpec.Key == "Player_Body_CrouchBackpedal"
+                        ? keyframes.Length - 1 - index
+                        : index;
                     Require(keyframes[index].value != null &&
-                            keyframes[index].value.name == "player_salvager_body_" + clipSpec.Value.spriteState + "_" + index,
+                            keyframes[index].value.name == "player_salvager_body_" +
+                                clipSpec.Value.spriteState + "_" + expectedSpriteIndex,
                         clipSpec.Key + " sprite order mismatch at frame " + index + ".");
                 }
                 AnimationClipSettings clipSettings = AnimationUtility.GetAnimationClipSettings(clip);

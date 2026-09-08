@@ -53,6 +53,12 @@ namespace Rustline.Editor
         private const string SpriteUnlitMaterialPath =
             "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
 
+        private const string PrecisionCrouchCeilingName = "Combat Crouch Ceiling - Precision";
+        private const int PrecisionCrouchCeilingLeft = 69;
+        private const int PrecisionCrouchCeilingWidth = 9;
+        private const int PrecisionCrouchCeilingCellY = 2;
+        private const float CrouchClearanceRaiseWorldUnits = 10f / 16f;
+
         private static readonly CourseBlock[] Course =
         {
             new CourseBlock(-30, 0, 16, 4),
@@ -63,9 +69,9 @@ namespace Rustline.Editor
             new CourseBlock(35, -2, 6, 4),
             new CourseBlock(44, -1, 6, 4),
             new CourseBlock(53, 0, 10, 4),
-            // Combat-crouch tunnel: floor, low ceiling, then open stand-up space.
+            // Combat-crouch tunnel floor. Its ceiling is a dedicated sub-cell precision collider
+            // because the accepted clearance is 10 source pixels above the old 32 px grid opening.
             new CourseBlock(64, 0, 28, 4),
-            new CourseBlock(69, 3, 9, 1),
             // Wall-brace tuning shaft: deep side columns and a lower recovery floor.
             new CourseBlock(92, 0, 1, 8),
             new CourseBlock(93, -5, 4, 3),
@@ -232,7 +238,7 @@ namespace Rustline.Editor
             }
             else
             {
-                SynchronizeMovementLabCourse(collisionTile, combatTargetLayer);
+                SynchronizeMovementLabCourse(collisionTile, groundLayer, combatTargetLayer);
             }
             WireMovementLabLongwatchPresentation();
             ConfigureMovementLabIdentityUnlitRendering();
@@ -251,6 +257,11 @@ namespace Rustline.Editor
                 config = ScriptableObject.CreateInstance<PlayerMovementConfig>();
                 AssetDatabase.CreateAsset(config, ConfigPath);
             }
+
+            SerializedObject serialized = new SerializedObject(config);
+            serialized.FindProperty("crouchColliderSize").vector2Value = new Vector2(1.05f, 2.375f);
+            serialized.FindProperty("crouchColliderOffset").vector2Value = new Vector2(0f, 1.1875f);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
 
             EditorUtility.SetDirty(config);
             return config;
@@ -310,6 +321,7 @@ namespace Rustline.Editor
             string[] stateNames =
             {
                 "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+                "CrouchBackpedal",
             };
             HashSet<string> requiredStates = new HashSet<string>(stateNames);
             foreach (ChildAnimatorState child in stateMachine.states.ToArray())
@@ -886,6 +898,7 @@ namespace Rustline.Editor
             EditorUtility.SetDirty(visualTilemap.GetComponent<TilemapRenderer>());
             EditorUtility.SetDirty(collisionTilemap);
             EditorUtility.SetDirty(collisionTilemap.GetComponent<TilemapRenderer>());
+            SynchronizePrecisionCrouchCeiling(scene, gridObject.transform, ruleTile, groundLayer);
             EditorSceneManager.MarkSceneDirty(scene);
 
             GameObject spawn = new GameObject("Player Spawn");
@@ -905,7 +918,10 @@ namespace Rustline.Editor
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
 
-        private static void SynchronizeMovementLabCourse(TileBase collisionTile, int combatTargetLayer)
+        private static void SynchronizeMovementLabCourse(
+            TileBase collisionTile,
+            int groundLayer,
+            int combatTargetLayer)
         {
             RuleTile ruleTile = AssetDatabase.LoadAssetAtPath<RuleTile>(RuleTilePath);
             Require(ruleTile != null, "Accepted M0 IndustrialSurface Rule Tile is missing.");
@@ -924,6 +940,8 @@ namespace Rustline.Editor
             bool changed = SynchronizeCompositeCollisionContract(collisionTilemap);
             changed |= SynchronizeTilemap(visualTilemap, courseCells, ruleTile);
             changed |= SynchronizeTilemap(collisionTilemap, courseCells, collisionTile);
+            changed |= SynchronizePrecisionCrouchCeiling(
+                scene, visualTilemap.transform.parent, ruleTile, groundLayer);
 
             // Always refresh/bake the collision geometry after opening the scene, even when the
             // authored cell set is already correct. This removes build output dependence on whether
@@ -941,6 +959,77 @@ namespace Rustline.Editor
                 EditorSceneManager.MarkSceneDirty(scene);
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
+        }
+
+        private static bool SynchronizePrecisionCrouchCeiling(
+            Scene scene,
+            Transform gridParent,
+            RuleTile ruleTile,
+            int groundLayer)
+        {
+            bool changed = false;
+            Tilemap tilemap = FindTilemap(scene, PrecisionCrouchCeilingName);
+            if (tilemap == null)
+            {
+                tilemap = CreateTilemap(gridParent, PrecisionCrouchCeilingName, 0);
+                changed = true;
+            }
+
+            Transform ceilingTransform = tilemap.transform;
+            Vector3 desiredLocalPosition = new Vector3(0f, CrouchClearanceRaiseWorldUnits, 0f);
+            if (ceilingTransform.parent != gridParent)
+            {
+                ceilingTransform.SetParent(gridParent, false);
+                changed = true;
+            }
+            if (ceilingTransform.localPosition != desiredLocalPosition)
+            {
+                ceilingTransform.localPosition = desiredLocalPosition;
+                changed = true;
+            }
+            if (ceilingTransform.localRotation != Quaternion.identity)
+            {
+                ceilingTransform.localRotation = Quaternion.identity;
+                changed = true;
+            }
+            if (ceilingTransform.localScale != Vector3.one)
+            {
+                ceilingTransform.localScale = Vector3.one;
+                changed = true;
+            }
+            if (tilemap.gameObject.layer != groundLayer)
+            {
+                tilemap.gameObject.layer = groundLayer;
+                changed = true;
+            }
+
+            changed |= SynchronizeTilemap(tilemap, GetPrecisionCrouchCeilingCells().ToArray(), ruleTile);
+
+            TilemapRenderer renderer = tilemap.GetComponent<TilemapRenderer>();
+            Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
+            Require(renderer != null && unlitMaterial != null,
+                "Precision crouch ceiling requires its TilemapRenderer and unlit material.");
+            if (!renderer.enabled) { renderer.enabled = true; changed = true; }
+            if (renderer.sharedMaterial != unlitMaterial) { renderer.sharedMaterial = unlitMaterial; changed = true; }
+            if (renderer.sortingOrder != 0) { renderer.sortingOrder = 0; changed = true; }
+
+            Rigidbody2D body = GetOrAddComponent<Rigidbody2D>(tilemap.gameObject);
+            if (body.bodyType != RigidbodyType2D.Static) { body.bodyType = RigidbodyType2D.Static; changed = true; }
+
+            BoxCollider2D collider = GetOrAddComponent<BoxCollider2D>(tilemap.gameObject);
+            Vector2 desiredSize = new Vector2(PrecisionCrouchCeilingWidth, 1f);
+            Vector2 desiredOffset = new Vector2(
+                PrecisionCrouchCeilingLeft + PrecisionCrouchCeilingWidth * 0.5f,
+                PrecisionCrouchCeilingCellY + 0.5f);
+            if (collider.size != desiredSize) { collider.size = desiredSize; changed = true; }
+            if (collider.offset != desiredOffset) { collider.offset = desiredOffset; changed = true; }
+            if (collider.isTrigger) { collider.isTrigger = false; changed = true; }
+
+            EditorUtility.SetDirty(tilemap);
+            EditorUtility.SetDirty(renderer);
+            EditorUtility.SetDirty(body);
+            EditorUtility.SetDirty(collider);
+            return changed;
         }
 
         private static bool SynchronizeCompositeCollisionContract(Tilemap collisionTilemap)
@@ -1687,8 +1776,8 @@ namespace Rustline.Editor
             Require(Mathf.Approximately(config.MaxCrouchGroundSpeed, 3f) &&
                 config.StandingColliderSize == new Vector2(1.05f, 2.75f) &&
                 config.StandingColliderOffset == new Vector2(0f, 1.375f) &&
-                config.CrouchColliderSize == new Vector2(1.05f, 1.75f) &&
-                config.CrouchColliderOffset == new Vector2(0f, 0.875f),
+                config.CrouchColliderSize == new Vector2(1.05f, 2.375f) &&
+                config.CrouchColliderOffset == new Vector2(0f, 1.1875f),
                 "Player combat-crouch tuning or foot-anchor collider contract changed.");
             Require(Mathf.Approximately(config.WallBraceMaxFallSpeed, 4f) &&
                 Mathf.Approximately(config.WallKickHorizontalSpeed, 8f) &&
@@ -1745,6 +1834,7 @@ namespace Rustline.Editor
             string[] expectedGameplayStateNames =
             {
                 "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+                "CrouchBackpedal",
             };
             Require(gameplayStates.Length == expectedGameplayStateNames.Length,
                 "Player gameplay Animator must contain exactly the eight locomotion states.");
@@ -1977,6 +2067,36 @@ namespace Rustline.Editor
                     Require(collisionTilemap.GetTile(cell) == collisionTile,
                         "MovementLab collision Tilemap is missing its collision tile at " + cell + ".");
                 }
+
+                Tilemap precisionCeiling = FindTilemap(scene, PrecisionCrouchCeilingName);
+                Require(precisionCeiling != null &&
+                    precisionCeiling.gameObject.layer == 6 &&
+                    precisionCeiling.transform.localPosition ==
+                        new Vector3(0f, CrouchClearanceRaiseWorldUnits, 0f),
+                    "MovementLab precision crouch ceiling is missing or has the wrong 10 px vertical offset.");
+                Require(CountOccupiedCells(precisionCeiling) == PrecisionCrouchCeilingWidth,
+                    "Precision crouch ceiling must contain exactly nine visual cells.");
+                foreach (Vector3Int cell in GetPrecisionCrouchCeilingCells())
+                {
+                    Require(precisionCeiling.GetTile(cell) == ruleTile,
+                        "Precision crouch ceiling is missing its visual RuleTile at " + cell + ".");
+                }
+                BoxCollider2D precisionCeilingCollider = precisionCeiling.GetComponent<BoxCollider2D>();
+                Rigidbody2D precisionCeilingBody = precisionCeiling.GetComponent<Rigidbody2D>();
+                Require(precisionCeilingCollider != null && !precisionCeilingCollider.isTrigger &&
+                    precisionCeilingCollider.size == new Vector2(PrecisionCrouchCeilingWidth, 1f) &&
+                    precisionCeilingCollider.offset == new Vector2(
+                        PrecisionCrouchCeilingLeft + PrecisionCrouchCeilingWidth * 0.5f,
+                        PrecisionCrouchCeilingCellY + 0.5f) &&
+                    precisionCeilingBody != null &&
+                    precisionCeilingBody.bodyType == RigidbodyType2D.Static,
+                    "Precision crouch ceiling must use its exact static sub-cell BoxCollider2D contract.");
+                float crouchOpeningHeight =
+                    PrecisionCrouchCeilingCellY + CrouchClearanceRaiseWorldUnits;
+                Require(Mathf.Approximately(crouchOpeningHeight, 2.625f) &&
+                    config.CrouchColliderSize.y < crouchOpeningHeight &&
+                    config.StandingColliderSize.y > crouchOpeningHeight,
+                    "The crouch-only opening must be exactly 42 px: passable crouched, not standable.");
 
                 TilemapCollider2D collider = FindInScene<TilemapCollider2D>(scene);
                 CompositeCollider2D composite = collider?.GetComponent<CompositeCollider2D>();
@@ -2214,6 +2334,16 @@ namespace Rustline.Editor
         {
             BoundsInt bounds = tilemap.cellBounds;
             return tilemap.GetTilesBlock(bounds).Count(tile => tile != null);
+        }
+
+        private static IEnumerable<Vector3Int> GetPrecisionCrouchCeilingCells()
+        {
+            for (int x = PrecisionCrouchCeilingLeft;
+                 x < PrecisionCrouchCeilingLeft + PrecisionCrouchCeilingWidth;
+                 x++)
+            {
+                yield return new Vector3Int(x, PrecisionCrouchCeilingCellY, 0);
+            }
         }
 
         private static IEnumerable<Vector3Int> GetCourseCells()

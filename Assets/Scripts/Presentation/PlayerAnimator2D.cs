@@ -17,6 +17,9 @@ namespace Rustline.Presentation
         private static readonly int LandStateHash = Animator.StringToHash(nameof(PlayerAnimationState.Land));
         private static readonly int CrouchIdleStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchIdle));
         private static readonly int CrouchMoveStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchMove));
+        // Presentation-only variant: logical gameplay state remains CrouchMove, but walking
+        // opposite aim-facing uses the same six authored frames in reverse order (5 -> 0).
+        private static readonly int CrouchBackpedalStateHash = Animator.StringToHash("CrouchBackpedal");
 
         [SerializeField] private PlayerMovementConfig config;
         [SerializeField] private Animator animator;
@@ -28,6 +31,7 @@ namespace Rustline.Presentation
         private float _landingTimeRemaining;
         private PlayerAnimationState? _currentState;
         private bool? _lastFacingLeft;
+        private bool _crouchBackpedaling;
 
         public PlayerAnimationState? CurrentState => _currentState;
         public PlayerAim2D PlayerAim => playerAim;
@@ -88,13 +92,23 @@ namespace Rustline.Presentation
                     config.AscendingAnimationThreshold,
                     _motor.IsCrouched);
 
-                if (_currentState == nextState)
+                bool crouchBackpedaling =
+                    nextState == PlayerAnimationState.CrouchMove &&
+                    Gameplay.Player.PlayerMovementMath.IsDirectionAgainstFacing(velocity.x, facingLeft);
+
+                if (_currentState == nextState &&
+                    (nextState != PlayerAnimationState.CrouchMove ||
+                     _crouchBackpedaling == crouchBackpedaling))
                 {
                     return;
                 }
 
-                animator.Play(GetStateHash(nextState), 0, 0f);
+                int presentationStateHash = nextState == PlayerAnimationState.CrouchMove && crouchBackpedaling
+                    ? CrouchBackpedalStateHash
+                    : GetStateHash(nextState);
+                animator.Play(presentationStateHash, 0, 0f);
                 _currentState = nextState;
+                _crouchBackpedaling = crouchBackpedaling;
             }
         }
 

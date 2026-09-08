@@ -35,8 +35,10 @@ namespace Rustline.Gameplay.Player
         [Header("Posture collision")]
         [SerializeField] private Vector2 standingColliderSize = new Vector2(1.05f, 2.75f);
         [SerializeField] private Vector2 standingColliderOffset = new Vector2(0f, 1.375f);
-        [SerializeField] private Vector2 crouchColliderSize = new Vector2(1.05f, 1.75f);
-        [SerializeField] private Vector2 crouchColliderOffset = new Vector2(0f, 0.875f);
+        // 38 source pixels tall: the authored crouch silhouette is 41 px high, while the
+        // diagnostic crouch-only opening is 42 px. The bottom anchor remains exactly invariant.
+        [SerializeField] private Vector2 crouchColliderSize = new Vector2(1.05f, 2.375f);
+        [SerializeField] private Vector2 crouchColliderOffset = new Vector2(0f, 1.1875f);
 
         [Header("Wall interaction")]
         [SerializeField, Range(0.001f, 0.25f)] private float wallCheckDistance = 0.075f;

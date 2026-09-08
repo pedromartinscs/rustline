@@ -90,6 +90,8 @@ namespace Rustline.Tests
                 BodyAnimationRoot + "/Player_Body_CrouchIdle.anim");
             AnimationClip moveClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
                 BodyAnimationRoot + "/Player_Body_CrouchMove.anim");
+            AnimationClip backpedalClip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_CrouchBackpedal.anim");
 
             Assert.That(crouchSprites, Has.Count.EqualTo(6));
             Assert.That(idleClip, Is.Not.Null);
@@ -115,6 +117,17 @@ namespace Rustline.Tests
                 Assert.That(moveKeys[index].time, Is.EqualTo(index / 7f).Within(0.0001f));
                 Assert.That(moveKeys[index].value, Is.SameAs(crouchSprites[index]));
             }
+
+            Assert.That(backpedalClip, Is.Not.Null);
+            Assert.That(backpedalClip.frameRate, Is.EqualTo(7f));
+            Assert.That(AnimationUtility.GetAnimationClipSettings(backpedalClip).loopTime, Is.True);
+            ObjectReferenceKeyframe[] backpedalKeys = GetSpriteKeys(backpedalClip);
+            Assert.That(backpedalKeys, Has.Length.EqualTo(6));
+            for (int index = 0; index < backpedalKeys.Length; index++)
+            {
+                Assert.That(backpedalKeys[index].time, Is.EqualTo(index / 7f).Within(0.0001f));
+                Assert.That(backpedalKeys[index].value, Is.SameAs(crouchSprites[5 - index]));
+            }
         }
 
         [Test]
@@ -128,6 +141,7 @@ namespace Rustline.Tests
             string[] expectedStateNames =
             {
                 "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
+                "CrouchBackpedal",
             };
 
             Assert.That(states, Has.Length.EqualTo(expectedStateNames.Length));

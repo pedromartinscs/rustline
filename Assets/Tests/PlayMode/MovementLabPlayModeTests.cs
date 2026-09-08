@@ -813,12 +813,35 @@ namespace Rustline.Tests
                         armsPosition, armsRotation, armsScale);
                 }
 
-                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 1.75f)));
-                Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 0.875f)));
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.375f)));
+                Assert.That(capsule.offset, Is.EqualTo(new Vector2(0f, 1.1875f)));
 
                 Set(gamepad.leftStick, Vector2.left);
                 InputSystem.Update();
                 yield return WaitForPresentationState(playerAnimator, PlayerAnimationState.CrouchMove, 30);
+                yield return null;
+
+                var reverseSequence = new List<string>();
+                string lastReverseFrame = null;
+                for (int index = 0; index < 180 && reverseSequence.Count < 6; index++)
+                {
+                    yield return null;
+                    string frameName = bodyRenderer.sprite.name;
+                    if (frameName != lastReverseFrame)
+                    {
+                        reverseSequence.Add(frameName);
+                        lastReverseFrame = frameName;
+                    }
+                }
+                Assert.That(reverseSequence, Is.EqualTo(new[]
+                {
+                    "player_salvager_body_crouch_5",
+                    "player_salvager_body_crouch_4",
+                    "player_salvager_body_crouch_3",
+                    "player_salvager_body_crouch_2",
+                    "player_salvager_body_crouch_1",
+                    "player_salvager_body_crouch_0",
+                }), "Crouch backpedal did not play the authored crouch cycle 5 -> 0.");
 
                 HashSet<string> observedBodyFrames = new HashSet<string>();
                 bool reachedCrouchSpeedCap = false;
@@ -931,7 +954,7 @@ namespace Rustline.Tests
                 InputSystem.Update();
                 yield return new WaitForFixedUpdate();
                 Assert.That(motor.IsCrouched, Is.True);
-                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 1.75f)));
+                Assert.That(capsule.size, Is.EqualTo(new Vector2(1.05f, 2.375f)));
                 Assert.That(capsule.offset.y - capsule.size.y * 0.5f,
                     Is.EqualTo(standingBottom).Within(0.0001f));
 

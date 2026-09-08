@@ -100,6 +100,21 @@ A broken collision scene should therefore fail the build instead of silently pro
 
 The Composite remains required because the controlled no-Composite diagnostic reintroduced seam/phantom-Land behavior.
 
+## Intentional precision crouch ceiling
+
+MovementLab contains one deliberate exception to the grid-aligned terrain geometry:
+`Combat Crouch Ceiling - Precision`.
+
+It is a static Ground-layer `BoxCollider2D` paired with a visual Tilemap row shifted upward by exactly
+`10 / 16 = 0.625` world units. This produces the authored **42 px crouch-only opening** that cannot be
+represented by whole 16 px grid cells. It does **not** replace any floor collision and is unrelated to
+the historical Windows Release fall-through workaround. The playable floor and the rest of the real
+course remain on the release-hardened TilemapCollider2D → CompositeCollider2D path.
+
+Do not delete this precision ceiling merely because this document forbids diagnostic BoxCollider floor
+substitutions. The forbidden workaround is replacing the real floor/Composite path; this ceiling is
+intentional sub-cell level geometry.
+
 ## Tests and build validation
 
 PlayMode coverage must retain:

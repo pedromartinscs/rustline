@@ -20,7 +20,7 @@ The existing `InputSystem_Actions` asset contains one focused `Player` map with 
 - `PixelCameraFollow2D` smooths in continuous world space, then snaps the rendered camera position to the 1/16-unit pixel grid.
 - `PlayerMovementConfig` stores all important tuning in `Assets/Config/Player/PlayerMovementConfig.asset`.
 
-The prefab root uses a standing vertical CapsuleCollider2D with size `1.05 × 2.75` and offset `(0, 1.375)`. Its bottom remains at the full-cell bottom-center pivot while excluding the antenna, backpack silhouette, and transparent cell width. The separate `Visual - 48x64 Full Cell` child is presentation-offset to `(0, -0.25, 0)` (four source pixels at 16 PPU); animation frames never change the physics root or collider.
+The prefab root uses a standing vertical CapsuleCollider2D with size `1.05 × 2.75` and offset `(0, 1.375)`. Its bottom remains at the full-cell bottom-center pivot while excluding the antenna, backpack silhouette, and transparent cell width. The crouched capsule is `1.05 × 2.375` (38 source pixels) at offset `(0, 1.1875)`, preserving the exact same lower boundary while matching the authored crouch silhouette much more closely. The separate `Visual - 48x64 Full Cell` child is presentation-offset to `(0, -0.25, 0)` (four source pixels at 16 PPU); animation frames never change the physics root or collider.
 
 `AimOrigin` is an explicit child of `Visual - 48x64 Full Cell` at local `(0, 2.375, 0)`, exactly 38 source pixels above the shared renderer pivot. Pointer input remains unclamped through Deep Space margins. Aim direction stays continuous; only the left/right facing hemisphere is hysteretic. Inside `abs(normalizedAim.x) <= sin(5°)`, the prior hemisphere is retained, defaulting to right when no prior aim exists.
 
@@ -32,9 +32,9 @@ MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile`
 
 ## Crouch and wall interaction
 
-Combat crouch is grounded-only. Holding crouch changes the capsule to `1.05 × 1.75` at offset `(0, 0.875)`, keeping its lower boundary exactly invariant. Releasing crouch performs an upward capsule cast for the exact missing standing height; a ceiling keeps the player crouched, and standing happens automatically after clearance returns. Airborne crouch input never shrinks a standing capsule. A crouched ground jump restores the standing capsule and uses the normal `12.5` units/s impulse only when that clearance query succeeds.
+Combat crouch is grounded-only. Holding crouch changes the capsule to `1.05 × 2.375` at offset `(0, 1.1875)`, exactly **10 source pixels taller** than the previous crouch collider while keeping its lower boundary invariant. Releasing crouch performs an upward capsule cast for the exact missing standing height; a ceiling keeps the player crouched, and standing happens automatically after clearance returns. Airborne crouch input never shrinks a standing capsule. A crouched ground jump restores the standing capsule and uses the normal `12.5` units/s impulse only when that clearance query succeeds.
 
-The canonical crouch presentation comes from the single six-frame sheets `player_salvager_body_crouch.png` and `player_salvager_arms_crouch.png`. `CrouchIdle` statically holds authored frame 0; `CrouchMove` loops authored frames 0..5 at the initial human-tunable rate of 7 fps. Crouch intentionally has no breathing animation. Only the normal standing Idle keeps its accepted two-frame breathing motion. Body remains the sole Animator clock and the unarmed overlay follows the displayed Body frame one-to-one.
+The canonical crouch presentation comes from the single six-frame sheets `player_salvager_body_crouch.png` and `player_salvager_arms_crouch.png`. `CrouchIdle` statically holds authored frame 0. Forward `CrouchMove` loops authored frames 0→5 at 7 fps; when horizontal travel is opposite aim-facing, the internal crouch-backpedal presentation uses the **same sprites** in reverse order 5→0 at the same 7 fps. No additional source artwork is required. Crouch intentionally has no breathing animation. Only the normal standing Idle keeps its accepted two-frame breathing motion. Body remains the sole Animator clock and the unarmed overlay follows the displayed Body frame one-to-one.
 
 Longwatch crouch art is still pending. During `CrouchIdle` and `CrouchMove`, the Longwatch presenter releases overlay ownership so the authored unarmed crouch arms remain visible, and crouched firing remains blocked.
 
@@ -82,12 +82,12 @@ These values are a starting point, not final feel approval.
 | Minimum ground normal Y | 0.65 |
 | Land presentation duration | 0.22 s |
 | Standing capsule size / offset | 1.05 × 2.75 / (0, 1.375) |
-| Crouch capsule size / offset | 1.05 × 1.75 / (0, 0.875) |
+| Crouch capsule size / offset | 1.05 × 2.375 / (0, 1.1875) |
 | Wall brace maximum fall speed | 4 units/s |
 | Wall kick horizontal / vertical speed | 8 / 11.5 units/s |
 | Wall-kick input / same-wall lock | 0.12 s |
 
-Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course exercises the original movement cases plus a real Composite-collision low tunnel with open auto-stand space and a deep wall-brace/wall-kick shaft. The shaft keeps the left wall at x=92, has exactly four open cells at x=93..96, and begins its right wall at x=97 so repeated alternating kicks are more comfortable without changing wall-kick tuning. The right block still ends at x=112, where the existing Longwatch firing-range floor begins. Falling below `-12` respawns the diagnostic specimen independently of the M3A enemy health/death model.
+Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course exercises the original movement cases plus a crouch-only low tunnel with open auto-stand space and a deep wall-brace/wall-kick shaft. The main terrain floor remains the release-hardened Composite Tilemap; the tunnel ceiling is a deliberate precision Ground collider shifted upward by exactly **10 source pixels**, producing a 42 px opening (crouch collider 38 px fits; standing collider 44 px does not). This sub-cell ceiling is not a workaround for the historical Release floor bug. The shaft keeps the left wall at x=92, has exactly four open cells at x=93..96, and begins its right wall at x=97 so repeated alternating kicks are more comfortable without changing wall-kick tuning. The right block still ends at x=112, where the existing Longwatch firing-range floor begins. Falling below `-12` respawns the diagnostic specimen independently of the M3A enemy health/death model.
 
 ## Deterministic rebuild and validation
 

@@ -18,3 +18,12 @@ Non-negotiable contract:
 - Relevant changes require a Windows Release smoke test; Editor tests alone are insufficient.
 
 If a refactor conflicts with this contract, preserve the contract and document why.
+
+
+## Precision crouch ceiling
+
+MovementLab intentionally keeps `Combat Crouch Ceiling - Precision` as a static Ground-layer
+`BoxCollider2D` plus visual Tilemap row offset upward by exactly 10 source pixels (0.625 u).
+This is deliberate sub-cell level geometry for the 42 px crouch-only opening, not a workaround for
+the Release floor bug. Do not fold it back into whole-cell terrain or remove it under the general
+"no diagnostic BoxCollider floor replacement" rule.
