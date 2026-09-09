@@ -18,6 +18,7 @@ namespace Rustline.Presentation
         private static readonly int CrouchIdleStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchIdle));
         private static readonly int CrouchMoveStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchMove));
         private static readonly int WallBraceStateHash = Animator.StringToHash(nameof(PlayerAnimationState.WallBrace));
+        private static readonly int LedgeClimbStateHash = Animator.StringToHash(nameof(PlayerAnimationState.LedgeClimb));
         // Presentation-only variant: logical gameplay state remains CrouchMove, but walking
         // opposite aim-facing uses the same six authored frames in reverse order (5 -> 0).
         private static readonly int CrouchBackpedalStateHash = Animator.StringToHash("CrouchBackpedal");
@@ -80,15 +81,20 @@ namespace Rustline.Presentation
                     _landingTimeRemaining = 0f;
                 }
 
+                bool ledgeClimbing = _motor.IsLedgeClimbing;
                 bool wallBraced = _motor.IsWallBraced;
-                bool facingLeft = wallBraced
-                    ? _motor.WallSide < 0
-                    : playerAim != null && playerAim.FacingLeft;
+                bool facingLeft = ledgeClimbing
+                    ? _motor.LedgeSide < 0
+                    : wallBraced
+                        ? _motor.WallSide < 0
+                        : playerAim != null && playerAim.FacingLeft;
                 ApplyFacing(facingLeft);
 
-                PlayerAnimationState nextState = wallBraced
-                    ? PlayerAnimationState.WallBrace
-                    : PlayerAnimationStateSelector.Select(
+                PlayerAnimationState nextState = ledgeClimbing
+                    ? PlayerAnimationState.LedgeClimb
+                    : wallBraced
+                        ? PlayerAnimationState.WallBrace
+                        : PlayerAnimationStateSelector.Select(
                         _motor.IsGrounded,
                         velocity.x,
                         velocity.y,
@@ -151,6 +157,7 @@ namespace Rustline.Presentation
                 case PlayerAnimationState.CrouchIdle: return CrouchIdleStateHash;
                 case PlayerAnimationState.CrouchMove: return CrouchMoveStateHash;
                 case PlayerAnimationState.WallBrace: return WallBraceStateHash;
+                case PlayerAnimationState.LedgeClimb: return LedgeClimbStateHash;
                 default: return IdleStateHash;
             }
         }

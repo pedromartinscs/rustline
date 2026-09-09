@@ -387,12 +387,15 @@ namespace Rustline.Tests
             SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
             Animator animator = bodyVisual?.GetComponent<Animator>();
             PlayerUnarmedArmsPresenter2D presenter = motor.GetComponent<PlayerUnarmedArmsPresenter2D>();
+            PlayerLongwatchAimPresenter2D longwatchPresenter =
+                motor.GetComponent<PlayerLongwatchAimPresenter2D>();
             PlayerJumpPresentation2D jumpPresentation = motor.GetComponent<PlayerJumpPresentation2D>();
 
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
             Assert.That(animator, Is.Not.Null);
             Assert.That(presenter, Is.Not.Null);
+            Assert.That(longwatchPresenter, Is.Not.Null);
             Assert.That(jumpPresentation, Is.Not.Null);
 
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
@@ -445,7 +448,8 @@ namespace Rustline.Tests
                     else if (state.IsName("Fall"))
                     {
                         sawFall = true;
-                        AssertLayers(presenter, bodyRenderer, armsRenderer);
+                        AssertOwnedLayers(
+                            presenter, longwatchPresenter, bodyRenderer, armsRenderer);
                         Assert.That(bodyRenderer.sprite.name, Is.EqualTo("player_salvager_body_fall_0"));
                     }
                 }
@@ -778,7 +782,7 @@ namespace Rustline.Tests
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
             Assert.That(animator, Is.Not.Null);
-            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(26));
+            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(31));
             Assert.That(motor.GetComponentsInChildren<Animator>(true), Has.Length.EqualTo(1));
 
             Vector3 visualPosition = visual.localPosition;
@@ -1161,11 +1165,14 @@ namespace Rustline.Tests
 
             PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
             Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            PlayerAim2D aim = motor.GetComponent<PlayerAim2D>();
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
             int landEvents = 0;
             motor.Landed += CountLand;
             try
             {
+                aim.enabled = false;
+                Assert.That(aim.ApplyWorldAimVector(Vector2.left), Is.True);
                 body.position = new Vector2(96.4f, -3.5f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
@@ -1180,6 +1187,7 @@ namespace Rustline.Tests
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.A, Key.Space));
                 InputSystem.Update();
+                Assert.That(aim.ApplyWorldAimVector(Vector2.right), Is.True);
                 yield return WaitForWallBrace(motor, -1, 100);
                 Assert.That(body.position.x, Is.InRange(93.45f, 93.75f));
 
@@ -1199,6 +1207,7 @@ namespace Rustline.Tests
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.D, Key.Space));
                 InputSystem.Update();
+                Assert.That(aim.ApplyWorldAimVector(Vector2.left), Is.True);
                 yield return WaitForWallBrace(motor, 1, 100);
                 Assert.That(body.position.x, Is.InRange(96.25f, 96.55f));
                 Assert.That(landEvents, Is.Zero, "Alternating shaft wall contact emitted a false Land event.");

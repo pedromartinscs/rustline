@@ -1,0 +1,1359 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.0f1 (8cf496087c8f) revision 9237654'; Using compiler version '194234433'; Build Type 'Release'
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-pedro" at "2026-09-09T19:51:54.764568Z"
+OS: 'Windows 11  (10.0.26200) CoreSingleLanguage' Language: 'pt' Physical Memory: 32460 MB
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-09-09T19:51:54Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.0f1\Editor\Unity.exe
+-batchmode
+-projectPath
+C:\Projetos\Github\rustline
+-runTests
+-testPlatform
+PlayMode
+-testResults
+C:\Projetos\Github\rustline\TestResults-play-full.xml
+-logFile
+C:\Projetos\Github\rustline\play-full-gfx.log
+Successfully changed project path to: C:\Projetos\Github\rustline
+C:/Projetos/Github/rustline
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Player connection [42448]  Target information:
+
+Player connection [42448]  * "[IP] 192.168.56.1 [Port] 55504 [Flags] 2 [Guid] 2973106743 [EditorId] 2973106743 [Version] 1048832 [Id] WindowsEditor(7,HAL) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [42448]  * "[IP] 172.18.64.1 [Port] 55504 [Flags] 2 [Guid] 2973106743 [EditorId] 2973106743 [Version] 1048832 [Id] WindowsEditor(7,HAL) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Player connection [42448]  * "[IP] 192.168.2.7 [Port] 55504 [Flags] 2 [Guid] 2973106743 [EditorId] 2973106743 [Version] 1048832 [Id] WindowsEditor(7,HAL) [Debug] 1 [PackageName] WindowsEditor [ProjectName] Editor" 
+
+Unable to join player connection multicast group (err: 10013).
+Player connection [42448] Host joined alternative multi-casting on [225.0.0.222:34997]...
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Package Manager] Connected to IPC stream "Upm-45880" after 0.8 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.18.1'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-pedro"
+[Licensing::IpcConnector] LicenseClient-pedro channel disconnected successfully.
+[Licensing::IpcConnector] Channel LicenseClient-pedro-6000.4.0 doesn't exist
+[Licensing::Module] Successfully launched the LicensingClient (PId: 51152)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-pedro-6000.4.0" at "2026-09-09T19:51:57.3304973Z"
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              4274497a2782456fbc9f6a12721e6d93
+  Correlation Id:          55d93dc6af73fc9efcb1b7a5fd314d76
+  External correlation Id: 1030158605171060404
+  Machine Id:              bVarEh7pdWlrHNQkjgbo2ZGeDds=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-pedro-6000.4.0" (connect: 0.38s, validation: 0.09s, handshake: 1.80s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-pedro-6000.4.0-notifications" at "2026-09-09T19:51:59.2181587Z"
+[Licensing::Module] Connected to LicensingClient (PId: 51152, launch time: 0.01, total connection time: 2.26s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 4674099990778-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.02
+[Licensing::Module] Licensing Background thread has ended after 4.52s
+[Licensing::Module] Licensing is initialized (took 2.87s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Active build profile path: `Assets/Settings/Build Profiles/Windows.asset`
+Got setting from build profile YAML, name `m_BuildTarget`, value `19`
+Got setting from build profile YAML, name `m_Subtarget`, value `2`
+Initialize engine version: 6000.4.0f1 (8cf496087c8f)
+[Subsystems] Discovering subsystems at path C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path C:/Projetos/Github/rustline/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.1]
+    Renderer: NVIDIA GeForce MX550 (ID=0x1f9f)
+    Vendor:   NVIDIA
+    VRAM:     1905 MB
+    Driver:   32.0.15.9608
+Initialize mono
+Mono path[0] = 'C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/Managed'
+Mono path[1] = 'C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/MonoBleedingEdge/lib/mono/unityjit-win32'
+Mono config path = 'C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56880
+CodeReloadManager initialized
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+Using cacheserver namespaces - metadata:defaultmetadata, artifacts:defaultartifacts
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/VisionOSPlayer/UnityEditor.VisionOS.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/WindowsStandaloneSupport/UnityEditor.WindowsStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/iOSSupport/UnityEditor.iOS.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/AppleTVSupport/UnityEditor.AppleTV.Extensions.dll
+Register platform support module: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/LinuxStandaloneSupport/UnityEditor.LinuxStandalone.Extensions.dll
+Registered in 0.027257 seconds.
+Native extension for LinuxStandalone target not found
+Native extension for AppleTV target not found
+Native extension for iOS target not found
+Native extension for Android target not found
+Android Extension - Scanning For ADB Devices 2418 ms
+Native extension for WindowsStandalone target not found
+Failed to load: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/VisionOSPlayer\x64\UnityEditor.VisionOS.Native.dll
+Native extension for VisionOS target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+[Licensing::Client] Successfully resolved entitlement details
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  6.059 seconds
+Domain Reload Profiling: 6751ms
+	BeginReloadAssembly (181ms)
+		CreateAndSetChildDomain (20ms)
+	RebuildCommonClasses (55ms)
+	RebuildNativeTypeToScriptingClass (19ms)
+	initialDomainReloadingComplete (126ms)
+	LoadAllAssembliesAndSetupDomain (309ms)
+		LoadAssemblies (156ms)
+		AnalyzeDomain (289ms)
+			TypeCache.Refresh (286ms)
+				TypeCache.ScanAssembly (265ms)
+	FinalizeReload (6061ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (2576ms)
+			BeforeProcessingInitializeOnLoad (104ms)
+			ProcessInitializeOnLoadAttributes (111ms)
+			ProcessInitializeOnLoadMethodAttributes (3138ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 64 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.2d.animation@14.0.3 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.animation@a6f2f1d22eb5)
+    com.unity.2d.aseprite@4.0.1 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.aseprite@151b68d46c40)
+    com.unity.2d.psdimporter@13.0.2 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.psdimporter@11a0e04e0561)
+    com.unity.2d.spriteshape@14.0.1 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.spriteshape@da3647ffbbd7)
+    com.unity.2d.tilemap.extras@7.0.1 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.tilemap.extras@66df903b3633)
+    com.unity.2d.tooling@2.0.1 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.tooling@baa4133dcff2)
+    com.unity.collab-proxy@2.11.4 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.collab-proxy@a5329f833fa8)
+    com.unity.ide.rider@3.0.39 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.ide.rider@4504839d03f7)
+    com.unity.ide.visualstudio@2.0.27 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.ide.visualstudio@dc1ddd4f09b6)
+    com.unity.inputsystem@1.19.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.inputsystem@21a28c3a6c83)
+    com.unity.timeline@1.8.11 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.timeline@bfd27f8016ff)
+    com.unity.visualscripting@1.9.10 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.visualscripting@eb6004dcc707)
+    com.unity.2d.common@13.0.1 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.common@49d8bea2bff3)
+    com.unity.mathematics@1.3.3 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.mathematics@19a9377c4ffa)
+    com.unity.searcher@4.9.4 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.searcher@d45a78918735)
+    com.unity.burst@1.8.28 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.burst@07790c2d06d9)
+    com.unity.nuget.mono-cecil@1.11.6 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.nuget.mono-cecil@ecb9724e46ff)
+    com.unity.test-framework.performance@3.2.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.test-framework.performance@0840f58e4562)
+  Built-in packages:
+    com.unity.2d.sprite@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.sprite@929df5adbb1f)
+    com.unity.2d.tilemap@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.2d.tilemap@533f309b6f37)
+    com.unity.render-pipelines.universal@17.4.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.render-pipelines.universal@0c5162adfb45)
+    com.unity.test-framework@1.6.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.test-framework@629486125cfc)
+    com.unity.ugui@2.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.ugui@3dd2fbd8c1f1)
+    com.unity.modules.accessibility@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.accessibility)
+    com.unity.modules.adaptiveperformance@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.adaptiveperformance)
+    com.unity.modules.ai@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.physics2d)
+    com.unity.modules.screencapture@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.terrainphysics)
+    com.unity.modules.tilemap@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.tilemap)
+    com.unity.modules.ui@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.video)
+    com.unity.modules.vr@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.vr)
+    com.unity.modules.wind@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.xr)
+    com.unity.modules.subsystems@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.modules.hierarchycore)
+    com.unity.ext.nunit@2.0.5 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.ext.nunit@d8c07649098d)
+    com.unity.render-pipelines.core@17.4.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.render-pipelines.core@6a60abc179f8)
+    com.unity.shadergraph@17.4.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.shadergraph@c6e5f4d3afa5)
+    com.unity.render-pipelines.universal-config@17.4.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.render-pipelines.universal-config@0db4263b9e6b)
+    com.unity.collections@6.4.0 (location: C:\Projetos\Github\rustline\Library\PackageCache\com.unity.collections@538ace9075bc)
+[Subsystems] No new subsystems found in resolved package list.
+[Package Manager] Done registering packages in 0.09 seconds
+Starting: C:\Program Files\Unity\Hub\Editor\6000.4.0f1\Editor\Data\Tools\BuildPipeline\bee_backend.exe --ipc --defer-dag-verification --dagfile="Library/Bee/1900b0aEDbg.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: C:/Projetos/Github/rustline
+DisplayProgressbar: Compiling Scripts
+ExitCode: 0 Duration: 0s969ms
+[ 875/1125  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+*** Tundra build success (0.88 seconds), 1 items updated, 1125 evaluated
+AssetDatabase: script compilation time: 1.967066s
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp.dll at Library/ScriptAssemblies/Assembly-CSharp.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Animation.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Animation.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Aseprite.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Aseprite.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Common.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Common.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Psdimporter.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Psdimporter.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.SpriteShape.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.SpriteShape.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Tilemap.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Tilemap.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Refreshing native plugins compatible for Editor in 8.05 ms, found 4 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for AppleTV target not found
+Native extension for iOS target not found
+Native extension for Android target not found
+Native extension for WindowsStandalone target not found
+Failed to load: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/VisionOSPlayer\x64\UnityEditor.VisionOS.Native.dll
+Native extension for VisionOS target not found
+Native extension for WebGL target not found
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  7.290 seconds
+Domain Reload Profiling: 9295ms
+	BeginReloadAssembly (622ms)
+		DisableScriptedObjects (95ms)
+		CreateAndSetChildDomain (180ms)
+	RebuildCommonClasses (65ms)
+	RebuildNativeTypeToScriptingClass (23ms)
+	initialDomainReloadingComplete (127ms)
+	LoadAllAssembliesAndSetupDomain (1167ms)
+		LoadAssemblies (854ms)
+		AnalyzeDomain (486ms)
+			TypeCache.Refresh (352ms)
+				TypeCache.ScanAssembly (332ms)
+			BuildScriptInfoCaches (117ms)
+			ResolveRequiredComponents (15ms)
+	FinalizeReload (7291ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (75ms)
+			BeforeProcessingInitializeOnLoad (358ms)
+			ProcessInitializeOnLoadAttributes (6104ms)
+			ProcessInitializeOnLoadMethodAttributes (228ms)
+			AfterProcessingInitializeOnLoad (9ms)
+		AwakeInstancesAfterBackupRestoration (27ms)
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=363b23f542aeefa41b6acb6836d85680): Total: 12.550 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=8247 ms
+		Asset DB Callback time: managed=61 ms, native=97 ms
+		Scripting: domain reloads=1, domain reload time=2016 ms, compile time=1969 ms, other=156 ms
+		Project Asset Count: scripts=1531, non-scripts=3262
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 101.125ms
+	ApplyChangesToAssetFolders: 1.841ms
+	Scan: 251.707ms
+	CategorizeScriptCompilationAssets: 73.027ms
+	ProcessAssetsWithTransientArtifactChanges: 111.680ms
+	CategorizeAssets: 134.978ms
+	CompileScripts: 1969.373ms
+	ImportOutOfDateAssets: 7318.535ms (7311.640ms without children)
+		ReloadNativeAssets: 0.073ms
+		UnloadImportedAssets: 2.952ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 2.064ms
+		OnDemandSchedulerStart: 1.796ms
+	PostProcessAllAssets: 61.455ms
+		MonoPostProcessAllAssets: 61.374ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 21.985ms
+			SyncVS.PostprocessSyncProject 10.043ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 5.669ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 4.270ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 1.141ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 1.113ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.951ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.872ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.481ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.386ms
+	UnloadStreamsBegin: 3.006ms
+	PersistCurrentRevisions: 0.201ms
+	GenerateScriptTypeHashes: 7.490ms
+	GenerateScriptTypeSerializationHashes: 13.024ms
+	Untracked: 2509.580ms
+
+Application.AssetDatabase Initial Refresh End
+Launched and connected shader compiler UnityShaderCompiler.exe after 0.02 seconds
+Scanning for USB devices : 5.115ms
+Initializing Unity extensions:
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-rustline
+Unloading 27 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 7041 unused Assets / (5.2 MB). Loaded Objects now: 7920.
+Memory consumption went from 215.9 MB to 210.6 MB.
+Total: 24.353100 ms (FindLiveObjects: 1.556100 ms CreateObjectMapping: 1.423000 ms MarkObjects: 9.178300 ms  DeleteObjects: 12.186800 ms)
+
+[Project] Loading completed in 31.748 seconds
+	Project init time: 				28.266 seconds
+		Template init time: 		0.000 seconds
+		Package Manager init time: 		3.712 seconds
+		Asset Database init time: 		1.931 seconds
+		Global illumination init time: 	0.004 seconds
+		Assemblies load time: 			6.811 seconds
+		Unity extensions init time: 	0.089 seconds
+		Asset Database refresh time: 	12.551 seconds
+	Scene opening time: 			2.644 seconds
+##utp:{"type":"ProjectInfo","version":2,"phase":"Immediate","time":1788983546488,"processId":45880,"projectLoad":31.7478159,"projectInit":28.2661755,"templateInit":0.0,"packageManagerInit":3.7115524,"assetDatabaseInit":1.9307994,"globalIlluminationInit":0.0037293,"assembliesLoad":6.8108737,"unityExtensionsInit":0.0885812,"assetDatabaseRefresh":12.5512022,"sceneOpening":2.644441}
+##utp:{"type":"EditorInfo","version":2,"phase":"Immediate","time":1788983546488,"processId":45880,"editorVersion":"6000.4.0f1 (8cf496087c8f)","branch":"6000.4/staging","buildType":"Release","platform":"Windows"}
+Asset Pipeline Refresh (id=84d86f4a1711679408ca434e3dafff23): Total: 0.082 seconds - Initiated by RefreshV2(ForceSynchronousImport)
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
+Running tests for ExecutionSettings with details:
+targetPlatform = 
+playerHeartbeatTimeout = 600
+filters[0] = 
+   Filter with settings:
+   testMode = PlayMode
+   targetPlatform = 
+   testNames = null
+   groupNames = null
+   categoryNames = null
+   assemblyNames = null
+ignoreTests = {}
+featureFlags = null
+
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:InitializeAndExecuteRun (string[]) (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/CommandLineTest/Executer.cs:53)
+UnityEditor.TestTools.TestRunner.CommandLineTest.TestStarter:InitializeAndExecuteRun () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/CommandLineTest/TestStarter.cs:64)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 53)
+
+Start Indexing on Editor startup
+[Indexing] Starting Initial Indexing for Assets
+[UnityConnectServicesConfig] config is NOT valid, switching to default
+Created GICache directory at C:/Users/pedro/AppData/LocalLow/Unity/Caches/GiCache. Took: 0.122s, timestamps: [31.758 - 31.881]
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 1 unused Assets / (55.6 KB). Loaded Objects now: 7942.
+Memory consumption went from 190.2 MB to 190.1 MB.
+Total: 12.311100 ms (FindLiveObjects: 0.863800 ms CreateObjectMapping: 0.514400 ms MarkObjects: 10.846900 ms  DeleteObjects: 0.082800 ms)
+
+Start importing Assets/InitTestScene0775e826-752e-4618-9e6c-024ad7ddc8f1.unity using Guid(34a2d02ebdf125c45ba101f36b332dbc) (DefaultImporter) -> (Import Result ID: 'b77c57fc48a74b95c53cf177f3c66a9e') in 0.0143435 seconds [static dependencies only]. Details - ImportResultOutputID=23dda1da07cf54ff877ad2cb12299584 DependenciesID=da91c7778eca9836b4ce4920105ff9ea StaticDependenciesID=dc88d0a5f5c20bb5354b3a52ad684212 
+Refreshing native plugins compatible for Editor in 3.18 ms, found 4 plugins.
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=23faf62d9afd8f844be626d934a41823): Total: 0.471 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=7 ms, native=102 ms
+		Asset DB Callback time: managed=341 ms, native=18 ms
+		Scripting: domain reloads=0, domain reload time=0 ms, compile time=0 ms, other=0 ms
+		Project Asset Count: scripts=1531, non-scripts=3263
+		Asset File Changes: new=1, changed=1, moved=0, deleted=0
+		Scan Filter Count: 2
+	ApplyChangesToAssetFolders: 0.132ms
+	Scan: 56.470ms
+	OnSourceAssetsModified: 2.235ms
+	ProcessAssetsWithTransientArtifactChanges: 0.176ms
+	CategorizeAssets: 23.320ms
+	ImportOutOfDateAssets: 22.385ms (1.854ms without children)
+		ImportManagerImport: 18.220ms (2.886ms without children)
+		ReloadNativeAssets: 0.059ms
+		UnloadImportedAssets: 0.337ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 1.141ms
+		OnDemandSchedulerStart: 0.758ms
+	PostProcessAllAssets: 350.799ms
+		XRBuildSystem.XRAssetImported 12.440ms
+		VersionControlSettings.HiddenFilePostprocess 0.158ms
+		MonoPostProcessAllAssets: 336.507ms
+			AssetPostprocessor.OnPostprocessAllAssets 227.127ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 60.165ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 9.264ms
+			SyncVS.PostprocessSyncProject 2.948ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 2.462ms
+			SpriteShapeAssetPostProcessor.OnPostprocessAllAssets 2.326ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 2.212ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 2.109ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 2.063ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 2.057ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.982ms
+			AssetProcessor.OnPostprocessAllAssets 1.908ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 1.746ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 1.666ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 1.395ms
+			SpriteLibraryAssetPostprocessor.OnPostprocessAllAssets 1.202ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.812ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.741ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.703ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 0.645ms
+			AssetChangedListener.OnPostprocessAllAssets 0.602ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.520ms
+			PostProcessor.OnPostprocessAllAssets 0.501ms
+			PSDImportPostProcessor.OnPostprocessAllAssets 0.461ms
+			PSDImporterAssetPostProcessor.OnPostprocessAllAssets 0.442ms
+			AssetEvents.OnPostprocessAllAssets 0.394ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.311ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.307ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.187ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.057ms
+	PostAssetChangesProfiler: 6.628ms
+	GatherAllCurrentPrimaryImportResultRevisions: 0.253ms
+	PersistCurrentRevisions: 0.754ms
+	UnloadStreamsEnd: 0.107ms
+	Untracked: 7.547ms
+
+Executing IPrebuildSetup for: Unity.PerformanceTesting.Editor.TestRunBuilder.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<ExecuteMethods>d__8<UnityEngine.TestTools.IPrebuildSetup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:48)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<Execute>d__7<UnityEngine.TestTools.IPrebuildSetup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:34)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteStep () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:173)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteCallback () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:108)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs Line: 48)
+
+SpriteAtlasPacking completed in 0.005505 sec
+Reloading assemblies for play mode.
+Reloading assemblies after forced synchronous recompile.
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp.dll at Library/ScriptAssemblies/Assembly-CSharp.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Animation.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Animation.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Aseprite.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Aseprite.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Common.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Common.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Psdimporter.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Psdimporter.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.SpriteShape.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.SpriteShape.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Tilemap.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Tilemap.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Begin MonoManager ReloadAssembly
+Assembly Assembly-CSharp-Editor-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-Editor-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp-firstpass.dll at Library/ScriptAssemblies/Assembly-CSharp-firstpass.dll not valid. Loading of assembly skipped.
+Assembly Assembly-CSharp.dll at Library/ScriptAssemblies/Assembly-CSharp.dll not valid. Loading of assembly skipped.
+Assembly DocCodeExamples.dll at Library/ScriptAssemblies/DocCodeExamples.dll not valid. Loading of assembly skipped.
+Assembly TestNewCustomAssembly.dll at Library/ScriptAssemblies/TestNewCustomAssembly.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Animation.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Animation.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Aseprite.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Aseprite.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Common.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Common.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Psdimporter.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Psdimporter.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Sprite.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Sprite.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.SpriteShape.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.SpriteShape.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.2D.Tilemap.Package.EditorTests.dll at Library/ScriptAssemblies/Unity.2D.Tilemap.Package.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.BurstCompatibilityGen.dll at Library/ScriptAssemblies/Unity.Collections.BurstCompatibilityGen.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.DocCodeSamples.dll at Library/ScriptAssemblies/Unity.Collections.DocCodeSamples.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.PerformanceTests.dll at Library/ScriptAssemblies/Unity.Collections.PerformanceTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.dll at Library/ScriptAssemblies/Unity.Collections.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Collections.Tests.Playmode.dll at Library/ScriptAssemblies/Unity.Collections.Tests.Playmode.dll not valid. Loading of assembly skipped.
+Assembly Unity.InputSystem.IntegrationTests.dll at Library/ScriptAssemblies/Unity.InputSystem.IntegrationTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Mathematics.Tests.dll at Library/ScriptAssemblies/Unity.Mathematics.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Nuget.Mono-Cecil.dll at Library/ScriptAssemblies/Unity.Nuget.Mono-Cecil.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.PathTracing.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.PathTracing.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Core.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Core.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Config.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Config.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Editor.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.RenderPipelines.Universal.Runtime.Tests.dll at Library/ScriptAssemblies/Unity.RenderPipelines.Universal.Runtime.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.Searcher.EditorTests.dll at Library/ScriptAssemblies/Unity.Searcher.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly Unity.ShaderGraph.Editor.Tests.dll at Library/ScriptAssemblies/Unity.ShaderGraph.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Editor.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.TextMeshPro.Tests.dll at Library/ScriptAssemblies/Unity.TextMeshPro.Tests.dll not valid. Loading of assembly skipped.
+Assembly Unity.UnifiedRayTracing.Editor.Tests.dll at Library/ScriptAssemblies/Unity.UnifiedRayTracing.Editor.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.Common.Tests.dll at Library/ScriptAssemblies/UnityEditor.UI.Common.Tests.dll not valid. Loading of assembly skipped.
+Assembly UnityEditor.UI.EditorTests.dll at Library/ScriptAssemblies/UnityEditor.UI.EditorTests.dll not valid. Loading of assembly skipped.
+Assembly UnityEngine.UI.Tests.dll at Library/ScriptAssemblies/UnityEngine.UI.Tests.dll not valid. Loading of assembly skipped.
+Refreshing native plugins compatible for Editor in 7.92 ms, found 4 plugins.
+Native extension for LinuxStandalone target not found
+Native extension for AppleTV target not found
+Native extension for iOS target not found
+Native extension for Android target not found
+Native extension for WindowsStandalone target not found
+Failed to load: C:/Program Files/Unity/Hub/Editor/6000.4.0f1/Editor/Data/PlaybackEngines/VisionOSPlayer\x64\UnityEditor.VisionOS.Native.dll
+Native extension for VisionOS target not found
+Native extension for WebGL target not found
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Mono: successfully reloaded assembly
+- Finished resetting the current domain, in  2.805 seconds
+Domain Reload Profiling: 4893ms
+	BeginReloadAssembly (1046ms)
+		DisableScriptedObjects (188ms)
+		CreateAndSetChildDomain (540ms)
+	RebuildCommonClasses (98ms)
+	RebuildNativeTypeToScriptingClass (28ms)
+	initialDomainReloadingComplete (183ms)
+	LoadAllAssembliesAndSetupDomain (733ms)
+		LoadAssemblies (359ms)
+		AnalyzeDomain (570ms)
+			TypeCache.Refresh (24ms)
+			BuildScriptInfoCaches (501ms)
+			ResolveRequiredComponents (38ms)
+	FinalizeReload (2806ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (82ms)
+			BeforeProcessingInitializeOnLoad (381ms)
+			ProcessInitializeOnLoadAttributes (856ms)
+			ProcessInitializeOnLoadMethodAttributes (562ms)
+			AfterProcessingInitializeOnLoad (17ms)
+		AwakeInstancesAfterBackupRestoration (88ms)
+(Values over 0.050ms)
+Asset Pipeline Refresh (id=dee5b03d846e6f24eafb91504c53b569): Total: 5.324 seconds - Initiated by StopAssetImportingV2(ForceSynchronousImport | ForceDomainReload)
+	Summary:
+		Imports: total=0 (actual=0, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=3026 ms
+		Asset DB Callback time: managed=73 ms, native=1 ms
+		Scripting: domain reloads=1, domain reload time=2218 ms, compile time=2 ms, other=0 ms
+		Project Asset Count: scripts=1531, non-scripts=3263
+		Asset File Changes: new=0, changed=0, moved=0, deleted=0
+		Scan Filter Count: 0
+	InvokePackagesCallback: 5.177ms
+	ApplyChangesToAssetFolders: 0.601ms
+	ProcessAssetsWithTransientArtifactChanges: 7.806ms
+	CategorizeAssets: 115.339ms
+	CompileScripts: 1.729ms
+	ImportOutOfDateAssets: 2827.894ms (2821.919ms without children)
+		CollectScriptTypesHashes: 5.928ms
+		ReloadNativeAssets: 2.656ms
+		UnloadImportedAssets: 0.173ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 1.836ms
+		OnDemandSchedulerStart: 1.238ms
+	PostProcessAllAssets: 73.637ms
+		MonoPostProcessAllAssets: 73.619ms
+			AssetPostprocessor.OnPostprocessAllAssets 227.127ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 60.165ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 30.403ms
+			SyncVS.PostprocessSyncProject 11.425ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 9.264ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 3.736ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 3.523ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 2.462ms
+			SpriteShapeAssetPostProcessor.OnPostprocessAllAssets 2.326ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 2.212ms
+			SpriteEditorTexturePostprocessor.OnPostprocessAllAssets 2.109ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 2.063ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 2.057ms
+			MaterialPostprocessor.OnPostprocessAllAssets 1.982ms
+			AssetProcessor.OnPostprocessAllAssets 1.908ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 1.746ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 1.666ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 1.395ms
+			SpriteLibraryAssetPostprocessor.OnPostprocessAllAssets 1.202ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 1.164ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.812ms
+			ScenarioDriftAssetsTracker.OnPostprocessAllAssets 0.741ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.703ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 0.645ms
+			AssetChangedListener.OnPostprocessAllAssets 0.602ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.592ms
+			PostProcessor.OnPostprocessAllAssets 0.501ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.481ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.477ms
+			PSDImportPostProcessor.OnPostprocessAllAssets 0.461ms
+			PSDImporterAssetPostProcessor.OnPostprocessAllAssets 0.442ms
+			AssetEvents.OnPostprocessAllAssets 0.394ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.366ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.316ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.311ms
+			AudioContainerPostProcessor.OnPostprocessAllAssets 0.307ms
+	GatherAllCurrentPrimaryImportResultRevisions: 0.461ms
+	UnloadStreamsBegin: 0.432ms
+	PersistCurrentRevisions: 0.386ms
+	GenerateScriptTypeHashes: 13.197ms
+	GenerateScriptTypeSerializationHashes: 20.565ms
+	Untracked: 2272.243ms
+
+Loaded scene 'Temp/__Backupscenes/0.backup'
+	Deserialize:            3.464 ms
+	Integration:            414.385 ms
+	Integration of assets:  0.006 ms
+	Thread Wait Time:       0.033 ms
+	Total Operation Time:   417.888 ms
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Client] Successfully resolved entitlement details
+Unloading 137 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.248800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            111.915 ms
+	Integration:            543.673 ms
+	Integration of assets:  55.408 ms
+	Thread Wait Time:       -0.073 ms
+	Total Operation Time:   710.922 ms
+Unloading 210 unused Assets / (3.8 MB). Loaded Objects now: 8751.
+Memory consumption went from 226.9 MB to 223.1 MB.
+Total: 20.728500 ms (FindLiveObjects: 0.854700 ms CreateObjectMapping: 0.334900 ms MarkObjects: 18.340400 ms  DeleteObjects: 1.196400 ms)
+
+Unloading 10 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 8.879300 ms
+Loaded scene 'Assets/Scenes/ArtShowcase.unity'
+	Deserialize:            10.575 ms
+	Integration:            287.296 ms
+	Integration of assets:  0.388 ms
+	Thread Wait Time:       0.054 ms
+	Total Operation Time:   298.314 ms
+Unloading 526 unused Assets / (6.6 MB). Loaded Objects now: 8587.
+Memory consumption went from 217.6 MB to 211.0 MB.
+Total: 17.149300 ms (FindLiveObjects: 0.823400 ms CreateObjectMapping: 0.400700 ms MarkObjects: 14.156600 ms  DeleteObjects: 1.766800 ms)
+
+Unloading 113 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 7.706800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            62.242 ms
+	Integration:            403.129 ms
+	Integration of assets:  21.186 ms
+	Thread Wait Time:       -0.313 ms
+	Total Operation Time:   486.245 ms
+Unloading 63 unused Assets / (47.4 KB). Loaded Objects now: 8911.
+Memory consumption went from 218.2 MB to 218.2 MB.
+Total: 16.685700 ms (FindLiveObjects: 0.588200 ms CreateObjectMapping: 0.249700 ms MarkObjects: 15.702700 ms  DeleteObjects: 0.143600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.800500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            19.351 ms
+	Integration:            383.791 ms
+	Integration of assets:  0.341 ms
+	Thread Wait Time:       0.048 ms
+	Total Operation Time:   403.531 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 18.085500 ms (FindLiveObjects: 0.605700 ms CreateObjectMapping: 0.280800 ms MarkObjects: 17.102200 ms  DeleteObjects: 0.095100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.883500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            19.567 ms
+	Integration:            373.341 ms
+	Integration of assets:  0.306 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   393.251 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 15.857300 ms (FindLiveObjects: 0.616600 ms CreateObjectMapping: 0.331600 ms MarkObjects: 14.803200 ms  DeleteObjects: 0.103500 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.776400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            16.385 ms
+	Integration:            422.222 ms
+	Integration of assets:  0.336 ms
+	Thread Wait Time:       0.059 ms
+	Total Operation Time:   439.002 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 15.928300 ms (FindLiveObjects: 0.600000 ms CreateObjectMapping: 0.307700 ms MarkObjects: 14.889400 ms  DeleteObjects: 0.129300 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.709400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            15.451 ms
+	Integration:            350.063 ms
+	Integration of assets:  0.317 ms
+	Thread Wait Time:       0.037 ms
+	Total Operation Time:   365.867 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 12.180100 ms (FindLiveObjects: 0.454400 ms CreateObjectMapping: 0.232700 ms MarkObjects: 11.260700 ms  DeleteObjects: 0.230000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.259800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            17.199 ms
+	Integration:            381.925 ms
+	Integration of assets:  0.483 ms
+	Thread Wait Time:       0.040 ms
+	Total Operation Time:   399.647 ms
+Unloading 39 unused Assets / (6.0 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 15.064200 ms (FindLiveObjects: 0.464500 ms CreateObjectMapping: 0.197500 ms MarkObjects: 14.199600 ms  DeleteObjects: 0.200300 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.689400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            20.289 ms
+	Integration:            328.125 ms
+	Integration of assets:  0.308 ms
+	Thread Wait Time:       0.054 ms
+	Total Operation Time:   348.776 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 15.522500 ms (FindLiveObjects: 1.263100 ms CreateObjectMapping: 0.490600 ms MarkObjects: 13.560600 ms  DeleteObjects: 0.206000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.920000 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            14.048 ms
+	Integration:            373.881 ms
+	Integration of assets:  0.293 ms
+	Thread Wait Time:       0.342 ms
+	Total Operation Time:   388.565 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 15.947700 ms (FindLiveObjects: 0.553700 ms CreateObjectMapping: 0.238700 ms MarkObjects: 15.060100 ms  DeleteObjects: 0.093600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.696800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            9.456 ms
+	Integration:            333.462 ms
+	Integration of assets:  0.161 ms
+	Thread Wait Time:       2.813 ms
+	Total Operation Time:   345.891 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 12.164600 ms (FindLiveObjects: 0.523800 ms CreateObjectMapping: 0.269600 ms MarkObjects: 11.168500 ms  DeleteObjects: 0.200800 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.679300 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            17.205 ms
+	Integration:            400.054 ms
+	Integration of assets:  0.392 ms
+	Thread Wait Time:       0.044 ms
+	Total Operation Time:   417.695 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 13.522700 ms (FindLiveObjects: 0.701300 ms CreateObjectMapping: 0.445400 ms MarkObjects: 12.267200 ms  DeleteObjects: 0.106600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.672900 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            16.203 ms
+	Integration:            341.991 ms
+	Integration of assets:  0.266 ms
+	Thread Wait Time:       0.071 ms
+	Total Operation Time:   358.530 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 13.192700 ms (FindLiveObjects: 0.431300 ms CreateObjectMapping: 0.187700 ms MarkObjects: 12.479700 ms  DeleteObjects: 0.092900 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.689000 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            16.446 ms
+	Integration:            345.704 ms
+	Integration of assets:  0.507 ms
+	Thread Wait Time:       -0.038 ms
+	Total Operation Time:   362.619 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 13.527000 ms (FindLiveObjects: 0.457500 ms CreateObjectMapping: 0.209400 ms MarkObjects: 12.767600 ms  DeleteObjects: 0.091400 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.767100 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            18.889 ms
+	Integration:            389.470 ms
+	Integration of assets:  0.381 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   408.776 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.8 MB.
+Total: 15.213000 ms (FindLiveObjects: 0.548500 ms CreateObjectMapping: 0.926500 ms MarkObjects: 13.644400 ms  DeleteObjects: 0.092000 ms)
+
+TrimDiskCacheJob: Current cache size 0mb
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.116500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            19.301 ms
+	Integration:            353.029 ms
+	Integration of assets:  0.388 ms
+	Thread Wait Time:       4.883 ms
+	Total Operation Time:   377.601 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 19.359700 ms (FindLiveObjects: 0.575000 ms CreateObjectMapping: 0.196000 ms MarkObjects: 18.499000 ms  DeleteObjects: 0.088300 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.047300 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            20.835 ms
+	Integration:            378.519 ms
+	Integration of assets:  0.478 ms
+	Thread Wait Time:       -0.007 ms
+	Total Operation Time:   399.824 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 15.024500 ms (FindLiveObjects: 0.479900 ms CreateObjectMapping: 0.589600 ms MarkObjects: 13.733900 ms  DeleteObjects: 0.218800 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.520600 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            17.083 ms
+	Integration:            341.198 ms
+	Integration of assets:  0.389 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   358.706 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.570100 ms (FindLiveObjects: 0.592900 ms CreateObjectMapping: 0.365500 ms MarkObjects: 11.494300 ms  DeleteObjects: 0.115800 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.753200 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            31.622 ms
+	Integration:            478.702 ms
+	Integration of assets:  0.752 ms
+	Thread Wait Time:       -0.023 ms
+	Total Operation Time:   511.053 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 15.342600 ms (FindLiveObjects: 0.619900 ms CreateObjectMapping: 0.324600 ms MarkObjects: 14.261800 ms  DeleteObjects: 0.134500 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.715200 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            13.488 ms
+	Integration:            386.668 ms
+	Integration of assets:  0.165 ms
+	Thread Wait Time:       1.961 ms
+	Total Operation Time:   402.282 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 13.464800 ms (FindLiveObjects: 0.991500 ms CreateObjectMapping: 0.494500 ms MarkObjects: 11.870800 ms  DeleteObjects: 0.106300 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.702800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            21.736 ms
+	Integration:            316.655 ms
+	Integration of assets:  0.451 ms
+	Thread Wait Time:       -0.013 ms
+	Total Operation Time:   338.829 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 10.840100 ms (FindLiveObjects: 0.447200 ms CreateObjectMapping: 0.223400 ms MarkObjects: 10.077700 ms  DeleteObjects: 0.090400 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.698600 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            16.294 ms
+	Integration:            388.367 ms
+	Integration of assets:  0.330 ms
+	Thread Wait Time:       0.036 ms
+	Total Operation Time:   405.027 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 15.716500 ms (FindLiveObjects: 1.043100 ms CreateObjectMapping: 0.588600 ms MarkObjects: 13.988000 ms  DeleteObjects: 0.094500 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.717000 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            15.061 ms
+	Integration:            323.030 ms
+	Integration of assets:  0.145 ms
+	Thread Wait Time:       0.544 ms
+	Total Operation Time:   338.779 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 11.399200 ms (FindLiveObjects: 0.418200 ms CreateObjectMapping: 0.200200 ms MarkObjects: 10.578600 ms  DeleteObjects: 0.200100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.706300 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            19.469 ms
+	Integration:            323.604 ms
+	Integration of assets:  0.290 ms
+	Thread Wait Time:       0.062 ms
+	Total Operation Time:   343.425 ms
+Unloading 39 unused Assets / (6.0 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.462600 ms (FindLiveObjects: 0.443100 ms CreateObjectMapping: 0.186800 ms MarkObjects: 11.617100 ms  DeleteObjects: 0.213000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.694700 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            17.893 ms
+	Integration:            343.637 ms
+	Integration of assets:  0.409 ms
+	Thread Wait Time:       0.092 ms
+	Total Operation Time:   362.030 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 16.210800 ms (FindLiveObjects: 0.768000 ms CreateObjectMapping: 0.387900 ms MarkObjects: 14.847100 ms  DeleteObjects: 0.205700 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 2.354500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            12.611 ms
+	Integration:            365.742 ms
+	Integration of assets:  0.235 ms
+	Thread Wait Time:       1.418 ms
+	Total Operation Time:   380.006 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 14.435400 ms (FindLiveObjects: 1.022700 ms CreateObjectMapping: 0.946800 ms MarkObjects: 12.370400 ms  DeleteObjects: 0.094000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.539400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            16.091 ms
+	Integration:            349.571 ms
+	Integration of assets:  0.357 ms
+	Thread Wait Time:       0.063 ms
+	Total Operation Time:   366.082 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 14.393800 ms (FindLiveObjects: 0.869500 ms CreateObjectMapping: 0.199900 ms MarkObjects: 13.131200 ms  DeleteObjects: 0.191000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.704400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            18.269 ms
+	Integration:            304.462 ms
+	Integration of assets:  0.250 ms
+	Thread Wait Time:       0.126 ms
+	Total Operation Time:   323.107 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 9.866600 ms (FindLiveObjects: 0.438400 ms CreateObjectMapping: 0.185900 ms MarkObjects: 9.057600 ms  DeleteObjects: 0.182900 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.957600 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            13.699 ms
+	Integration:            400.888 ms
+	Integration of assets:  0.421 ms
+	Thread Wait Time:       0.112 ms
+	Total Operation Time:   415.121 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 13.024200 ms (FindLiveObjects: 0.474200 ms CreateObjectMapping: 0.209900 ms MarkObjects: 12.205700 ms  DeleteObjects: 0.132600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.686500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            12.277 ms
+	Integration:            382.254 ms
+	Integration of assets:  0.169 ms
+	Thread Wait Time:       3.012 ms
+	Total Operation Time:   397.711 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 11.808400 ms (FindLiveObjects: 0.442400 ms CreateObjectMapping: 0.195400 ms MarkObjects: 10.957000 ms  DeleteObjects: 0.211600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.634400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            11.034 ms
+	Integration:            321.204 ms
+	Integration of assets:  0.147 ms
+	Thread Wait Time:       3.921 ms
+	Total Operation Time:   336.305 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.391700 ms (FindLiveObjects: 0.695400 ms CreateObjectMapping: 0.215000 ms MarkObjects: 11.296700 ms  DeleteObjects: 0.182800 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.602900 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            13.857 ms
+	Integration:            343.216 ms
+	Integration of assets:  0.141 ms
+	Thread Wait Time:       1.250 ms
+	Total Operation Time:   358.463 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.236900 ms (FindLiveObjects: 0.454200 ms CreateObjectMapping: 0.189600 ms MarkObjects: 11.489900 ms  DeleteObjects: 0.101600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.164800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            14.486 ms
+	Integration:            351.640 ms
+	Integration of assets:  0.382 ms
+	Thread Wait Time:       1.114 ms
+	Total Operation Time:   367.621 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 15.550600 ms (FindLiveObjects: 0.468100 ms CreateObjectMapping: 0.216000 ms MarkObjects: 14.645500 ms  DeleteObjects: 0.219000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.692300 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            20.247 ms
+	Integration:            318.964 ms
+	Integration of assets:  0.313 ms
+	Thread Wait Time:       0.015 ms
+	Total Operation Time:   339.539 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 14.242500 ms (FindLiveObjects: 1.010300 ms CreateObjectMapping: 0.531800 ms MarkObjects: 12.609600 ms  DeleteObjects: 0.089100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.578100 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            14.589 ms
+	Integration:            359.933 ms
+	Integration of assets:  0.373 ms
+	Thread Wait Time:       0.082 ms
+	Total Operation Time:   374.977 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 15.604600 ms (FindLiveObjects: 0.453400 ms CreateObjectMapping: 0.202300 ms MarkObjects: 14.753200 ms  DeleteObjects: 0.194000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.836600 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            12.248 ms
+	Integration:            355.761 ms
+	Integration of assets:  0.199 ms
+	Thread Wait Time:       3.442 ms
+	Total Operation Time:   371.650 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 25.611500 ms (FindLiveObjects: 1.107300 ms CreateObjectMapping: 0.338100 ms MarkObjects: 23.963300 ms  DeleteObjects: 0.200100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.682100 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            18.437 ms
+	Integration:            306.852 ms
+	Integration of assets:  0.308 ms
+	Thread Wait Time:       0.030 ms
+	Total Operation Time:   325.626 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 11.480700 ms (FindLiveObjects: 0.427900 ms CreateObjectMapping: 0.200300 ms MarkObjects: 10.763200 ms  DeleteObjects: 0.087600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.691900 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            20.092 ms
+	Integration:            309.932 ms
+	Integration of assets:  0.316 ms
+	Thread Wait Time:       0.059 ms
+	Total Operation Time:   330.399 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.048500 ms (FindLiveObjects: 0.549300 ms CreateObjectMapping: 0.219000 ms MarkObjects: 11.186800 ms  DeleteObjects: 0.091600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.662400 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            18.570 ms
+	Integration:            328.882 ms
+	Integration of assets:  0.301 ms
+	Thread Wait Time:       0.032 ms
+	Total Operation Time:   347.786 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.527400 ms (FindLiveObjects: 0.441900 ms CreateObjectMapping: 0.197900 ms MarkObjects: 11.702300 ms  DeleteObjects: 0.182600 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.824100 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            21.701 ms
+	Integration:            323.376 ms
+	Integration of assets:  0.317 ms
+	Thread Wait Time:       0.016 ms
+	Total Operation Time:   345.410 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 11.130000 ms (FindLiveObjects: 0.436900 ms CreateObjectMapping: 0.191200 ms MarkObjects: 10.388300 ms  DeleteObjects: 0.112400 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.661800 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            19.362 ms
+	Integration:            313.878 ms
+	Integration of assets:  0.283 ms
+	Thread Wait Time:       0.075 ms
+	Total Operation Time:   333.599 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 11.923000 ms (FindLiveObjects: 0.898100 ms CreateObjectMapping: 0.158800 ms MarkObjects: 10.775500 ms  DeleteObjects: 0.088700 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.744100 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            18.881 ms
+	Integration:            329.099 ms
+	Integration of assets:  0.391 ms
+	Thread Wait Time:       0.028 ms
+	Total Operation Time:   348.399 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 13.731400 ms (FindLiveObjects: 0.506600 ms CreateObjectMapping: 0.475500 ms MarkObjects: 12.565700 ms  DeleteObjects: 0.182100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 1.555600 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            16.980 ms
+	Integration:            329.424 ms
+	Integration of assets:  0.355 ms
+	Thread Wait Time:       0.037 ms
+	Total Operation Time:   346.796 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.935800 ms (FindLiveObjects: 0.911500 ms CreateObjectMapping: 0.148400 ms MarkObjects: 11.781600 ms  DeleteObjects: 0.092100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.647100 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            13.420 ms
+	Integration:            321.683 ms
+	Integration of assets:  0.156 ms
+	Thread Wait Time:       1.656 ms
+	Total Operation Time:   336.915 ms
+Unloading 39 unused Assets / (6.0 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 12.931300 ms (FindLiveObjects: 1.160800 ms CreateObjectMapping: 0.900000 ms MarkObjects: 10.769900 ms  DeleteObjects: 0.098400 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.655500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            12.146 ms
+	Integration:            326.887 ms
+	Integration of assets:  0.158 ms
+	Thread Wait Time:       3.418 ms
+	Total Operation Time:   342.610 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8915.
+Memory consumption went from 218.9 MB to 218.9 MB.
+Total: 11.613400 ms (FindLiveObjects: 0.458000 ms CreateObjectMapping: 0.201500 ms MarkObjects: 10.860700 ms  DeleteObjects: 0.091700 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.644000 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            19.070 ms
+	Integration:            326.508 ms
+	Integration of assets:  0.275 ms
+	Thread Wait Time:       0.106 ms
+	Total Operation Time:   345.959 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8914.
+Memory consumption went from 218.4 MB to 218.4 MB.
+Total: 14.292900 ms (FindLiveObjects: 0.439700 ms CreateObjectMapping: 0.189900 ms MarkObjects: 13.466100 ms  DeleteObjects: 0.195100 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.566500 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            8.760 ms
+	Integration:            310.224 ms
+	Integration of assets:  0.130 ms
+	Thread Wait Time:       2.145 ms
+	Total Operation Time:   321.259 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8914.
+Memory consumption went from 218.4 MB to 218.4 MB.
+Total: 14.659300 ms (FindLiveObjects: 0.525600 ms CreateObjectMapping: 0.202800 ms MarkObjects: 13.837500 ms  DeleteObjects: 0.092000 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.868200 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            11.421 ms
+	Integration:            310.016 ms
+	Integration of assets:  0.518 ms
+	Thread Wait Time:       4.321 ms
+	Total Operation Time:   326.276 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8936.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 14.985500 ms (FindLiveObjects: 0.453700 ms CreateObjectMapping: 0.195500 ms MarkObjects: 14.245000 ms  DeleteObjects: 0.090200 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.616700 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            8.367 ms
+	Integration:            330.336 ms
+	Integration of assets:  0.160 ms
+	Thread Wait Time:       2.944 ms
+	Total Operation Time:   341.807 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8934.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 12.888900 ms (FindLiveObjects: 0.446400 ms CreateObjectMapping: 0.266800 ms MarkObjects: 12.069400 ms  DeleteObjects: 0.104800 ms)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 0.690900 ms
+Loaded scene 'Assets/Scenes/MovementLab.unity'
+	Deserialize:            15.937 ms
+	Integration:            313.581 ms
+	Integration of assets:  0.225 ms
+	Thread Wait Time:       0.133 ms
+	Total Operation Time:   329.876 ms
+Unloading 39 unused Assets / (5.7 KB). Loaded Objects now: 8934.
+Memory consumption went from 218.8 MB to 218.8 MB.
+Total: 12.854000 ms (FindLiveObjects: 0.442100 ms CreateObjectMapping: 0.192900 ms MarkObjects: 12.130600 ms  DeleteObjects: 0.087200 ms)
+
+Saving results to: C:/Users/pedro/AppData/LocalLow/DefaultCompany/rustline\TestResults.xml
+Saving results to: C:\Projetos\Github\rustline\TestResults-play-full.xml
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Temp/__Backupscenes/0.backup'
+	Deserialize:            0.650 ms
+	Integration:            279.637 ms
+	Integration of assets:  0.003 ms
+	Thread Wait Time:       0.098 ms
+	Total Operation Time:   280.388 ms
+Unloading 613 unused Assets / (9.7 MB). Loaded Objects now: 7958.
+Memory consumption went from 216.3 MB to 206.5 MB.
+Total: 18.071200 ms (FindLiveObjects: 0.890000 ms CreateObjectMapping: 0.567300 ms MarkObjects: 13.462800 ms  DeleteObjects: 3.148800 ms)
+
+[Licensing::Client] Successfully resolved entitlement details
+Start importing Assets/InputSystem_Actions.inputactions using Guid(2bcd2660ca9b64942af0de543d8d7100) (ScriptedImporter) -> (Import Result ID: 'af5f5f99e9f6fa7e60b5d1b4713285e7') in 0.0366924 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=2d28ec2e7f1b6645d07bcb973de8898e DependenciesID=d99e0b6f14d90199a6ead731d07ff0c8 StaticDependenciesID=cf04696b4fd62d8edaf3e095d2625c99 
+Refreshing native plugins compatible for Editor in 2.78 ms, found 4 plugins.
+Asset Pipeline Refresh (id=abbad25a795411a48bc75892f5ad0b20): Total: 0.209 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Executing IPostBuildCleanup for: Unity.PerformanceTesting.Editor.TestRunBuilder.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<ExecuteMethods>d__8<UnityEngine.TestTools.IPostBuildCleanup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:48)
+UnityEditor.TestTools.TestRunner.TestRun.Tasks.BuildActionTaskBase`1/<Execute>d__7<UnityEngine.TestTools.IPostBuildCleanup>:MoveNext () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs:34)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteStep () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:173)
+UnityEditor.TestTools.TestRunner.TestRun.TestJobRunner:ExecuteCallback () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/TestJobRunner.cs:108)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/TestRun/Tasks/BuildActionTaskBase.cs Line: 48)
+
+Asset Pipeline Refresh (id=c72601ca23181504a989a6fdc0f304fc): Total: 0.018 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 11 unused Assets / (Unknown). Loaded Objects now: 7960.
+Memory consumption went from 203.9 MB to 203.9 MB.
+Total: 18.801900 ms (FindLiveObjects: 0.885800 ms CreateObjectMapping: 0.932300 ms MarkObjects: 16.880000 ms  DeleteObjects: 0.100500 ms)
+
+Asset Pipeline Refresh (id=9b56cfa1216a21e42a459905034f2713): Total: 0.077 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+DisplayProgressbar: Undo
+Test run completed. Exiting with code 2 (Failed). One or more tests failed.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace ()
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:ExitApplication (UnityEditor.TestTools.TestRunner.CommandLineTest.Executer/ReturnCodes,string) (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/CommandLineTest/Executer.cs:81)
+UnityEditor.TestTools.TestRunner.CommandLineTest.Executer:ExitIfRunIsCompleted () (at ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/CommandLineTest/Executer.cs:74)
+UnityEditor.EditorApplication:Internal_CallUpdateFunctions ()
+
+(Filename: ./Library/PackageCache/com.unity.test-framework@629486125cfc/UnityEditor.TestRunner/CommandLineTest/Executer.cs Line: 81)
+
+Killing ADB server in 0,0909072 seconds.
+Start importing ProjectSettings/ProjectSettings.asset using Guid(00000000000000004000000000000000) (LibraryAssetImporter) -> (Import Result ID: '2ea6a66ad79925f4cf032bc47c4dbbbf') in 0.0056227 seconds [static dependencies only]. Details - ImportResultOutputID=d3ca6db29495033f6ec6c171ea098da8 DependenciesID=7b5c03a2a78cf02f8b5f6802ebc2e3d9 StaticDependenciesID=232debac4b0978b6f90dfd30c2b6d877 
+Start importing ProjectSettings/EditorBuildSettings.asset using Guid(0000000000000000b000000000000000) (LibraryAssetImporter) -> (Import Result ID: 'cd1ce71548b9ee633da218268b740ec7') in 0.0072286 seconds [static dependencies only]. Details - ImportResultOutputID=d777934f36c664454d62eda103573334 DependenciesID=447f903d95fc560fbfc007d6bd9b0689 StaticDependenciesID=6786a4a19d2fa6f0ed46c23aa2249e01 
+Asset Pipeline Refresh (id=2e088eafe7496ce4da7ef20e3dd31709): Total: 0.045 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+[Licensing::IpcConnector] LicenseClient-pedro-6000.4.0-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-pedro-6000.4.0 channel disconnected successfully.
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+Checking for leaked weakptr:
+  Found no leaked weakptrs.
+[Package Manager] Server process was shutdown
+##utp:{"type":"MemoryLeaks","version":2,"phase":"Immediate","time":1788983624321,"processId":45880,"allocatedMemory":16460646,"memoryLabels":[{"Default":202282},{"Permanent":15268},{"NewDelete":66259},{"Thread":4230384},{"Manager":819661},{"VertexData":392},{"Geometry":816},{"Texture":24},{"Shader":850207},{"Material":24},{"GfxDevice":55601},{"Animation":392},{"Audio":2632},{"FreeType":8},{"FontEngine":736},{"Physics":2090},{"Physics2D":16},{"Serialization":568},{"Input":9880},{"JobScheduler":33024},{"TextLib":216},{"Mono":32},{"MonoCode":64},{"ScriptingNativeRuntime":155052},{"BaseObject":1620752},{"Resource":1184},{"Renderer":3000},{"Transform":4685},{"File":18634},{"WebCam":616},{"Culling":32},{"Terrain":11394},{"Wind":24},{"STL":40},{"String":13648},{"StaticString":6718},{"Utility":2672774},{"Curl":2498},{"PoolAlloc":2264},{"AI":80},{"TypeTree":26725},{"ScriptManager":448},{"RuntimeInitializeOnLoadManager":64},{"SpriteAtlas":120},{"GI":7792},{"Director":8320},{"CloudService":432},{"WebRequest":848},{"VR":48050},{"SceneManager":504},{"Video":208},{"LazyScriptCache":32},{"Camera":17},{"Secure":2113},{"SerializationCache":1576},{"APIUpdating":10320},{"Subsystems":336},{"VirtualTexturing":57888},{"StaticSafetyDebugInfo":278528},{"Analytics":336},{"Hierarchy":608},{"CoreStats":13032},{"Identifiers":12960},{"Gui":128},{"EditorUtility":111242},{"VersionControl":4},{"Undo":931},{"AssetDatabase":5019343},{"EditorGi":328},{"UnityConnect":37777},{"Upm":1904},{"AssetCompliance":64},{"DrivenProperties":72},{"LocalIPC":211},{"ProfilerEditor":9746},{"CoreBusinessMetrics":2588},{"Windowing":456},{"Licensing":664},{"AssetReference":32},{"IPCStream":32}]}

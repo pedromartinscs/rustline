@@ -49,6 +49,10 @@ namespace Rustline.Gameplay.Player
         [SerializeField, Min(0.01f)] private float wallKickVerticalSpeed = 11.5f;
         [SerializeField, Min(0f)] private float wallKickLockDuration = 0.12f;
 
+        [Header("Ledge climb")]
+        [SerializeField, Min(0f)] private float maximumLedgeClimbUpwardSpeed = 0.1f;
+        [SerializeField, Range(0.01f, 0.5f)] private float ledgeCaptureTolerance = 0.25f;
+
         [Header("Presentation")]
         [SerializeField, Min(0f)] private float runAnimationSpeedThreshold = 0.2f;
         [SerializeField, Min(0f)] private float ascendingAnimationThreshold = 0.15f;
@@ -85,6 +89,8 @@ namespace Rustline.Gameplay.Player
         public float WallKickHorizontalSpeed => wallKickHorizontalSpeed;
         public float WallKickVerticalSpeed => wallKickVerticalSpeed;
         public float WallKickLockDuration => wallKickLockDuration;
+        public float MaximumLedgeClimbUpwardSpeed => maximumLedgeClimbUpwardSpeed;
+        public float LedgeCaptureTolerance => ledgeCaptureTolerance;
         public float RunAnimationSpeedThreshold => runAnimationSpeedThreshold;
         public float AscendingAnimationThreshold => ascendingAnimationThreshold;
         public float FacingVelocityThreshold => facingVelocityThreshold;
@@ -142,6 +148,12 @@ namespace Rustline.Gameplay.Player
                 wallKickLockDuration < 0f)
             {
                 reason = "Wall interaction tuning values are invalid.";
+                return false;
+            }
+
+            if (maximumLedgeClimbUpwardSpeed < 0f || ledgeCaptureTolerance <= 0f)
+            {
+                reason = "Ledge-climb eligibility and capture values are invalid.";
                 return false;
             }
 

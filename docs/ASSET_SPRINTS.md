@@ -30,8 +30,9 @@ Goal: remove the remaining player movement fallbacks before expanding armed pres
 - [x] 2. Crouch Unarmed Arms — six matching frames integrated from `player_salvager_arms_crouch.png`
 - [ ] 3. Approve crouch in-engine at native gameplay scale
 - [x] 4. Wall Brace Body / Unarmed Arms — two matching frames integrated from `player_salvager_body_wall_brace.png` / `player_salvager_arms_wall_brace.png`
-- [ ] 5. Wall Kick Body / Unarmed Arms
+- [x] 5. Wall Kick uses the accepted Jump/Fall fallback; dedicated art is not currently required
 - [ ] 6. Approve wall presentation in-engine at native gameplay scale
+- [x] LedgeClimb Body / Unarmed Arms — five matching 48×64 frames at 10 fps, integrated as an immediate committed traversal
 
 Acceptance notes:
 
@@ -41,7 +42,8 @@ Acceptance notes:
 - Crouch frame counts become the authoritative N used by the armed crouch packages in Sprint 2.
 - Crouch Idle statically reuses frame 0 and intentionally has no breathing animation; Crouch Move loops frames 0..5 at the initial 7 fps visual tuning. Standing Idle remains the only breathing idle.
 - Longwatch crouch presentation now uses the completed six-frame directional package. Its presenter owns the shared overlay and firing is enabled in both crouch states.
-- Wall Brace has no Longwatch carry package yet: the unarmed overlay owns its matching Arms frames and firing remains blocked. Wall Kick art and the overall native-scale wall approval gate remain pending.
+- Wall Brace has no Longwatch carry package yet: the unarmed overlay owns its matching Arms frames and firing remains blocked. Wall Kick uses the accepted Jump/Fall fallback and does not currently require dedicated art; the overall native-scale wall approval gate remains pending.
+- LedgeClimb has no grab/hang state and no Longwatch carry package. Once its valid wall/top geometry, facing, and toward-input gate succeeds, the five-frame right-authored traversal commits, mirrors for a left ledge, releases the overlay to unarmed Arms, and blocks firing through its geometry-driven final settle.
 
 ## Asset Sprint 2 — Complete Longwatch locomotion presentation
 

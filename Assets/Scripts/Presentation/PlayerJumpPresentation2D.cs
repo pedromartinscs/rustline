@@ -47,6 +47,7 @@ namespace Rustline.Presentation
             }
 
             _motor.Jumped += OnJumped;
+            _motor.LedgeClimbStarted += OnLedgeClimbStarted;
         }
 
         private void OnDisable()
@@ -54,6 +55,7 @@ namespace Rustline.Presentation
             if (_motor != null)
             {
                 _motor.Jumped -= OnJumped;
+                _motor.LedgeClimbStarted -= OnLedgeClimbStarted;
             }
 
             RestoreBaseline();
@@ -117,6 +119,11 @@ namespace Rustline.Presentation
                 PlayerJumpDustFx2D dust = Instantiate(jumpDustPrefab, _takeoffWorldPosition, Quaternion.identity);
                 dust.Initialize(bodySpriteRenderer != null && bodySpriteRenderer.flipX);
             }
+        }
+
+        private void OnLedgeClimbStarted()
+        {
+            RestoreBaseline();
         }
 
         private void RestoreBaseline()

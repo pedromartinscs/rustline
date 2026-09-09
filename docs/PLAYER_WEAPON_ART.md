@@ -59,6 +59,7 @@ player_salvager_body_fall.png
 player_salvager_body_land.png
 player_salvager_body_crouch.png
 player_salvager_body_wall_brace.png
+player_salvager_body_ledge_climb.png
 
 player_salvager_arms_idle.png
 player_salvager_arms_run.png
@@ -68,6 +69,7 @@ player_salvager_arms_fall.png
 player_salvager_arms_land.png
 player_salvager_arms_crouch.png
 player_salvager_arms_wall_brace.png
+player_salvager_arms_ledge_climb.png
 ```
 
 Future roll/dodge artwork follows the same convention:
@@ -82,6 +84,8 @@ Each Body/Unarmed Arms pair preserves the source sheet's frame count, frame orde
 The crouch pair is one authoritative six-frame sheet per layer, not separate Idle and Move artwork. `CrouchIdle` statically reuses crouch frame 0 with no breathing, while `CrouchMove` loops frames 0..5 at an initial 7 fps. The accepted two-frame breathing motion remains exclusive to standing Idle.
 
 The Wall Brace pair is two frames per layer and loops at 6 fps. It is authored touching a wall on the right: `WallSide == +1` presents unflipped and `WallSide == -1` presents with `flipX`; that visual override does not mutate continuous aim or its normal facing hemisphere. No armed Longwatch Wall Brace overlay exists yet, so unarmed Arms own the renderer during this state.
+
+The LedgeClimb pair is exactly five frames per layer and plays once at 10 fps, with no added Idle frame. It is authored for a platform on the right and mirrors for a left ledge. Physical root motion follows the authored source-pixel offsets `(0,0)`, `(8,8)`, `(14,14)`, `(18,17)`, `(19,19)` before a short geometry-driven settle. There is deliberately no LedgeGrab/Hang state. No Longwatch LedgeClimb carry artwork exists, so the unarmed overlay owns all five matching Arms frames and firing is blocked.
 
 ## Armed overlay geometry
 
@@ -371,6 +375,8 @@ player_salvager_<weapon_id>_roll_carry.png
 
 Aim input may still be tracked internally so aiming resumes immediately when the character returns to an aim-capable state.
 
+`LedgeClimb` is the exception to the carried-weapon rule: no Longwatch carry art exists yet, so the equipped overlay is released and the authored five-frame unarmed Arms package is shown. Firing stays disabled, while background aim remains available again immediately after the committed climb finishes.
+
 ## Facing and mirroring
 
 Production player/weapon artwork is authored facing right.
@@ -452,6 +458,8 @@ Player_Body_Land.anim
 Player_Body_CrouchIdle.anim
 Player_Body_CrouchMove.anim
 Player_Body_CrouchBackpedal.anim
+Player_Body_WallBrace.anim
+Player_Body_LedgeClimb.anim
 ```
 
 `Player_Body_Jump.anim` is a non-looping takeoff sequence with Body keys at `0.00`, `0.10`, and `0.26` seconds. Frame 1 is a 100 ms Y-anchored compression pose; Frame 2 is a 160 ms leg-extension pose with cubic ease-out catch-up to the root's current normal Visual position; Frame 3 is held while locomotion remains Jump. X movement, physical impulse, and camera root-follow are unchanged.
@@ -468,9 +476,9 @@ The Longwatch aim origin is exactly **38 source pixels above** the shared Body/o
 
 While locomotion presentation is Idle, Run, Backpedal, Crouch Idle, Crouch Move, or Fall, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, 4 Backpedal, 6 shared Crouch, and 1 Fall Body frame map one-to-one to their selected-angle overlays. Crouch Idle holds shared frame 0; crouch backpedal naturally follows reverse Body playback 5..0. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
 
-Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall share one continuous selection and ownership path. On Jump or Land the presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall Brace uses its dedicated two-frame Body/Unarmed Arms presentation; Wall Kick retains its accepted Jump/Fall fallback. Both remain non-firing.
+Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall share one continuous selection and ownership path. On Jump, Land, Wall Brace, or LedgeClimb the presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall Brace uses its dedicated two-frame Body/Unarmed Arms presentation, LedgeClimb uses its five-frame one-shot package, and Wall Kick retains its accepted Jump/Fall fallback. All three remain non-firing.
 
-Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only and also controls the attached muzzle-flash rotation. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. The metadata-positioned flash follows that recoil transform, while the reused 3-unit distal tracer and hitscan still derive from the resolved `AimOriginWorld` path. Jump, Land, Wall Brace, and Wall Kick remain blocked.
+Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only and also controls the attached muzzle-flash rotation. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. The metadata-positioned flash follows that recoil transform, while the reused 3-unit distal tracer and hitscan still derive from the resolved `AimOriginWorld` path. Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked.
 
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 

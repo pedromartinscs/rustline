@@ -2,12 +2,35 @@ using UnityEngine;
 
 namespace Rustline.Gameplay.Player
 {
+    public readonly struct LedgeClimbCandidate2D
+    {
+        public LedgeClimbCandidate2D(
+            int side,
+            Vector2 ledgePoint,
+            Vector2 captureRootPosition,
+            Vector2 finalRootPosition)
+        {
+            Side = side;
+            LedgePoint = ledgePoint;
+            CaptureRootPosition = captureRootPosition;
+            FinalRootPosition = finalRootPosition;
+        }
+
+        public int Side { get; }
+        public Vector2 LedgePoint { get; }
+        public float WallX => LedgePoint.x;
+        public float TopY => LedgePoint.y;
+        public Vector2 CaptureRootPosition { get; }
+        public Vector2 FinalRootPosition { get; }
+    }
+
     [RequireComponent(typeof(CapsuleCollider2D), typeof(PlayerGroundProbe2D))]
     public sealed class PlayerEnvironmentProbe2D : MonoBehaviour
     {
         [SerializeField] private PlayerMovementConfig config;
 
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
+        private readonly Collider2D[] _overlaps = new Collider2D[8];
         private CapsuleCollider2D _collider;
         private PlayerGroundProbe2D _groundProbe;
         private ContactFilter2D _filter;
@@ -69,6 +92,133 @@ namespace Rustline.Gameplay.Player
             }
 
             return 0;
+        }
+
+        public bool TryFindLedgeClimb(int side, Vector2 rootPosition, out LedgeClimbCandidate2D candidate)
+        {
+            candidate = default;
+            if (_collider == null || config == null || side == 0)
+            {
+                return false;
+            }
+
+            side = side < 0 ? -1 : 1;
+            float tolerance = config.LedgeCaptureTolerance;
+            float pixel = PlayerLedgeClimbMotion2D.SourcePixel;
+            Vector2 expectedCorner = rootPosition + PlayerLedgeClimbMotion2D.GetExpectedContactOffset(side);
+
+            Vector2 wallOrigin = expectedCorner - Vector2.right * side * tolerance - Vector2.up * pixel;
+            int wallHitCount = Physics2D.Raycast(
+                wallOrigin,
+                Vector2.right * side,
+                _filter,
+                _hits,
+                tolerance * 2f);
+            bool foundWall = false;
+            float wallX = 0f;
+            for (int index = 0; index < wallHitCount; index++)
+            {
+                RaycastHit2D hit = _hits[index];
+                if (hit.collider != null && -hit.normal.x * side >= config.MinimumWallNormalX)
+                {
+                    wallX = hit.point.x;
+                    foundWall = true;
+                    break;
+                }
+            }
+
+            if (!foundWall)
+            {
+                return false;
+            }
+
+            Vector2 topOrigin = new Vector2(
+                wallX + side * pixel,
+                expectedCorner.y + tolerance);
+            int topHitCount = Physics2D.Raycast(
+                topOrigin,
+                Vector2.down,
+                _filter,
+                _hits,
+                tolerance * 2f);
+            bool foundTop = false;
+            float topY = 0f;
+            for (int index = 0; index < topHitCount; index++)
+            {
+                RaycastHit2D hit = _hits[index];
+                if (hit.collider != null && hit.normal.y >= config.MinimumGroundNormalY)
+                {
+                    topY = hit.point.y;
+                    foundTop = true;
+                    break;
+                }
+            }
+
+            Vector2 ledgePoint = new Vector2(wallX, topY);
+            if (!foundTop || Mathf.Abs(ledgePoint.x - expectedCorner.x) > tolerance ||
+                Mathf.Abs(ledgePoint.y - expectedCorner.y) > tolerance)
+            {
+                return false;
+            }
+
+            Vector2 contactOffset = PlayerLedgeClimbMotion2D.GetExpectedContactOffset(side);
+            Vector2 captureRoot = ledgePoint - contactOffset;
+            Vector2 finalRoot = new Vector2(
+                wallX + side * (config.StandingColliderSize.x * 0.5f + pixel),
+                topY + pixel);
+            if (!HasStandingClearanceAt(finalRoot) || !HasGroundSupportAt(finalRoot))
+            {
+                return false;
+            }
+
+            candidate = new LedgeClimbCandidate2D(side, ledgePoint, captureRoot, finalRoot);
+            return true;
+        }
+
+        public bool HasStandingClearanceAt(Vector2 rootPosition)
+        {
+            if (config == null)
+            {
+                return false;
+            }
+
+            Vector2 center = rootPosition + config.StandingColliderOffset;
+            return Physics2D.OverlapCapsule(
+                center,
+                config.StandingColliderSize,
+                CapsuleDirection2D.Vertical,
+                0f,
+                _filter,
+                _overlaps) == 0;
+        }
+
+        public bool HasGroundSupportAt(Vector2 rootPosition)
+        {
+            if (config == null)
+            {
+                return false;
+            }
+
+            Vector2 center = rootPosition + config.StandingColliderOffset;
+            int hitCount = Physics2D.CapsuleCast(
+                center,
+                config.StandingColliderSize,
+                CapsuleDirection2D.Vertical,
+                0f,
+                Vector2.down,
+                _filter,
+                _hits,
+                config.GroundCheckDistance);
+            for (int index = 0; index < hitCount; index++)
+            {
+                RaycastHit2D hit = _hits[index];
+                if (hit.collider != null && hit.normal.y >= config.MinimumGroundNormalY)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void RebuildFilter()

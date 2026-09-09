@@ -42,6 +42,8 @@ MonoBehaviour:
   wallKickHorizontalSpeed: 8
   wallKickVerticalSpeed: 11.5
   wallKickLockDuration: 0.12
+  maximumLedgeClimbUpwardSpeed: 0.1
+  ledgeCaptureTolerance: 0.25
   runAnimationSpeedThreshold: 0.2
   ascendingAnimationThreshold: 0.15
   facingVelocityThreshold: 0.05

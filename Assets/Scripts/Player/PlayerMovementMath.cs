@@ -87,6 +87,25 @@ namespace Rustline.Gameplay.Player
                    Mathf.Abs(horizontalInput) >= config.InputDeadZone;
         }
 
+        public static bool CanAttemptLedgeClimb(
+            bool grounded,
+            float verticalVelocity,
+            float horizontalInput,
+            bool facingLeft,
+            float wallKickLockRemaining,
+            PlayerMovementConfig config)
+        {
+            if (grounded || verticalVelocity > config.MaximumLedgeClimbUpwardSpeed ||
+                wallKickLockRemaining > 0f || Mathf.Abs(horizontalInput) < config.InputDeadZone)
+            {
+                return false;
+            }
+
+            int inputSide = horizontalInput < 0f ? -1 : 1;
+            int facingSide = facingLeft ? -1 : 1;
+            return inputSide == facingSide;
+        }
+
         public static float CapWallBraceFallVelocity(float verticalVelocity, PlayerMovementConfig config)
         {
             return Mathf.Max(verticalVelocity, -config.WallBraceMaxFallSpeed);

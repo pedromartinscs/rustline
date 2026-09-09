@@ -28,6 +28,7 @@ namespace Rustline.Tests
         [TestCase("land", 2)]
         [TestCase("crouch", 6)]
         [TestCase("wall_brace", 2)]
+        [TestCase("ledge_climb", 5)]
         public void LayeredSheets_MatchCanonicalImportAndCellContract(string state, int expectedFrames)
         {
             string bodyPath = BodyRoot + "/player_salvager_body_" + state + ".png";
@@ -57,7 +58,7 @@ namespace Rustline.Tests
             Assert.That(prefab, Is.Not.Null);
             PlayerUnarmedArmsPresenter2D presenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
             Assert.That(presenter, Is.Not.Null);
-            Assert.That(presenter.MappingCount, Is.EqualTo(26));
+            Assert.That(presenter.MappingCount, Is.EqualTo(31));
 
             HashSet<Sprite> bodySprites = new HashSet<Sprite>();
             HashSet<Sprite> armsSprites = new HashSet<Sprite>();
@@ -79,8 +80,8 @@ namespace Rustline.Tests
                 }
             }
 
-            Assert.That(bodySprites, Has.Count.EqualTo(26));
-            Assert.That(armsSprites, Has.Count.EqualTo(26));
+            Assert.That(bodySprites, Has.Count.EqualTo(31));
+            Assert.That(armsSprites, Has.Count.EqualTo(31));
         }
 
         [Test]
@@ -142,7 +143,7 @@ namespace Rustline.Tests
             string[] expectedStateNames =
             {
                 "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
-                "CrouchBackpedal", "WallBrace",
+                "CrouchBackpedal", "WallBrace", "LedgeClimb",
             };
 
             Assert.That(states, Has.Length.EqualTo(expectedStateNames.Length));
@@ -260,6 +261,27 @@ namespace Rustline.Tests
             }
         }
 
+        [Test]
+        public void LedgeClimbClip_PreservesFiveAuthoredFramesAtTenFpsAndHoldsFinalFrame()
+        {
+            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
+                BodyAnimationRoot + "/Player_Body_LedgeClimb.anim");
+            List<Sprite> expectedSprites = LoadSprites(
+                BodyRoot + "/player_salvager_body_ledge_climb.png");
+
+            Assert.That(clip, Is.Not.Null);
+            Assert.That(clip.frameRate, Is.EqualTo(10f));
+            Assert.That(clip.wrapMode, Is.EqualTo(WrapMode.ClampForever));
+            Assert.That(AnimationUtility.GetAnimationClipSettings(clip).loopTime, Is.False);
+            ObjectReferenceKeyframe[] keyframes = GetSpriteKeys(clip);
+            Assert.That(keyframes, Has.Length.EqualTo(5));
+            for (int index = 0; index < keyframes.Length; index++)
+            {
+                Assert.That(keyframes[index].time, Is.EqualTo(index * 0.1f).Within(0.0001f));
+                Assert.That(keyframes[index].value, Is.SameAs(expectedSprites[index]));
+            }
+        }
+
         [TestCase(0f, 0f)]
         [TestCase(0.25f, 0.578125f)]
         [TestCase(0.5f, 0.875f)]
@@ -354,6 +376,7 @@ namespace Rustline.Tests
             yield return ("land", 2);
             yield return ("crouch", 6);
             yield return ("wall_brace", 2);
+            yield return ("ledge_climb", 5);
         }
     }
 }

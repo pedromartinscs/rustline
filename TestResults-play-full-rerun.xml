@@ -1,0 +1,462 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="51" result="Failed(Child)" total="51" passed="47" failed="4" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:56:44Z" duration="66,1188348">
+  <test-suite type="TestSuite" id="1068" name="rustline" fullname="rustline" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:56:44Z" duration="66.118835" total="51" passed="47" failed="4" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1062" name="Rustline.PlayModeTests.dll" fullname="C:/Projetos/Github/rustline/Library/ScriptAssemblies/Rustline.PlayModeTests.dll" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:56:44Z" duration="66.106104" total="51" passed="47" failed="4" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="51732" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1063" name="Rustline" fullname="Rustline" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:56:44Z" duration="66.096664" total="51" passed="47" failed="4" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1064" name="Tests" fullname="Rustline.Tests" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:56:44Z" duration="66.079830" total="51" passed="47" failed="4" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1001" name="FramePacingPlayModeTests" fullname="Rustline.Tests.FramePacingPlayModeTests" classname="Rustline.Tests.FramePacingPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:55:38Z" duration="0.041059" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1002" name="RuntimePolicy_CapsAtSixtyWithoutVSync" fullname="Rustline.Tests.FramePacingPlayModeTests.RuntimePolicy_CapsAtSixtyWithoutVSync" methodname="RuntimePolicy_CapsAtSixtyWithoutVSync" classname="Rustline.Tests.FramePacingPlayModeTests" runstate="Runnable" seed="1441676778" result="Passed" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:55:38Z" duration="0.015832" asserts="0">
+              <properties>
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1003" name="IdentityLightingPlayModeTests" fullname="Rustline.Tests.IdentityLightingPlayModeTests" classname="Rustline.Tests.IdentityLightingPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:55:40Z" duration="1.476675" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1004" name="CurrentScenes_RunWithUnlitOrdinaryRenderersAndNoIdentityGlobalLight" fullname="Rustline.Tests.IdentityLightingPlayModeTests.CurrentScenes_RunWithUnlitOrdinaryRenderersAndNoIdentityGlobalLight" methodname="CurrentScenes_RunWithUnlitOrdinaryRenderersAndNoIdentityGlobalLight" classname="Rustline.Tests.IdentityLightingPlayModeTests" runstate="Runnable" seed="769850264" result="Passed" start-time="2026-09-09 19:55:38Z" end-time="2026-09-09 19:55:40Z" duration="1.474010" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1005" name="LedgeClimbPlayModeTests" fullname="Rustline.Tests.LedgeClimbPlayModeTests" classname="Rustline.Tests.LedgeClimbPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-09 19:55:40Z" end-time="2026-09-09 19:55:44Z" duration="4.383606" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1008" name="BackpedalOffRightEdge_RequiresReverseInputButNotNegativeVelocity" fullname="Rustline.Tests.LedgeClimbPlayModeTests.BackpedalOffRightEdge_RequiresReverseInputButNotNegativeVelocity" methodname="BackpedalOffRightEdge_RequiresReverseInputButNotNegativeVelocity" classname="Rustline.Tests.LedgeClimbPlayModeTests" runstate="Runnable" seed="1897010544" result="Passed" start-time="2026-09-09 19:55:40Z" end-time="2026-09-09 19:55:41Z" duration="1.395915" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1009" name="FacingMismatchAndBlockedDestination_RejectWithoutDisablingCollider" fullname="Rustline.Tests.LedgeClimbPlayModeTests.FacingMismatchAndBlockedDestination_RejectWithoutDisablingCollider" methodname="FacingMismatchAndBlockedDestination_RejectWithoutDisablingCollider" classname="Rustline.Tests.LedgeClimbPlayModeTests" runstate="Runnable" seed="2098206432" result="Passed" start-time="2026-09-09 19:55:41Z" end-time="2026-09-09 19:55:42Z" duration="0.471788" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1006" name="LeftPlatformEdge_CompletesCommittedRightFacingClimbWithoutLandOrFire" fullname="Rustline.Tests.LedgeClimbPlayModeTests.LeftPlatformEdge_CompletesCommittedRightFacingClimbWithoutLandOrFire" methodname="LeftPlatformEdge_CompletesCommittedRightFacingClimbWithoutLandOrFire" classname="Rustline.Tests.LedgeClimbPlayModeTests" runstate="Runnable" seed="766117272" result="Passed" start-time="2026-09-09 19:55:42Z" end-time="2026-09-09 19:55:43Z" duration="1.022126" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1010" name="ResetAfterRespawn_CancelsClimbAndRestoresStandingCollider" fullname="Rustline.Tests.LedgeClimbPlayModeTests.ResetAfterRespawn_CancelsClimbAndRestoresStandingCollider" methodname="ResetAfterRespawn_CancelsClimbAndRestoresStandingCollider" classname="Rustline.Tests.LedgeClimbPlayModeTests" runstate="Runnable" seed="1795239575" result="Passed" start-time="2026-09-09 19:55:43Z" end-time="2026-09-09 19:55:43Z" duration="0.469896" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1007" name="RightPlatformEdge_MirrorsOnlyHorizontalTrajectoryAndFacing" fullname="Rustline.Tests.LedgeClimbPlayModeTests.RightPlatformEdge_MirrorsOnlyHorizontalTrajectoryAndFacing" methodname="RightPlatformEdge_MirrorsOnlyHorizontalTrajectoryAndFacing" classname="Rustline.Tests.LedgeClimbPlayModeTests" runstate="Runnable" seed="1958915319" result="Passed" start-time="2026-09-09 19:55:43Z" end-time="2026-09-09 19:55:44Z" duration="1.001802" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1011" name="LongwatchAimPlayModeTests" fullname="Rustline.Tests.LongwatchAimPlayModeTests" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-09-09 19:55:44Z" end-time="2026-09-09 19:55:58Z" duration="14.213579" total="7" passed="6" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1012" name="AimDirtyState_RefreshesForEveryExactConversionInput" fullname="Rustline.Tests.LongwatchAimPlayModeTests.AimDirtyState_RefreshesForEveryExactConversionInput" methodname="AimDirtyState_RefreshesForEveryExactConversionInput" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="990684407" result="Passed" start-time="2026-09-09 19:55:44Z" end-time="2026-09-09 19:55:45Z" duration="1.098433" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1016" name="GroundedAimRelativeLocomotion_UsesSevenForwardAndFourBackpedal" fullname="Rustline.Tests.LongwatchAimPlayModeTests.GroundedAimRelativeLocomotion_UsesSevenForwardAndFourBackpedal" methodname="GroundedAimRelativeLocomotion_UsesSevenForwardAndFourBackpedal" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="615939464" result="Passed" start-time="2026-09-09 19:55:45Z" end-time="2026-09-09 19:55:51Z" duration="5.286494" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1018" name="HemisphereChangeWhileMoving_TransitionsNaturallyToBackpedalCap" fullname="Rustline.Tests.LongwatchAimPlayModeTests.HemisphereChangeWhileMoving_TransitionsNaturallyToBackpedalCap" methodname="HemisphereChangeWhileMoving_TransitionsNaturallyToBackpedalCap" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="2111623856" result="Passed" start-time="2026-09-09 19:55:51Z" end-time="2026-09-09 19:55:53Z" duration="2.561169" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1013" name="IdleLongwatch_UsesCorrectedAimOriginAndFollowsBodyWithoutDrift" fullname="Rustline.Tests.LongwatchAimPlayModeTests.IdleLongwatch_UsesCorrectedAimOriginAndFollowsBodyWithoutDrift" methodname="IdleLongwatch_UsesCorrectedAimOriginAndFollowsBodyWithoutDrift" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="22793730" result="Passed" start-time="2026-09-09 19:55:53Z" end-time="2026-09-09 19:55:54Z" duration="1.116260" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1015" name="Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires" fullname="Rustline.Tests.LongwatchAimPlayModeTests.Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires" methodname="Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="112573656" result="Failed" start-time="2026-09-09 19:55:54Z" end-time="2026-09-09 19:55:56Z" duration="1.512573" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected: False
+  But was:  True
+]]></message>
+                <stack-trace><![CDATA[at Rustline.Tests.LongwatchAimPlayModeTests.AssertUnarmedOwnership (Rustline.Presentation.PlayerLongwatchAimPresenter2D armed, Rustline.Presentation.PlayerUnarmedArmsPresenter2D unarmed, UnityEngine.SpriteRenderer bodyRenderer, UnityEngine.SpriteRenderer armsRenderer) [0x00001] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\LongwatchAimPlayModeTests.cs:691
+at Rustline.Tests.LongwatchAimPlayModeTests+<Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires>d__3.MoveNext () [0x0040c] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\LongwatchAimPlayModeTests.cs:368
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@629486125cfc\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1014" name="RunLongwatch_UsesBodyClockAndAimFacingIndependentOfMovement" fullname="Rustline.Tests.LongwatchAimPlayModeTests.RunLongwatch_UsesBodyClockAndAimFacingIndependentOfMovement" methodname="RunLongwatch_UsesBodyClockAndAimFacingIndependentOfMovement" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="510838169" result="Passed" start-time="2026-09-09 19:55:56Z" end-time="2026-09-09 19:55:57Z" duration="1.510864" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1017" name="VerticalAimHysteresis_DoesNotChatterAcrossUpOrDownAxis" fullname="Rustline.Tests.LongwatchAimPlayModeTests.VerticalAimHysteresis_DoesNotChatterAcrossUpOrDownAxis" methodname="VerticalAimHysteresis_DoesNotChatterAcrossUpOrDownAxis" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="1117144735" result="Passed" start-time="2026-09-09 19:55:57Z" end-time="2026-09-09 19:55:58Z" duration="1.112146" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1019" name="LongwatchGunplayPlayModeTests" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" testcasecount="10" result="Passed" start-time="2026-09-09 19:55:58Z" end-time="2026-09-09 19:56:12Z" duration="13.312310" total="10" passed="10" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1024" name="AuthoredGroundedStates_CanFireWithoutResettingAnimationOrOverlay" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.AuthoredGroundedStates_CanFireWithoutResettingAnimationOrOverlay" methodname="AuthoredGroundedStates_CanFireWithoutResettingAnimationOrOverlay" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="147742738" result="Passed" start-time="2026-09-09 19:55:58Z" end-time="2026-09-09 19:56:01Z" duration="2.579726" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1029" name="CombatTargetTrigger_DoesNotAffectEnvironmentAndRespawnClearsPendingFire" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.CombatTargetTrigger_DoesNotAffectEnvironmentAndRespawnClearsPendingFire" methodname="CombatTargetTrigger_DoesNotAffectEnvironmentAndRespawnClearsPendingFire" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="1850651987" result="Passed" start-time="2026-09-09 19:56:01Z" end-time="2026-09-09 19:56:02Z" duration="1.167265" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1022" name="GroundObstruction_StopsShotBeforeTarget" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.GroundObstruction_StopsShotBeforeTarget" methodname="GroundObstruction_StopsShotBeforeTarget" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="1375310791" result="Passed" start-time="2026-09-09 19:56:02Z" end-time="2026-09-09 19:56:03Z" duration="1.103644" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1020" name="IdleClick_FiresHitsTargetAndShowsReusedTrace" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.IdleClick_FiresHitsTargetAndShowsReusedTrace" methodname="IdleClick_FiresHitsTargetAndShowsReusedTrace" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="1635390720" result="Passed" start-time="2026-09-09 19:56:03Z" end-time="2026-09-09 19:56:05Z" duration="1.274479" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1025" name="JumpClick_IsDroppedAndNeverFiresLater" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.JumpClick_IsDroppedAndNeverFiresLater" methodname="JumpClick_IsDroppedAndNeverFiresLater" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="1701729980" result="Passed" start-time="2026-09-09 19:56:05Z" end-time="2026-09-09 19:56:06Z" duration="1.737696" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1026" name="JumpImmediatelyAfterShot_RestoresSharedOverlayBaseline" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.JumpImmediatelyAfterShot_RestoresSharedOverlayBaseline" methodname="JumpImmediatelyAfterShot_RestoresSharedOverlayBaseline" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="1407178384" result="Passed" start-time="2026-09-09 19:56:06Z" end-time="2026-09-09 19:56:07Z" duration="1.084912" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1023" name="Miss_UsesShortDistalTraceAndNoImpact" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.Miss_UsesShortDistalTraceAndNoImpact" methodname="Miss_UsesShortDistalTraceAndNoImpact" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="407008566" result="Passed" start-time="2026-09-09 19:56:07Z" end-time="2026-09-09 19:56:08Z" duration="1.009367" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1021" name="OffGridAim_UsesContinuousSevenDegreesWhileVisualUsesTen" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.OffGridAim_UsesContinuousSevenDegreesWhileVisualUsesTen" methodname="OffGridAim_UsesContinuousSevenDegreesWhileVisualUsesTen" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="754117365" result="Passed" start-time="2026-09-09 19:56:08Z" end-time="2026-09-09 19:56:09Z" duration="1.029234" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1028" name="SemiAutomaticInput_HoldAndCooldownDoNotCreateExtraShots" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.SemiAutomaticInput_HoldAndCooldownDoNotCreateExtraShots" methodname="SemiAutomaticInput_HoldAndCooldownDoNotCreateExtraShots" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="70252426" result="Passed" start-time="2026-09-09 19:56:09Z" end-time="2026-09-09 19:56:11Z" duration="1.804795" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1027" name="WallBraceAndKick_CannotFire" fullname="Rustline.Tests.LongwatchGunplayPlayModeTests.WallBraceAndKick_CannotFire" methodname="WallBraceAndKick_CannotFire" classname="Rustline.Tests.LongwatchGunplayPlayModeTests" runstate="Runnable" seed="1170880894" result="Passed" start-time="2026-09-09 19:56:11Z" end-time="2026-09-09 19:56:12Z" duration="0.501244" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1030" name="LongwatchMuzzleFlashPlayModeTests" fullname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" classname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" runstate="Runnable" testcasecount="5" result="Passed" start-time="2026-09-09 19:56:12Z" end-time="2026-09-09 19:56:14Z" duration="2.606471" total="5" passed="5" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1034" name="FallShot_UsesQuantizedVisualAndExactContinuousAimWithMirroredMetadata" fullname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests.FallShot_UsesQuantizedVisualAndExactContinuousAimWithMirroredMetadata" methodname="FallShot_UsesQuantizedVisualAndExactContinuousAimWithMirroredMetadata" classname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" runstate="Runnable" seed="1655467480" result="Passed" start-time="2026-09-09 19:56:12Z" end-time="2026-09-09 19:56:12Z" duration="0.400825" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1033" name="RunAndCrouchShots_UseDisplayedBodyFrameAndMirrorLeftPose" fullname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests.RunAndCrouchShots_UseDisplayedBodyFrameAndMirrorLeftPose" methodname="RunAndCrouchShots_UseDisplayedBodyFrameAndMirrorLeftPose" classname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" runstate="Runnable" seed="226462017" result="Passed" start-time="2026-09-09 19:56:12Z" end-time="2026-09-09 19:56:13Z" duration="0.482961" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1031" name="SuccessfulShot_ShowsF0ThenSameVariantF1ThenHides_AndRejectedShotDoesNotRestart" fullname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests.SuccessfulShot_ShowsF0ThenSameVariantF1ThenHides_AndRejectedShotDoesNotRestart" methodname="SuccessfulShot_ShowsF0ThenSameVariantF1ThenHides_AndRejectedShotDoesNotRestart" classname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" runstate="Runnable" seed="677835090" result="Passed" start-time="2026-09-09 19:56:13Z" end-time="2026-09-09 19:56:13Z" duration="0.428376" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1032" name="TenSuccessfulShots_VisitEveryVariantBeforeRepeating" fullname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests.TenSuccessfulShots_VisitEveryVariantBeforeRepeating" methodname="TenSuccessfulShots_VisitEveryVariantBeforeRepeating" classname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" runstate="Runnable" seed="1805438759" result="Passed" start-time="2026-09-09 19:56:13Z" end-time="2026-09-09 19:56:14Z" duration="0.874653" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1035" name="UnsupportedCrouchShot_ResolvesGameplayButDoesNotDisplayFakeFlash" fullname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests.UnsupportedCrouchShot_ResolvesGameplayButDoesNotDisplayFakeFlash" methodname="UnsupportedCrouchShot_ResolvesGameplayButDoesNotDisplayFakeFlash" classname="Rustline.Tests.LongwatchMuzzleFlashPlayModeTests" runstate="Runnable" seed="871238495" result="Passed" start-time="2026-09-09 19:56:14Z" end-time="2026-09-09 19:56:14Z" duration="0.403218" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1036" name="MovementLabPlayModeTests" fullname="Rustline.Tests.MovementLabPlayModeTests" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" testcasecount="16" result="Failed" site="Child" start-time="2026-09-09 19:56:14Z" end-time="2026-09-09 19:56:39Z" duration="24.235666" total="16" passed="13" failed="3" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1038" name="GroundCompositeGeometry_IsInitializedOnSceneLoad" fullname="Rustline.Tests.MovementLabPlayModeTests.GroundCompositeGeometry_IsInitializedOnSceneLoad" methodname="GroundCompositeGeometry_IsInitializedOnSceneLoad" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="410878624" result="Passed" start-time="2026-09-09 19:56:14Z" end-time="2026-09-09 19:56:15Z" duration="0.381252" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1037" name="PerformanceHud_IsOptInAndPenumbraToggleWorksWhileHidden" fullname="Rustline.Tests.MovementLabPlayModeTests.PerformanceHud_IsOptInAndPenumbraToggleWorksWhileHidden" methodname="PerformanceHud_IsOptInAndPenumbraToggleWorksWhileHidden" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1193746300" result="Passed" start-time="2026-09-09 19:56:15Z" end-time="2026-09-09 19:56:15Z" duration="0.480563" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1052" name="Player_AlternatesWallKicksAcrossFourCellShaft" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_AlternatesWallKicksAcrossFourCellShaft" methodname="Player_AlternatesWallKicksAcrossFourCellShaft" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1038942102" result="Failed" start-time="2026-09-09 19:56:15Z" end-time="2026-09-09 19:56:17Z" duration="1.854463" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                <stack-trace><![CDATA[at Rustline.Tests.MovementLabPlayModeTests+<Player_AlternatesWallKicksAcrossFourCellShaft>d__15.MoveNext () [0x00318] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\MovementLabPlayModeTests.cs:1192
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@629486125cfc\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1045" name="Player_CoyoteJumpKeepsImpulseWithoutSpawningFloatingDust" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_CoyoteJumpKeepsImpulseWithoutSpawningFloatingDust" methodname="Player_CoyoteJumpKeepsImpulseWithoutSpawningFloatingDust" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1380073146" result="Passed" start-time="2026-09-09 19:56:17Z" end-time="2026-09-09 19:56:19Z" duration="1.558308" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1049" name="Player_CrouchJumpRequiresClearanceAndAirborneInputDoesNotShrink" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_CrouchJumpRequiresClearanceAndAirborneInputDoesNotShrink" methodname="Player_CrouchJumpRequiresClearanceAndAirborneInputDoesNotShrink" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1214820327" result="Passed" start-time="2026-09-09 19:56:19Z" end-time="2026-09-09 19:56:19Z" duration="0.811616" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1047" name="Player_CrouchPresentationUsesStaticIdleAndSynchronizedMoveCycle" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_CrouchPresentationUsesStaticIdleAndSynchronizedMoveCycle" methodname="Player_CrouchPresentationUsesStaticIdleAndSynchronizedMoveCycle" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="903590253" result="Passed" start-time="2026-09-09 19:56:19Z" end-time="2026-09-09 19:56:23Z" duration="3.692960" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1048" name="Player_CrouchPreservesFeetBlocksStandAndAutoStandsAfterTunnel" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_CrouchPreservesFeetBlocksStandAndAutoStandsAfterTunnel" methodname="Player_CrouchPreservesFeetBlocksStandAndAutoStandsAfterTunnel" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="922673670" result="Passed" start-time="2026-09-09 19:56:23Z" end-time="2026-09-09 19:56:28Z" duration="5.043337" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1041" name="Player_GroundedRunningJumpAnchorsOnlyYThenEasesExactlyToBaseline" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_GroundedRunningJumpAnchorsOnlyYThenEasesExactlyToBaseline" methodname="Player_GroundedRunningJumpAnchorsOnlyYThenEasesExactlyToBaseline" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="580081962" result="Passed" start-time="2026-09-09 19:56:28Z" end-time="2026-09-09 19:56:30Z" duration="1.603605" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1042" name="Player_JumpTakeoffHoldsFinalLayeredFrameUntilFall" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_JumpTakeoffHoldsFinalLayeredFrameUntilFall" methodname="Player_JumpTakeoffHoldsFinalLayeredFrameUntilFall" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1541378334" result="Failed" start-time="2026-09-09 19:56:30Z" end-time="2026-09-09 19:56:31Z" duration="1.448807" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Arms overlay lagged or diverged from the displayed Body frame.
+  Expected: same as <player_salvager_arms_fall_0 (UnityEngine.Sprite)>
+  But was:  <player_salvager_longwatch_dmr_fall_aim_m40_0 (UnityEngine.Sprite)>
+]]></message>
+                <stack-trace><![CDATA[at Rustline.Tests.MovementLabPlayModeTests.AssertLayers (Rustline.Presentation.PlayerUnarmedArmsPresenter2D presenter, UnityEngine.SpriteRenderer bodyRenderer, UnityEngine.SpriteRenderer armsRenderer) [0x0004a] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\MovementLabPlayModeTests.cs:1519
+at Rustline.Tests.MovementLabPlayModeTests+<Player_JumpTakeoffHoldsFinalLayeredFrameUntilFall>d__5.MoveNext () [0x00460] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\MovementLabPlayModeTests.cs:448
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@629486125cfc\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1040" name="Player_LayeredPresentationStaysSynchronizedAcrossLocomotionStates" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_LayeredPresentationStaysSynchronizedAcrossLocomotionStates" methodname="Player_LayeredPresentationStaysSynchronizedAcrossLocomotionStates" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1979904338" result="Failed" start-time="2026-09-09 19:56:31Z" end-time="2026-09-09 19:56:33Z" duration="1.452628" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[Armed Longwatch owns the overlay for an unsupported Body sprite.]]></message>
+                <stack-trace><![CDATA[at Rustline.Tests.MovementLabPlayModeTests.AssertOwnedLayers (Rustline.Presentation.PlayerUnarmedArmsPresenter2D unarmedPresenter, Rustline.Presentation.PlayerLongwatchAimPresenter2D longwatchPresenter, UnityEngine.SpriteRenderer bodyRenderer, UnityEngine.SpriteRenderer armsRenderer) [0x00224] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\MovementLabPlayModeTests.cs:1492
+at Rustline.Tests.MovementLabPlayModeTests+<Player_LayeredPresentationStaysSynchronizedAcrossLocomotionStates>d__3.MoveNext () [0x0079d] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\MovementLabPlayModeTests.cs:253
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@629486125cfc\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+            </test-case>
+            <test-case id="1044" name="Player_LeftFacingDustKeepsTakeoffFacingAfterPlayerTurns" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_LeftFacingDustKeepsTakeoffFacingAfterPlayerTurns" methodname="Player_LeftFacingDustKeepsTakeoffFacingAfterPlayerTurns" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="2005017255" result="Passed" start-time="2026-09-09 19:56:33Z" end-time="2026-09-09 19:56:34Z" duration="1.064114" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1051" name="Player_LeftWallBraceAndKickUseActualWallSideAndPreserveImpulseLock" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_LeftWallBraceAndKickUseActualWallSideAndPreserveImpulseLock" methodname="Player_LeftWallBraceAndKickUseActualWallSideAndPreserveImpulseLock" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="280906112" result="Passed" start-time="2026-09-09 19:56:34Z" end-time="2026-09-09 19:56:34Z" duration="0.627289" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1046" name="Player_MovesJumpsAndRespawnsInMovementLab" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_MovesJumpsAndRespawnsInMovementLab" methodname="Player_MovesJumpsAndRespawnsInMovementLab" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="887529146" result="Passed" start-time="2026-09-09 19:56:34Z" end-time="2026-09-09 19:56:36Z" duration="1.366819" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1050" name="Player_RightWallBraceAndKickUseActualWallSideAndPreserveImpulseLock" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_RightWallBraceAndKickUseActualWallSideAndPreserveImpulseLock" methodname="Player_RightWallBraceAndKickUseActualWallSideAndPreserveImpulseLock" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1164685317" result="Passed" start-time="2026-09-09 19:56:36Z" end-time="2026-09-09 19:56:36Z" duration="0.622429" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1043" name="Player_RunningJumpDustStaysInWorldAndPlaysExactlyOnce" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_RunningJumpDustStaysInWorldAndPlaysExactlyOnce" methodname="Player_RunningJumpDustStaysInWorldAndPlaysExactlyOnce" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1083835567" result="Passed" start-time="2026-09-09 19:56:36Z" end-time="2026-09-09 19:56:38Z" duration="1.637469" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1039" name="Player_SpawnRemainsSupportedAfterCompositeInitialization" fullname="Rustline.Tests.MovementLabPlayModeTests.Player_SpawnRemainsSupportedAfterCompositeInitialization" methodname="Player_SpawnRemainsSupportedAfterCompositeInitialization" classname="Rustline.Tests.MovementLabPlayModeTests" runstate="Runnable" seed="1965725332" result="Passed" start-time="2026-09-09 19:56:38Z" end-time="2026-09-09 19:56:39Z" duration="0.568951" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1053" name="NativePixelPresentationPlayModeTests" fullname="Rustline.Tests.NativePixelPresentationPlayModeTests" classname="Rustline.Tests.NativePixelPresentationPlayModeTests" runstate="Runnable" testcasecount="3" result="Passed" start-time="2026-09-09 19:56:39Z" end-time="2026-09-09 19:56:40Z" duration="1.640573" total="3" passed="3" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1055" name="MovementLab_AllocatesAndTogglesNativeLogicalPresentation" fullname="Rustline.Tests.NativePixelPresentationPlayModeTests.MovementLab_AllocatesAndTogglesNativeLogicalPresentation" methodname="MovementLab_AllocatesAndTogglesNativeLogicalPresentation" classname="Rustline.Tests.NativePixelPresentationPlayModeTests" runstate="Runnable" seed="115846426" result="Passed" start-time="2026-09-09 19:56:39Z" end-time="2026-09-09 19:56:39Z" duration="0.391516" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1056" name="MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths" fullname="Rustline.Tests.NativePixelPresentationPlayModeTests.MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths" methodname="MovementLab_RendersWorldPixelsThroughRawAndPenumbraRenderGraphPaths" classname="Rustline.Tests.NativePixelPresentationPlayModeTests" runstate="Runnable" seed="440853219" result="Passed" start-time="2026-09-09 19:56:39Z" end-time="2026-09-09 19:56:40Z" duration="0.733103" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1054" name="Penumbra_MovementWhileOffRefreshesImmediatelyOnEnableAndAfterTargetRecreation" fullname="Rustline.Tests.NativePixelPresentationPlayModeTests.Penumbra_MovementWhileOffRefreshesImmediatelyOnEnableAndAfterTargetRecreation" methodname="Penumbra_MovementWhileOffRefreshesImmediatelyOnEnableAndAfterTargetRecreation" classname="Rustline.Tests.NativePixelPresentationPlayModeTests" runstate="Runnable" seed="338453049" result="Passed" start-time="2026-09-09 19:56:40Z" end-time="2026-09-09 19:56:40Z" duration="0.499421" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1057" name="PixelCameraFollowPlayModeTests" fullname="Rustline.Tests.PixelCameraFollowPlayModeTests" classname="Rustline.Tests.PixelCameraFollowPlayModeTests" runstate="Runnable" testcasecount="1" result="Passed" start-time="2026-09-09 19:56:40Z" end-time="2026-09-09 19:56:40Z" duration="0.213337" total="1" passed="1" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1058" name="Follow_PreservesContinuousSmoothingAndRecoilWithoutDirtyingUnchangedPixels" fullname="Rustline.Tests.PixelCameraFollowPlayModeTests.Follow_PreservesContinuousSmoothingAndRecoilWithoutDirtyingUnchangedPixels" methodname="Follow_PreservesContinuousSmoothingAndRecoilWithoutDirtyingUnchangedPixels" classname="Rustline.Tests.PixelCameraFollowPlayModeTests" runstate="Runnable" seed="617495338" result="Passed" start-time="2026-09-09 19:56:40Z" end-time="2026-09-09 19:56:40Z" duration="0.199707" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+          </test-suite>
+          <test-suite type="TestFixture" id="1059" name="PrototypeGroundEnemyPlayModeTests" fullname="Rustline.Tests.PrototypeGroundEnemyPlayModeTests" classname="Rustline.Tests.PrototypeGroundEnemyPlayModeTests" runstate="Runnable" testcasecount="2" result="Passed" start-time="2026-09-09 19:56:40Z" end-time="2026-09-09 19:56:44Z" duration="3.935296" total="2" passed="2" failed="0" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <test-case id="1060" name="LongwatchHitscan_ThreeShotsKillAndEncounterRestoresSameEnemy" fullname="Rustline.Tests.PrototypeGroundEnemyPlayModeTests.LongwatchHitscan_ThreeShotsKillAndEncounterRestoresSameEnemy" methodname="LongwatchHitscan_ThreeShotsKillAndEncounterRestoresSameEnemy" classname="Rustline.Tests.PrototypeGroundEnemyPlayModeTests" runstate="Runnable" seed="287190741" result="Passed" start-time="2026-09-09 19:56:40Z" end-time="2026-09-09 19:56:43Z" duration="2.290185" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+            </test-case>
+            <test-case id="1061" name="Patrol_StaysInBoundsReversesStopsOnDeathAndResetsExactly" fullname="Rustline.Tests.PrototypeGroundEnemyPlayModeTests.Patrol_StaysInBoundsReversesStopsOnDeathAndResetsExactly" methodname="Patrol_StaysInBoundsReversesStopsOnDeathAndResetsExactly" classname="Rustline.Tests.PrototypeGroundEnemyPlayModeTests" runstate="Runnable" seed="69365164" result="Passed" start-time="2026-09-09 19:56:43Z" end-time="2026-09-09 19:56:44Z" duration="1.628418" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <output><![CDATA[Saving results to: C:/Users/pedro/AppData/LocalLow/DefaultCompany/rustline\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

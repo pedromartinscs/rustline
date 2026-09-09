@@ -94,12 +94,13 @@ Current production status:
 - right-facing Fall is authored at all 19 angles as one `80×96` frame per direction, following the sole Body Fall frame;
 - generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
 - mouse-left primary fire now drives a semi-automatic Longwatch hitscan from the exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
-- firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall, while the exact continuous hitscan aim remains independent from 10-degree visual quantization; Jump, Land, Wall Brace, and Wall Kick remain blocked;
+- firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall, while the exact continuous hitscan aim remains independent from 10-degree visual quantization; Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked;
 - MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short distal one-source-pixel tracer streak, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
 - exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash attached beneath the recoil-driven weapon overlay;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
 - Fall aim is authored and integrated; Jump/Land carry art remains pending. Dedicated Wall Kick art is not currently required because the accepted Jump/Fall fallback remains sufficient unless future native-scale testing proves otherwise.
+- Longwatch LedgeClimb carry art is not authored. The immediate committed five-frame climb has no LedgeGrab/Hang state, releases overlay ownership to the matching unarmed Arms, and remains non-firing until grounded locomotion resumes.
 
 This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
 

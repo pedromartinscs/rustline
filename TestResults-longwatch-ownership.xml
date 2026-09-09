@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<test-run id="2" testcasecount="1" result="Failed(Child)" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0" engine-version="3.5.0.0" clr-version="4.0.30319.42000" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2,3503003">
+  <test-suite type="TestSuite" id="1068" name="rustline" fullname="rustline" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2.350300" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+    <properties>
+      <property name="platform" value="PlayMode" />
+    </properties>
+    <failure>
+      <message><![CDATA[One or more child tests had errors]]></message>
+    </failure>
+    <test-suite type="Assembly" id="1062" name="Rustline.PlayModeTests.dll" fullname="C:/Projetos/Github/rustline/Library/ScriptAssemblies/Rustline.PlayModeTests.dll" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2.324611" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+      <properties>
+        <property name="_PID" value="44240" />
+        <property name="_APPDOMAIN" value="Unity Child Domain" />
+        <property name="platform" value="PlayMode" />
+        <property name="EditorOnly" value="False" />
+      </properties>
+      <failure>
+        <message><![CDATA[One or more child tests had errors]]></message>
+      </failure>
+      <test-suite type="TestSuite" id="1063" name="Rustline" fullname="Rustline" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2.319074" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+        <properties />
+        <failure>
+          <message><![CDATA[One or more child tests had errors]]></message>
+        </failure>
+        <test-suite type="TestSuite" id="1064" name="Tests" fullname="Rustline.Tests" runstate="Runnable" testcasecount="51" result="Failed" site="Child" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2.302706" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+          <properties />
+          <failure>
+            <message><![CDATA[One or more child tests had errors]]></message>
+          </failure>
+          <test-suite type="TestFixture" id="1011" name="LongwatchAimPlayModeTests" fullname="Rustline.Tests.LongwatchAimPlayModeTests" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" testcasecount="7" result="Failed" site="Child" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2.284931" total="1" passed="0" failed="1" inconclusive="0" skipped="0" asserts="0">
+            <properties />
+            <failure>
+              <message><![CDATA[One or more child tests had errors]]></message>
+            </failure>
+            <test-case id="1015" name="Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires" fullname="Rustline.Tests.LongwatchAimPlayModeTests.Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires" methodname="Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires" classname="Rustline.Tests.LongwatchAimPlayModeTests" runstate="Runnable" seed="663919214" result="Failed" start-time="2026-09-09 19:58:33Z" end-time="2026-09-09 19:58:36Z" duration="2.258690" asserts="0">
+              <properties>
+                <property name="_JOINTYPE" value="UnityCombinatorial" />
+                <property name="retryIteration" value="0" />
+                <property name="repeatIteration" value="0" />
+              </properties>
+              <failure>
+                <message><![CDATA[  Expected: True
+  But was:  False
+]]></message>
+                <stack-trace><![CDATA[at Rustline.Tests.LongwatchAimPlayModeTests+<Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires>d__3.MoveNext () [0x00312] in C:\Projetos\Github\rustline\Assets\Tests\PlayMode\LongwatchAimPlayModeTests.cs:358
+at UnityEngine.TestTools.TestEnumerator+<Execute>d__7.MoveNext () [0x0004e] in .\Library\PackageCache\com.unity.test-framework@629486125cfc\UnityEngine.TestRunner\NUnitExtensions\Attributes\TestEnumerator.cs:44
+]]></stack-trace>
+              </failure>
+              <output><![CDATA[Saving results to: C:/Users/pedro/AppData/LocalLow/DefaultCompany/rustline\TestResults.xml
+]]></output>
+            </test-case>
+          </test-suite>
+        </test-suite>
+      </test-suite>
+    </test-suite>
+  </test-suite>
+</test-run>

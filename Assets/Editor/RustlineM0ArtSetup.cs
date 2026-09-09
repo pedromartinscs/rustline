@@ -72,6 +72,7 @@ namespace Rustline.Editor
             new SheetSpec(BodySpriteRoot, "player_salvager_body_land", 2),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_crouch", 6),
             new SheetSpec(BodySpriteRoot, "player_salvager_body_wall_brace", 2),
+            new SheetSpec(BodySpriteRoot, "player_salvager_body_ledge_climb", 5),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_idle", 2),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_run", 6),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_backpedal", 4),
@@ -80,6 +81,7 @@ namespace Rustline.Editor
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_land", 2),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_crouch", 6),
             new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_wall_brace", 2),
+            new SheetSpec(UnarmedArmsSpriteRoot, "player_salvager_arms_ledge_climb", 5),
         };
 
         private static readonly LongwatchDirectionSpec[] LongwatchDirections =
@@ -458,6 +460,7 @@ namespace Rustline.Editor
             // Same authored crouch sheet, deliberately reversed for crouched backpedal.
             AddPreview(previews, "CrouchBackpedal", "crouch", 7f, true, reverseFrames: true);
             AddPreview(previews, "WallBrace", "wall_brace", 6f, true);
+            AddPreview(previews, "LedgeClimb", "ledge_climb", 10f, false);
             return previews;
         }
 
@@ -1056,7 +1059,11 @@ namespace Rustline.Editor
             Require(jumpDust != null && jumpDust.width == 144 && jumpDust.height == 64,
                 "Jump dust must remain exactly 144x64 (three 48x64 full cells).");
 
-            string[] layeredStates = { "idle", "run", "backpedal", "jump", "fall", "land", "crouch", "wall_brace" };
+            string[] layeredStates =
+            {
+                "idle", "run", "backpedal", "jump", "fall", "land", "crouch", "wall_brace",
+                "ledge_climb",
+            };
             foreach (string state in layeredStates)
             {
                 string bodyPath = BodySpriteRoot + "/player_salvager_body_" + state + ".png";
@@ -1108,6 +1115,7 @@ namespace Rustline.Editor
                     { "Player_Body_CrouchMove", (6, 7f, true, "crouch") },
                     { "Player_Body_CrouchBackpedal", (6, 7f, true, "crouch") },
                     { "Player_Body_WallBrace", (2, 6f, true, "wall_brace") },
+                    { "Player_Body_LedgeClimb", (5, 10f, false, "ledge_climb") },
                 };
             foreach (KeyValuePair<string, (int frameCount, float frameRate, bool loop, string spriteState)> clipSpec in clipSpecs)
             {

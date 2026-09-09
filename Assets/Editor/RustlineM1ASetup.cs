@@ -320,6 +320,8 @@ namespace Rustline.Editor
             SerializedObject serialized = new SerializedObject(config);
             serialized.FindProperty("crouchColliderSize").vector2Value = new Vector2(1.05f, 2.375f);
             serialized.FindProperty("crouchColliderOffset").vector2Value = new Vector2(0f, 1.1875f);
+            serialized.FindProperty("maximumLedgeClimbUpwardSpeed").floatValue = 0.1f;
+            serialized.FindProperty("ledgeCaptureTolerance").floatValue = 0.25f;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             EditorUtility.SetDirty(config);
@@ -563,7 +565,7 @@ namespace Rustline.Editor
             string[] stateNames =
             {
                 "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
-                "CrouchBackpedal", "WallBrace",
+                "CrouchBackpedal", "WallBrace", "LedgeClimb",
             };
             HashSet<string> requiredStates = new HashSet<string>(stateNames);
             foreach (ChildAnimatorState child in stateMachine.states.ToArray())
@@ -651,8 +653,8 @@ namespace Rustline.Editor
             List<Sprite> longwatchMuzzleFlashFrames = LoadLongwatchMuzzleFlashFrames();
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
-            Require(bodyFrames.Count == 26 && armsFrames.Count == 26,
-                "The player prefab requires all 26 unique Body and Unarmed Arms frames.");
+            Require(bodyFrames.Count == 31 && armsFrames.Count == 31,
+                "The player prefab requires all 31 unique Body and Unarmed Arms frames.");
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
                 bodyBackpedalFrames.Count == 4 && bodyCrouchFrames.Count == 6 && bodyFallFrames.Count == 1 &&
                 longwatchIdleFrames.Count == 38 && longwatchRunFrames.Count == 114 &&
@@ -907,8 +909,12 @@ namespace Rustline.Editor
 
         private static List<Sprite> LoadLayeredPlayerFrames(string spriteRoot, string layerId)
         {
-            string[] states = { "idle", "run", "backpedal", "jump", "fall", "land", "crouch", "wall_brace" };
-            List<Sprite> frames = new List<Sprite>(26);
+            string[] states =
+            {
+                "idle", "run", "backpedal", "jump", "fall", "land", "crouch", "wall_brace",
+                "ledge_climb",
+            };
+            List<Sprite> frames = new List<Sprite>(31);
             foreach (string state in states)
             {
                 string path = spriteRoot + "/player_salvager_" + layerId + "_" + state + ".png";
@@ -2123,6 +2129,9 @@ namespace Rustline.Editor
                 Mathf.Approximately(config.WallKickVerticalSpeed, 11.5f) &&
                 Mathf.Approximately(config.WallKickLockDuration, 0.12f),
                 "Player wall-brace/wall-kick tuning changed from 4/8/11.5/0.12.");
+            Require(Mathf.Approximately(config.MaximumLedgeClimbUpwardSpeed, 0.1f) &&
+                Mathf.Approximately(config.LedgeCaptureTolerance, 0.25f),
+                "Player ledge-climb tuning changed from the accepted 0.1 upward / 0.25 capture contract.");
 
             InputActionAsset input = AssetDatabase.LoadAssetAtPath<InputActionAsset>(InputPath);
             InputActionMap playerMap = input?.FindActionMap("Player", false);
@@ -2173,7 +2182,7 @@ namespace Rustline.Editor
             string[] expectedGameplayStateNames =
             {
                 "Idle", "Run", "Backpedal", "Jump", "Fall", "Land", "CrouchIdle", "CrouchMove",
-                "CrouchBackpedal", "WallBrace",
+                "CrouchBackpedal", "WallBrace", "LedgeClimb",
             };
             Require(gameplayStates.Length == expectedGameplayStateNames.Length,
                 "Player gameplay Animator must contain exactly the required locomotion states.");
@@ -2228,7 +2237,7 @@ namespace Rustline.Editor
                     "Visual - 48x64 Full Cell/ArmsWeaponSpriteRenderer"),
                 "Player prefab Longwatch presentation recoil wiring is incomplete.");
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
-            Require(armsPresenter != null && armsPresenter.MappingCount == 26 && armsPresenter.OwnsRenderer,
+            Require(armsPresenter != null && armsPresenter.MappingCount == 31 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
             PlayerLongwatchAimPresenter2D longwatchPresenter =
                 prefab.GetComponent<PlayerLongwatchAimPresenter2D>();
