@@ -12,9 +12,10 @@ namespace Rustline.Gameplay.Player
         public const float PixelsPerUnit = 16f;
         public const float SourcePixel = 1f / PixelsPerUnit;
         public const float FrameDuration = 0.1f;
-        public const float AuthoredPhaseDuration = 0.4f;
-        public const float SettleDuration = 0.16f;
-        public const float TotalDuration = AuthoredPhaseDuration + SettleDuration;
+        // Five authored frames at 10 fps. Frame 4 is held at its calibrated ledge-contact
+        // position until the state ends; the physical handoff to standing happens atomically
+        // at the same boundary where presentation leaves LedgeClimb.
+        public const float TotalDuration = FrameCount * FrameDuration;
         public const float ContactOffsetXPixels = 16.5f;
         public const float ContactOffsetYPixels = 40.5f;
 
@@ -48,25 +49,11 @@ namespace Rustline.Gameplay.Player
 
         public static Vector2 GetPosition(
             Vector2 captureRootPosition,
-            Vector2 finalRootPosition,
             int side,
             float elapsed)
         {
             int frame = GetFrameIndex(elapsed);
-            Vector2 authoredPosition = captureRootPosition + GetRootOffset(frame, side);
-            if (elapsed <= AuthoredPhaseDuration)
-            {
-                return authoredPosition;
-            }
-
-            float progress = (elapsed - AuthoredPhaseDuration) / SettleDuration;
-            return Vector2.Lerp(authoredPosition, finalRootPosition, EaseOutCubic(progress));
-        }
-
-        public static float EaseOutCubic(float normalizedTime)
-        {
-            float inverse = 1f - Mathf.Clamp01(normalizedTime);
-            return 1f - inverse * inverse * inverse;
+            return captureRootPosition + GetRootOffset(frame, side);
         }
     }
 }

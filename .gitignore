@@ -54,3 +54,9 @@ Desktop.ini
 !.env.example
 
 .vsconfig
+
+# Local Unity test-run artifacts
+/TestResults-*.xml
+/*.log
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta

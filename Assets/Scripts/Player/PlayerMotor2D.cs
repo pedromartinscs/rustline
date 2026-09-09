@@ -253,17 +253,19 @@ namespace Rustline.Gameplay.Player
             _ledgeClimbElapsed = Mathf.Min(
                 PlayerLedgeClimbMotion2D.TotalDuration,
                 _ledgeClimbElapsed + deltaTime);
-            _body.position = PlayerLedgeClimbMotion2D.GetPosition(
-                _ledgeCaptureRootPosition,
-                _ledgeFinalRootPosition,
-                LedgeSide,
-                _ledgeClimbElapsed);
 
             if (_ledgeClimbElapsed < PlayerLedgeClimbMotion2D.TotalDuration)
             {
+                _body.position = PlayerLedgeClimbMotion2D.GetPosition(
+                    _ledgeCaptureRootPosition,
+                    LedgeSide,
+                    _ledgeClimbElapsed);
                 return;
             }
 
+            // Do not translate authored frame 4 after its hands reach the ledge. The final
+            // standing placement happens only at the state boundary, when presentation also
+            // leaves LedgeClimb for grounded locomotion.
             _body.position = _ledgeFinalRootPosition;
             _body.linearVelocity = Vector2.zero;
             _collider.enabled = true;
