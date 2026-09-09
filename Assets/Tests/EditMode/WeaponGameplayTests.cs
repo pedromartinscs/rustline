@@ -46,13 +46,13 @@ namespace Rustline.Tests
         [TestCase(PlayerAnimationState.Backpedal)]
         [TestCase(PlayerAnimationState.CrouchIdle)]
         [TestCase(PlayerAnimationState.CrouchMove)]
+        [TestCase(PlayerAnimationState.Fall)]
         public void FirePolicy_AllowsAuthoredGroundedLongwatchStates(PlayerAnimationState state)
         {
             Assert.That(WeaponFirePolicy2D.CanFire(state, false, false), Is.True);
         }
 
         [TestCase(PlayerAnimationState.Jump)]
-        [TestCase(PlayerAnimationState.Fall)]
         [TestCase(PlayerAnimationState.Land)]
         [TestCase(PlayerAnimationState.WallBrace)]
         public void FirePolicy_BlocksStatesWithoutAuthoredLongwatchPresentation(PlayerAnimationState state)

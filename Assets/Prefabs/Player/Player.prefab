@@ -1309,6 +1309,47 @@ MonoBehaviour:
     frame3: {fileID: 1815168086113418463, guid: 63bcbaffd589c4d4e91058332eb0c5bc, type: 3}
     frame4: {fileID: 1860151934639821565, guid: 63bcbaffd589c4d4e91058332eb0c5bc, type: 3}
     frame5: {fileID: -3440589793527348654, guid: 63bcbaffd589c4d4e91058332eb0c5bc, type: 3}
+  bodyFallFrames:
+  - {fileID: 3318448561657881336, guid: 467ef8f65985cc44fada5f0d70207087, type: 3}
+  fallAimPoses:
+  - angleDegrees: 90
+    frame0: {fileID: 1679381264733122737, guid: 69034688af704fb40b44778dcdfdd65f, type: 3}
+  - angleDegrees: 80
+    frame0: {fileID: -1033591303859918256, guid: 17632c46d2a9d984bb5df5eb77a42a39, type: 3}
+  - angleDegrees: 70
+    frame0: {fileID: 554240274931344592, guid: 476d1eb2d931a114d9ece1bff90210a9, type: 3}
+  - angleDegrees: 60
+    frame0: {fileID: 1499795460102649586, guid: 9d576e73065b5634a8e6840200c27939, type: 3}
+  - angleDegrees: 50
+    frame0: {fileID: -5021614701993023118, guid: c1ec38eaad866c04e8653df67e6f6733, type: 3}
+  - angleDegrees: 40
+    frame0: {fileID: 295784365248530236, guid: 2c4c9293c8fdc1047b910ed0452a9162, type: 3}
+  - angleDegrees: 30
+    frame0: {fileID: -3008701756143282092, guid: 495706ed3b502824289c9c591738a73f, type: 3}
+  - angleDegrees: 20
+    frame0: {fileID: 4708123574921588722, guid: b29f1179ed2d11e41ad1bbc077d3aa0c, type: 3}
+  - angleDegrees: 10
+    frame0: {fileID: 8499112379194560209, guid: ccaff0714c0207449b503e439eeb1061, type: 3}
+  - angleDegrees: 0
+    frame0: {fileID: 4459696444015289713, guid: 34869d951aa10a948ba2dcfa481fcf86, type: 3}
+  - angleDegrees: -10
+    frame0: {fileID: 5840248903700018070, guid: fc5362f51f46a624b9e56065d72c4253, type: 3}
+  - angleDegrees: -20
+    frame0: {fileID: 3339308984356633783, guid: 2ff6dec27a74db24fb641fd2c65e5b90, type: 3}
+  - angleDegrees: -30
+    frame0: {fileID: 6086353402405600679, guid: ff1f0b719d87ed84e870e7562f58534a, type: 3}
+  - angleDegrees: -40
+    frame0: {fileID: 4305961884076684068, guid: 8f5042757d22bb646b7e72facb24a09f, type: 3}
+  - angleDegrees: -50
+    frame0: {fileID: 5888916311298080970, guid: 7d875cecba395f54ca894a4d0bbcf51e, type: 3}
+  - angleDegrees: -60
+    frame0: {fileID: 7499967389702766403, guid: fa1f7a8539daa854a96b76646b8566fd, type: 3}
+  - angleDegrees: -70
+    frame0: {fileID: 7589191758945345992, guid: 42f5cb1fc475d444099b60e7b22d00a4, type: 3}
+  - angleDegrees: -80
+    frame0: {fileID: 4601709783436468705, guid: 2e5a3ea8c1eb70b498beb297fea37b89, type: 3}
+  - angleDegrees: -90
+    frame0: {fileID: -1400660450956173746, guid: 392f90962295d1542917af8f492f0c81, type: 3}
 --- !u!114 &1662337730154184211
 MonoBehaviour:
   m_ObjectHideFlags: 0

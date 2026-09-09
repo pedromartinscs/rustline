@@ -106,6 +106,26 @@ namespace Rustline.Presentation
         }
     }
 
+    [Serializable]
+    public struct LongwatchFallAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+
+        public int AngleDegrees => angleDegrees;
+        public Sprite Frame0 => frame0;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            if (frameIndex != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+
+            return frame0;
+        }
+    }
+
     /// <summary>
     /// Owns the shared overlay renderer while the prototype Longwatch is in an
     /// authored aim-capable state. Body remains Animator-driven; its displayed
@@ -131,6 +151,8 @@ namespace Rustline.Presentation
         [SerializeField] private LongwatchBackpedalAimPose[] backpedalAimPoses = Array.Empty<LongwatchBackpedalAimPose>();
         [SerializeField] private Sprite[] bodyCrouchFrames = Array.Empty<Sprite>();
         [SerializeField] private LongwatchCrouchAimPose[] crouchAimPoses = Array.Empty<LongwatchCrouchAimPose>();
+        [SerializeField] private Sprite[] bodyFallFrames = Array.Empty<Sprite>();
+        [SerializeField] private LongwatchFallAimPose[] fallAimPoses = Array.Empty<LongwatchFallAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -157,6 +179,8 @@ namespace Rustline.Presentation
         public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
         public int BodyCrouchFrameCount => bodyCrouchFrames?.Length ?? 0;
         public int CrouchAimPoseCount => crouchAimPoses?.Length ?? 0;
+        public int BodyFallFrameCount => bodyFallFrames?.Length ?? 0;
+        public int FallAimPoseCount => fallAimPoses?.Length ?? 0;
         public bool OwnsRenderer => _ownsRenderer;
         public bool HasValidAim => playerAim != null && playerAim.HasValidAim;
         public LongwatchAimSelection Selection => _selection;
@@ -219,6 +243,11 @@ namespace Rustline.Presentation
                         armsWeaponSpriteRenderer.sprite = crouchAimPoses[directionIndex].GetFrame(bodyFrameIndex);
                         authoredAngleDegrees = crouchAimPoses[directionIndex].AngleDegrees;
                         muzzleState = LongwatchMuzzleState2D.Crouch;
+                        break;
+                    case PlayerAnimationState.Fall:
+                        armsWeaponSpriteRenderer.sprite = fallAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        authoredAngleDegrees = fallAimPoses[directionIndex].AngleDegrees;
+                        muzzleState = LongwatchMuzzleState2D.Fall;
                         break;
                     default:
                         _hasRenderedPose = false;
@@ -290,6 +319,16 @@ namespace Rustline.Presentation
             return bodyCrouchFrames[index];
         }
 
+        public LongwatchFallAimPose GetFallAimPose(int index)
+        {
+            return fallAimPoses[index];
+        }
+
+        public Sprite GetBodyFallFrame(int index)
+        {
+            return bodyFallFrames[index];
+        }
+
         public bool TryGetCurrentRenderedPose(out LongwatchRenderedPose2D pose)
         {
             if (_ownsRenderer && _hasRenderedPose)
@@ -312,7 +351,7 @@ namespace Rustline.Presentation
             PlayerAnimationState? state = playerAnimator.CurrentState;
             return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run ||
                    state == PlayerAnimationState.Backpedal || state == PlayerAnimationState.CrouchIdle ||
-                   state == PlayerAnimationState.CrouchMove;
+                   state == PlayerAnimationState.CrouchMove || state == PlayerAnimationState.Fall;
         }
 
         private bool TryResolveDisplayedBodyFrame(
@@ -362,6 +401,16 @@ namespace Rustline.Presentation
                 }
             }
 
+            for (int index = 0; index < bodyFallFrames.Length; index++)
+            {
+                if (displayedBody == bodyFallFrames[index])
+                {
+                    bodyState = PlayerAnimationState.Fall;
+                    frameIndex = index;
+                    return true;
+                }
+            }
+
             bodyState = PlayerAnimationState.Idle;
             frameIndex = -1;
             return false;
@@ -400,7 +449,9 @@ namespace Rustline.Presentation
                    bodyBackpedalFrames != null && bodyBackpedalFrames.Length == 4 &&
                    backpedalAimPoses != null && backpedalAimPoses.Length == 19 &&
                    bodyCrouchFrames != null && bodyCrouchFrames.Length == 6 &&
-                   crouchAimPoses != null && crouchAimPoses.Length == 19;
+                   crouchAimPoses != null && crouchAimPoses.Length == 19 &&
+                   bodyFallFrames != null && bodyFallFrames.Length == 1 &&
+                   fallAimPoses != null && fallAimPoses.Length == 19;
         }
 
         private void AcquireRenderer()

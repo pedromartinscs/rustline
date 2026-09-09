@@ -16,7 +16,7 @@ from PIL import Image
 
 WEAPON_ID = "longwatch_dmr"
 SCHEMA_VERSION = 1
-GENERATOR_VERSION = 1
+GENERATOR_VERSION = 2
 CELL_WIDTH = 80
 CELL_HEIGHT = 96
 PIVOT_X = 24
@@ -62,6 +62,7 @@ STATE_SPECS = (
     StateSpec("Run", "Run", "run", 6),
     StateSpec("Backpedal", "Backpedal", "backpedal", 4),
     StateSpec("Crouch", "Crouch", "crouch", 6),
+    StateSpec("Fall", "Fall", "fall", 1),
 )
 
 Pixel = tuple[int, int, int, int]
@@ -476,7 +477,7 @@ def print_summary(result: GenerationResult, output_path: Path, check: bool) -> N
         crouch = "unsupported" if suffix in UNSUPPORTED_CROUCH_DIRECTIONS else "6/6"
         print(
             f"{suffix:>3}  signature {result.signature_sizes[suffix]}x{result.signature_sizes[suffix]}  "
-            f"Idle 2/2 Run 6/6 Backpedal 4/4 Crouch {crouch}"
+            f"Idle 2/2 Run 6/6 Backpedal 4/4 Crouch {crouch} Fall 1/1"
         )
     verb = "checked" if check else "generated"
     print(f"{verb}: {output_path}")

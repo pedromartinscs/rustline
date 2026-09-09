@@ -31,6 +31,8 @@ namespace Rustline.Editor
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
         private const string LongwatchCrouchAimRoot =
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
+        private const string LongwatchFallAimRoot =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Fall";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string LongwatchMuzzleFlashPath =
@@ -156,6 +158,8 @@ namespace Rustline.Editor
             internal string BackpedalAssetPath => LongwatchBackpedalAimRoot + "/" + BackpedalFileName + ".png";
             internal string CrouchFileName => "player_salvager_longwatch_dmr_crouch_aim_" + Suffix;
             internal string CrouchAssetPath => LongwatchCrouchAimRoot + "/" + CrouchFileName + ".png";
+            internal string FallFileName => "player_salvager_longwatch_dmr_fall_aim_" + Suffix;
+            internal string FallAssetPath => LongwatchFallAimRoot + "/" + FallFileName + ".png";
         }
 
         private sealed class PreviewAsset
@@ -311,6 +315,14 @@ namespace Rustline.Editor
                     96,
                     6,
                     index => direction.CrouchFileName + "_" + index,
+                    new Vector2(0.3f, 8f / 96f),
+                    logicalRowsRunTopToBottom: false);
+                ConfigureFixedGrid(
+                    direction.FallAssetPath,
+                    80,
+                    96,
+                    1,
+                    index => direction.FallFileName + "_" + index,
                     new Vector2(0.3f, 8f / 96f),
                     logicalRowsRunTopToBottom: false);
             }
@@ -1027,6 +1039,7 @@ namespace Rustline.Editor
             ValidateLongwatchRunAimSheets();
             ValidateLongwatchBackpedalAimSheets();
             ValidateLongwatchCrouchAimSheets();
+            ValidateLongwatchFallAimSheets();
             ValidateLongwatchMuzzleFlash();
 
             ValidateImporter(JumpDustPath);
@@ -1382,6 +1395,48 @@ namespace Rustline.Editor
 
             Require(importedSpriteCount == 114,
                 "Longwatch Crouch aim package must import exactly 114 sprites.");
+        }
+
+        private static void ValidateLongwatchFallAimSheets()
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absoluteRoot = Path.Combine(projectRoot, LongwatchFallAimRoot);
+            Require(Directory.Exists(absoluteRoot), "Longwatch Fall aim source folder is missing.");
+            string[] actualPngs = Directory.GetFiles(absoluteRoot, "*.png", SearchOption.TopDirectoryOnly);
+            Require(actualPngs.Length == LongwatchDirections.Length,
+                "Longwatch Fall aim folder must contain exactly the 19 expected direction PNGs.");
+
+            HashSet<string> expectedFiles = new HashSet<string>(
+                LongwatchDirections.Select(direction => direction.FallFileName + ".png"),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string actualPath in actualPngs)
+            {
+                Require(expectedFiles.Contains(Path.GetFileName(actualPath)),
+                    "Unexpected Longwatch Fall aim direction file: " + Path.GetFileName(actualPath));
+            }
+
+            int importedSpriteCount = 0;
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
+            {
+                ValidateImporter(direction.FallAssetPath);
+                ValidateSpriteGrid(
+                    direction.FallAssetPath,
+                    80,
+                    96,
+                    1,
+                    false,
+                    index => direction.FallFileName + "_" + index,
+                    new Vector2(24f, 8f));
+                ValidateSourcePixels(direction.FallAssetPath);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(direction.FallAssetPath);
+                Require(texture != null && texture.width == 80 && texture.height == 96,
+                    direction.FallAssetPath + " must remain exactly 80x96 (one 80x96 cell).");
+                importedSpriteCount += LoadSprites(direction.FallAssetPath).Count();
+            }
+
+            Require(importedSpriteCount == 19,
+                "Longwatch Fall aim package must import exactly 19 sprites.");
         }
 
         private static void ValidateLongwatchMuzzleFlash()

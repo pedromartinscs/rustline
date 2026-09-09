@@ -194,9 +194,9 @@ ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata
 
 The JSON is derived data and must not be edited by hand. Re-running the generator after an art change is expected to update the file, producing a useful Git diff of changed muzzle points.
 
-The current schema is version 1 with generator version 1. The validated
-Longwatch corpus contains 324 supported frame points: 38 Idle, 114 Run, 76
-Backpedal, and 96 Crouch. Crouch `m70`, `m80`, and `m90` are present as explicit
+The current schema is version 1 with generator version 2. The validated
+Longwatch corpus contains 343 supported frame points: 38 Idle, 114 Run, 76
+Backpedal, 96 Crouch, and 19 Fall. Crouch `m70`, `m80`, and `m90` are present as explicit
 unsupported direction entries with empty frame arrays.
 
 The schema must be versioned and include enough information to validate:
@@ -221,7 +221,7 @@ Unity Editor C# consumes the generated JSON through `RustlineM1ASetup` and seria
 Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
 ```
 
-The asset contains all 324 supported points and preserves Crouch `m70`, `m80`, and `m90` as unsupported direction records with no frame coordinates. `PlayerLongwatchAimPresenter2D` exposes the state, direction, authored angle, displayed Body frame, and facing of the weapon sprite actually rendered. The muzzle-flash presenter performs a direct indexed lookup after that visual pose has been selected.
+The asset contains all 343 supported points, including all 19 one-frame Fall directions, and preserves Crouch `m70`, `m80`, and `m90` as unsupported direction records with no frame coordinates. `PlayerLongwatchAimPresenter2D` exposes the state, direction, authored angle, displayed Body frame, and facing of the weapon sprite actually rendered. The muzzle-flash presenter performs a direct indexed lookup after that visual pose has been selected.
 
 Runtime gameplay must not:
 

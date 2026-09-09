@@ -317,7 +317,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator Longwatch_ReleasesForJumpFallAndLandThenReacquires()
+        public IEnumerator Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -355,7 +355,15 @@ namespace Rustline.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
                 yield return WaitForAnimationState(playerAnimator, PlayerAnimationState.Fall, 240);
-                AssertUnarmedOwnership(armed, unarmed, bodyRenderer, armsRenderer);
+                Assert.That(armed.OwnsRenderer, Is.True);
+                Assert.That(unarmed.OwnsRenderer, Is.False);
+                Assert.That(armed.TryGetCurrentRenderedPose(out LongwatchRenderedPose2D fallPose), Is.True);
+                Assert.That(fallPose.State, Is.EqualTo(LongwatchMuzzleState2D.Fall));
+                Assert.That(fallPose.FrameIndex, Is.Zero);
+                Assert.That(fallPose.AuthoredAngleDegrees, Is.EqualTo(-30));
+                Assert.That(fallPose.FacingLeft, Is.True);
+                Assert.That(armsRenderer.sprite.name,
+                    Is.EqualTo("player_salvager_longwatch_dmr_fall_aim_m30_0"));
                 yield return WaitForAnimationState(playerAnimator, PlayerAnimationState.Land, 240);
                 AssertUnarmedOwnership(armed, unarmed, bodyRenderer, armsRenderer);
                 yield return WaitForArmedState(armed, PlayerAnimationState.Idle, 120);

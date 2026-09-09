@@ -21,6 +21,8 @@ namespace Rustline.Tests
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Backpedal";
         private const string LongwatchCrouchRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
+        private const string LongwatchFallRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Fall";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
 
@@ -334,6 +336,31 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void AllLongwatchFallSheets_MatchAuthoredSingleFrameContract()
+        {
+            string[] importedGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { LongwatchFallRoot });
+            Assert.That(importedGuids, Has.Length.EqualTo(19));
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string baseName = "player_salvager_longwatch_dmr_fall_aim_" +
+                    DirectionSuffixes[directionIndex];
+                string path = LongwatchFallRoot + "/" + baseName + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                Assert.That(texture, Is.Not.Null, path);
+                Assert.That(texture.width, Is.EqualTo(80), path);
+                Assert.That(texture.height, Is.EqualTo(96), path);
+                AssertLongwatchImporter(path);
+                List<Sprite> sprites = LoadSprites(path);
+                Assert.That(sprites, Has.Count.EqualTo(1), path);
+                Assert.That(sprites[0].name, Is.EqualTo(baseName + "_0"));
+                Assert.That(sprites[0].rect, Is.EqualTo(new Rect(0, 0, 80, 96)));
+                Assert.That(Vector2.Distance(sprites[0].pivot, new Vector2(24f, 8f)), Is.LessThan(0.001f));
+                Assert.That(sprites[0].pixelsPerUnit, Is.EqualTo(16f));
+                AssertSourcePixels(path);
+            }
+        }
+
+        [Test]
         public void PlayerPrefab_ContainsCompleteLongwatchPoseMapping()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
@@ -348,6 +375,8 @@ namespace Rustline.Tests
             Assert.That(presenter.BackpedalAimPoseCount, Is.EqualTo(19));
             Assert.That(presenter.BodyCrouchFrameCount, Is.EqualTo(6));
             Assert.That(presenter.CrouchAimPoseCount, Is.EqualTo(19));
+            Assert.That(presenter.BodyFallFrameCount, Is.EqualTo(1));
+            Assert.That(presenter.FallAimPoseCount, Is.EqualTo(19));
             PlayerAim2D playerAim = prefab.GetComponent<PlayerAim2D>();
             Assert.That(playerAim, Is.Not.Null);
             Assert.That(presenter.PlayerAim, Is.SameAs(playerAim));
@@ -359,6 +388,8 @@ namespace Rustline.Tests
             HashSet<Sprite> mappedRunSprites = new HashSet<Sprite>();
             HashSet<Sprite> mappedBackpedalSprites = new HashSet<Sprite>();
             HashSet<Sprite> mappedCrouchSprites = new HashSet<Sprite>();
+            HashSet<Sprite> mappedFallSprites = new HashSet<Sprite>();
+            Assert.That(presenter.GetBodyFallFrame(0).name, Is.EqualTo("player_salvager_body_fall_0"));
             for (int frameIndex = 0; frameIndex < 6; frameIndex++)
             {
                 Assert.That(presenter.GetBodyCrouchFrame(frameIndex).name,
@@ -402,12 +433,18 @@ namespace Rustline.Tests
                         Does.EndWith("_" + DirectionSuffixes[index] + "_" + frameIndex));
                     Assert.That(mappedCrouchSprites.Add(frame), Is.True);
                 }
+
+                LongwatchFallAimPose fallPose = presenter.GetFallAimPose(index);
+                Assert.That(fallPose.AngleDegrees, Is.EqualTo(DirectionAngles[index]));
+                Assert.That(fallPose.Frame0.name, Does.EndWith("_" + DirectionSuffixes[index] + "_0"));
+                Assert.That(mappedFallSprites.Add(fallPose.Frame0), Is.True);
             }
 
             Assert.That(mappedIdleSprites, Has.Count.EqualTo(38));
             Assert.That(mappedRunSprites, Has.Count.EqualTo(114));
             Assert.That(mappedBackpedalSprites, Has.Count.EqualTo(76));
             Assert.That(mappedCrouchSprites, Has.Count.EqualTo(114));
+            Assert.That(mappedFallSprites, Has.Count.EqualTo(19));
         }
 
         [Test]

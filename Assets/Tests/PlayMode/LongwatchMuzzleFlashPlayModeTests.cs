@@ -128,6 +128,36 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
+        public IEnumerator FallShot_UsesQuantizedVisualAndExactContinuousAimWithMirroredMetadata()
+        {
+            yield return LoadFixture();
+            GetFixture(out PlayerWeaponController2D weapon, out PlayerAim2D aim,
+                out PlayerAnimator2D animator, out PlayerLongwatchAimPresenter2D longwatch,
+                out LongwatchMuzzleFlashPresenter2D flash);
+
+            Vector2 exactDirection = Direction(27f, true);
+            ForcePose(animator, aim, longwatch, PlayerAnimationState.Fall,
+                longwatch.GetBodyFallFrame(0), exactDirection, true);
+            yield return null;
+            Assert.That(longwatch.OwnsRenderer, Is.True);
+            Assert.That(longwatch.TryGetCurrentRenderedPose(out LongwatchRenderedPose2D pose), Is.True);
+            Assert.That(pose.State, Is.EqualTo(LongwatchMuzzleState2D.Fall));
+            Assert.That(pose.AuthoredAngleDegrees, Is.EqualTo(30));
+            Assert.That(pose.FrameIndex, Is.Zero);
+            Assert.That(pose.FacingLeft, Is.True);
+            Assert.That(longwatch.ArmsWeaponSpriteRenderer.sprite.name,
+                Is.EqualTo("player_salvager_longwatch_dmr_fall_aim_p30_0"));
+
+            Assert.That(weapon.TryFire(350f), Is.True);
+            Assert.That(weapon.LastShotResult.Direction, Is.EqualTo(exactDirection));
+            Assert.That(weapon.WeaponDefinition.Range, Is.EqualTo(80f));
+            Assert.That(weapon.LastShotResult.Damage, Is.EqualTo(40));
+            yield return null;
+            Assert.That(flash.IsVisible, Is.True);
+            AssertFlashTransform(flash, pose);
+        }
+
+        [UnityTest]
         public IEnumerator UnsupportedCrouchShot_ResolvesGameplayButDoesNotDisplayFakeFlash()
         {
             yield return LoadFixture();

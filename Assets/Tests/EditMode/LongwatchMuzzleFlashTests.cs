@@ -100,17 +100,26 @@ namespace Rustline.Tests
                 AssetDatabase.LoadAssetAtPath<LongwatchMuzzleMetadata2D>(MetadataPath);
             Assert.That(metadata, Is.Not.Null);
             Assert.That(metadata.SchemaVersion, Is.EqualTo(1));
-            Assert.That(metadata.GeneratorVersion, Is.EqualTo(1));
+            Assert.That(metadata.GeneratorVersion, Is.EqualTo(2));
             Assert.That(metadata.WeaponId, Is.EqualTo("longwatch_dmr"));
             Assert.That(metadata.CellSizePixels, Is.EqualTo(new Vector2Int(80, 96)));
             Assert.That(metadata.PivotPixels, Is.EqualTo(new Vector2Int(24, 8)));
-            Assert.That(metadata.GetSupportedPointCount(), Is.EqualTo(324));
+            Assert.That(metadata.GetSupportedPointCount(), Is.EqualTo(343));
 
             AssertOffset(metadata, LongwatchMuzzleState2D.Idle, 0, 0, new Vector2(-5.5f, 84.5f));
             AssertOffset(metadata, LongwatchMuzzleState2D.Idle, 9, 1, new Vector2(41.5f, 42.5f));
             AssertOffset(metadata, LongwatchMuzzleState2D.Run, 6, 4, new Vector2(41.5f, 66.5f));
             AssertOffset(metadata, LongwatchMuzzleState2D.Backpedal, 13, 3, new Vector2(27.5f, 15.5f));
             AssertOffset(metadata, LongwatchMuzzleState2D.Crouch, 15, 5, new Vector2(24.5f, -4.5f));
+            for (int directionIndex = 0; directionIndex < 19; directionIndex++)
+            {
+                LongwatchMuzzleDirection2D fall =
+                    metadata.GetDirection(LongwatchMuzzleState2D.Fall, directionIndex);
+                Assert.That(fall.Supported, Is.True);
+                Assert.That(fall.FrameCount, Is.EqualTo(1));
+                Assert.That(metadata.TryGetMuzzleOffset(
+                    LongwatchMuzzleState2D.Fall, directionIndex, 0, out _), Is.True);
+            }
 
             for (int directionIndex = 16; directionIndex < 19; directionIndex++)
             {
@@ -154,6 +163,12 @@ namespace Rustline.Tests
                 AssertPose(presenter, animator, aim, armsRenderer,
                     PlayerAnimationState.CrouchMove, presenter.GetBodyCrouchFrame(5),
                     Direction(-20f, false), LongwatchMuzzleState2D.Crouch, 11, -20, 5, false);
+                AssertPose(presenter, animator, aim, armsRenderer,
+                    PlayerAnimationState.Fall, presenter.GetBodyFallFrame(0),
+                    Direction(27f, false), LongwatchMuzzleState2D.Fall, 6, 30, 0, false);
+                AssertPose(presenter, animator, aim, armsRenderer,
+                    PlayerAnimationState.Fall, presenter.GetBodyFallFrame(0),
+                    Direction(27f, true), LongwatchMuzzleState2D.Fall, 6, 30, 0, true);
             }
             finally
             {

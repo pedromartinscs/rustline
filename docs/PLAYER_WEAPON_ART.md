@@ -265,7 +265,7 @@ Production folder is `Aim/Backpedal`, filenames follow `player_salvager_longwatc
 
 The Longwatch Crouch package is one authoritative six-frame set per direction. Each of the 19 directions is one `480×96` PNG containing six horizontal `80×96` cells, stored in `Aim/Crouch` as `player_salvager_longwatch_dmr_crouch_aim_<direction>.png`, for **114 final crouch armed sprites**. Crouch Idle reuses armed frame 0 and never advances a breathing cycle. Forward Crouch Move follows displayed Body frames 0..5 one-to-one. Presentation-only crouch backpedal uses the same armed sprites as the Body Animator displays the shared crouch cycle in reverse, 5..0; there is no separately authored Longwatch CrouchBackpedal package.
 
-For the current Run and Backpedal packages and future Fall aim-capable art, preserve the same principles:
+For the current Run, Backpedal, and Fall packages, preserve the same principles:
 
 - one authored sprite for every `animation frame × aim direction` combination;
 - fixed armed-cell geometry and common body pivot;
@@ -297,7 +297,7 @@ ArtSource/Concepts/Player_concept.png
 
 The standalone weapon concept is a design reference. The final production authority for hand placement, silhouette, palette, and per-angle pixel cleanup is the authored Arms/Weapon overlay artwork.
 
-The Longwatch Idle, Run, Backpedal, and Crouch packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run and Crouch each supply 6, and Backpedal supplies exactly 4. Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, 5° vertical facing hysteresis, renderer ownership, and Body-clock frame synchronization. The corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved. The accepted Backpedal solution keeps the right foot visually ahead while alternating short backward steps, preserving a convincing four-frame cycle. The four-frame contract remains unchanged; playback is tuned to 7.0 fps while grounded Backpedal remains 4 units/s. Longwatch crouch integration is automated and complete, but still requires separate human native-scale visual approval. Fall aim and Jump/Land/Roll carry art remain deferred.
+The Longwatch Idle, Run, Backpedal, Crouch, and Fall packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run and Crouch each supply 6, Backpedal supplies exactly 4, and Fall supplies one Body-clocked frame per direction. Longwatch crouch integration is automated and complete, but still requires separate human native-scale visual approval. Jump/Land carry art remains pending; dedicated Wall Kick art is not currently required because the accepted Jump/Fall fallback remains adequate unless future native-scale testing proves otherwise.
 
 ## Longwatch muzzle metadata authoring
 
@@ -311,7 +311,7 @@ ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.p
 
 It overlays Longwatch Idle frame 0 for all 19 authored right-facing directions and contains one blue muzzle marker per direction plus a single red radial-ordering anchor. The composite is used only to seed direction-specific extraction; clean pixel signatures must come from each isolated production Idle frame 0 so neighboring overlaid angles cannot contaminate matching.
 
-The implemented Python/Pillow generator and JSON contract are specified in [`WEAPON_MUZZLE_METADATA.md`](WEAPON_MUZZLE_METADATA.md). It resolves 324 supported Longwatch muzzle points across Idle, Run, Backpedal, and Crouch and writes deterministic pivot-relative source-pixel offsets. `RustlineM1ASetup` consumes that JSON in the Editor and deterministically writes the strongly typed `LongwatchDMRMuzzleMetadata.asset`; runtime presentation performs only direct serialized lookups and never inspects JSON or PNGs.
+The implemented Python/Pillow generator and JSON contract are specified in [`WEAPON_MUZZLE_METADATA.md`](WEAPON_MUZZLE_METADATA.md). It resolves 343 supported Longwatch muzzle points across Idle, Run, Backpedal, Crouch, and Fall and writes deterministic pivot-relative source-pixel offsets. `RustlineM1ASetup` consumes that JSON in the Editor and deterministically writes the strongly typed `LongwatchDMRMuzzleMetadata.asset`; runtime presentation performs only direct serialized lookups and never inspects JSON or PNGs.
 
 Longwatch Crouch `m70`, `m80`, and `m90` are a deliberate exception: the muzzle leaves the 80×96 authored cell at those downward poses. They are therefore treated as unsupported muzzle poses rather than generator failures. The approved future presentation rule is to clamp those crouch visuals to `m60`; invalid-angle firing and red-crosshair feedback remain separate follow-up runtime work.
 
@@ -346,10 +346,11 @@ The current artistic/gameplay direction deliberately distinguishes locomotion st
 - Backpedal
 - Crouch Idle
 - Crouch Move
+- Fall
 
 These states use the full 19-direction authored aim set for the equipped weapon.
 
-Fall remains an intended future aim/fire-capable state, but firing is blocked until its authored Longwatch package exists.
+Fall uses its authored 19-direction, one-frame package. Its visual angle is quantized to the nearest 10 degrees while hitscan/fire direction remains the exact continuous aim.
 
 ### Weapon visible, but no aim/fire pose set
 
@@ -465,11 +466,11 @@ The Longwatch aim origin is exactly **38 source pixels above** the shared Body/o
 
 `LongwatchAimMath` mirrors left-hemisphere vectors conceptually into the right-authored hemisphere, retains continuous angle/direction data, and quantizes only the displayed pose to the nearest 10 degrees. Exact vertical input retains the last facing hemisphere and zero-length input retains the last valid selection. No final weapon sprite is rotated at runtime.
 
-While locomotion presentation is Idle, Run, Backpedal, Crouch Idle, or Crouch Move, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, 4 Backpedal, and 6 shared Crouch Body frames map one-to-one to their selected-angle overlays. Crouch Idle holds shared frame 0; crouch backpedal naturally follows reverse Body playback 5..0. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
+While locomotion presentation is Idle, Run, Backpedal, Crouch Idle, Crouch Move, or Fall, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, 4 Backpedal, 6 shared Crouch, and 1 Fall Body frame map one-to-one to their selected-angle overlays. Crouch Idle holds shared frame 0; crouch backpedal naturally follows reverse Body playback 5..0. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
 
-Idle, Run, Backpedal, Crouch Idle, and Crouch Move share one continuous selection and ownership path. On Jump, Fall, or Land the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall brace/kick use Fall/Jump fallback and remain non-firing states.
+Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall share one continuous selection and ownership path. On Jump or Land the presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall Brace uses its dedicated two-frame Body/Unarmed Arms presentation; Wall Kick retains its accepted Jump/Fall fallback. Both remain non-firing.
 
-Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, and Crouch Move. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only and now also controls the attached muzzle-flash rotation. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. The metadata-positioned flash follows that recoil transform, while the reused 3-unit distal tracer and hitscan still derive from the resolved `AimOriginWorld` path. A compact deterministic mark appears only at a resolved obstruction. M3A adds generic health and one programmer-art killable enemy without changing this weapon-art or gun-feel contract. The Crouch invalid-angle clamp/crosshair, clearance, hitscan/tracer-origin decisions, casing ejection, Fall armed aim, carry states, gamepad aim, ammo/reload, inventory, production recoil/impact art, combat audio, and player health remain deferred.
+Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only and also controls the attached muzzle-flash rotation. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. The metadata-positioned flash follows that recoil transform, while the reused 3-unit distal tracer and hitscan still derive from the resolved `AimOriginWorld` path. Jump, Land, Wall Brace, and Wall Kick remain blocked.
 
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 

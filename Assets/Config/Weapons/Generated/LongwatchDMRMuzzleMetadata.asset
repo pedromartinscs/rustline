@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LongwatchDMRMuzzleMetadata
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.LongwatchMuzzleMetadata2D
   schemaVersion: 1
-  generatorVersion: 1
+  generatorVersion: 2
   weaponId: longwatch_dmr
   cellSizePixels: {x: 80, y: 96}
   pivotPixels: {x: 24, y: 8}
@@ -649,3 +649,99 @@ MonoBehaviour:
     angleDegrees: -90
     supported: 0
     frameOffsetsPixels: []
+  fallDirections:
+  - suffix: p90
+    angleDegrees: 90
+    supported: 1
+    frameOffsetsPixels:
+    - {x: -5.5, y: 87.5}
+  - suffix: p80
+    angleDegrees: 80
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 2.5, y: 87.5}
+  - suffix: p70
+    angleDegrees: 70
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 10.5, y: 83.5}
+  - suffix: p60
+    angleDegrees: 60
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 16.5, y: 81.5}
+  - suffix: p50
+    angleDegrees: 50
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 21.5, y: 76.5}
+  - suffix: p40
+    angleDegrees: 40
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 27.5, y: 72.5}
+  - suffix: p30
+    angleDegrees: 30
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 31.5, y: 67.5}
+  - suffix: p20
+    angleDegrees: 20
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 34.5, y: 59.5}
+  - suffix: p10
+    angleDegrees: 10
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 37.5, y: 52.5}
+  - suffix: 0
+    angleDegrees: 0
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 40.5, y: 43.5}
+  - suffix: m10
+    angleDegrees: -10
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 39.5, y: 36.5}
+  - suffix: m20
+    angleDegrees: -20
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 36.5, y: 29.5}
+  - suffix: m30
+    angleDegrees: -30
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 35.5, y: 21.5}
+  - suffix: m40
+    angleDegrees: -40
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 30.5, y: 16.5}
+  - suffix: m50
+    angleDegrees: -50
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 25.5, y: 9.5}
+  - suffix: m60
+    angleDegrees: -60
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 20.5, y: 5.5}
+  - suffix: m70
+    angleDegrees: -70
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 12.5, y: 3.5}
+  - suffix: m80
+    angleDegrees: -80
+    supported: 1
+    frameOffsetsPixels:
+    - {x: 5.5, y: 0.5}
+  - suffix: m90
+    angleDegrees: -90
+    supported: 1
+    frameOffsetsPixels:
+    - {x: -2.5, y: -3.5}

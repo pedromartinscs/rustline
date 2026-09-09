@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatorVersion": 1,
+  "generatorVersion": 2,
   "weaponId": "longwatch_dmr",
   "cellSizePixels": [
     80,
@@ -2834,6 +2834,278 @@
           "angleDegrees": -90,
           "supported": false,
           "frames": []
+        }
+      ]
+    },
+    {
+      "name": "Fall",
+      "frameCount": 1,
+      "directions": [
+        {
+          "suffix": "p90",
+          "angleDegrees": 90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -5.5,
+                87.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p80",
+          "angleDegrees": 80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                2.5,
+                87.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p70",
+          "angleDegrees": 70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                10.5,
+                83.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p60",
+          "angleDegrees": 60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                16.5,
+                81.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p50",
+          "angleDegrees": 50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                21.5,
+                76.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p40",
+          "angleDegrees": 40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                27.5,
+                72.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p30",
+          "angleDegrees": 30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                31.5,
+                67.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p20",
+          "angleDegrees": 20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                34.5,
+                59.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p10",
+          "angleDegrees": 10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                37.5,
+                52.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "0",
+          "angleDegrees": 0,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                40.5,
+                43.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m10",
+          "angleDegrees": -10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                39.5,
+                36.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m20",
+          "angleDegrees": -20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                36.5,
+                29.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m30",
+          "angleDegrees": -30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                35.5,
+                21.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m40",
+          "angleDegrees": -40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                30.5,
+                16.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m50",
+          "angleDegrees": -50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                25.5,
+                9.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m60",
+          "angleDegrees": -60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                20.5,
+                5.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m70",
+          "angleDegrees": -70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                12.5,
+                3.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m80",
+          "angleDegrees": -80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                5.5,
+                0.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m90",
+          "angleDegrees": -90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -2.5,
+                -3.5
+              ]
+            }
+          ]
         }
       ]
     }

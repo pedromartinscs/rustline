@@ -156,7 +156,7 @@ class LongwatchRealArtIntegrationTests(unittest.TestCase):
             self.assertEqual(1, pixels.count(muzzle.RED_MARKER))
 
         sheets = muzzle.load_production_sheets(REPO_ROOT)
-        self.assertEqual(19 * 4, len(sheets))
+        self.assertEqual(19 * 5, len(sheets))
         for spec in muzzle.STATE_SPECS:
             state_sheets = [
                 sheets[(spec.name, suffix)] for suffix in muzzle.DIRECTION_SUFFIXES
@@ -175,6 +175,7 @@ class LongwatchRealArtIntegrationTests(unittest.TestCase):
             "Run": 114,
             "Backpedal": 76,
             "Crouch": 96,
+            "Fall": 19,
         }
         states = self.result.metadata["states"]
         self.assertEqual(list(expected_supported_points), [state["name"] for state in states])
@@ -206,7 +207,7 @@ class LongwatchRealArtIntegrationTests(unittest.TestCase):
                     expected_frames,
                     [frame["frame"] for frame in direction["frames"]],
                 )
-        self.assertEqual(324, sum(expected_supported_points.values()))
+        self.assertEqual(343, sum(expected_supported_points.values()))
         self.assertEqual(
             {suffix: 5 for suffix in muzzle.DIRECTION_SUFFIXES},
             self.result.signature_sizes,

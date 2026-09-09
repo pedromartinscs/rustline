@@ -9,6 +9,7 @@ namespace Rustline.Presentation
         Run = 1,
         Backpedal = 2,
         Crouch = 3,
+        Fall = 4,
     }
 
     public readonly struct LongwatchRenderedPose2D
@@ -82,6 +83,8 @@ namespace Rustline.Presentation
             Array.Empty<LongwatchMuzzleDirection2D>();
         [SerializeField] private LongwatchMuzzleDirection2D[] crouchDirections =
             Array.Empty<LongwatchMuzzleDirection2D>();
+        [SerializeField] private LongwatchMuzzleDirection2D[] fallDirections =
+            Array.Empty<LongwatchMuzzleDirection2D>();
 
         public int SchemaVersion => schemaVersion;
         public int GeneratorVersion => generatorVersion;
@@ -122,7 +125,8 @@ namespace Rustline.Presentation
         public int GetSupportedPointCount()
         {
             return CountSupportedPoints(idleDirections) + CountSupportedPoints(runDirections) +
-                   CountSupportedPoints(backpedalDirections) + CountSupportedPoints(crouchDirections);
+                   CountSupportedPoints(backpedalDirections) + CountSupportedPoints(crouchDirections) +
+                   CountSupportedPoints(fallDirections);
         }
 
         private LongwatchMuzzleDirection2D[] GetDirections(LongwatchMuzzleState2D state)
@@ -133,6 +137,7 @@ namespace Rustline.Presentation
                 case LongwatchMuzzleState2D.Run: return runDirections;
                 case LongwatchMuzzleState2D.Backpedal: return backpedalDirections;
                 case LongwatchMuzzleState2D.Crouch: return crouchDirections;
+                case LongwatchMuzzleState2D.Fall: return fallDirections;
                 default: return null;
             }
         }

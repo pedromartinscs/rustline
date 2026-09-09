@@ -47,7 +47,7 @@ Acceptance notes:
 
 Goal: remove unsupported-state Longwatch presentation fallbacks and complete the first weapon's art pipeline.
 
-- [ ] 7. Longwatch Fall aim — 19 right-facing authored sprites
+- [x] 7. Longwatch Fall aim — 19 right-facing authored sprites, integrated as one Body-clocked frame per direction
 - [ ] 8. Longwatch Jump carry — 3 sprites
 - [ ] 9. Longwatch Land carry — 2 sprites
 - [x] 10. Longwatch Crouch Idle — frame 0 of the shared 19 × 6 package, following static authored Body frame 0
@@ -57,7 +57,7 @@ Goal: remove unsupported-state Longwatch presentation fallbacks and complete the
 Presentation policy:
 
 - Fall and Crouch Idle / Crouch Move are aim/fire-capable states and therefore use the 19-direction authored set.
-- Jump, Land, and Wall Kick keep the weapon visible through carry-only presentation and remain non-firing states. Wall Brace currently has no Longwatch carry art, so it releases the overlay to the matching unarmed Arms presentation and remains non-firing.
+- Jump and Land carry art remain pending and non-firing. Wall Brace has dedicated two-frame Body/Unarmed Arms presentation and remains non-firing. Dedicated Wall Kick art is not currently required; its accepted Jump/Fall fallback remains non-firing unless future native-scale testing proves otherwise.
 - Body animation remains the authoritative frame clock; weapon art follows the approved locomotion frame one-to-one.
 - Longwatch crouch uses one six-frame set per direction. Crouch Idle holds frame 0, forward movement follows 0..5, and presentation-only crouch backpedal reuses the same sprites through reverse Body playback 5..0.
 - Automated crouch import/runtime integration is complete; human native-scale visual approval remains a separate open gate.
