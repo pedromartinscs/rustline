@@ -85,7 +85,7 @@ The crouch pair is one authoritative six-frame sheet per layer, not separate Idl
 
 The Wall Brace pair is two frames per layer and loops at 6 fps. It is authored touching a wall on the right: `WallSide == +1` presents unflipped and `WallSide == -1` presents with `flipX`; that visual override does not mutate continuous aim or its normal facing hemisphere. No armed Longwatch Wall Brace overlay exists yet, so unarmed Arms own the renderer during this state.
 
-The LedgeClimb pair is exactly five frames per layer and plays once at 10 fps, with no added Idle frame. It is authored for a platform on the right and mirrors for a left ledge. Physical root motion follows the authored source-pixel offsets `(0,0)`, `(8,8)`, `(14,14)`, `(18,17)`, `(19,19)` before a short geometry-driven settle. There is deliberately no LedgeGrab/Hang state. No Longwatch LedgeClimb carry artwork exists, so the unarmed overlay owns all five matching Arms frames and firing is blocked.
+The LedgeClimb pair is exactly five frames per layer and plays once at 10 fps, with no added Idle frame. It is authored for a platform on the right and mirrors for a left ledge. Physical root motion follows the authored source-pixel offsets `(0,0)`, `(8,8)`, `(14,14)`, `(18,17)`, `(19,19)`. Frame 4 then remains pinned at its calibrated ledge contact for the rest of its final 0.10 s instead of being translated toward the standing destination; the physics root/collider moves to the prevalidated standing placement only as presentation leaves LedgeClimb. There is deliberately no LedgeGrab/Hang state. No Longwatch LedgeClimb carry artwork exists, so the unarmed overlay owns all five matching Arms frames and firing is blocked.
 
 ## Armed overlay geometry
 

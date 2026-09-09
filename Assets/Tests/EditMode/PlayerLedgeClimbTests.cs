@@ -55,19 +55,17 @@ namespace Rustline.Tests
         }
 
         [Test]
-        public void FinalSettle_StartsOnlyAfterFrameFourAndEndsExactlyAtDestination()
+        public void FinalFrame_RemainsAtAuthoredContactUntilCommittedTraversalBoundary()
         {
             Vector2 capture = new Vector2(2f, 3f);
-            Vector2 destination = new Vector2(7f, 9f);
             Vector2 frameFour = capture + PlayerLedgeClimbMotion2D.GetRootOffset(4, 1);
 
-            Assert.That(PlayerLedgeClimbMotion2D.GetPosition(capture, destination, 1, 0.4f),
+            Assert.That(PlayerLedgeClimbMotion2D.TotalDuration, Is.EqualTo(0.5f).Within(0.0001f));
+            Assert.That(PlayerLedgeClimbMotion2D.GetPosition(capture, 1, 0.4f),
                 Is.EqualTo(frameFour));
-            Assert.That(PlayerLedgeClimbMotion2D.GetPosition(capture, destination, 1, 0.41f),
-                Is.Not.EqualTo(frameFour));
-            Assert.That(PlayerLedgeClimbMotion2D.GetPosition(
-                capture, destination, 1, PlayerLedgeClimbMotion2D.TotalDuration),
-                Is.EqualTo(destination));
+            Assert.That(PlayerLedgeClimbMotion2D.GetPosition(capture, 1, 0.4999f),
+                Is.EqualTo(frameFour),
+                "Authored frame 4 moved after its calibrated hands reached the ledge.");
         }
 
         [TestCase(false, -1f, 1f, false, 0f, true)]

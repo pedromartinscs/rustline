@@ -349,13 +349,13 @@ namespace Rustline.Tests
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space));
                 InputSystem.Update();
-                yield return WaitForAnimationState(playerAnimator, PlayerAnimationState.Jump, 60);
+                yield return WaitForUnarmedState(
+                    armed, unarmed, playerAnimator, PlayerAnimationState.Jump, 60);
                 AssertUnarmedOwnership(armed, unarmed, bodyRenderer, armsRenderer);
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
-                yield return WaitForAnimationState(playerAnimator, PlayerAnimationState.Fall, 240);
-                Assert.That(armed.OwnsRenderer, Is.True);
+                yield return WaitForArmedState(armed, PlayerAnimationState.Fall, 240);
                 Assert.That(unarmed.OwnsRenderer, Is.False);
                 Assert.That(armed.TryGetCurrentRenderedPose(out LongwatchRenderedPose2D fallPose), Is.True);
                 Assert.That(fallPose.State, Is.EqualTo(LongwatchMuzzleState2D.Fall));
@@ -364,7 +364,8 @@ namespace Rustline.Tests
                 Assert.That(fallPose.FacingLeft, Is.True);
                 Assert.That(armsRenderer.sprite.name,
                     Is.EqualTo("player_salvager_longwatch_dmr_fall_aim_m30_0"));
-                yield return WaitForAnimationState(playerAnimator, PlayerAnimationState.Land, 240);
+                yield return WaitForUnarmedState(
+                    armed, unarmed, playerAnimator, PlayerAnimationState.Land, 240);
                 AssertUnarmedOwnership(armed, unarmed, bodyRenderer, armsRenderer);
                 yield return WaitForArmedState(armed, PlayerAnimationState.Idle, 120);
                 Assert.That(armed.Selection.AuthoredAngleDegrees, Is.EqualTo(-30));
@@ -561,6 +562,28 @@ namespace Rustline.Tests
             }
 
             Assert.Fail("Longwatch presenter did not acquire the overlay renderer for " + expectedState + ".");
+        }
+
+        private static IEnumerator WaitForUnarmedState(
+            PlayerLongwatchAimPresenter2D armed,
+            PlayerUnarmedArmsPresenter2D unarmed,
+            PlayerAnimator2D playerAnimator,
+            PlayerAnimationState expected,
+            int maximumFrames)
+        {
+            for (int index = 0; index < maximumFrames; index++)
+            {
+                yield return new WaitForFixedUpdate();
+                yield return null;
+                if (playerAnimator.CurrentState == expected &&
+                    !armed.OwnsRenderer &&
+                    unarmed.OwnsRenderer)
+                {
+                    yield break;
+                }
+            }
+
+            Assert.Fail("Longwatch presenter did not release the overlay renderer for " + expected + ".");
         }
 
         private static IEnumerator WaitForAnimationState(

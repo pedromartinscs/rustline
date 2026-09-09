@@ -1498,6 +1498,18 @@ namespace Rustline.Tests
                 }
             }
 
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyFallFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyFallFrame(frameIndex))
+                {
+                    LongwatchFallAimPose fallPose = longwatchPresenter.GetFallAimPose(
+                        longwatchPresenter.Selection.DirectionIndex);
+                    Assert.That(armsRenderer.sprite, Is.SameAs(fallPose.GetFrame(frameIndex)),
+                        "Longwatch overlay lagged or diverged from the displayed Body Fall frame.");
+                    return;
+                }
+            }
+
             Assert.Fail("Armed Longwatch owns the overlay for an unsupported Body sprite.");
         }
 

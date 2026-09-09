@@ -43,7 +43,7 @@ Acceptance notes:
 - Crouch Idle statically reuses frame 0 and intentionally has no breathing animation; Crouch Move loops frames 0..5 at the initial 7 fps visual tuning. Standing Idle remains the only breathing idle.
 - Longwatch crouch presentation now uses the completed six-frame directional package. Its presenter owns the shared overlay and firing is enabled in both crouch states.
 - Wall Brace has no Longwatch carry package yet: the unarmed overlay owns its matching Arms frames and firing remains blocked. Wall Kick uses the accepted Jump/Fall fallback and does not currently require dedicated art; the overall native-scale wall approval gate remains pending.
-- LedgeClimb has no grab/hang state and no Longwatch carry package. Once its valid wall/top geometry, facing, and toward-input gate succeeds, the five-frame right-authored traversal commits, mirrors for a left ledge, releases the overlay to unarmed Arms, and blocks firing through its geometry-driven final settle.
+- LedgeClimb has no grab/hang state and no Longwatch carry package. Once its valid wall/top geometry, facing, and toward-input gate succeeds, the five-frame right-authored traversal commits, mirrors for a left ledge, releases the overlay to unarmed Arms, and blocks firing throughout. Frame 4 stays pinned to its calibrated ledge contact for its final 0.10 s; the validated standing root/collider handoff occurs only when the state ends, so the hands are never dragged upward while that pose is displayed.
 
 ## Asset Sprint 2 — Complete Longwatch locomotion presentation
 
