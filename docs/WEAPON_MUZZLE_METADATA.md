@@ -1,6 +1,6 @@
 # Weapon muzzle metadata
 
-This document defines the authoring and generation contract for exact weapon muzzle points. It is intentionally limited to **muzzle metadata**. Clearance casts, reticle feedback, muzzle flash, casing ejection, and other runtime effects are separate follow-up work.
+This document defines the authoring, generation, and serialized presentation-data contract for exact weapon muzzle points. The Longwatch muzzle-flash presenter now consumes that data for visual placement only. Clearance casts, reticle feedback, casing ejection, and gameplay/tracer-origin migration remain separate follow-up work.
 
 ## Current scope
 
@@ -8,7 +8,9 @@ The first supported weapon is the **Longwatch DMR**.
 
 Phase 1 is implemented as an offline Python/Pillow generator. The checked-in
 schema-versioned JSON is derived from production PNGs and the authoring reference.
-Unity/runtime consumption remains future work.
+`RustlineM1ASetup` now validates that JSON Editor-side and deterministically
+serializes its exact values into a compact runtime `LongwatchMuzzleMetadata2D`
+asset for presentation use.
 
 Production armed art remains authored only for the canonical right-facing hemisphere:
 
@@ -213,7 +215,13 @@ The schema must be versioned and include enough information to validate:
 
 Python is responsible for image inspection and metadata generation.
 
-Unity Editor C# may later consume the generated JSON and serialize compact runtime data into a `ScriptableObject`, weapon definition, or prefab-owned structure.
+Unity Editor C# consumes the generated JSON through `RustlineM1ASetup` and serializes compact, strongly typed runtime data into:
+
+```text
+Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
+```
+
+The asset contains all 324 supported points and preserves Crouch `m70`, `m80`, and `m90` as unsupported direction records with no frame coordinates. `PlayerLongwatchAimPresenter2D` exposes the state, direction, authored angle, displayed Body frame, and facing of the weapon sprite actually rendered. The muzzle-flash presenter performs a direct indexed lookup after that visual pose has been selected.
 
 Runtime gameplay must not:
 
@@ -223,9 +231,10 @@ Runtime gameplay must not:
 - repeatedly parse JSON;
 - discover assets from disk.
 
-The first implementation phase stops at a validated JSON artifact. Runtime
-clearance, muzzle flash, tracer-origin migration, and reticle behavior remain
-separate work after the generated coordinates have been inspected and accepted.
+Runtime muzzle-flash placement is implemented without changing ballistics. The
+hitscan result origin and the existing distal tracer still use `AimOriginWorld`.
+Runtime clearance, the Crouch invalid-angle visual clamp and red reticle,
+hitscan/tracer-origin migration, and casing ejection remain separate work.
 
 ## Tooling location
 

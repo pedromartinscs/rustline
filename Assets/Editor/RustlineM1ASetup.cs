@@ -29,6 +29,12 @@ namespace Rustline.Editor
         private const string ArtShowcasePath = "Assets/Scenes/ArtShowcase.unity";
         private const string ConfigPath = "Assets/Config/Player/PlayerMovementConfig.asset";
         private const string LongwatchDefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
+        private const string LongwatchMuzzleMetadataJsonPath =
+            "ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata.json";
+        private const string LongwatchMuzzleMetadataAssetPath =
+            "Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset";
+        private const string LongwatchMuzzleFlashPath =
+            "Assets/Art/Effects/Weapons/longwatch_dmr/longwatch_dmr_muzzle_flash.png";
         private const string PhysicsMaterialPath = "Assets/Config/Player/PlayerFrictionless.physicsMaterial2D";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string JumpDustSpritePath = "Assets/Art/Effects/Movement/player_jump_dust.png";
@@ -174,6 +180,50 @@ namespace Rustline.Editor
             internal Vector3 Position { get; }
         }
 
+        [Serializable]
+        private sealed class LongwatchMuzzleJson
+        {
+            public int schemaVersion;
+            public int generatorVersion;
+            public string weaponId;
+            public int[] cellSizePixels;
+            public int[] pivotPixels;
+            public LongwatchMuzzleReferenceJson reference;
+            public LongwatchMuzzleStateJson[] states;
+        }
+
+        [Serializable]
+        private sealed class LongwatchMuzzleReferenceJson
+        {
+            public string state;
+            public int frame;
+            public string path;
+        }
+
+        [Serializable]
+        private sealed class LongwatchMuzzleStateJson
+        {
+            public string name;
+            public int frameCount;
+            public LongwatchMuzzleDirectionJson[] directions;
+        }
+
+        [Serializable]
+        private sealed class LongwatchMuzzleDirectionJson
+        {
+            public string suffix;
+            public int angleDegrees;
+            public bool supported;
+            public LongwatchMuzzleFrameJson[] frames;
+        }
+
+        [Serializable]
+        private sealed class LongwatchMuzzleFrameJson
+        {
+            public int frame;
+            public float[] muzzleOffsetPixels;
+        }
+
         [MenuItem("Tools/Rustline/Rebuild M1A Movement Lab")]
         public static void RebuildFromMenu()
         {
@@ -214,15 +264,18 @@ namespace Rustline.Editor
         {
             EnsureFolder("Assets/Config/Player");
             EnsureFolder("Assets/Config/Weapons");
+            EnsureFolder("Assets/Config/Weapons/Generated");
             EnsureFolder("Assets/Prefabs/Player");
             EnsureFolder("Assets/Prefabs/Effects/Movement");
             int groundLayer = EnsureGroundLayer();
             int combatTargetLayer = EnsureLayer("CombatTarget", 7);
             ConfigureRenderer2DDefaultMaterial();
             RustlineM0ArtSetup.ConfigureLongwatchAimSheets();
+            RustlineM0ArtSetup.ConfigureLongwatchMuzzleFlash();
 
             PlayerMovementConfig config = CreateConfig();
             WeaponDefinition2D longwatchDefinition = CreateLongwatchDefinition();
+            LongwatchMuzzleMetadata2D longwatchMuzzleMetadata = CreateLongwatchMuzzleMetadata();
             PhysicsMaterial2D physicsMaterial = CreatePhysicsMaterial();
             AnimatorController controller = CreateGameplayController();
             Tile collisionTile = CreateCollisionTile();
@@ -230,6 +283,7 @@ namespace Rustline.Editor
             GameObject prefab = CreatePlayerPrefab(
                 config,
                 longwatchDefinition,
+                longwatchMuzzleMetadata,
                 physicsMaterial,
                 controller,
                 jumpDustPrefab,
@@ -290,6 +344,187 @@ namespace Rustline.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             return definition;
+        }
+
+        private static LongwatchMuzzleMetadata2D CreateLongwatchMuzzleMetadata()
+        {
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            string absoluteJsonPath = Path.Combine(projectRoot, LongwatchMuzzleMetadataJsonPath);
+            Require(File.Exists(absoluteJsonPath),
+                "Generated Longwatch muzzle metadata JSON is missing: " + LongwatchMuzzleMetadataJsonPath);
+
+            LongwatchMuzzleJson source = JsonUtility.FromJson<LongwatchMuzzleJson>(
+                File.ReadAllText(absoluteJsonPath));
+            ValidateLongwatchMuzzleJson(source);
+
+            LongwatchMuzzleMetadata2D metadata =
+                AssetDatabase.LoadAssetAtPath<LongwatchMuzzleMetadata2D>(LongwatchMuzzleMetadataAssetPath);
+            if (metadata == null)
+            {
+                metadata = ScriptableObject.CreateInstance<LongwatchMuzzleMetadata2D>();
+                metadata.name = "Longwatch DMR Muzzle Metadata";
+                AssetDatabase.CreateAsset(metadata, LongwatchMuzzleMetadataAssetPath);
+            }
+
+            SerializedObject serialized = new SerializedObject(metadata);
+            serialized.FindProperty("schemaVersion").intValue = source.schemaVersion;
+            serialized.FindProperty("generatorVersion").intValue = source.generatorVersion;
+            serialized.FindProperty("weaponId").stringValue = source.weaponId;
+            serialized.FindProperty("cellSizePixels").vector2IntValue =
+                new Vector2Int(source.cellSizePixels[0], source.cellSizePixels[1]);
+            serialized.FindProperty("pivotPixels").vector2IntValue =
+                new Vector2Int(source.pivotPixels[0], source.pivotPixels[1]);
+            ConfigureMuzzleDirectionArray(serialized.FindProperty("idleDirections"), source.states[0]);
+            ConfigureMuzzleDirectionArray(serialized.FindProperty("runDirections"), source.states[1]);
+            ConfigureMuzzleDirectionArray(serialized.FindProperty("backpedalDirections"), source.states[2]);
+            ConfigureMuzzleDirectionArray(serialized.FindProperty("crouchDirections"), source.states[3]);
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(metadata);
+            return metadata;
+        }
+
+        private static void ValidateLongwatchMuzzleJson(LongwatchMuzzleJson source)
+        {
+            Require(source != null, "Generated Longwatch muzzle metadata JSON could not be parsed.");
+            Require(source.schemaVersion == 1 && source.generatorVersion == 1 &&
+                source.weaponId == "longwatch_dmr",
+                "Generated Longwatch muzzle metadata schema/generator/weapon identity mismatch.");
+            Require(source.cellSizePixels != null && source.cellSizePixels.Length == 2 &&
+                source.cellSizePixels[0] == 80 && source.cellSizePixels[1] == 96 &&
+                source.pivotPixels != null && source.pivotPixels.Length == 2 &&
+                source.pivotPixels[0] == 24 && source.pivotPixels[1] == 8,
+                "Generated Longwatch muzzle metadata geometry mismatch.");
+            Require(source.reference != null && source.reference.state == "Idle" &&
+                source.reference.frame == 0 &&
+                source.reference.path ==
+                    "ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png",
+                "Generated Longwatch muzzle metadata reference contract mismatch.");
+
+            string[] expectedStateNames = { "Idle", "Run", "Backpedal", "Crouch" };
+            int[] expectedFrameCounts = { 2, 6, 4, 6 };
+            Require(source.states != null && source.states.Length == expectedStateNames.Length,
+                "Generated Longwatch muzzle metadata must contain exactly four states.");
+            int supportedPointCount = 0;
+            for (int stateIndex = 0; stateIndex < expectedStateNames.Length; stateIndex++)
+            {
+                LongwatchMuzzleStateJson state = source.states[stateIndex];
+                Require(state != null && state.name == expectedStateNames[stateIndex] &&
+                    state.frameCount == expectedFrameCounts[stateIndex] &&
+                    state.directions != null &&
+                    state.directions.Length == LongwatchDirectionSuffixes.Length,
+                    "Generated Longwatch muzzle state mismatch at index " + stateIndex + ".");
+
+                for (int directionIndex = 0;
+                     directionIndex < LongwatchDirectionSuffixes.Length;
+                     directionIndex++)
+                {
+                    LongwatchMuzzleDirectionJson direction = state.directions[directionIndex];
+                    bool expectedSupported = state.name != "Crouch" || directionIndex < 16;
+                    Require(direction != null &&
+                        direction.suffix == LongwatchDirectionSuffixes[directionIndex] &&
+                        direction.angleDegrees == LongwatchDirectionAngles[directionIndex] &&
+                        direction.supported == expectedSupported && direction.frames != null,
+                        $"Generated Longwatch muzzle direction mismatch at {state.name}/{directionIndex}.");
+
+                    if (!expectedSupported)
+                    {
+                        Require(direction.frames.Length == 0,
+                            $"Unsupported Longwatch muzzle direction {state.name}/{direction.suffix} " +
+                            "must not serialize fake frame coordinates.");
+                        continue;
+                    }
+
+                    Require(direction.frames.Length == state.frameCount,
+                        $"Generated Longwatch muzzle frame count mismatch for {state.name}/{direction.suffix}.");
+                    for (int frameIndex = 0; frameIndex < state.frameCount; frameIndex++)
+                    {
+                        LongwatchMuzzleFrameJson frame = direction.frames[frameIndex];
+                        Require(frame != null && frame.frame == frameIndex &&
+                            frame.muzzleOffsetPixels != null && frame.muzzleOffsetPixels.Length == 2 &&
+                            float.IsFinite(frame.muzzleOffsetPixels[0]) &&
+                            float.IsFinite(frame.muzzleOffsetPixels[1]) &&
+                            IsHalfInteger(frame.muzzleOffsetPixels[0]) &&
+                            IsHalfInteger(frame.muzzleOffsetPixels[1]),
+                            $"Generated Longwatch muzzle coordinate mismatch at " +
+                            $"{state.name}/{direction.suffix}/frame {frameIndex}.");
+                        supportedPointCount++;
+                    }
+                }
+            }
+
+            Require(supportedPointCount == 324,
+                "Generated Longwatch muzzle metadata must contain exactly 324 supported frame points.");
+        }
+
+        private static bool IsHalfInteger(float value)
+        {
+            return Mathf.Approximately(value * 2f, Mathf.Round(value * 2f)) &&
+                   !Mathf.Approximately(value, Mathf.Round(value));
+        }
+
+        private static void ConfigureMuzzleDirectionArray(
+            SerializedProperty target,
+            LongwatchMuzzleStateJson source)
+        {
+            Require(target != null && target.isArray,
+                "Longwatch runtime muzzle metadata direction array is unavailable.");
+            target.arraySize = source.directions.Length;
+            for (int directionIndex = 0; directionIndex < source.directions.Length; directionIndex++)
+            {
+                LongwatchMuzzleDirectionJson sourceDirection = source.directions[directionIndex];
+                SerializedProperty targetDirection = target.GetArrayElementAtIndex(directionIndex);
+                targetDirection.FindPropertyRelative("suffix").stringValue = sourceDirection.suffix;
+                targetDirection.FindPropertyRelative("angleDegrees").intValue = sourceDirection.angleDegrees;
+                targetDirection.FindPropertyRelative("supported").boolValue = sourceDirection.supported;
+                SerializedProperty targetFrames =
+                    targetDirection.FindPropertyRelative("frameOffsetsPixels");
+                targetFrames.arraySize = sourceDirection.frames.Length;
+                for (int frameIndex = 0; frameIndex < sourceDirection.frames.Length; frameIndex++)
+                {
+                    float[] offset = sourceDirection.frames[frameIndex].muzzleOffsetPixels;
+                    targetFrames.GetArrayElementAtIndex(frameIndex).vector2Value =
+                        new Vector2(offset[0], offset[1]);
+                }
+            }
+        }
+
+        private static void ValidateLongwatchMuzzleMetadataAsset(
+            LongwatchMuzzleMetadata2D metadata)
+        {
+            Require(metadata != null && metadata.SchemaVersion == 1 &&
+                metadata.GeneratorVersion == 1 && metadata.WeaponId == "longwatch_dmr" &&
+                metadata.CellSizePixels == new Vector2Int(80, 96) &&
+                metadata.PivotPixels == new Vector2Int(24, 8) &&
+                metadata.GetSupportedPointCount() == 324,
+                "Generated Longwatch runtime muzzle metadata asset is invalid.");
+
+            LongwatchMuzzleState2D[] states =
+            {
+                LongwatchMuzzleState2D.Idle,
+                LongwatchMuzzleState2D.Run,
+                LongwatchMuzzleState2D.Backpedal,
+                LongwatchMuzzleState2D.Crouch,
+            };
+            int[] frameCounts = { 2, 6, 4, 6 };
+            for (int stateIndex = 0; stateIndex < states.Length; stateIndex++)
+            {
+                for (int directionIndex = 0;
+                     directionIndex < LongwatchDirectionSuffixes.Length;
+                     directionIndex++)
+                {
+                    LongwatchMuzzleDirection2D direction =
+                        metadata.GetDirection(states[stateIndex], directionIndex);
+                    bool expectedSupported =
+                        states[stateIndex] != LongwatchMuzzleState2D.Crouch || directionIndex < 16;
+                    Require(direction.Suffix == LongwatchDirectionSuffixes[directionIndex] &&
+                        direction.AngleDegrees == LongwatchDirectionAngles[directionIndex] &&
+                        direction.Supported == expectedSupported &&
+                        direction.FrameCount == (expectedSupported ? frameCounts[stateIndex] : 0),
+                        $"Runtime Longwatch muzzle metadata mismatch at " +
+                        $"{states[stateIndex]}/{directionIndex}.");
+                }
+            }
         }
 
         private static PhysicsMaterial2D CreatePhysicsMaterial()
@@ -378,6 +613,7 @@ namespace Rustline.Editor
         private static GameObject CreatePlayerPrefab(
             PlayerMovementConfig config,
             WeaponDefinition2D longwatchDefinition,
+            LongwatchMuzzleMetadata2D longwatchMuzzleMetadata,
             PhysicsMaterial2D physicsMaterial,
             RuntimeAnimatorController controller,
             PlayerJumpDustFx2D jumpDustPrefab,
@@ -404,6 +640,7 @@ namespace Rustline.Editor
                 LongwatchBackpedalAimRoot, "backpedal", 4);
             List<Sprite> longwatchCrouchFrames = LoadLongwatchAimFrames(
                 LongwatchCrouchAimRoot, "crouch", 6);
+            List<Sprite> longwatchMuzzleFlashFrames = LoadLongwatchMuzzleFlashFrames();
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
             Require(bodyFrames.Count == 24 && armsFrames.Count == 24,
@@ -411,7 +648,9 @@ namespace Rustline.Editor
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
                 bodyBackpedalFrames.Count == 4 && bodyCrouchFrames.Count == 6 &&
                 longwatchIdleFrames.Count == 38 && longwatchRunFrames.Count == 114 &&
-                longwatchBackpedalFrames.Count == 76 && longwatchCrouchFrames.Count == 114,
+                longwatchBackpedalFrames.Count == 76 && longwatchCrouchFrames.Count == 114 &&
+                longwatchMuzzleFlashFrames.Count == LongwatchMuzzleFlashPresenter2D.RequiredSpriteCount &&
+                longwatchMuzzleMetadata != null,
                 "The Longwatch presenter requires complete Idle, Run, Backpedal, and Crouch Body/armed frames.");
 
             bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath) != null;
@@ -557,6 +796,22 @@ namespace Rustline.Editor
                 SetObjectReference(recoilPresenter, "longwatchPresenter", longwatchPresenter);
                 SetObjectReference(recoilPresenter, "armsWeaponTransform", armsVisual.transform);
 
+                GameObject muzzleFlashObject =
+                    GetOrCreateChild(armsVisual.transform, "LongwatchMuzzleFlash");
+                SpriteRenderer muzzleFlashRenderer = GetOrAddComponent<SpriteRenderer>(muzzleFlashObject);
+                muzzleFlashRenderer.sprite = longwatchMuzzleFlashFrames[0];
+                muzzleFlashRenderer.sharedMaterial = unlitMaterial;
+                muzzleFlashRenderer.sortingOrder = 12;
+                muzzleFlashRenderer.flipX = false;
+                muzzleFlashRenderer.enabled = false;
+                LongwatchMuzzleFlashPresenter2D muzzleFlashPresenter =
+                    GetOrAddComponent<LongwatchMuzzleFlashPresenter2D>(muzzleFlashObject);
+                SetObjectReference(muzzleFlashPresenter, "weaponController", weaponController);
+                SetObjectReference(muzzleFlashPresenter, "longwatchPresenter", longwatchPresenter);
+                SetObjectReference(muzzleFlashPresenter, "metadata", longwatchMuzzleMetadata);
+                SetObjectReference(muzzleFlashPresenter, "flashRenderer", muzzleFlashRenderer);
+                SetObjectReferenceArray(muzzleFlashPresenter, "frames", longwatchMuzzleFlashFrames);
+
                 GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Require(prefab != null, "Failed to create the player prefab.");
                 return prefab;
@@ -672,6 +927,29 @@ namespace Rustline.Editor
                 frames.AddRange(directionFrames);
             }
 
+            return frames;
+        }
+
+        private static List<Sprite> LoadLongwatchMuzzleFlashFrames()
+        {
+            Dictionary<string, Sprite> sprites = AssetDatabase.LoadAllAssetsAtPath(LongwatchMuzzleFlashPath)
+                .OfType<Sprite>()
+                .ToDictionary(sprite => sprite.name);
+            var frames = new List<Sprite>(LongwatchMuzzleFlashPresenter2D.RequiredSpriteCount);
+            for (int variant = 0; variant < LongwatchMuzzleFlashMath.VariantCount; variant++)
+            {
+                for (int frame = 0; frame < LongwatchMuzzleFlashPresenter2D.FramesPerVariant; frame++)
+                {
+                    string name = "longwatch_dmr_muzzle_flash_v" + variant.ToString("00") +
+                        "_f" + frame;
+                    Require(sprites.TryGetValue(name, out Sprite sprite),
+                        "Missing imported Longwatch muzzle-flash sprite: " + name);
+                    frames.Add(sprite);
+                }
+            }
+
+            Require(sprites.Count == LongwatchMuzzleFlashPresenter2D.RequiredSpriteCount,
+                "Longwatch muzzle-flash sheet must import exactly 20 sprites.");
             return frames;
         }
 
@@ -1899,6 +2177,10 @@ namespace Rustline.Editor
                 Mathf.Approximately(longwatchDefinition.Range, 80f) &&
                 longwatchDefinition.Damage == 40,
                 "Longwatch prototype definition changed from semi-auto / 0.25 s / 80 u / 40 damage.");
+            LongwatchMuzzleMetadata2D longwatchMuzzleMetadata =
+                AssetDatabase.LoadAssetAtPath<LongwatchMuzzleMetadata2D>(
+                    LongwatchMuzzleMetadataAssetPath);
+            ValidateLongwatchMuzzleMetadataAsset(longwatchMuzzleMetadata);
             PlayerWeaponController2D weaponController = prefab.GetComponent<PlayerWeaponController2D>();
             PrototypeWeaponShotFeedback2D shotFeedback =
                 prefab.GetComponentInChildren<PrototypeWeaponShotFeedback2D>(true);
@@ -1927,9 +2209,13 @@ namespace Rustline.Editor
                 "Player visual child must be lowered exactly 4 source pixels (-0.25 Unity units).");
             Transform bodyVisual = visual.Find("BodySpriteRenderer");
             Transform armsVisual = visual.Find("ArmsWeaponSpriteRenderer");
+            Transform muzzleFlashVisual = armsVisual?.Find("LongwatchMuzzleFlash");
             Transform aimOrigin = visual.Find("AimOrigin");
             SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
             SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+            SpriteRenderer muzzleFlashRenderer = muzzleFlashVisual?.GetComponent<SpriteRenderer>();
+            LongwatchMuzzleFlashPresenter2D muzzleFlashPresenter =
+                muzzleFlashVisual?.GetComponent<LongwatchMuzzleFlashPresenter2D>();
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(bodyVisual != null && armsVisual != null && bodyVisual.localPosition == Vector3.zero &&
                 armsVisual.localPosition == Vector3.zero && bodyVisual.localScale == Vector3.one &&
@@ -1948,6 +2234,31 @@ namespace Rustline.Editor
             Require(unlitMaterial != null && bodyRenderer.sharedMaterial == unlitMaterial &&
                 armsRenderer.sharedMaterial == unlitMaterial,
                 "Player Body and ArmsWeapon renderers must use URP Sprite-Unlit-Default.");
+            Require(muzzleFlashVisual != null && muzzleFlashVisual.parent == armsVisual &&
+                muzzleFlashVisual.localPosition == Vector3.zero &&
+                muzzleFlashVisual.localRotation == Quaternion.identity &&
+                muzzleFlashVisual.localScale == Vector3.one &&
+                muzzleFlashRenderer != null && muzzleFlashRenderer.sortingOrder == 12 &&
+                !muzzleFlashRenderer.enabled && !muzzleFlashRenderer.flipX &&
+                muzzleFlashRenderer.sharedMaterial == unlitMaterial &&
+                muzzleFlashPresenter != null &&
+                muzzleFlashPresenter.WeaponController == weaponController &&
+                muzzleFlashPresenter.LongwatchPresenter == longwatchPresenter &&
+                muzzleFlashPresenter.Metadata == longwatchMuzzleMetadata &&
+                muzzleFlashPresenter.FlashRenderer == muzzleFlashRenderer &&
+                muzzleFlashPresenter.SpriteCount == LongwatchMuzzleFlashPresenter2D.RequiredSpriteCount,
+                "Player prefab Longwatch muzzle-flash hierarchy or wiring is incomplete.");
+            for (int variant = 0; variant < LongwatchMuzzleFlashMath.VariantCount; variant++)
+            {
+                for (int frame = 0; frame < LongwatchMuzzleFlashPresenter2D.FramesPerVariant; frame++)
+                {
+                    int spriteIndex = variant * LongwatchMuzzleFlashPresenter2D.FramesPerVariant + frame;
+                    Sprite sprite = muzzleFlashPresenter.GetSprite(spriteIndex);
+                    Require(sprite != null && sprite.name ==
+                        "longwatch_dmr_muzzle_flash_v" + variant.ToString("00") + "_f" + frame,
+                        "Player prefab Longwatch muzzle-flash sprite order mismatch at " + spriteIndex + ".");
+                }
+            }
             Require(longwatchPresenter != null && longwatchPresenter.PlayerAim == playerAim &&
                 longwatchPresenter.PlayerAnimator == prefab.GetComponent<PlayerAnimator2D>() &&
                 longwatchPresenter.UnarmedPresenter == armsPresenter &&

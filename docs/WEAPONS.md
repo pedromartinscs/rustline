@@ -95,6 +95,7 @@ Current production status:
 - mouse-left primary fire now drives a semi-automatic Longwatch hitscan from the exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
 - firing is allowed during Idle, Run, Backpedal, Crouch Idle, and Crouch Move, where authored Longwatch presentation exists; Jump, Fall, Land, Wall Brace, and Wall Kick remain deliberately blocked pending appropriate art;
 - MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short distal one-source-pixel tracer streak, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
+- exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash attached beneath the recoil-driven weapon overlay;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
 - Fall aim and Jump/Land/Roll carry art remain deferred; Longwatch crouch integration is complete but awaits human native-scale visual approval.
@@ -109,7 +110,7 @@ This staged validation is intentional. Do not multiply an unproven art/runtime c
 - Strong silhouettes matter more than micro-detail.
 - Weapons within a family should share visual language without becoming silhouette clones.
 - A weapon is not considered production-ready merely because a standalone gun sprite exists; its player presentation package must follow the discrete aim/carry system in `PLAYER_WEAPON_ART.md`.
-- Exact per-frame/per-direction muzzle metadata, production muzzle flash, casing ejection, projectiles, reload, audio, and production recoil/impact art remain deferred. Gun Feel v1 uses reusable programmer-art recoil, tracer, and impact presentation; its hitscan still originates at `AimOriginWorld` rather than pretending authored muzzle metadata exists.
+- Exact per-frame/per-direction Longwatch muzzle metadata and the production two-frame muzzle flash are implemented for presentation. Crouch `m70`/`m80`/`m90` remain explicitly unsupported and omit the flash without changing the shot. Clearance, the planned Crouch `m60` clamp/red crosshair, casing ejection, projectiles, reload, audio, and production recoil/impact art remain deferred. Gun Feel v1 hitscan and its distal tracer still originate at `AimOriginWorld`; the muzzle metadata has not migrated ballistics.
 
 ## Initial production order
 

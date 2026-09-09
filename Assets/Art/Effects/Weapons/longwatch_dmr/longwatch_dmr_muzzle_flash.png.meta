@@ -1,0 +1,672 @@
+fileFormatVersion: 2
+guid: be66dedbeb992624dafd8f99e98855a8
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -2387942269332609475
+    second: longwatch_dmr_muzzle_flash_0
+  - first:
+      213: 818890609329768887
+    second: longwatch_dmr_muzzle_flash_1
+  - first:
+      213: -2750926707147690680
+    second: longwatch_dmr_muzzle_flash_2
+  - first:
+      213: -931818639108674023
+    second: longwatch_dmr_muzzle_flash_3
+  - first:
+      213: 8280093530527197728
+    second: longwatch_dmr_muzzle_flash_4
+  - first:
+      213: 3838197392818515395
+    second: longwatch_dmr_muzzle_flash_5
+  - first:
+      213: -4249113769620031312
+    second: longwatch_dmr_muzzle_flash_6
+  - first:
+      213: 1791639837456018191
+    second: longwatch_dmr_muzzle_flash_7
+  - first:
+      213: -4683716753560427347
+    second: longwatch_dmr_muzzle_flash_8
+  - first:
+      213: -6828327659213077232
+    second: longwatch_dmr_muzzle_flash_9
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 16
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 0
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 16384
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v00_f0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 83c0625dab9b08245868953cc6b783ed
+      internalID: -1578704993
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v00_f1
+      rect:
+        serializedVersion: 2
+        x: 9
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a4c68dfab5281d441a7e6d65bd9a4455
+      internalID: 1220623951
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v01_f0
+      rect:
+        serializedVersion: 2
+        x: 18
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b459e1dfd66f13448aede1f7198cee9e
+      internalID: 237839483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v01_f1
+      rect:
+        serializedVersion: 2
+        x: 27
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 657a9a1e76430eb4fa0db62cb29854b2
+      internalID: 96107625
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v02_f0
+      rect:
+        serializedVersion: 2
+        x: 36
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e1ac3f29cc365f048b99810a04e726a6
+      internalID: -1929505934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v02_f1
+      rect:
+        serializedVersion: 2
+        x: 45
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6254b63b336f3cf4a8c08dce25ea629c
+      internalID: 467519557
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v03_f0
+      rect:
+        serializedVersion: 2
+        x: 54
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 88b731851dd0608498c2b14afc9934d6
+      internalID: -2147210189
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v03_f1
+      rect:
+        serializedVersion: 2
+        x: 63
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d2c63a7cf32cc554e89b374c0135e313
+      internalID: 197508640
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v04_f0
+      rect:
+        serializedVersion: 2
+        x: 72
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dff61842f2aa34c41ad29dc1fc77781c
+      internalID: -2129240420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v04_f1
+      rect:
+        serializedVersion: 2
+        x: 81
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 78aa1be42a4c2de45830de1c502c6e27
+      internalID: 796666917
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v05_f0
+      rect:
+        serializedVersion: 2
+        x: 90
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 82cbec9987871d1439c561ade4051f84
+      internalID: -402655991
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v05_f1
+      rect:
+        serializedVersion: 2
+        x: 99
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: df73159c2e7dc244c988d82186cb8ca9
+      internalID: 327872239
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v06_f0
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6fe9aaa50709fe845903ec8aa75fe29b
+      internalID: 1484732221
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v06_f1
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 09863c830dbb0314e950406991d0bcc0
+      internalID: -1306921825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v07_f0
+      rect:
+        serializedVersion: 2
+        x: 126
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 72a699ed1d1beb04a9a2e87bf5e23bf9
+      internalID: 1764702343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v07_f1
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 50a1348123b175b43a7e2886f4e86ab4
+      internalID: 1747806891
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v08_f0
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2bf1d7d3576195d49b30a10c36e3f137
+      internalID: 166556321
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v08_f1
+      rect:
+        serializedVersion: 2
+        x: 153
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1d056690fd5eafd4e96191c6fe36fa8d
+      internalID: 1469251483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v09_f0
+      rect:
+        serializedVersion: 2
+        x: 162
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dee98f2ba47376542a6a980375acaff2
+      internalID: -628929066
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: longwatch_dmr_muzzle_flash_v09_f1
+      rect:
+        serializedVersion: 2
+        x: 171
+        y: 0
+        width: 9
+        height: 9
+      alignment: 9
+      pivot: {x: 0.055555556, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f8000a7e65298cf4885e1cab77e7a23b
+      internalID: 861064754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 787110c51683dd647ab8bf912f36a5f2
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      longwatch_dmr_muzzle_flash_v00_f0: -1578704993
+      longwatch_dmr_muzzle_flash_v00_f1: 1220623951
+      longwatch_dmr_muzzle_flash_v01_f0: 237839483
+      longwatch_dmr_muzzle_flash_v01_f1: 96107625
+      longwatch_dmr_muzzle_flash_v02_f0: -1929505934
+      longwatch_dmr_muzzle_flash_v02_f1: 467519557
+      longwatch_dmr_muzzle_flash_v03_f0: -2147210189
+      longwatch_dmr_muzzle_flash_v03_f1: 197508640
+      longwatch_dmr_muzzle_flash_v04_f0: -2129240420
+      longwatch_dmr_muzzle_flash_v04_f1: 796666917
+      longwatch_dmr_muzzle_flash_v05_f0: -402655991
+      longwatch_dmr_muzzle_flash_v05_f1: 327872239
+      longwatch_dmr_muzzle_flash_v06_f0: 1484732221
+      longwatch_dmr_muzzle_flash_v06_f1: -1306921825
+      longwatch_dmr_muzzle_flash_v07_f0: 1764702343
+      longwatch_dmr_muzzle_flash_v07_f1: 1747806891
+      longwatch_dmr_muzzle_flash_v08_f0: 166556321
+      longwatch_dmr_muzzle_flash_v08_f1: 1469251483
+      longwatch_dmr_muzzle_flash_v09_f0: -628929066
+      longwatch_dmr_muzzle_flash_v09_f1: 861064754
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

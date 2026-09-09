@@ -33,6 +33,8 @@ namespace Rustline.Editor
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
+        private const string LongwatchMuzzleFlashPath =
+            "Assets/Art/Effects/Weapons/longwatch_dmr/longwatch_dmr_muzzle_flash.png";
         private const string AtlasPath = "Assets/Art/Environment/Tiles/industrial_surface.png";
         private const string AnimationRoot = PlayerRoot + "/Animations";
         private const string BodyAnimationRoot = AnimationRoot + "/Body";
@@ -222,6 +224,7 @@ namespace Rustline.Editor
 
             ConfigurePlayerSheets();
             ConfigureLongwatchAimSheets();
+            ConfigureLongwatchMuzzleFlash();
             ConfigureJumpDust();
             ConfigureEnvironmentAtlas();
             MoveLegacyBodyAnimationClips();
@@ -309,6 +312,25 @@ namespace Rustline.Editor
                     new Vector2(0.3f, 8f / 96f),
                     logicalRowsRunTopToBottom: false);
             }
+        }
+
+        internal static void ConfigureLongwatchMuzzleFlash()
+        {
+            ConfigureFixedGrid(
+                LongwatchMuzzleFlashPath,
+                9,
+                9,
+                20,
+                index => "longwatch_dmr_muzzle_flash_v" + (index / 2).ToString("00") +
+                    "_f" + (index % 2),
+                new Vector2(0.5f / 9f, 0.5f),
+                logicalRowsRunTopToBottom: false);
+
+            TextureImporter importer = AssetImporter.GetAtPath(LongwatchMuzzleFlashPath) as TextureImporter;
+            Require(importer != null, "Longwatch muzzle-flash texture importer is missing.");
+            importer.sRGBTexture = true;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.SaveAndReimport();
         }
 
         private static void ConfigureJumpDust()
@@ -1002,6 +1024,7 @@ namespace Rustline.Editor
             ValidateLongwatchRunAimSheets();
             ValidateLongwatchBackpedalAimSheets();
             ValidateLongwatchCrouchAimSheets();
+            ValidateLongwatchMuzzleFlash();
 
             ValidateImporter(JumpDustPath);
             ValidateSpriteGrid(
@@ -1355,6 +1378,77 @@ namespace Rustline.Editor
 
             Require(importedSpriteCount == 114,
                 "Longwatch Crouch aim package must import exactly 114 sprites.");
+        }
+
+        private static void ValidateLongwatchMuzzleFlash()
+        {
+            ValidateImporter(LongwatchMuzzleFlashPath);
+            ValidateSpriteGrid(
+                LongwatchMuzzleFlashPath,
+                9,
+                9,
+                20,
+                false,
+                index => "longwatch_dmr_muzzle_flash_v" + (index / 2).ToString("00") +
+                    "_f" + (index % 2),
+                new Vector2(0.5f, 4.5f));
+
+            TextureImporter importer = AssetImporter.GetAtPath(LongwatchMuzzleFlashPath) as TextureImporter;
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(LongwatchMuzzleFlashPath);
+            Require(importer != null && importer.sRGBTexture &&
+                importer.npotScale == TextureImporterNPOTScale.None,
+                "Longwatch muzzle flash must import as normal sRGB color with NPOT scaling disabled.");
+            Require(texture != null && texture.width == 180 && texture.height == 9,
+                "Longwatch muzzle-flash sheet must remain exactly 180x9 (twenty 9x9 cells).");
+
+            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Require(!string.IsNullOrEmpty(projectRoot), "Could not resolve the Unity project root.");
+            Texture2D source = new Texture2D(2, 2, TextureFormat.RGBA32, false, true);
+            try
+            {
+                Require(source.LoadImage(
+                        File.ReadAllBytes(Path.Combine(projectRoot, LongwatchMuzzleFlashPath)), false),
+                    "Could not decode the Longwatch muzzle-flash source PNG.");
+                Require(source.width == 180 && source.height == 9,
+                    "Longwatch muzzle-flash source PNG must remain exactly 180x9.");
+
+                Color32 rustOrange = RustlinePalette.GetColor(11);
+                Color32 warningOrange = RustlinePalette.GetColor(13);
+                Color32 muzzleYellow = RustlinePalette.GetColor(23);
+                Color32 muzzleWhite = RustlinePalette.GetColor(24);
+                bool foundRustOrange = false;
+                bool foundWarningOrange = false;
+                bool foundMuzzleYellow = false;
+                bool foundMuzzleWhite = false;
+                Color32[] pixels = source.GetPixels32();
+                for (int index = 0; index < pixels.Length; index++)
+                {
+                    Color32 pixel = pixels[index];
+                    Require(pixel.a == 0 || pixel.a == 255,
+                        "Longwatch muzzle flash contains partial alpha at source pixel " + index + ".");
+                    if (pixel.a == 0)
+                    {
+                        continue;
+                    }
+
+                    bool expected = pixel.Equals(rustOrange) || pixel.Equals(warningOrange) ||
+                                    pixel.Equals(muzzleYellow) || pixel.Equals(muzzleWhite);
+                    Require(expected,
+                        "Longwatch muzzle flash contains a visible color outside its canonical FX subset " +
+                        "at source pixel " + index + ".");
+                    foundRustOrange |= pixel.Equals(rustOrange);
+                    foundWarningOrange |= pixel.Equals(warningOrange);
+                    foundMuzzleYellow |= pixel.Equals(muzzleYellow);
+                    foundMuzzleWhite |= pixel.Equals(muzzleWhite);
+                }
+
+                Require(foundRustOrange && foundWarningOrange && foundMuzzleYellow && foundMuzzleWhite,
+                    "Longwatch muzzle flash must use all four expected canonical FX colors.");
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(source);
+            }
         }
 
         private static void ValidateImporter(string path)

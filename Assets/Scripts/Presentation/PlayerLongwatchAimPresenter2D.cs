@@ -140,6 +140,9 @@ namespace Rustline.Presentation
         private bool _configurationValid;
         private bool _hasObservedAimRevision;
         private uint _lastAimRevision;
+        private bool _lastFacingLeft;
+        private bool _hasRenderedPose;
+        private LongwatchRenderedPose2D _renderedPose;
 
         public PlayerAim2D PlayerAim => playerAim;
         public PlayerAnimator2D PlayerAnimator => playerAnimator;
@@ -177,33 +180,58 @@ namespace Rustline.Presentation
 
                 int directionIndex = _selection.DirectionIndex;
                 Sprite bodySprite = bodySpriteRenderer.sprite;
-                if (bodySprite == _lastBodySprite && directionIndex == _lastDirectionIndex)
+                bool facingLeft = armsWeaponSpriteRenderer.flipX;
+                if (bodySprite == _lastBodySprite && directionIndex == _lastDirectionIndex &&
+                    facingLeft == _lastFacingLeft)
                 {
                     return;
                 }
 
                 if (!TryResolveDisplayedBodyFrame(bodySprite, out PlayerAnimationState bodyState, out int bodyFrameIndex))
                 {
+                    _hasRenderedPose = false;
                     return;
                 }
 
                 _lastBodySprite = bodySprite;
                 _lastDirectionIndex = directionIndex;
+                _lastFacingLeft = facingLeft;
+                int authoredAngleDegrees;
+                LongwatchMuzzleState2D muzzleState;
                 switch (bodyState)
                 {
                     case PlayerAnimationState.Idle:
                         armsWeaponSpriteRenderer.sprite = idleAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        authoredAngleDegrees = idleAimPoses[directionIndex].AngleDegrees;
+                        muzzleState = LongwatchMuzzleState2D.Idle;
                         break;
                     case PlayerAnimationState.Run:
                         armsWeaponSpriteRenderer.sprite = runAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        authoredAngleDegrees = runAimPoses[directionIndex].AngleDegrees;
+                        muzzleState = LongwatchMuzzleState2D.Run;
                         break;
                     case PlayerAnimationState.Backpedal:
                         armsWeaponSpriteRenderer.sprite = backpedalAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        authoredAngleDegrees = backpedalAimPoses[directionIndex].AngleDegrees;
+                        muzzleState = LongwatchMuzzleState2D.Backpedal;
                         break;
                     case PlayerAnimationState.CrouchMove:
                         armsWeaponSpriteRenderer.sprite = crouchAimPoses[directionIndex].GetFrame(bodyFrameIndex);
+                        authoredAngleDegrees = crouchAimPoses[directionIndex].AngleDegrees;
+                        muzzleState = LongwatchMuzzleState2D.Crouch;
                         break;
+                    default:
+                        _hasRenderedPose = false;
+                        return;
                 }
+
+                _renderedPose = new LongwatchRenderedPose2D(
+                    muzzleState,
+                    directionIndex,
+                    authoredAngleDegrees,
+                    bodyFrameIndex,
+                    facingLeft);
+                _hasRenderedPose = true;
             }
         }
 
@@ -213,6 +241,8 @@ namespace Rustline.Presentation
             _hasObservedAimRevision = false;
             _lastBodySprite = null;
             _lastDirectionIndex = -1;
+            _lastFacingLeft = false;
+            _hasRenderedPose = false;
         }
 
         private void OnDisable()
@@ -258,6 +288,18 @@ namespace Rustline.Presentation
         public Sprite GetBodyCrouchFrame(int index)
         {
             return bodyCrouchFrames[index];
+        }
+
+        public bool TryGetCurrentRenderedPose(out LongwatchRenderedPose2D pose)
+        {
+            if (_ownsRenderer && _hasRenderedPose)
+            {
+                pose = _renderedPose;
+                return true;
+            }
+
+            pose = default;
+            return false;
         }
 
         private bool CanOwnRenderer()
@@ -372,6 +414,7 @@ namespace Rustline.Presentation
             _ownsRenderer = true;
             _lastBodySprite = null;
             _lastDirectionIndex = -1;
+            _hasRenderedPose = false;
         }
 
         private void ReleaseRenderer()
@@ -385,6 +428,7 @@ namespace Rustline.Presentation
             unarmedPresenter?.SetRendererOwnership(true);
             _lastBodySprite = null;
             _lastDirectionIndex = -1;
+            _hasRenderedPose = false;
         }
     }
 }
