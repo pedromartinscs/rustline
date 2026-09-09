@@ -828,6 +828,10 @@ MonoBehaviour:
     armsSprite: {fileID: -8532235562473994697, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
   - bodySprite: {fileID: -4216503289844374570, guid: 2e177b38b59905349be658f285a832b4, type: 3}
     armsSprite: {fileID: 462722929035812072, guid: 2ddc090689ca39a40a54e5a2d0f4e8b2, type: 3}
+  - bodySprite: {fileID: 559417623693251364, guid: bcee2fef62fc7004b9f67cdc5a4db535, type: 3}
+    armsSprite: {fileID: -4796557330900376825, guid: abe9c228cf8766c4680e0fab0fbac00d, type: 3}
+  - bodySprite: {fileID: -4093670279925378538, guid: bcee2fef62fc7004b9f67cdc5a4db535, type: 3}
+    armsSprite: {fileID: 873792862, guid: abe9c228cf8766c4680e0fab0fbac00d, type: 3}
   ownsRenderer: 1
 --- !u!114 &2385879683141238295
 MonoBehaviour:

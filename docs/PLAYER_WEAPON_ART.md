@@ -58,6 +58,7 @@ player_salvager_body_jump.png
 player_salvager_body_fall.png
 player_salvager_body_land.png
 player_salvager_body_crouch.png
+player_salvager_body_wall_brace.png
 
 player_salvager_arms_idle.png
 player_salvager_arms_run.png
@@ -66,6 +67,7 @@ player_salvager_arms_jump.png
 player_salvager_arms_fall.png
 player_salvager_arms_land.png
 player_salvager_arms_crouch.png
+player_salvager_arms_wall_brace.png
 ```
 
 Future roll/dodge artwork follows the same convention:
@@ -78,6 +80,8 @@ player_salvager_arms_roll.png
 Each Body/Unarmed Arms pair preserves the source sheet's frame count, frame order, **48×64** cell dimensions, pivot, and timing.
 
 The crouch pair is one authoritative six-frame sheet per layer, not separate Idle and Move artwork. `CrouchIdle` statically reuses crouch frame 0 with no breathing, while `CrouchMove` loops frames 0..5 at an initial 7 fps. The accepted two-frame breathing motion remains exclusive to standing Idle.
+
+The Wall Brace pair is two frames per layer and loops at 6 fps. It is authored touching a wall on the right: `WallSide == +1` presents unflipped and `WallSide == -1` presents with `flipX`; that visual override does not mutate continuous aim or its normal facing hemisphere. No armed Longwatch Wall Brace overlay exists yet, so unarmed Arms own the renderer during this state.
 
 ## Armed overlay geometry
 

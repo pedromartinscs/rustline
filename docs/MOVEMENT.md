@@ -16,7 +16,7 @@ The existing `InputSystem_Actions` asset contains one focused `Player` map with 
 - `PlayerMotor2D` applies horizontal velocity, posture changes, wall interaction, explicit gravity, jump cutting, coyote time, and jump buffering to a Dynamic Rigidbody2D in `FixedUpdate`. Grounded input with aim-facing uses 7 units/s forward and 4 units/s backward, crouch uses 3 units/s, and air speed remains 7 units/s regardless of aim.
 - `PlayerGroundProbe2D` casts the stable player CapsuleCollider2D a short distance downward against the `Ground` layer and accepts only sufficiently upward-facing normals. Side-wall contacts do not ground the player.
 - `PlayerEnvironmentProbe2D` reuses the player capsule, a cached `ContactFilter2D`, and fixed hit storage for stand-clearance and near-vertical wall casts.
-- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, Land, Crouch Idle, or Crouch Move from authoritative movement state and actual velocity. Crouch uses its dedicated authored Body/Unarmed Arms package. Wall brace/kick deliberately fall back to Fall/Jump.
+- `PlayerAnimator2D` selects Idle, Run, Backpedal, Jump, Fall, Land, Crouch Idle, Crouch Move, or Wall Brace from authoritative movement state and actual velocity. Crouch and Wall Brace use dedicated authored Body/Unarmed Arms packages. Wall Brace facing follows the contacted `WallSide` (`+1` unflipped, `-1` flipped) without changing continuous aim; Wall Kick deliberately falls back to Jump/Fall until art is authored.
 - `PixelCameraFollow2D` smooths in continuous world space, then snaps the rendered camera position to the 1/16-unit pixel grid.
 - `PlayerMovementConfig` stores all important tuning in `Assets/Config/Player/PlayerMovementConfig.asset`.
 

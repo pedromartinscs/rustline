@@ -778,7 +778,7 @@ namespace Rustline.Tests
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
             Assert.That(animator, Is.Not.Null);
-            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(24));
+            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(26));
             Assert.That(motor.GetComponentsInChildren<Animator>(true), Has.Length.EqualTo(1));
 
             Vector3 visualPosition = visual.localPosition;
@@ -1225,11 +1225,33 @@ namespace Rustline.Tests
 
             PlayerMotor2D motor = Object.FindAnyObjectByType<PlayerMotor2D>();
             Rigidbody2D body = motor.GetComponent<Rigidbody2D>();
+            PlayerAim2D aim = motor.GetComponent<PlayerAim2D>();
+            PlayerAnimator2D playerAnimator = motor.GetComponent<PlayerAnimator2D>();
+            PlayerUnarmedArmsPresenter2D unarmedPresenter =
+                motor.GetComponent<PlayerUnarmedArmsPresenter2D>();
+            PlayerLongwatchAimPresenter2D longwatchPresenter =
+                motor.GetComponent<PlayerLongwatchAimPresenter2D>();
+            Transform visual = motor.transform.Find("Visual - 48x64 Full Cell");
+            Transform bodyVisual = visual?.Find("BodySpriteRenderer");
+            Transform armsVisual = visual?.Find("ArmsWeaponSpriteRenderer");
+            SpriteRenderer bodyRenderer = bodyVisual?.GetComponent<SpriteRenderer>();
+            SpriteRenderer armsRenderer = armsVisual?.GetComponent<SpriteRenderer>();
+            Animator animator = bodyVisual?.GetComponent<Animator>();
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
             int landEvents = 0;
             motor.Landed += CountLand;
             try
             {
+                Assert.That(aim, Is.Not.Null);
+                Assert.That(playerAnimator, Is.Not.Null);
+                Assert.That(unarmedPresenter, Is.Not.Null);
+                Assert.That(longwatchPresenter, Is.Not.Null);
+                Assert.That(bodyRenderer, Is.Not.Null);
+                Assert.That(armsRenderer, Is.Not.Null);
+                Assert.That(animator, Is.Not.Null);
+                Vector2 oppositeWallAim = wallSide > 0 ? Vector2.left : Vector2.right;
+                aim.enabled = false;
+                Assert.That(aim.ApplyWorldAimVector(oppositeWallAim), Is.True);
                 body.position = new Vector2(startingX, -1f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
@@ -1239,11 +1261,24 @@ namespace Rustline.Tests
                 {
                     yield return new WaitForFixedUpdate();
                 }
+                yield return null;
 
                 Assert.That(motor.IsGrounded, Is.False);
                 Assert.That(motor.IsWallBraced, Is.True);
                 Assert.That(motor.WallSide, Is.EqualTo(wallSide));
                 Assert.That(body.linearVelocity.y, Is.InRange(-4.01f, -0.01f));
+                Assert.That(playerAnimator.CurrentState, Is.EqualTo(PlayerAnimationState.WallBrace));
+                Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName("WallBrace"), Is.True);
+                Assert.That(bodyRenderer.sprite.name, Does.StartWith("player_salvager_body_wall_brace_"));
+                Assert.That(unarmedPresenter.TryGetArmsSprite(bodyRenderer.sprite, out Sprite expectedArms), Is.True);
+                Assert.That(armsRenderer.sprite, Is.SameAs(expectedArms));
+                Assert.That(bodyRenderer.flipX, Is.EqualTo(wallSide < 0));
+                Assert.That(armsRenderer.flipX, Is.EqualTo(wallSide < 0));
+                Assert.That(aim.FacingLeft, Is.EqualTo(wallSide > 0),
+                    "Wall Brace visual facing must not mutate the opposing continuous aim-facing.");
+                Assert.That(aim.ContinuousAimDirection, Is.EqualTo(oppositeWallAim));
+                Assert.That(longwatchPresenter.OwnsRenderer, Is.False);
+                Assert.That(unarmedPresenter.OwnsRenderer, Is.True);
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(inputKey, Key.Space));
                 InputSystem.Update();
@@ -1252,6 +1287,11 @@ namespace Rustline.Tests
                 Assert.That(body.linearVelocity.x, Is.EqualTo(expectedKickVelocityX).Within(0.05f));
                 Assert.That(body.linearVelocity.y, Is.EqualTo(11.5f).Within(0.05f));
                 Assert.That(motor.WallKickLockRemaining, Is.GreaterThan(0f));
+                yield return null;
+                Assert.That(playerAnimator.CurrentState, Is.EqualTo(PlayerAnimationState.Jump));
+                Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName("Jump"), Is.True);
+                Assert.That(longwatchPresenter.OwnsRenderer, Is.False);
+                Assert.That(unarmedPresenter.OwnsRenderer, Is.True);
 
                 for (int index = 0; index < 3; index++)
                 {

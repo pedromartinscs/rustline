@@ -12,6 +12,7 @@ namespace Rustline.Presentation
         Land,
         CrouchIdle,
         CrouchMove,
+        WallBrace,
     }
 
     public static class PlayerAnimationStateSelector

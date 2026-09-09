@@ -17,6 +17,7 @@ namespace Rustline.Presentation
         private static readonly int LandStateHash = Animator.StringToHash(nameof(PlayerAnimationState.Land));
         private static readonly int CrouchIdleStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchIdle));
         private static readonly int CrouchMoveStateHash = Animator.StringToHash(nameof(PlayerAnimationState.CrouchMove));
+        private static readonly int WallBraceStateHash = Animator.StringToHash(nameof(PlayerAnimationState.WallBrace));
         // Presentation-only variant: logical gameplay state remains CrouchMove, but walking
         // opposite aim-facing uses the same six authored frames in reverse order (5 -> 0).
         private static readonly int CrouchBackpedalStateHash = Animator.StringToHash("CrouchBackpedal");
@@ -79,18 +80,23 @@ namespace Rustline.Presentation
                     _landingTimeRemaining = 0f;
                 }
 
-                bool facingLeft = playerAim != null && playerAim.FacingLeft;
+                bool wallBraced = _motor.IsWallBraced;
+                bool facingLeft = wallBraced
+                    ? _motor.WallSide < 0
+                    : playerAim != null && playerAim.FacingLeft;
                 ApplyFacing(facingLeft);
 
-                PlayerAnimationState nextState = PlayerAnimationStateSelector.Select(
-                    _motor.IsGrounded,
-                    velocity.x,
-                    velocity.y,
-                    _landingTimeRemaining > 0f,
-                    facingLeft,
-                    config.RunAnimationSpeedThreshold,
-                    config.AscendingAnimationThreshold,
-                    _motor.IsCrouched);
+                PlayerAnimationState nextState = wallBraced
+                    ? PlayerAnimationState.WallBrace
+                    : PlayerAnimationStateSelector.Select(
+                        _motor.IsGrounded,
+                        velocity.x,
+                        velocity.y,
+                        _landingTimeRemaining > 0f,
+                        facingLeft,
+                        config.RunAnimationSpeedThreshold,
+                        config.AscendingAnimationThreshold,
+                        _motor.IsCrouched);
 
                 bool crouchBackpedaling =
                     nextState == PlayerAnimationState.CrouchMove &&
@@ -144,6 +150,7 @@ namespace Rustline.Presentation
                 case PlayerAnimationState.Land: return LandStateHash;
                 case PlayerAnimationState.CrouchIdle: return CrouchIdleStateHash;
                 case PlayerAnimationState.CrouchMove: return CrouchMoveStateHash;
+                case PlayerAnimationState.WallBrace: return WallBraceStateHash;
                 default: return IdleStateHash;
             }
         }
