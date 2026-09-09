@@ -6,6 +6,10 @@ This document defines the authoring and generation contract for exact weapon muz
 
 The first supported weapon is the **Longwatch DMR**.
 
+Phase 1 is implemented as an offline Python/Pillow generator. The checked-in
+schema-versioned JSON is derived from production PNGs and the authoring reference.
+Unity/runtime consumption remains future work.
+
 Production armed art remains authored only for the canonical right-facing hemisphere:
 
 ```text
@@ -111,6 +115,21 @@ The generator must never silently choose a "best" candidate.
 
 If no supported signature radius is unique across the corpus, fail with weapon/state/direction/frame diagnostics.
 
+### Cell-edge behavior
+
+The implementation extracts neighborhoods with a distinct out-of-bounds
+sentinel and confines every search to one 80×96 cell. During exact comparison,
+an out-of-cell sample is equivalent only to a normalized fully transparent
+pixel. This models the empty rendered space beyond an isolated Full Rect sprite;
+it never permits an out-of-cell sample to match an alpha-greater-than-zero pixel.
+
+This explicit transparent-padding rule is exercised by Longwatch p90 Run frames
+2 and 3: the unchanged muzzle signature reaches the top cell boundary. It avoids
+Python slice wraparound while preserving exact normalized RGBA matching.
+
+The current production corpus resolves uniquely at `5×5` for every direction;
+adaptive sizes through `13×13` remain available for future art revisions.
+
 ## Intentional Crouch exception
 
 Longwatch Crouch angles:
@@ -165,13 +184,18 @@ Runtime left-facing mirroring can therefore negate X while preserving Y.
 
 ## Generated artifact
 
-The intended versioned generated output is:
+The versioned generated output is:
 
 ```text
 ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata.json
 ```
 
 The JSON is derived data and must not be edited by hand. Re-running the generator after an art change is expected to update the file, producing a useful Git diff of changed muzzle points.
+
+The current schema is version 1 with generator version 1. The validated
+Longwatch corpus contains 324 supported frame points: 38 Idle, 114 Run, 76
+Backpedal, and 96 Crouch. Crouch `m70`, `m80`, and `m90` are present as explicit
+unsupported direction entries with empty frame arrays.
 
 The schema must be versioned and include enough information to validate:
 
@@ -199,7 +223,9 @@ Runtime gameplay must not:
 - repeatedly parse JSON;
 - discover assets from disk.
 
-The first implementation phase should stop at a validated JSON artifact. Runtime clearance, muzzle flash, tracer-origin migration, and reticle behavior should be implemented separately after the generated coordinates have been inspected and accepted.
+The first implementation phase stops at a validated JSON artifact. Runtime
+clearance, muzzle flash, tracer-origin migration, and reticle behavior remain
+separate work after the generated coordinates have been inspected and accepted.
 
 ## Tooling location
 

@@ -1,0 +1,2841 @@
+{
+  "schemaVersion": 1,
+  "generatorVersion": 1,
+  "weaponId": "longwatch_dmr",
+  "cellSizePixels": [
+    80,
+    96
+  ],
+  "pivotPixels": [
+    24,
+    8
+  ],
+  "reference": {
+    "state": "Idle",
+    "frame": 0,
+    "path": "ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png"
+  },
+  "states": [
+    {
+      "name": "Idle",
+      "frameCount": 2,
+      "directions": [
+        {
+          "suffix": "p90",
+          "angleDegrees": 90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -5.5,
+                84.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -4.5,
+                85.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p80",
+          "angleDegrees": 80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                2.5,
+                85.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                3.5,
+                86.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p70",
+          "angleDegrees": 70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                10.5,
+                81.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                11.5,
+                82.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p60",
+          "angleDegrees": 60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                16.5,
+                79.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                17.5,
+                80.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p50",
+          "angleDegrees": 50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                21.5,
+                74.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                22.5,
+                75.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p40",
+          "angleDegrees": 40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                27.5,
+                70.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                28.5,
+                71.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p30",
+          "angleDegrees": 30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                31.5,
+                65.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                32.5,
+                66.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p20",
+          "angleDegrees": 20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                34.5,
+                57.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                35.5,
+                58.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p10",
+          "angleDegrees": 10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                37.5,
+                50.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                38.5,
+                51.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "0",
+          "angleDegrees": 0,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                40.5,
+                41.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                41.5,
+                42.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m10",
+          "angleDegrees": -10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                39.5,
+                34.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                40.5,
+                35.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m20",
+          "angleDegrees": -20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                36.5,
+                27.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                37.5,
+                28.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m30",
+          "angleDegrees": -30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                35.5,
+                19.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                36.5,
+                20.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m40",
+          "angleDegrees": -40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                30.5,
+                14.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                31.5,
+                15.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m50",
+          "angleDegrees": -50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                25.5,
+                7.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                26.5,
+                8.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m60",
+          "angleDegrees": -60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                20.5,
+                3.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                21.5,
+                4.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m70",
+          "angleDegrees": -70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                12.5,
+                1.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                13.5,
+                2.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m80",
+          "angleDegrees": -80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                5.5,
+                -1.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                6.5,
+                -0.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m90",
+          "angleDegrees": -90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -2.5,
+                -5.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -1.5,
+                -4.5
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Run",
+      "frameCount": 6,
+      "directions": [
+        {
+          "suffix": "p90",
+          "angleDegrees": 90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                6.5,
+                83.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -0.5,
+                82.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                2.5,
+                86.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                2.5,
+                86.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                4.5,
+                85.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                -1.5,
+                85.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p80",
+          "angleDegrees": 80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                14.5,
+                84.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                7.5,
+                83.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                10.5,
+                87.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                10.5,
+                87.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                12.5,
+                86.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                6.5,
+                86.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p70",
+          "angleDegrees": 70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                22.5,
+                80.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                15.5,
+                79.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                18.5,
+                83.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                18.5,
+                83.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                20.5,
+                82.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                14.5,
+                82.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p60",
+          "angleDegrees": 60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                28.5,
+                78.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                21.5,
+                77.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                24.5,
+                81.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                24.5,
+                81.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                26.5,
+                80.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                20.5,
+                80.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p50",
+          "angleDegrees": 50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                33.5,
+                73.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                26.5,
+                72.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                29.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                29.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                31.5,
+                75.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                25.5,
+                75.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p40",
+          "angleDegrees": 40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                39.5,
+                69.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                32.5,
+                68.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                35.5,
+                72.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                35.5,
+                72.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                37.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                31.5,
+                71.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p30",
+          "angleDegrees": 30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                43.5,
+                64.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                36.5,
+                63.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                39.5,
+                67.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                39.5,
+                67.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                41.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                35.5,
+                66.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p20",
+          "angleDegrees": 20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                46.5,
+                56.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                39.5,
+                55.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                42.5,
+                59.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                42.5,
+                59.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                44.5,
+                58.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                38.5,
+                58.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p10",
+          "angleDegrees": 10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                49.5,
+                49.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                42.5,
+                48.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                45.5,
+                52.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                45.5,
+                52.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                47.5,
+                51.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                41.5,
+                51.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "0",
+          "angleDegrees": 0,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                52.5,
+                40.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                45.5,
+                39.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                48.5,
+                43.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                48.5,
+                43.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                50.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                44.5,
+                42.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m10",
+          "angleDegrees": -10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                51.5,
+                33.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                44.5,
+                32.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                47.5,
+                36.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                47.5,
+                36.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                49.5,
+                35.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                43.5,
+                35.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m20",
+          "angleDegrees": -20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                48.5,
+                26.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                41.5,
+                25.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                44.5,
+                29.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                44.5,
+                29.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                46.5,
+                28.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                40.5,
+                28.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m30",
+          "angleDegrees": -30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                47.5,
+                18.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                40.5,
+                17.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                43.5,
+                21.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                43.5,
+                21.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                45.5,
+                20.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                39.5,
+                20.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m40",
+          "angleDegrees": -40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                42.5,
+                13.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                35.5,
+                12.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                38.5,
+                16.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                38.5,
+                16.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                40.5,
+                15.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                34.5,
+                15.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m50",
+          "angleDegrees": -50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                37.5,
+                6.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                30.5,
+                5.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                33.5,
+                9.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                33.5,
+                9.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                35.5,
+                8.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                29.5,
+                8.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m60",
+          "angleDegrees": -60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                32.5,
+                2.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                25.5,
+                1.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                28.5,
+                5.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                28.5,
+                5.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                30.5,
+                4.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                24.5,
+                4.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m70",
+          "angleDegrees": -70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                24.5,
+                0.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                17.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                20.5,
+                3.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                20.5,
+                3.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                22.5,
+                2.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                16.5,
+                2.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m80",
+          "angleDegrees": -80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                17.5,
+                -2.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                10.5,
+                -3.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                13.5,
+                0.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                13.5,
+                0.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                15.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                9.5,
+                -0.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m90",
+          "angleDegrees": -90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                9.5,
+                -6.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                2.5,
+                -7.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                5.5,
+                -3.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                5.5,
+                -3.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                7.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                1.5,
+                -4.5
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Backpedal",
+      "frameCount": 4,
+      "directions": [
+        {
+          "suffix": "p90",
+          "angleDegrees": 90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -10.5,
+                85.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -10.5,
+                85.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                -7.5,
+                85.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                -8.5,
+                85.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p80",
+          "angleDegrees": 80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -2.5,
+                86.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -2.5,
+                86.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                0.5,
+                86.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                -0.5,
+                86.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p70",
+          "angleDegrees": 70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                5.5,
+                82.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                5.5,
+                82.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                8.5,
+                82.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                7.5,
+                82.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p60",
+          "angleDegrees": 60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                11.5,
+                80.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                11.5,
+                80.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                14.5,
+                80.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                13.5,
+                80.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p50",
+          "angleDegrees": 50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                16.5,
+                75.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                16.5,
+                75.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                19.5,
+                75.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                18.5,
+                75.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p40",
+          "angleDegrees": 40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                22.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                22.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                25.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                24.5,
+                71.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p30",
+          "angleDegrees": 30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                26.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                26.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                29.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                28.5,
+                66.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p20",
+          "angleDegrees": 20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                29.5,
+                58.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                29.5,
+                58.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                32.5,
+                58.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                31.5,
+                58.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p10",
+          "angleDegrees": 10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                32.5,
+                51.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                32.5,
+                51.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                35.5,
+                51.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                34.5,
+                51.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "0",
+          "angleDegrees": 0,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                35.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                35.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                38.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                37.5,
+                42.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m10",
+          "angleDegrees": -10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                34.5,
+                35.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                34.5,
+                35.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                37.5,
+                35.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                36.5,
+                35.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m20",
+          "angleDegrees": -20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                31.5,
+                28.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                31.5,
+                28.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                34.5,
+                28.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                33.5,
+                28.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m30",
+          "angleDegrees": -30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                30.5,
+                20.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                30.5,
+                20.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                33.5,
+                20.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                32.5,
+                20.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m40",
+          "angleDegrees": -40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                25.5,
+                15.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                25.5,
+                15.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                28.5,
+                15.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                27.5,
+                15.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m50",
+          "angleDegrees": -50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                20.5,
+                8.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                20.5,
+                8.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                23.5,
+                8.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                22.5,
+                8.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m60",
+          "angleDegrees": -60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                15.5,
+                4.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                15.5,
+                4.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                18.5,
+                4.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                17.5,
+                4.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m70",
+          "angleDegrees": -70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                7.5,
+                2.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                7.5,
+                2.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                10.5,
+                2.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                9.5,
+                2.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m80",
+          "angleDegrees": -80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                0.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                0.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                3.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                2.5,
+                -0.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m90",
+          "angleDegrees": -90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                -7.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -7.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                -4.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                -5.5,
+                -4.5
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Crouch",
+      "frameCount": 6,
+      "directions": [
+        {
+          "suffix": "p90",
+          "angleDegrees": 90,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                0.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                -1.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                -1.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                0.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                -1.5,
+                76.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                -1.5,
+                76.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p80",
+          "angleDegrees": 80,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                8.5,
+                77.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                6.5,
+                77.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                6.5,
+                77.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                8.5,
+                77.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                6.5,
+                77.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                6.5,
+                77.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p70",
+          "angleDegrees": 70,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                16.5,
+                73.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                14.5,
+                73.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                14.5,
+                73.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                16.5,
+                73.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                14.5,
+                73.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                14.5,
+                73.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p60",
+          "angleDegrees": 60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                22.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                20.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                20.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                22.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                20.5,
+                71.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                20.5,
+                71.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p50",
+          "angleDegrees": 50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                27.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                25.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                25.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                27.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                25.5,
+                66.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                25.5,
+                66.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p40",
+          "angleDegrees": 40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                33.5,
+                62.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                31.5,
+                62.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                31.5,
+                62.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                33.5,
+                62.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                31.5,
+                62.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                31.5,
+                62.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p30",
+          "angleDegrees": 30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                37.5,
+                57.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                35.5,
+                57.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                35.5,
+                57.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                37.5,
+                57.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                35.5,
+                57.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                35.5,
+                57.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p20",
+          "angleDegrees": 20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                40.5,
+                49.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                38.5,
+                49.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                38.5,
+                49.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                40.5,
+                49.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                38.5,
+                49.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                38.5,
+                49.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "p10",
+          "angleDegrees": 10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                43.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                41.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                41.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                43.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                41.5,
+                42.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                41.5,
+                42.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "0",
+          "angleDegrees": 0,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                46.5,
+                33.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                44.5,
+                33.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                44.5,
+                33.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                46.5,
+                33.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                44.5,
+                33.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                44.5,
+                33.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m10",
+          "angleDegrees": -10,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                45.5,
+                26.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                43.5,
+                26.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                43.5,
+                26.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                45.5,
+                26.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                43.5,
+                26.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                43.5,
+                26.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m20",
+          "angleDegrees": -20,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                42.5,
+                19.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                40.5,
+                19.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                40.5,
+                19.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                42.5,
+                19.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                40.5,
+                19.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                40.5,
+                19.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m30",
+          "angleDegrees": -30,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                41.5,
+                11.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                39.5,
+                11.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                39.5,
+                11.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                41.5,
+                11.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                39.5,
+                11.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                39.5,
+                11.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m40",
+          "angleDegrees": -40,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                36.5,
+                6.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                34.5,
+                6.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                34.5,
+                6.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                36.5,
+                6.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                34.5,
+                6.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                34.5,
+                6.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m50",
+          "angleDegrees": -50,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                31.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                29.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                29.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                31.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                29.5,
+                -0.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                29.5,
+                -0.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m60",
+          "angleDegrees": -60,
+          "supported": true,
+          "frames": [
+            {
+              "frame": 0,
+              "muzzleOffsetPixels": [
+                26.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 1,
+              "muzzleOffsetPixels": [
+                24.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 2,
+              "muzzleOffsetPixels": [
+                24.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 3,
+              "muzzleOffsetPixels": [
+                26.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 4,
+              "muzzleOffsetPixels": [
+                24.5,
+                -4.5
+              ]
+            },
+            {
+              "frame": 5,
+              "muzzleOffsetPixels": [
+                24.5,
+                -4.5
+              ]
+            }
+          ]
+        },
+        {
+          "suffix": "m70",
+          "angleDegrees": -70,
+          "supported": false,
+          "frames": []
+        },
+        {
+          "suffix": "m80",
+          "angleDegrees": -80,
+          "supported": false,
+          "frames": []
+        },
+        {
+          "suffix": "m90",
+          "angleDegrees": -90,
+          "supported": false,
+          "frames": []
+        }
+      ]
+    }
+  ]
+}

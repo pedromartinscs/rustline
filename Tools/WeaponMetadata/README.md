@@ -1,10 +1,10 @@
 # Weapon Metadata Tools
 
-This directory is reserved for offline weapon-art metadata generation.
+This directory contains offline weapon-art metadata generation.
 
-The first tool should generate exact **Longwatch DMR muzzle points** from production PNGs. The design contract is documented in [`docs/WEAPON_MUZZLE_METADATA.md`](../../docs/WEAPON_MUZZLE_METADATA.md).
+The generator produces exact **Longwatch DMR muzzle points** from production PNGs. The design contract is documented in [`docs/WEAPON_MUZZLE_METADATA.md`](../../docs/WEAPON_MUZZLE_METADATA.md).
 
-## Intended implementation
+## Implementation
 
 Use:
 
@@ -13,27 +13,46 @@ Use:
 - deterministic exact pixel comparisons;
 - no OpenCV unless a future requirement genuinely needs it.
 
-Expected entry point:
+Entry point:
 
 ```text
 Tools/WeaponMetadata/generate_muzzle_metadata.py
 ```
 
-Expected checked-in input reference:
+Checked-in input reference:
 
 ```text
 ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png
 ```
 
-Expected generated output:
+Versioned generated output:
 
 ```text
 ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata.json
 ```
 
-## Scope of the first generator
+Install the sole third-party dependency and run the generator from repository root:
 
-The first implementation should:
+```text
+python -m pip install -r Tools/WeaponMetadata/requirements.txt
+python Tools/WeaponMetadata/generate_muzzle_metadata.py
+```
+
+Verify that the checked-in JSON is current without writing it:
+
+```text
+python Tools/WeaponMetadata/generate_muzzle_metadata.py --check
+```
+
+Run the focused unit and real-art integration tests:
+
+```text
+python -m unittest discover -s Tools/WeaponMetadata/tests -p "test_*.py" -v
+```
+
+## Scope of the generator
+
+The implementation:
 
 1. validate the 80×96 reference image;
 2. require exactly 19 opaque blue muzzle markers and one opaque red anchor;
@@ -46,7 +65,11 @@ The first implementation should:
 9. write deterministic, schema-versioned JSON relative to the canonical `(24,8)` armed pivot;
 10. provide clear diagnostics and automated tests.
 
-Do not add runtime weapon-clearance logic in this first phase.
+The current Longwatch corpus resolves all required frames uniquely with the
+smallest `5×5` signature. It emits 324 supported muzzle points plus explicit
+unsupported entries for Crouch `m70`, `m80`, and `m90`.
+
+Do not add runtime weapon-clearance logic to this offline phase.
 
 ## Failure policy
 
@@ -62,8 +85,29 @@ Never silently select the nearest, first, or highest-scoring candidate.
 
 Transparent RGB must be ignored whenever alpha is zero.
 
+## Cell-boundary policy
+
+Neighborhood extraction uses an explicit out-of-bounds sentinel, so Python
+slicing cannot wrap around and searches never leave an individual 80×96 cell.
+For exact comparison, out-of-cell samples are equivalent only to normalized
+fully transparent pixels. This is deliberate: every frame is an isolated Full
+Rect sprite and renders no content outside its cell. The sentinel never matches
+pixels whose alpha is greater than zero.
+
+This rule is required by the real p90 Run frames 2 and 3, where the unchanged
+barrel-tip signature translates to the top edge. The focused boundary test locks
+the policy down. Matching otherwise remains exact RGBA comparison; there is no
+fuzzy score, closest-candidate choice, or prior-frame tracking.
+
 ## Generated files
 
 Generated JSON is versioned source-of-truth derived from production art. Do not hand-edit it.
 
 Tests should prove deterministic output: identical source art and reference data must produce byte-for-byte identical JSON.
+
+## Runtime boundary
+
+This tool does not implement Unity JSON consumption, runtime muzzle-origin
+migration, weapon clearance, muzzle effects, or invalid-crouch-angle reticle/fire
+behavior. `AimOriginWorld` remains the current gameplay/tracer origin until a
+separate runtime task changes it.
