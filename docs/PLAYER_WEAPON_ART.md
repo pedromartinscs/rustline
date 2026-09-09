@@ -297,7 +297,7 @@ The Longwatch Idle, Run, Backpedal, and Crouch packages are authored, determinis
 
 ## Longwatch muzzle metadata authoring
 
-Exact per-frame muzzle coordinates are being prepared as **offline-generated art metadata**, rather than maintained manually in Unity.
+Exact per-frame muzzle coordinates are generated as **offline-generated art metadata**, rather than maintained manually in Unity.
 
 The canonical authoring reference is:
 
@@ -307,11 +307,29 @@ ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.p
 
 It overlays Longwatch Idle frame 0 for all 19 authored right-facing directions and contains one blue muzzle marker per direction plus a single red radial-ordering anchor. The composite is used only to seed direction-specific extraction; clean pixel signatures must come from each isolated production Idle frame 0 so neighboring overlaid angles cannot contaminate matching.
 
-The planned Python/Pillow generator and JSON contract are specified in [`WEAPON_MUZZLE_METADATA.md`](WEAPON_MUZZLE_METADATA.md). Generated coordinates will be relative to the canonical armed pivot `(24,8)` and will later be imported into compact Unity runtime data; runtime gameplay will not inspect PNGs or perform image matching.
+The implemented Python/Pillow generator and JSON contract are specified in [`WEAPON_MUZZLE_METADATA.md`](WEAPON_MUZZLE_METADATA.md). It resolves 324 supported Longwatch muzzle points across Idle, Run, Backpedal, and Crouch and writes deterministic pivot-relative source-pixel offsets. The generated JSON will later be imported into compact Unity runtime data; runtime gameplay will not inspect PNGs or perform image matching.
 
 Longwatch Crouch `m70`, `m80`, and `m90` are a deliberate exception: the muzzle leaves the 80×96 authored cell at those downward poses. They are therefore treated as unsupported muzzle poses rather than generator failures. The approved future presentation rule is to clamp those crouch visuals to `m60`; invalid-angle firing and red-crosshair feedback remain separate follow-up runtime work.
 
-At this stage the reference/scaffold is versioned, but generated per-frame metadata and runtime muzzle consumption are **not yet implemented**. Existing hitscan/tracer behavior therefore continues to use the current `AimOriginWorld` path until that later integration is explicitly completed.
+The reference, generator, tests, and deterministic per-frame JSON are now versioned. Runtime muzzle consumption is **not yet implemented**. Existing hitscan/tracer behavior therefore continues to use the current `AimOriginWorld` path until that later integration is explicitly completed.
+
+## Longwatch muzzle flash asset
+
+A production Longwatch muzzle-flash spritesheet is versioned at:
+
+```text
+Assets/Art/Effects/Weapons/longwatch_dmr/longwatch_dmr_muzzle_flash.png
+```
+
+The sheet is exactly **180×9 px** and contains **10 deterministic variants × 2 frames**, laid out as 20 horizontal **9×9** cells:
+
+```text
+V0 F0 | V0 F1 | V1 F0 | V1 F1 | ... | V9 F0 | V9 F1
+```
+
+Each cell is authored right-facing with its attachment point at the left-center source pixel `(0,4)`. The effect uses only canonical Rustline FX colors: Muzzle White `#FEFEFE`, Muzzle Yellow `#FED437`, Warning Orange `#FBAB29`, Rust Orange `#ED7527`, plus full transparency. Alpha is binary.
+
+The asset is **authored and versioned but not yet imported/integrated at runtime**. The intended next step is to slice it deterministically as 20 `9×9` sprites, select a variant per resolved shot, play its two frames as a short one-shot, and place/orient it from the generated Longwatch muzzle metadata. Do not infer completed runtime behavior from the presence of this asset.
 
 ## Aim/fire locomotion rules
 
@@ -447,7 +465,7 @@ While locomotion presentation is Idle, Run, Backpedal, Crouch Idle, or Crouch Mo
 
 Idle, Run, Backpedal, Crouch Idle, and Crouch Move share one continuous selection and ownership path. On Jump, Fall, or Land the current presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall brace/kick use Fall/Jump fallback and remain non-firing states.
 
-Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, and Crouch Move. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. Its reused 3-unit distal tracer still derives from the resolved `AimOriginWorld` path because exact muzzle metadata is not yet authored, and a compact deterministic mark appears only at a resolved obstruction. M3A adds generic health and one programmer-art killable enemy without changing this weapon-art or gun-feel contract. Fall armed aim, carry states, gamepad aim, ammo/reload, inventory, authored muzzle flash, production recoil/impact art, combat audio, and player health remain deferred.
+Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, and Crouch Move. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. Its reused 3-unit distal tracer still derives from the resolved `AimOriginWorld` path because runtime muzzle-metadata consumption is not yet integrated, and a compact deterministic mark appears only at a resolved obstruction. M3A adds generic health and one programmer-art killable enemy without changing this weapon-art or gun-feel contract. Fall armed aim, carry states, gamepad aim, ammo/reload, inventory, muzzle-flash runtime integration, production recoil/impact art, combat audio, and player health remain deferred.
 
 `PlayerAnimator2D` continues to own locomotion-state selection. Armed aim presentation must not alter the accepted movement physics, jump presentation, camera behavior, collider, coyote time, jump buffer, or other M1A semantics.
 
