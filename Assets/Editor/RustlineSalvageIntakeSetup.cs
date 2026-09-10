@@ -49,8 +49,10 @@ namespace Rustline.Editor
         private const string PlayerSpawnName = "Player Spawn";
         private const string ExitStagingName = "Exit Staging";
 
-        // The first graybox is intentionally tile-aligned. The 24 px / 1.5 u Minimum Traversable
-        // Gap remains the authoring floor, while ordinary authored gaps stay at 2+ whole tiles.
+        // Graybox v2 keeps the 56-tile room envelope but replaces the test-course-like service
+        // staircase with a cleaner entry deck, a lower central bay, and a genuine upper catwalk route.
+        // The 24 px / 1.5 u Minimum Traversable Gap remains the authoring floor; ordinary openings
+        // stay aligned to whole 16 px tiles and comfortably exceed that minimum.
         private static readonly CellRect[] StructureRects =
         {
             // Continuous safety floor and room boundary bulkheads.
@@ -58,34 +60,43 @@ namespace Rustline.Editor
             new CellRect(-28, 0, 2, 16),
             new CellRect(26, 0, 2, 16),
 
-            // West-side service rise: readable 1-2 tile height changes instead of test-course gaps.
-            new CellRect(-18, 0, 5, 1),
-            new CellRect(-13, 0, 5, 2),
-            new CellRect(-8, 0, 5, 4),
+            // Left entry deck: intentionally simple and readable.
+            new CellRect(-24, 0, 8, 1),
 
-            // Central salvage machinery plinth. This is gameplay collision; the eventual hero
-            // machinery silhouette will extend far beyond it as non-colliding background art.
-            new CellRect(-3, 0, 7, 6),
+            // Small service step before the drop into the lower bay.
+            new CellRect(-12, 0, 4, 1),
 
-            // Upper transfer catwalk and its east support.
-            new CellRect(4, 5, 11, 1),
-            new CellRect(14, 0, 2, 5),
+            // Left approach to the upper route: a modest ledge, not a staircase course.
+            new CellRect(-7, 1, 3, 1),
 
-            // East-side low cover / staging geometry before the future exit route.
-            new CellRect(18, 0, 4, 2),
+            // Central salvage machinery plinth. This is intentionally much lighter than v1;
+            // the eventual hero machinery will mostly extend as non-colliding background art.
+            new CellRect(-2, 0, 4, 2),
+
+            // Main catwalk crossing the lower bay and its east support.
+            new CellRect(3, 3, 13, 1),
+            new CellRect(15, 0, 1, 3),
+
+            // Right-side staging / future exit deck.
+            new CellRect(19, 0, 4, 1),
         };
 
-        // Background-only masses establish the composition and reserve visual space for the hero
-        // transfer machine. They deliberately have no Collider2D and are not traversal authority.
+        // Background-only masses now form an open machinery frame rather than a central wall.
+        // They deliberately have no Collider2D and are never traversal authority.
         private static readonly CellRect[] BackgroundRects =
         {
+            // Overhead room beam / upper structure.
             new CellRect(-26, 12, 52, 1),
-            new CellRect(-22, 3, 2, 8),
-            new CellRect(20, 3, 2, 8),
-            new CellRect(-8, 4, 16, 7),
-            new CellRect(-5, 11, 10, 1),
-            new CellRect(-12, 8, 4, 1),
-            new CellRect(8, 7, 5, 1),
+
+            // Hero machinery frame: uprights, top beam, and compact central head, open inside.
+            new CellRect(-6, 3, 1, 7),
+            new CellRect(5, 3, 1, 7),
+            new CellRect(-6, 9, 12, 1),
+            new CellRect(-2, 5, 4, 2),
+
+            // Small service arms suggesting industrial function without reading as platforms.
+            new CellRect(-11, 6, 4, 1),
+            new CellRect(7, 5, 4, 1),
         };
 
         private static readonly Vector3 PlayerSpawnPosition = new Vector3(-24f, 0.08f, 0f);
