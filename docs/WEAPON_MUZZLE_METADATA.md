@@ -1,18 +1,14 @@
 # Weapon muzzle metadata
 
-This document defines the authoring, generation, and serialized presentation-data contract for exact weapon muzzle points. The Longwatch muzzle-flash presenter now consumes that data for visual placement only. Clearance casts, reticle feedback, casing ejection, and gameplay/tracer-origin migration remain separate follow-up work.
+This document defines the authoring, generation, and serialized presentation-data contract for exact weapon muzzle points. The Longwatch muzzle-flash presenter consumes that data for visual placement only. Clearance casts, reticle feedback, casing ejection, and gameplay/tracer-origin migration remain separate follow-up work.
 
 ## Current scope
 
 The first supported weapon is the **Longwatch DMR**.
 
-Phase 1 is implemented as an offline Python/Pillow generator. The checked-in
-schema-versioned JSON is derived from production PNGs and the authoring reference.
-`RustlineM1ASetup` now validates that JSON Editor-side and deterministically
-serializes its exact values into a compact runtime `LongwatchMuzzleMetadata2D`
-asset for presentation use.
+Phase 1 is implemented as an offline Python/Pillow generator. The checked-in schema-versioned JSON is derived from production PNGs and the authoring reference. `RustlineM1ASetup` validates that JSON Editor-side and deterministically serializes its exact values into a compact runtime `LongwatchMuzzleMetadata2D` asset for presentation use.
 
-Production armed art remains authored only for the canonical right-facing hemisphere:
+Production aim-capable art remains authored only for the canonical right-facing hemisphere:
 
 ```text
 p90 p80 p70 p60 p50 p40 p30 p20 p10 0
@@ -29,8 +25,11 @@ Current Longwatch aim-capable source packages:
 | Run | 6 |
 | Backpedal | 4 |
 | Crouch | 6 |
+| Fall | 1 |
 
-Future aim-capable packages may join this pipeline once their production art exists.
+Jump and Land are deliberately **carry-only, non-firing states**. Their 48×64 carry sprites do not expose a `LongwatchRenderedPose2D`, require no muzzle metadata, and cannot produce a muzzle flash. Wall Brace and LedgeClimb also expose no Longwatch muzzle pose.
+
+Future aim-capable weapon/state packages may join this pipeline only when their production art and gameplay semantics actually require muzzle attachment data.
 
 ## Canonical Longwatch reference
 
@@ -119,18 +118,11 @@ If no supported signature radius is unique across the corpus, fail with weapon/s
 
 ### Cell-edge behavior
 
-The implementation extracts neighborhoods with a distinct out-of-bounds
-sentinel and confines every search to one 80×96 cell. During exact comparison,
-an out-of-cell sample is equivalent only to a normalized fully transparent
-pixel. This models the empty rendered space beyond an isolated Full Rect sprite;
-it never permits an out-of-cell sample to match an alpha-greater-than-zero pixel.
+The implementation extracts neighborhoods with a distinct out-of-bounds sentinel and confines every search to one 80×96 cell. During exact comparison, an out-of-cell sample is equivalent only to a normalized fully transparent pixel. This models the empty rendered space beyond an isolated Full Rect sprite; it never permits an out-of-cell sample to match an alpha-greater-than-zero pixel.
 
-This explicit transparent-padding rule is exercised by Longwatch p90 Run frames
-2 and 3: the unchanged muzzle signature reaches the top cell boundary. It avoids
-Python slice wraparound while preserving exact normalized RGBA matching.
+This explicit transparent-padding rule is exercised by Longwatch p90 Run frames 2 and 3: the unchanged muzzle signature reaches the top cell boundary. It avoids Python slice wraparound while preserving exact normalized RGBA matching.
 
-The current production corpus resolves uniquely at `5×5` for every direction;
-adaptive sizes through `13×13` remain available for future art revisions.
+The current production corpus resolves uniquely at `5×5` for every direction; adaptive sizes through `13×13` remain available for future art revisions.
 
 ## Intentional Crouch exception
 
@@ -144,7 +136,7 @@ m90
 
 are intentionally **unsupported muzzle poses**. In those downward crouch poses the muzzle falls outside the authored 80×96 cell, matching the visual floor-intersection problem observed in-engine.
 
-The generator must treat these as a declared exception, not as extraction failures. Generated metadata should represent them explicitly as unsupported rather than inventing coordinates.
+The generator treats these as a declared exception, not as extraction failures. Generated metadata represents them explicitly as unsupported rather than inventing coordinates.
 
 Approved future presentation behavior:
 
@@ -153,13 +145,13 @@ Approved future presentation behavior:
 - firing/reticle behavior for this invalid crouch sector is follow-up runtime work;
 - the intended UI direction is a normal yellow crosshair for valid aim and a red crosshair for an impossible/blocked weapon angle.
 
-Do not implement that runtime behavior as part of the first metadata-generator task unless explicitly requested.
+Do not implement that runtime behavior as part of metadata regeneration unless explicitly requested.
 
 ## Coordinate contract
 
-Generated muzzle points must be stored in **source-pixel space relative to the canonical armed sprite pivot**, not as absolute sheet coordinates.
+Generated muzzle points are stored in **source-pixel space relative to the canonical armed sprite pivot**, not as absolute sheet coordinates.
 
-Longwatch canonical armed geometry:
+Longwatch canonical aim-capable geometry:
 
 ```text
 cell        = 80×96 px
@@ -194,12 +186,9 @@ ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata
 
 The JSON is derived data and must not be edited by hand. Re-running the generator after an art change is expected to update the file, producing a useful Git diff of changed muzzle points.
 
-The current schema is version 1 with generator version 2. The validated
-Longwatch corpus contains 343 supported frame points: 38 Idle, 114 Run, 76
-Backpedal, 96 Crouch, and 19 Fall. Crouch `m70`, `m80`, and `m90` are present as explicit
-unsupported direction entries with empty frame arrays.
+The current schema is version 1 with generator version 2. The validated Longwatch corpus contains **343 supported frame points**: 38 Idle, 114 Run, 76 Backpedal, 96 Crouch, and 19 Fall. Crouch `m70`, `m80`, and `m90` are present as explicit unsupported direction entries with empty frame arrays.
 
-The schema must be versioned and include enough information to validate:
+The schema is versioned and includes enough information to validate:
 
 - weapon id;
 - cell size;
@@ -221,7 +210,7 @@ Unity Editor C# consumes the generated JSON through `RustlineM1ASetup` and seria
 Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
 ```
 
-The asset contains all 343 supported points, including all 19 one-frame Fall directions, and preserves Crouch `m70`, `m80`, and `m90` as unsupported direction records with no frame coordinates. `PlayerLongwatchAimPresenter2D` exposes the state, direction, authored angle, displayed Body frame, and facing of the weapon sprite actually rendered. The muzzle-flash presenter performs a direct indexed lookup after that visual pose has been selected.
+The asset contains all 343 supported points, including all 19 one-frame Fall directions, and preserves Crouch `m70`, `m80`, and `m90` as unsupported direction records with no frame coordinates. `PlayerLongwatchAimPresenter2D` exposes the state, direction, authored angle, displayed Body frame, and facing of the weapon sprite actually rendered. Jump/Land carry deliberately return no rendered muzzle pose. The muzzle-flash presenter performs a direct indexed lookup after an aim-capable visual pose has been selected, and an already-active flash is hidden immediately if the presenter transitions to a state without a muzzle-capable pose.
 
 Runtime gameplay must not:
 
@@ -231,10 +220,7 @@ Runtime gameplay must not:
 - repeatedly parse JSON;
 - discover assets from disk.
 
-Runtime muzzle-flash placement is implemented without changing ballistics. The
-hitscan result origin and the existing distal tracer still use `AimOriginWorld`.
-Runtime clearance, the Crouch invalid-angle visual clamp and red reticle,
-hitscan/tracer-origin migration, and casing ejection remain separate work.
+Runtime muzzle-flash placement is implemented without changing ballistics. The hitscan result origin and the existing distal tracer still use `AimOriginWorld`. Runtime clearance, the Crouch invalid-angle visual clamp and red reticle, hitscan/tracer-origin migration, and casing ejection remain separate work.
 
 ## Tooling location
 
