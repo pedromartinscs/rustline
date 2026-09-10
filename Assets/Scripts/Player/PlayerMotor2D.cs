@@ -258,14 +258,14 @@ namespace Rustline.Gameplay.Player
             {
                 _body.position = PlayerLedgeClimbMotion2D.GetPosition(
                     _ledgeCaptureRootPosition,
+                    _ledgeFinalRootPosition,
                     LedgeSide,
                     _ledgeClimbElapsed);
                 return;
             }
 
-            // Do not translate authored frame 4 after its hands reach the ledge. The final
-            // standing placement happens only at the state boundary, when presentation also
-            // leaves LedgeClimb for grounded locomotion.
+            // Frame 5 is the authored recovery pose. At its 0.60-second boundary, hand off
+            // atomically to the validated standing root and grounded locomotion.
             _body.position = _ledgeFinalRootPosition;
             _body.linearVelocity = Vector2.zero;
             _collider.enabled = true;

@@ -782,7 +782,7 @@ namespace Rustline.Tests
             Assert.That(bodyRenderer, Is.Not.Null);
             Assert.That(armsRenderer, Is.Not.Null);
             Assert.That(animator, Is.Not.Null);
-            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(31));
+            Assert.That(unarmedPresenter.MappingCount, Is.EqualTo(32));
             Assert.That(motor.GetComponentsInChildren<Animator>(true), Has.Length.EqualTo(1));
 
             Vector3 visualPosition = visual.localPosition;

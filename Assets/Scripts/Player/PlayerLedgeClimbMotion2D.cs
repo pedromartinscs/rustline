@@ -3,21 +3,21 @@ using UnityEngine;
 namespace Rustline.Gameplay.Player
 {
     /// <summary>
-    /// Fixed authored motion contract for the committed five-frame ledge climb.
+    /// Fixed authored motion contract for the committed six-frame ledge climb.
     /// Values are source pixels converted at the canonical 16 PPU.
     /// </summary>
     public static class PlayerLedgeClimbMotion2D
     {
-        public const int FrameCount = 5;
+        public const int FrameCount = 6;
         public const float PixelsPerUnit = 16f;
         public const float SourcePixel = 1f / PixelsPerUnit;
         public const float FrameDuration = 0.1f;
-        // Five authored frames at 10 fps. Frame 4 is held at its calibrated ledge-contact
-        // position until the state ends; the physical handoff to standing happens atomically
-        // at the same boundary where presentation leaves LedgeClimb.
+        // Six authored frames at 10 fps. Frames 0..4 use the calibrated climb/contact
+        // offsets; frame 5 is the discrete recovery pose on the platform.
         public const float TotalDuration = FrameCount * FrameDuration;
         public const float ContactOffsetXPixels = 16.5f;
         public const float ContactOffsetYPixels = 40.5f;
+        public const float RecoveryFrameYOffsetPixels = 31f;
 
         private static readonly Vector2[] RightSideRootOffsetsPixels =
         {
@@ -43,17 +43,26 @@ namespace Rustline.Gameplay.Player
 
         public static Vector2 GetRootOffset(int frameIndex, int side)
         {
-            Vector2 pixels = RightSideRootOffsetsPixels[Mathf.Clamp(frameIndex, 0, FrameCount - 1)];
+            Vector2 pixels = RightSideRootOffsetsPixels[
+                Mathf.Clamp(frameIndex, 0, RightSideRootOffsetsPixels.Length - 1)];
             return new Vector2(Mathf.Sign(side) * pixels.x, pixels.y) * SourcePixel;
         }
 
         public static Vector2 GetPosition(
             Vector2 captureRootPosition,
+            Vector2 finalRootPosition,
             int side,
             float elapsed)
         {
             int frame = GetFrameIndex(elapsed);
-            return captureRootPosition + GetRootOffset(frame, side);
+            if (frame < FrameCount - 1)
+            {
+                return captureRootPosition + GetRootOffset(frame, side);
+            }
+
+            return new Vector2(
+                finalRootPosition.x,
+                captureRootPosition.y + RecoveryFrameYOffsetPixels * SourcePixel);
         }
     }
 }

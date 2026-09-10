@@ -842,6 +842,8 @@ MonoBehaviour:
     armsSprite: {fileID: 1148068615063907921, guid: 76faea3811bb43e4d92616d6f5c3e699, type: 3}
   - bodySprite: {fileID: -302579167318145986, guid: a1348bcf73f1e9c4e800720ebd81c1d7, type: 3}
     armsSprite: {fileID: -4423068849147249395, guid: 76faea3811bb43e4d92616d6f5c3e699, type: 3}
+  - bodySprite: {fileID: 1196144109, guid: a1348bcf73f1e9c4e800720ebd81c1d7, type: 3}
+    armsSprite: {fileID: -1306350955, guid: 76faea3811bb43e4d92616d6f5c3e699, type: 3}
   ownsRenderer: 1
 --- !u!114 &2385879683141238295
 MonoBehaviour:

@@ -653,8 +653,8 @@ namespace Rustline.Editor
             List<Sprite> longwatchMuzzleFlashFrames = LoadLongwatchMuzzleFlashFrames();
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
-            Require(bodyFrames.Count == 31 && armsFrames.Count == 31,
-                "The player prefab requires all 31 unique Body and Unarmed Arms frames.");
+            Require(bodyFrames.Count == 32 && armsFrames.Count == 32,
+                "The player prefab requires all 32 unique Body and Unarmed Arms frames.");
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
                 bodyBackpedalFrames.Count == 4 && bodyCrouchFrames.Count == 6 && bodyFallFrames.Count == 1 &&
                 longwatchIdleFrames.Count == 38 && longwatchRunFrames.Count == 114 &&
@@ -914,7 +914,7 @@ namespace Rustline.Editor
                 "idle", "run", "backpedal", "jump", "fall", "land", "crouch", "wall_brace",
                 "ledge_climb",
             };
-            List<Sprite> frames = new List<Sprite>(31);
+            List<Sprite> frames = new List<Sprite>(32);
             foreach (string state in states)
             {
                 string path = spriteRoot + "/player_salvager_" + layerId + "_" + state + ".png";
@@ -2237,7 +2237,7 @@ namespace Rustline.Editor
                     "Visual - 48x64 Full Cell/ArmsWeaponSpriteRenderer"),
                 "Player prefab Longwatch presentation recoil wiring is incomplete.");
             PlayerUnarmedArmsPresenter2D armsPresenter = prefab.GetComponent<PlayerUnarmedArmsPresenter2D>();
-            Require(armsPresenter != null && armsPresenter.MappingCount == 31 && armsPresenter.OwnsRenderer,
+            Require(armsPresenter != null && armsPresenter.MappingCount == 32 && armsPresenter.OwnsRenderer,
                 "Player prefab must contain the complete active unarmed arms presenter.");
             PlayerLongwatchAimPresenter2D longwatchPresenter =
                 prefab.GetComponent<PlayerLongwatchAimPresenter2D>();

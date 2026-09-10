@@ -61,6 +61,7 @@ namespace Rustline.Tests
                 Assert.That(weapon.TryFire(Time.time), Is.False);
 
                 Vector2 capture = motor.LedgeCaptureRootPosition;
+                Vector2 finalRoot = motor.LedgeFinalRootPosition;
                 for (int index = 0; index < 5; index++)
                 {
                     yield return new WaitForFixedUpdate();
@@ -78,9 +79,33 @@ namespace Rustline.Tests
                 Assert.That(bodyRenderer.flipX, Is.False,
                     "Mouse aim changed the captured right-side climb facing.");
 
+                yield return WaitForClimbFrame(motor, 4, 30);
+                Vector2 frameFour = capture + new Vector2(19f / 16f, 19f / 16f);
+                AssertVector(body.position, frameFour);
+                for (int index = 0; index < 4; index++)
+                {
+                    yield return new WaitForFixedUpdate();
+                    Assert.That(motor.LedgeClimbFrameIndex, Is.EqualTo(4));
+                    AssertVector(body.position, frameFour);
+                }
+
+                yield return new WaitForFixedUpdate();
+                Assert.That(motor.LedgeClimbFrameIndex, Is.EqualTo(5));
+                Vector2 recovery = new Vector2(finalRoot.x, capture.y + 31f / 16f);
+                AssertVector(body.position, recovery);
+                Assert.That(
+                    body.position.y +
+                    (PlayerLedgeClimbMotion2D.ContactOffsetYPixels -
+                        PlayerLedgeClimbMotion2D.RecoveryFrameYOffsetPixels) / 16f,
+                    Is.EqualTo(2f).Within(0.002f),
+                    "The recovery-frame floor marker did not remain aligned with the platform top.");
+                Assert.That(collider.enabled, Is.False);
+                Assert.That(playerAnimator.CurrentState, Is.EqualTo(PlayerAnimationState.LedgeClimb));
+                Assert.That(weapon.TryFire(Time.time), Is.False);
+
                 yield return WaitForClimbCompletion(motor, 40);
                 yield return null;
-                AssertVector(body.position, new Vector2(9f + 1.05f * 0.5f + 1f / 16f, 2f + 1f / 16f));
+                AssertVector(body.position, finalRoot);
                 Assert.That(collider.enabled, Is.True);
                 Assert.That(collider.size, Is.EqualTo(new Vector2(1.05f, 2.75f)));
                 Assert.That(collider.offset, Is.EqualTo(new Vector2(0f, 1.375f)));
@@ -129,6 +154,7 @@ namespace Rustline.Tests
                 yield return WaitForClimb(motor, -1, 4);
                 yield return null;
                 Vector2 capture = motor.LedgeCaptureRootPosition;
+                Vector2 finalRoot = motor.LedgeFinalRootPosition;
                 Assert.That(bodyRenderer.flipX, Is.True);
                 for (int index = 0; index < 5; index++)
                 {
@@ -136,8 +162,11 @@ namespace Rustline.Tests
                 }
                 AssertVector(body.position, capture + new Vector2(-0.5f, 0.5f));
 
+                yield return WaitForClimbFrame(motor, 5, 30);
+                AssertVector(body.position, new Vector2(finalRoot.x, capture.y + 31f / 16f));
+
                 yield return WaitForClimbCompletion(motor, 40);
-                AssertVector(body.position, new Vector2(18f - 1.05f * 0.5f - 1f / 16f, 2f + 1f / 16f));
+                AssertVector(body.position, finalRoot);
                 Assert.That(motor.IsGrounded, Is.True);
             }
             finally
@@ -319,6 +348,23 @@ namespace Rustline.Tests
             }
 
             Assert.Fail("Committed ledge climb did not complete automatically.");
+        }
+
+        private static IEnumerator WaitForClimbFrame(
+            PlayerMotor2D motor,
+            int expectedFrame,
+            int maximumFixedFrames)
+        {
+            for (int index = 0; index < maximumFixedFrames; index++)
+            {
+                yield return new WaitForFixedUpdate();
+                if (motor.IsLedgeClimbing && motor.LedgeClimbFrameIndex == expectedFrame)
+                {
+                    yield break;
+                }
+            }
+
+            Assert.Fail("Committed ledge climb did not reach frame " + expectedFrame + ".");
         }
 
         private static void AssertVector(Vector2 actual, Vector2 expected)

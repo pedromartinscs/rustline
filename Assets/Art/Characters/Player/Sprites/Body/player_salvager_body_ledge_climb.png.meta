@@ -286,6 +286,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: player_salvager_body_ledge_climb_5
+      rect:
+        serializedVersion: 2
+        x: 240
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData:
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a5b53dee73d3f3e45ac89aee99263640
+      internalID: 1196144109
+      vertices: []
+      indices:
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -305,6 +327,7 @@ TextureImporter:
       player_salvager_body_ledge_climb_2: -3846242174392536448
       player_salvager_body_ledge_climb_3: 1396645648910220356
       player_salvager_body_ledge_climb_4: -302579167318145986
+      player_salvager_body_ledge_climb_5: 1196144109
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
