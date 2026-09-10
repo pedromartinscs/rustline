@@ -152,6 +152,14 @@ Example: slot `12` is column `4`, row `1`, occupying `x=64..79`, `y=16..31`.
 - Large pipes, vents, lights, cables, and decorative machinery should normally live in detail/overlay assets instead of being baked into every structural tile.
 - Do not rely on a generated source image being grid-perfect. Generated imagery may be used as visual reference, then reconstructed/cleaned at final 16×16 resolution.
 
+## Visual geometry versus gameplay collision
+
+The atlas is a **visual structural language**, not the authority for the player's exact traversal envelope. Production level collision must follow [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md) and the release-critical setup in [`RELEASE_COLLISION.md`](RELEASE_COLLISION.md).
+
+In particular, visual damage may show cracks or separations narrower than the player can safely traverse. The current level-design minimum for an intentionally traversable horizontal opening is **24 source pixels / 1.5 Unity units** at its narrowest point. A smaller decorative crack must be bridged by hidden gameplay collision rather than forcing the player capsule to interact with it.
+
+Do not distort structural art merely to make every visible recess a physical hole. Visual richness and collision robustness are intentionally separate concerns.
+
 ## Planned related atlases
 
 The structural atlas is intentionally separate from other environmental families:
@@ -161,4 +169,4 @@ The structural atlas is intentionally separate from other environmental families
 - `industrial_details.png` — pipes, vents, cables, lights, brackets, overlays
 - `industrial_hazards.png` — lasers, electrical hazards, damaged hazard pieces, related visual elements
 
-Do not create additional atlases merely to fill this list; add them when the prototype needs them.
+Do not create additional atlases merely to fill this list; add them when the playable environment actually needs them.

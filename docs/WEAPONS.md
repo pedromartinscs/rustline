@@ -49,6 +49,15 @@ Large mass, thick receivers, warning markings, oversized barrels, visible feed s
 | 19 | **Breaker-6** | Rotary gun | Heavy | Compact multi-barrel cluster with visible mechanical feed system. |
 | 20 | **Blackline** | Anti-materiel/sniper rifle | Heavy | Very long barrel, oversized muzzle brake, rare and immediately recognizable silhouette. |
 
+## Current itch.io demo weapon direction
+
+The current vertical-slice target is deliberately much smaller than the full roster:
+
+- **Longwatch DMR** — stronger precision weapon with a finite ammunition reserve during the demo level;
+- **Latch-9** — weaker compact fallback sidearm with effectively unlimited ammunition for the demo.
+
+The purpose is to create a simple resource decision without requiring a full loot/ammo economy before the extraction loop exists. The ammunition system and Latch-9 runtime/presentation are **not implemented yet**; this section records the current demo design direction only.
+
 ## Approximate visual scale
 
 These are silhouette guidelines, not rigid hitbox or gameplay dimensions:
@@ -62,11 +71,11 @@ DMR / sniper            ~50–64 px
 Heavy weapons           ~50–72 px
 ```
 
-The canonical Body cell is 48×64 px, so weapon scale must always be judged in relation to that character rather than in isolation. Armed overlay cells may be larger than the Body cell; the first Longwatch DMR package uses the documented 80×96 armed cell so the weapon silhouette is not clipped or artificially shortened.
+The canonical Body cell is 48×64 px, so weapon scale must always be judged in relation to that character rather than in isolation. Armed overlay cells may be larger than the Body cell; the first Longwatch DMR aim-capable package uses the documented 80×96 armed cell so the weapon silhouette is not clipped or artificially shortened. Fixed carry poses may use the 48×64 Body cell when their full silhouette fits, as the Longwatch Jump/Land carries do.
 
 ## Longwatch DMR — first pipeline weapon
 
-The Longwatch DMR is the first representative weapon chosen to stress-test directional armed presentation before scaling the pipeline to the remaining roster.
+The Longwatch DMR is the first representative weapon chosen to stress-test directional armed presentation before scaling the pipeline to another weapon.
 
 Current authored reference/source art:
 
@@ -81,28 +90,25 @@ ArtSource/Characters/Player/player_salvager_crouch_armed.xcf
 Current production status:
 
 - standalone visual identity established;
-- right-facing Idle authored at all 19 canonical angles from `+90°` to `-90°`;
-- two Idle animation frames authored for every angle;
-- each angle stored as one `160×96` PNG containing two `80×96` cells;
-- common armed-cell Body reference and pivot documented in `PLAYER_WEAPON_ART.md`;
-- runtime import, mouse-driven angle quantization, mirroring, renderer ownership, and automated in-engine validation are implemented for Idle;
-- right-facing Run is authored at all 19 angles with six `80×96` frames in each `480×96` sheet;
-- runtime Run integration uses the sole Body Animator as its six-frame clock and keeps aim-facing independent of movement direction;
-- right-facing Backpedal is authored at all 19 angles with exactly four `80×96` frames in each `320×96` sheet;
-- runtime Backpedal integration uses the same sole Body Animator clock at 8 fps for a 0.50-second four-frame loop, with a 4 units/s grounded cap versus 7 units/s forward;
-- right-facing Crouch is authored at all 19 angles with six `80×96` frames in each `480×96` sheet; Crouch Idle reuses frame 0 and forward/reverse movement follows the displayed Body frame;
-- right-facing Fall is authored at all 19 angles as one `80×96` frame per direction, following the sole Body Fall frame;
-- generic `PlayerAim2D` now owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
-- mouse-left primary fire now drives a semi-automatic Longwatch hitscan from the exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
-- firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall, while the exact continuous hitscan aim remains independent from 10-degree visual quantization; Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked;
-- MovementLab contains reusable trigger-based diagnostic targets, Ground occlusion coverage, a short distal one-source-pixel tracer streak, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
-- exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash attached beneath the recoil-driven weapon overlay;
-- the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
-- the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
-- Fall aim is authored and integrated. Jump uses three integrated 48×64 carry frames and Land uses two; the displayed Body frame is their sole clock, both remain non-firing, neither exposes a muzzle pose or requires muzzle metadata, and neither rotates with aim. Normal directional aim resumes in Fall and after grounded locomotion returns. No Longwatch locomotion carry assets remain pending. Wall Brace intentionally renders no Longwatch carry because both hands and one leg are committed to wall contact; dedicated unarmed Arms own the overlay and firing is blocked. Dedicated Wall Kick art is not required because the accepted Jump/Fall fallback remains sufficient.
-- Longwatch LedgeClimb carry art is not authored. The immediate committed six-frame climb has no LedgeGrab/Hang state, releases overlay ownership to the matching unarmed Arms, and remains non-firing until grounded locomotion resumes.
+- right-facing Idle authored at all 19 canonical angles from `+90°` to `-90°`, two frames per angle;
+- right-facing Run authored at all 19 angles with six `80×96` frames per direction;
+- right-facing Backpedal authored at all 19 angles with exactly four `80×96` frames per direction and follows the 8 fps Body clock while physical Backpedal remains 4 units/s;
+- right-facing Crouch authored at all 19 angles with six `80×96` frames per direction; Crouch Idle reuses frame 0 and forward/reverse movement follows the displayed Body frame;
+- right-facing Fall authored at all 19 angles as one `80×96` frame per direction;
+- Jump uses three integrated `48×64` carry frames and Land uses two integrated `48×64` carry frames; both follow displayed Body frames one-to-one, remain non-firing, expose no muzzle-capable rendered pose, and have been human-tested in-engine;
+- Wall Brace intentionally renders no Longwatch because both hands and one leg are committed to wall contact; dedicated unarmed Arms own presentation and firing is blocked;
+- LedgeClimb intentionally renders no Longwatch and releases to the accepted six-frame unarmed traversal overlay;
+- Wall Kick keeps the accepted Jump/Fall presentation fallback and remains non-firing;
+- generic `PlayerAim2D` owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
+- mouse-left primary fire drives a semi-automatic Longwatch hitscan from exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
+- firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall; Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked;
+- exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash beneath the recoil-driven weapon overlay;
+- an active muzzle flash is canceled immediately if presentation transitions to a state with no muzzle-capable Longwatch pose, preventing carry/traversal bleed;
+- MovementLab contains reusable diagnostic targets, Ground occlusion coverage, short distal tracer feedback, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
+- the shared aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
+- the first-weapon fixed-cell import, Body-clock, renderer-ownership, carry, aim, metadata, and muzzle-flash conventions are implemented and are now considered frozen for the current movement set.
 
-This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
+Do not add new Longwatch locomotion states merely to create more art. Future changes to this first-weapon contract should be driven by a demonstrated gameplay/visual need.
 
 ## Production rules
 
@@ -112,22 +118,20 @@ This staged validation is intentional. Do not multiply an unproven art/runtime c
 - Strong silhouettes matter more than micro-detail.
 - Weapons within a family should share visual language without becoming silhouette clones.
 - A weapon is not considered production-ready merely because a standalone gun sprite exists; its player presentation package must follow the discrete aim/carry system in `PLAYER_WEAPON_ART.md`.
-- Exact per-frame/per-direction Longwatch muzzle metadata and the production two-frame muzzle flash are implemented for presentation. Crouch `m70`/`m80`/`m90` remain explicitly unsupported and omit the flash without changing the shot. Clearance, the planned Crouch `m60` clamp/red crosshair, casing ejection, projectiles, reload, audio, and production recoil/impact art remain deferred. Gun Feel v1 hitscan and its distal tracer still originate at `AimOriginWorld`; the muzzle metadata has not migrated ballistics.
+- Exact per-frame/per-direction Longwatch muzzle metadata and the production two-frame muzzle flash are implemented for presentation. Crouch `m70`/`m80`/`m90` remain explicitly unsupported and omit the flash without changing the shot. Clearance, the planned Crouch `m60` clamp/red crosshair, casing ejection, reload, audio, and production recoil/impact art remain deferred. Gun Feel v1 hitscan and its distal tracer still originate at `AimOriginWorld`; muzzle metadata has not migrated ballistics.
 
-## Initial production order
+## First-weapon production sequence
 
-Do not generate all twenty complete weapon packages before validating the pipeline.
+1. Layered unarmed player. **Done.**
+2. Longwatch representative weapon selection. **Done.**
+3. 19-direction Idle presentation. **Done.**
+4. Fixed import/pivot/mirroring/renderer-ownership validation. **Done.**
+5. Run package. **Done.**
+6. Four-frame Backpedal package. **Done.**
+7. Continuous-aim semi-automatic hitscan proof. **Done.**
+8. Crouch directional package. **Done.**
+9. Fall aim plus Jump/Land carry. **Done.**
+10. Freeze the reusable first-weapon art/import/runtime convention. **Done for the current movement set.**
+11. Build the next weapon only when the demo needs it. **Current candidate: Latch-9.**
 
-1. Complete and validate the layered unarmed player. **Done.**
-2. Choose one representative first weapon. **Longwatch DMR chosen.**
-3. Produce its right-facing 19-direction Idle presentation. **Done.**
-4. Validate import, pivot, 360° mirrored visual aim, animation synchronization, and armed presenter ownership in Unity. **Automated Idle validation done.**
-5. Expand the accepted Longwatch contract to Run. **Authored, integrated, and human-approved.**
-6. Expand the accepted Longwatch contract to four-frame Backpedal. **Authored, integrated, and human-approved.**
-7. Validate the first real semi-automatic continuous-aim hitscan against diagnostic targets. **Implemented in MovementLab.**
-8. Expand to Crouch. **Authored and integrated from one six-frame set per direction; human native-scale approval remains open.**
-9. Expand to Fall aim and Jump/Land carry. **Authored and integrated; Fall is aim/fire-capable, while the 48×64 Jump/Land carry states retain renderer ownership but remain non-firing.**
-10. Freeze the reusable weapon art/import/runtime convention.
-11. Expand into the remaining roster in controlled batches.
-
-A long weapon remains the correct first stress test because angular, clipping, hand-placement, and pivot errors are easier to see than with a compact pistol.
+A long weapon was the correct first stress test because angular, clipping, hand-placement, and pivot errors were easier to see than with a compact pistol. The Latch-9 should reuse proven concepts where appropriate without mechanically inheriting Longwatch-sized art requirements that its smaller silhouette does not need.

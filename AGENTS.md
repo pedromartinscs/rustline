@@ -19,6 +19,20 @@ Non-negotiable contract:
 
 If a refactor conflicts with this contract, preserve the contract and document why.
 
+## Environment gameplay geometry
+
+Before changing playable room/terrain geometry, read `docs/ENVIRONMENT_GAMEPLAY_METRICS.md`.
+
+The player standing/crouched capsule is 16.8 source pixels wide, but that exact mathematical width is **not** the level-design minimum. The current accepted Minimum Traversable Gap is:
+
+- **24 source pixels = 1.5 Unity units** at the narrowest horizontal point of an intentionally traversable opening.
+- Any opening greater than zero but narrower than 24 px must be closed/bridged in gameplay collision unless the design contract is explicitly changed.
+- Visual cracks may remain narrower than 24 px when hidden collision bridges them.
+- Do not resize the player capsule to accommodate decorative micro-gaps.
+
+This is currently an authoring/documentation rule, not an automated builder rejection. Do not invent code enforcement unless requested.
+
+Wall Brace and LedgeClimb geometry have additional authored constraints in `docs/ENVIRONMENT_GAMEPLAY_METRICS.md` and `docs/MOVEMENT.md`; preserve those contracts when changing terrain.
 
 ## Precision crouch ceiling
 

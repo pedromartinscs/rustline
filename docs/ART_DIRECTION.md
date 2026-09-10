@@ -42,7 +42,7 @@ Production PNGs under `Assets/Art/` (excluding editable/reference files under `A
 
 The baseline is enforced by `Assets/Editor/RustlinePixelArtPostprocessor.cs`. Known fixed sheets and the M0 showcase are rebuilt with **Tools → Rustline → Rebuild M0 Art Showcase**.
 
-Body and Unarmed Arms player sheets use complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. Armed overlays may use a larger fixed cell when the weapon silhouette needs authored space outside the Body cell, provided the armed pivot represents the exact same body reference point. The first approved armed geometry is the Longwatch DMR **80×96** cell with Body reference rectangle `x=0, y=8, w=48, h=64` and armed pivot `(24,8)` px / normalized `(0.30, 0.083333333...)`. The complete contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
+Body and Unarmed Arms player sheets use complete **48×64** cells with a normalized bottom-center pivot of `(0.5, 0.0)`. Armed overlays may use a larger fixed cell when the weapon silhouette needs authored space outside the Body cell, provided the armed pivot represents the exact same body reference point. The first approved aim-capable armed geometry is the Longwatch DMR **80×96** cell with Body reference rectangle `x=0, y=8, w=48, h=64` and armed pivot `(24,8)` px / normalized `(0.30, 0.083333333...)`. Non-aim carry overlays may remain in the canonical 48×64 Body cell when the silhouette fits; Longwatch Jump/Land use that smaller geometry. The complete contract is documented in [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md).
 
 The industrial structural atlas is always sliced into all **48** fixed **16×16** cells. Its documented logical rows run top-to-bottom, so the editor setup deliberately converts them to Unity's bottom-origin sprite coordinates without changing slot names or semantics.
 
@@ -55,8 +55,9 @@ The industrial structural atlas is always sliced into all **48** fixed **16×16*
 - Slots `00–15` implement the canonical cardinal N/E/S/W connectivity cases
 - Structural adjacency controls sprite selection; collision remains a separate Tilemap/collider concern
 - Connected edges must remain visually compatible across canonical tiles and their visual variants
+- Visual cracks/recesses may differ from collision, but gameplay openings must respect the traversal metrics in [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md)
 
-The complete structural atlas contract and slot mapping are documented in [`TILESET_SPEC.md`](TILESET_SPEC.md).
+The complete structural atlas contract and slot mapping are documented in [`TILESET_SPEC.md`](TILESET_SPEC.md). The current gameplay/collision dimensions, including the **24 px Minimum Traversable Gap**, live in [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md).
 
 ### Player
 
@@ -66,10 +67,11 @@ The complete structural atlas contract and slot mapping are documented in [`TILE
 - Player presentation is decomposed into aligned Body and Arms/Weapon layers
 - Unarmed Body + Unarmed Arms must produce the accepted coherent layered appearance; deliberate decomposition retouching means historical composites are diagnostic references, not pixel-equality targets
 - Armed aiming uses authored fixed-cell directional overlays rather than free runtime rotation of the final pixel art
-- The first Longwatch DMR armed aim overlay uses **80×96 px** cells around the unchanged 48×64 Body reference, with 32 px additional forward space, 24 px above, and 8 px below
+- The first Longwatch DMR aim overlay uses **80×96 px** cells around the unchanged 48×64 Body reference, with 32 px additional forward space, 24 px above, and 8 px below
+- Longwatch Jump and Land carry use 48×64 overlays because those locked silhouettes fit inside the canonical Body cell
 - Body animation must remain readable when horizontally flipped
 - The three-frame Jump takeoff uses explicit keys at 0.00, 0.10, and 0.26 seconds: 100 ms of Y-anchored compression, 160 ms of cubic eased catch-up, then a held layered ascent pose; X and the camera continue following the physical root, and Fall remains velocity-selected
-- Grounded Run and Backpedal are selected from actual velocity relative to aim-facing; Backpedal uses exactly four authored frames and a 4 units/s grounded cap versus 7 units/s forward
+- Grounded Run and Backpedal are selected from actual velocity relative to aim-facing; Backpedal uses exactly four authored frames at 8 fps and a 4 units/s grounded cap versus 7 units/s forward
 - `AimOrigin` is an explicit Visual child 38 source pixels above the renderer pivot; generic aim-facing uses a 5° hysteresis zone around vertical
 - Grounded takeoff dust is a separate three-frame, 48×64 world-space one-shot at the player pivot; it snapshots facing, stays on the floor, and is omitted for coyote jumps
 - Initial canonical pose: neutral, unarmed, facing right
@@ -101,7 +103,7 @@ A player-centered atmospheric mask defines the readable visual region. The centr
 
 ### Canonical prototype geometry
 
-The first implementation should use a **perfect circular** visibility mask centered on the player, inside the square 1072×1072 viewport.
+The first implementation uses a **perfect circular** visibility mask centered on the player, inside the square 1072×1072 viewport.
 
 - Fully visible circle: **57 tiles in diameter = 912 px**, radius **28.5 tiles = 456 px**.
 - Penumbra thickness: **4 tiles = 64 px radially**.
@@ -111,13 +113,13 @@ The first implementation should use a **perfect circular** visibility mask cente
 - The corners of the square viewport naturally contain substantially more full darkness because the mask is circular.
 - Outside the canonical viewport, any unused physical display area is also filled with the same canonical darkness color.
 
-These dimensions are the approved starting specification for the camera/penumbra prototype. They may be tuned later from playtesting, but the native-pixel viewport model, circular-mask concept, and integer-scaling rules should remain stable unless deliberately revisited.
+These dimensions are the approved starting specification for the camera/penumbra presentation. They may be tuned later from playtesting, but the native-pixel viewport model, circular-mask concept, and integer-scaling rules should remain stable unless deliberately revisited.
 
 ### Palette-constrained darkness
 
 The penumbra must preserve the fixed Rustline palette. It must **not** generate arbitrary interpolated RGB shades.
 
-Darkening should happen by remapping visible colors through existing canonical colors of progressively lower value. For example, a bright warm/red pixel may step through darker canonical warm tones before reaching the darkest canonical color. The exact ramp used depends on the source material and should preserve hue/material identity where practical.
+Darkening happens by remapping visible colors through existing canonical colors of progressively lower value. The exact ramp depends on the source material and should preserve hue/material identity where practical.
 
 The final darkness color is **Deep Space `#01020B`**, not an additional `#000000` color.
 
@@ -127,7 +129,7 @@ Controlled pixel-pattern dithering is explicitly allowed for this atmospheric tr
 - no alpha gradients, anti-aliasing, blur, bilinear filtering, or synthesized intermediate colors are introduced;
 - dithering is deliberate, sparse, and readable at native scale rather than noisy texture;
 - the effect transitions from fully readable color, through palette-constrained shadow/remapping and pixel-pattern penumbra, into solid Deep Space;
-- production sprites and tiles themselves remain unchanged; the penumbra is a presentation/lighting effect layered over the rendered world.
+- production sprites and tiles themselves remain unchanged; the penumbra is a presentation effect layered over the rendered world.
 
 The penumbra is intended to become a gameplay-readable boundary as well as an aesthetic device. Future rendering, simulation, and spatial-audio ranges may use related but independently tunable distances; they should not be hard-coupled merely because the initial prototype centers all three around the player.
 
@@ -135,15 +137,15 @@ The penumbra is intended to become a gameplay-readable boundary as well as an ae
 
 Rustline separates **continuous gameplay aim** from **authored visual aim**.
 
-The gameplay direction may be mathematically continuous for mouse/gamepad targeting, projectiles, and hitscan. The player artwork uses discrete authored arm/weapon overlays at 10-degree intervals. For right-facing artwork, `0°` is horizontal, positive angles aim upward, and negative angles aim downward.
+Gameplay direction remains mathematically continuous for mouse/gamepad targeting and hitscan. Aim-capable player artwork uses discrete authored arm/weapon overlays at 10-degree intervals. For right-facing artwork, `0°` is horizontal, positive angles aim upward, and negative angles aim downward.
 
-The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. Idle, Run, Backpedal, and Fall are aim/fire-capable presentation states. Jump, Land, and Roll/Dodge keep the equipped weapon visible through authored carry poses but do not use the 19-angle firing set and do not permit firing.
+The canonical right-facing aim-capable set contains **19 directions** from `+90°` through `0°` to `-90°`; horizontal mirroring covers the opposite hemisphere. For the current Longwatch, **Idle, Run, Backpedal, Crouch Idle / Crouch Move, and Fall** are aim/fire-capable. Jump and Land keep the equipped weapon visible through fixed carry poses but do not expose an aim/muzzle pose and cannot fire. Wall Brace intentionally shows no Longwatch because both hands and one leg are committed to wall contact; LedgeClimb also uses its unarmed traversal overlay. Wall Kick keeps the accepted Jump/Fall presentation fallback and remains non-firing.
 
-The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing Idle, Run, and Backpedal sets are authored and integrated for all 19 directions: Idle uses two `80×96` cells per `160×96` sheet, Run uses six per `480×96`, and Backpedal uses exactly four per `320×96`. All use the common armed pivot and explicit AimOrigin 38 source pixels above the renderer pivot. Mouse-driven 360° mirroring, generic aim-facing, and Body-clock synchronization are automated. Run, the corrected origin, and the revised four-frame Backpedal presentation are human-approved.
+The **Longwatch DMR** is the first pipeline-validation weapon. Its right-facing aim packages are authored and integrated for all 19 directions: Idle uses two `80×96` cells per direction, Run and Crouch use six, Backpedal uses exactly four, and Fall uses one. Jump uses three integrated 48×64 carry frames and Land uses two. All locomotion weapon presentation follows the sole displayed Body Animator clock rather than introducing weapon-local animation timing. Mouse-driven 360° mirroring, generic aim-facing, renderer ownership, exact muzzle metadata, muzzle flash, recoil, and continuous hitscan are integrated.
 
 This is an intentional artistic/gameplay choice. It avoids free-angle rotation artifacts in small pixel art and gives each weapon authored hand placement and silhouette control.
 
-See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the complete production contract and [`WEAPONS.md`](WEAPONS.md) for the versioned initial 20-weapon roster.
+See [`PLAYER_WEAPON_ART.md`](PLAYER_WEAPON_ART.md) for the complete production contract and [`WEAPONS.md`](WEAPONS.md) for the versioned initial weapon roster.
 
 ## Canonical palette
 
@@ -175,48 +177,49 @@ Third-party packs may be studied for broad design principles, genre conventions,
 
 Once an original Rustline visual baseline exists, prefer Rustline's own artwork as the reference source for future generations.
 
-The active production sequence for the current player, Longwatch, ground-enemy, and combat-FX push is tracked in [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md).
+The active production sequence is tracked in [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md). With the current player and Longwatch locomotion package closed, the immediate art focus is the first production environment slice rather than multiplying more player states.
 
-## Initial asset checklist
+## Current asset checklist
 
 ### Player
 
-- Canonical neutral side-view
-- Layered Body / Unarmed Arms decomposition
-- Idle
-- Run
-- Jump
-- Fall
-- Land
-- Roll / dodge
-- Hit
-- Death
+- [x] Canonical neutral side-view and layered Body / Unarmed Arms decomposition
+- [x] Idle / Run / Backpedal
+- [x] Jump / Fall / Land
+- [x] Crouch
+- [x] Wall Brace
+- [x] LedgeClimb
+- [ ] Roll / dodge only if later level design requires it
+- [ ] Hit / Death when player-health work begins
 
-### Weapons
+### Longwatch DMR
 
-- Longwatch DMR standalone/reference concept
-- Longwatch DMR Idle: 19 authored right-facing aim directions × 2 Idle frames
-- Longwatch DMR Run: 19 authored right-facing aim directions × 6 Run frames
-- Longwatch DMR Backpedal: 19 authored right-facing aim directions × exactly 4 Backpedal frames
-- Unity import + 360° mirrored Idle/Run/Backpedal aim validation
-- Longwatch Fall aim remains deferred
-- Longwatch carry-only armed poses for non-firing movement states after the current visual gate
-- Remaining initial arsenal from [`WEAPONS.md`](WEAPONS.md) after pipeline validation
+- [x] Standalone/reference concept
+- [x] Idle: 19 authored right-facing aim directions × 2 frames
+- [x] Run: 19 × 6
+- [x] Backpedal: 19 × 4
+- [x] Crouch: 19 × 6
+- [x] Fall: 19 × 1
+- [x] Jump carry: 3 × 48×64
+- [x] Land carry: 2 × 48×64
+- [x] Deterministic import, mirrored runtime presentation, Body-clock synchronization, muzzle metadata, and muzzle flash
+- [x] Wall Brace / LedgeClimb no-carry behavior is intentional
+- [ ] Remaining arsenal only after the demo needs the next weapon
 
-### Environment
+### Environment — active production focus
 
-- Canonical structural Rule Tile family
-- Floor/platform center + edges
-- Walls
-- Inside/outside corners
-- Structural beams
-- Thin / one-way platforms
-- Pipes/conduits
-- Vents
-- Background panels/machinery
-- Warning-stripe variants
-- Damaged/corroded variants
-- Parallax background layers
+- [x] Canonical first 16 structural Rule Tile connectivity cases
+- [ ] Complete useful structural variants beyond the first 16 cases
+- [ ] Floor/platform edge family and reinforced/damaged variants
+- [ ] Walls / inside-outside corners / ceilings
+- [ ] Structural beams / columns / brackets
+- [ ] Pipes / conduits / vents
+- [ ] Background panels and large machinery
+- [ ] Warning-stripe / corroded variants
+- [ ] Foreground/background depth and restrained parallax where useful
+- [ ] First polished playable environment slice / hero room
+
+Environment art must preserve the hidden collision separation and the metrics in [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md).
 
 ### Gameplay props
 
@@ -230,18 +233,18 @@ The active production sequence for the current player, Longwatch, ground-enemy, 
 
 ### Enemies
 
-- Ground crawler
-- Drone
-- Turret/heavy unit
+- Production ground enemy
+- Drone only if the demo needs a second enemy class
+- Turret/heavy unit only if justified by the level
 
-### FX
+### FX / audio
 
-- Muzzle flash
-- Projectile/tracer
-- Impact spark
-- Small explosion
-- Damage feedback
-- Extraction beacon/effect
+- [x] Longwatch muzzle flash
+- Prototype tracer / impact feedback exists
+- [ ] Production impact spark
+- [ ] Combat audio
+- [ ] Small explosion only if required by content
+- [ ] Extraction beacon/effect
 
 ## Quality bar
 

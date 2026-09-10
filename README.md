@@ -47,7 +47,8 @@ See:
 - [`docs/ART_DIRECTION.md`](docs/ART_DIRECTION.md) — visual specification and asset workflow
 - [`docs/PALETTE.md`](docs/PALETTE.md) — canonical production palette
 - [`docs/TILESET_SPEC.md`](docs/TILESET_SPEC.md) — structural atlas layout and connectivity contract
-- [`docs/MOVEMENT.md`](docs/MOVEMENT.md) — M1A controller architecture, controls, and initial tuning
+- [`docs/ENVIRONMENT_GAMEPLAY_METRICS.md`](docs/ENVIRONMENT_GAMEPLAY_METRICS.md) — traversal-safe environment/collision measurements
+- [`docs/MOVEMENT.md`](docs/MOVEMENT.md) — controller architecture, controls, and movement tuning
 - [`docs/RELEASE_COLLISION.md`](docs/RELEASE_COLLISION.md) — release-critical Tilemap/Composite startup contract and regression history
 
 ## Development approach
@@ -65,9 +66,11 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-**M1 movement, initial Longwatch gunplay, and the M3A repeatable combat prototype are implemented.**
+**The current player movement set, first-weapon Longwatch presentation/gunplay slice, and the M3A repeatable combat prototype are implemented.**
 
-The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact. `Assets/Scenes/MovementLab.unity` provides the accepted movement course, combat crouch, wall brace/kick, the release-hardened Tilemap + Composite collision path, the Longwatch DMR hitscan range, and a killable patrol enemy that resets in place. Crouch uses authored six-frame Body/Unarmed Arms art, including reversed playback when backpedaling. Wall presentation retains Jump/Fall fallbacks; unsupported Longwatch locomotion art and production enemy art remain pending.
+`Assets/Scenes/MovementLab.unity` contains grounded forward/backpedal movement, combat crouch, Wall Brace / Wall Kick, committed six-frame LedgeClimb, the release-hardened Tilemap + Composite collision path, native-pixel presentation, Longwatch DMR continuous-aim hitscan, and a killable patrol enemy that resets in place. The Longwatch has authored aim-capable Idle, Run, Backpedal, Crouch, and Fall presentation plus non-firing three-frame Jump and two-frame Land carry. Wall Brace and LedgeClimb intentionally render no Longwatch carry; their traversal poses use the unarmed overlay and block firing. The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact.
+
+The next production focus is the **environment itself**: expand the modular structural family and build a first polished playable environment slice around the now-stable movement/collision metrics before multiplying additional gameplay content.
 
 ## License
 
