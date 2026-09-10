@@ -180,12 +180,12 @@ TextureImporter:
       name: player_salvager_longwatch_dmr_jump_carry_0
       rect:
         serializedVersion: 2
-        x: 4
-        y: 20
-        width: 43
-        height: 18
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -202,12 +202,12 @@ TextureImporter:
       name: player_salvager_longwatch_dmr_jump_carry_1
       rect:
         serializedVersion: 2
-        x: 54
-        y: 28
-        width: 40
-        height: 23
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 48
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -224,12 +224,12 @@ TextureImporter:
       name: player_salvager_longwatch_dmr_jump_carry_2
       rect:
         serializedVersion: 2
-        x: 85
-        y: 37
-        width: 11
-        height: 7
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 96
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -242,55 +242,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: player_salvager_longwatch_dmr_jump_carry_3
-      rect:
-        serializedVersion: 2
-        x: 96
-        y: 9
-        width: 31
-        height: 39
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: d214207f0f5cf0130800000000000000
-      internalID: 3535261871236071725
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: player_salvager_longwatch_dmr_jump_carry_4
-      rect:
-        serializedVersion: 2
-        x: 127
-        y: 37
-        width: 16
-        height: 9
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: e6c0ee9e8b86c7050800000000000000
-      internalID: 5799625563554319470
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: ce42e8b6160c4c04caa4bdf7e18709a1
     internalID: 0
     vertices: []
     indices: 
@@ -303,8 +259,6 @@ TextureImporter:
       player_salvager_longwatch_dmr_jump_carry_0: 1087903105764737349
       player_salvager_longwatch_dmr_jump_carry_1: -1168174451496668910
       player_salvager_longwatch_dmr_jump_carry_2: 2368398046348009312
-      player_salvager_longwatch_dmr_jump_carry_3: 3535261871236071725
-      player_salvager_longwatch_dmr_jump_carry_4: 5799625563554319470
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

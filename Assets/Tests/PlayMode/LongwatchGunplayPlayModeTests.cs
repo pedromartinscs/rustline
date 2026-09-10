@@ -306,7 +306,8 @@ namespace Rustline.Tests
                 yield return WaitForState(playerAnimator, PlayerAnimationState.Jump, 60);
                 yield return null;
 
-                Assert.That(_presenter.OwnsRenderer, Is.False);
+                Assert.That(_presenter.OwnsRenderer, Is.True);
+                Assert.That(_presenter.TryGetCurrentRenderedPose(out _), Is.False);
                 Assert.That(_recoil.IsRecoiling, Is.False);
                 Assert.That(_recoil.ArmsWeaponTransform.localPosition, Is.EqualTo(baseline));
             }

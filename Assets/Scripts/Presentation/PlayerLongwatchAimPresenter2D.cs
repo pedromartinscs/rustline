@@ -127,9 +127,9 @@ namespace Rustline.Presentation
     }
 
     /// <summary>
-    /// Owns the shared overlay renderer while the prototype Longwatch is in an
-    /// authored aim-capable state. Body remains Animator-driven; its displayed
-    /// frame selects the matching weapon frame at the nearest ten-degree pose.
+    /// Owns the shared overlay renderer for authored Longwatch aim and carry states.
+    /// Body remains Animator-driven; its displayed frame selects the matching
+    /// directional or carry frame.
     /// </summary>
     [DefaultExecutionOrder(100)]
     [DisallowMultipleComponent]
@@ -151,8 +151,12 @@ namespace Rustline.Presentation
         [SerializeField] private LongwatchBackpedalAimPose[] backpedalAimPoses = Array.Empty<LongwatchBackpedalAimPose>();
         [SerializeField] private Sprite[] bodyCrouchFrames = Array.Empty<Sprite>();
         [SerializeField] private LongwatchCrouchAimPose[] crouchAimPoses = Array.Empty<LongwatchCrouchAimPose>();
+        [SerializeField] private Sprite[] bodyJumpFrames = Array.Empty<Sprite>();
+        [SerializeField] private Sprite[] jumpCarryFrames = Array.Empty<Sprite>();
         [SerializeField] private Sprite[] bodyFallFrames = Array.Empty<Sprite>();
         [SerializeField] private LongwatchFallAimPose[] fallAimPoses = Array.Empty<LongwatchFallAimPose>();
+        [SerializeField] private Sprite[] bodyLandFrames = Array.Empty<Sprite>();
+        [SerializeField] private Sprite[] landCarryFrames = Array.Empty<Sprite>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -179,8 +183,12 @@ namespace Rustline.Presentation
         public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
         public int BodyCrouchFrameCount => bodyCrouchFrames?.Length ?? 0;
         public int CrouchAimPoseCount => crouchAimPoses?.Length ?? 0;
+        public int BodyJumpFrameCount => bodyJumpFrames?.Length ?? 0;
+        public int JumpCarryFrameCount => jumpCarryFrames?.Length ?? 0;
         public int BodyFallFrameCount => bodyFallFrames?.Length ?? 0;
         public int FallAimPoseCount => fallAimPoses?.Length ?? 0;
+        public int BodyLandFrameCount => bodyLandFrames?.Length ?? 0;
+        public int LandCarryFrameCount => landCarryFrames?.Length ?? 0;
         public bool OwnsRenderer => _ownsRenderer;
         public bool HasValidAim => playerAim != null && playerAim.HasValidAim;
         public LongwatchAimSelection Selection => _selection;
@@ -244,11 +252,19 @@ namespace Rustline.Presentation
                         authoredAngleDegrees = crouchAimPoses[directionIndex].AngleDegrees;
                         muzzleState = LongwatchMuzzleState2D.Crouch;
                         break;
+                    case PlayerAnimationState.Jump:
+                        armsWeaponSpriteRenderer.sprite = jumpCarryFrames[bodyFrameIndex];
+                        _hasRenderedPose = false;
+                        return;
                     case PlayerAnimationState.Fall:
                         armsWeaponSpriteRenderer.sprite = fallAimPoses[directionIndex].GetFrame(bodyFrameIndex);
                         authoredAngleDegrees = fallAimPoses[directionIndex].AngleDegrees;
                         muzzleState = LongwatchMuzzleState2D.Fall;
                         break;
+                    case PlayerAnimationState.Land:
+                        armsWeaponSpriteRenderer.sprite = landCarryFrames[bodyFrameIndex];
+                        _hasRenderedPose = false;
+                        return;
                     default:
                         _hasRenderedPose = false;
                         return;
@@ -324,9 +340,29 @@ namespace Rustline.Presentation
             return fallAimPoses[index];
         }
 
+        public Sprite GetBodyJumpFrame(int index)
+        {
+            return bodyJumpFrames[index];
+        }
+
+        public Sprite GetJumpCarryFrame(int index)
+        {
+            return jumpCarryFrames[index];
+        }
+
         public Sprite GetBodyFallFrame(int index)
         {
             return bodyFallFrames[index];
+        }
+
+        public Sprite GetBodyLandFrame(int index)
+        {
+            return bodyLandFrames[index];
+        }
+
+        public Sprite GetLandCarryFrame(int index)
+        {
+            return landCarryFrames[index];
         }
 
         public bool TryGetCurrentRenderedPose(out LongwatchRenderedPose2D pose)
@@ -351,7 +387,8 @@ namespace Rustline.Presentation
             PlayerAnimationState? state = playerAnimator.CurrentState;
             return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run ||
                    state == PlayerAnimationState.Backpedal || state == PlayerAnimationState.CrouchIdle ||
-                   state == PlayerAnimationState.CrouchMove || state == PlayerAnimationState.Fall;
+                   state == PlayerAnimationState.CrouchMove || state == PlayerAnimationState.Jump ||
+                   state == PlayerAnimationState.Fall || state == PlayerAnimationState.Land;
         }
 
         private bool TryResolveDisplayedBodyFrame(
@@ -411,6 +448,26 @@ namespace Rustline.Presentation
                 }
             }
 
+            for (int index = 0; index < bodyJumpFrames.Length; index++)
+            {
+                if (displayedBody == bodyJumpFrames[index])
+                {
+                    bodyState = PlayerAnimationState.Jump;
+                    frameIndex = index;
+                    return true;
+                }
+            }
+
+            for (int index = 0; index < bodyLandFrames.Length; index++)
+            {
+                if (displayedBody == bodyLandFrames[index])
+                {
+                    bodyState = PlayerAnimationState.Land;
+                    frameIndex = index;
+                    return true;
+                }
+            }
+
             bodyState = PlayerAnimationState.Idle;
             frameIndex = -1;
             return false;
@@ -450,8 +507,12 @@ namespace Rustline.Presentation
                    backpedalAimPoses != null && backpedalAimPoses.Length == 19 &&
                    bodyCrouchFrames != null && bodyCrouchFrames.Length == 6 &&
                    crouchAimPoses != null && crouchAimPoses.Length == 19 &&
+                   bodyJumpFrames != null && bodyJumpFrames.Length == 3 &&
+                   jumpCarryFrames != null && jumpCarryFrames.Length == 3 &&
                    bodyFallFrames != null && bodyFallFrames.Length == 1 &&
-                   fallAimPoses != null && fallAimPoses.Length == 19;
+                   fallAimPoses != null && fallAimPoses.Length == 19 &&
+                   bodyLandFrames != null && bodyLandFrames.Length == 2 &&
+                   landCarryFrames != null && landCarryFrames.Length == 2;
         }
 
         private void AcquireRenderer()

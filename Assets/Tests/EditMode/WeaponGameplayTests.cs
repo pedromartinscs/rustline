@@ -56,7 +56,7 @@ namespace Rustline.Tests
         [TestCase(PlayerAnimationState.Land)]
         [TestCase(PlayerAnimationState.WallBrace)]
         [TestCase(PlayerAnimationState.LedgeClimb)]
-        public void FirePolicy_BlocksStatesWithoutAuthoredLongwatchPresentation(PlayerAnimationState state)
+        public void FirePolicy_BlocksCarryAndUnarmedTraversalStates(PlayerAnimationState state)
         {
             Assert.That(WeaponFirePolicy2D.CanFire(state, false, false), Is.False);
         }

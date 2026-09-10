@@ -301,7 +301,7 @@ ArtSource/Concepts/Player_concept.png
 
 The standalone weapon concept is a design reference. The final production authority for hand placement, silhouette, palette, and per-angle pixel cleanup is the authored Arms/Weapon overlay artwork.
 
-The Longwatch Idle, Run, Backpedal, Crouch, and Fall packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run and Crouch each supply 6, Backpedal supplies exactly 4, and Fall supplies one Body-clocked frame per direction. Longwatch crouch integration is automated and complete, but still requires separate human native-scale visual approval. Jump/Land carry art remains pending; dedicated Wall Kick art is not currently required because the accepted Jump/Fall fallback remains adequate unless future native-scale testing proves otherwise.
+The Longwatch Idle, Run, Backpedal, Crouch, and Fall packages are authored, deterministically imported, and integrated at runtime for all 19 right-facing angles. Idle supplies 2 frames per direction, Run and Crouch each supply 6, Backpedal supplies exactly 4, and Fall supplies one Body-clocked frame per direction. Jump and Land carry are also authored and integrated: Jump uses three 48×64 frames and Land uses two 48×64 frames, all selected one-to-one by the displayed Body frame. Longwatch crouch and carry integration are automated and complete, but human native-scale visual approval remains separate. No Longwatch locomotion carry assets remain pending; dedicated Wall Kick art is not required because the accepted Jump/Fall fallback remains adequate.
 
 ## Longwatch muzzle metadata authoring
 
@@ -363,7 +363,9 @@ Fall uses its authored 19-direction, one-frame package. Its visual angle is quan
 - Roll / dodge
 - Wall Kick
 
-The equipped weapon remains visible, but these states use a single authored carried/locked weapon presentation per animation frame rather than the 19-direction set. Firing is disabled while these states are active.
+The equipped weapon remains visible, but these states use a single authored carried/locked weapon presentation per animation frame rather than the 19-direction set. Firing is disabled while these states are active. Longwatch Jump is an exact three-frame 144×64 sheet and Land is an exact two-frame 96×64 sheet, both sliced into bottom-center-pivot 48×64 cells. These smaller cells are valid because the carry silhouettes fit inside the canonical Body cell and do not need the angle-extension space of an 80×96 aim pose.
+
+Jump uses the Body clip's existing non-uniform keys at `0.00`, `0.10`, and `0.26` seconds; Land likewise follows its two displayed Body frames. The Body Animator is the sole clock. Carry presentation does not quantize aim, rotate the weapon, expose a muzzle-capable rendered pose, or require muzzle metadata. Background aim remains continuous, normal directional Fall aim resumes immediately after Jump, and normal grounded aim resumes after Land.
 
 Wall Brace is a deliberate exception: no Longwatch carry is planned. Both hands and one leg are committed to the wall, so the Longwatch presenter releases the overlay, dedicated unarmed Wall Brace Arms are shown, the weapon is not rendered, and firing remains blocked.
 
@@ -478,7 +480,7 @@ The Longwatch aim origin is exactly **38 source pixels above** the shared Body/o
 
 While locomotion presentation is Idle, Run, Backpedal, Crouch Idle, Crouch Move, or Fall, the Longwatch presenter calls `SetRendererOwnership(false)` on the unarmed presenter and maps the final Animator-displayed Body frame directly to the same frame of the selected Longwatch angle. `PlayerAnimator2D` converts authoritative `PlayerAim2D.FacingLeft` gameplay state into matching `flipX` values on both renderers. The sole Body Animator remains the clock: 2 Idle, 6 Run, 4 Backpedal, 6 shared Crouch, and 1 Fall Body frame map one-to-one to their selected-angle overlays. Crouch Idle holds shared frame 0; crouch backpedal naturally follows reverse Body playback 5..0. Aim can change without resetting the Body frame, and Body frames can change without resetting aim.
 
-Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall share one continuous selection and ownership path. On Jump, Land, Wall Brace, or LedgeClimb the presenter releases renderer ownership so the unarmed overlay resumes; generic aim-facing remains continuous. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall Brace uses its dedicated two-frame Body/Unarmed Arms presentation, LedgeClimb uses its six-frame one-shot package, and Wall Kick retains its accepted Jump/Fall fallback. All three remain non-firing.
+Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall share the continuous directional selection path. During Jump and Land the Longwatch presenter keeps renderer ownership and maps the final displayed Body frame one-to-one to the matching carry frame without exposing a muzzle pose. On Wall Brace or LedgeClimb it releases ownership so the dedicated unarmed overlay resumes; generic aim-facing remains continuous throughout. Crouch Idle holds authored crouch frame 0 and Crouch Move uses all six authored crouch frames in forward or reverse presentation order. Wall Brace uses its dedicated two-frame Body/Unarmed Arms presentation, LedgeClimb uses its six-frame one-shot package, and Wall Kick retains its accepted Jump/Fall fallback. Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain non-firing.
 
 Mouse/pointer remains the only armed-aim input. Mouse-left fires the semi-automatic Longwatch hitscan during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall. The shot uses the exact continuous aim direction; the 10° selection remains presentation-only and also controls the attached muzzle-flash rotation. Gun Feel v1 applies a 1.5-source-pixel overlay kick and one-source-pixel camera impulse opposite that continuous shot direction, both recovering over 0.10 s. The metadata-positioned flash follows that recoil transform, while the reused 3-unit distal tracer and hitscan still derive from the resolved `AimOriginWorld` path. Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked.
 
@@ -498,12 +500,12 @@ Implemented validation milestones:
 
 6. Import/slice all Longwatch Idle direction sheets as **80×96** cells with pivot `(24,8)` / normalized `(0.30, 0.083333333...)`. **Done.**
 7. Implement continuous gameplay aim → right-authored hemisphere normalization → nearest 10° visual selection → horizontal mirroring for the opposite hemisphere. **Done for mouse/pointer Idle, Run, Backpedal, and Crouch validation.**
-8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or jump semantics. **Done for Idle, Run, Backpedal, Crouch Idle, and Crouch Move, with intentional unarmed fallback for unsupported states.**
+8. Let the armed presenter own `ArmsWeaponSpriteRenderer` without changing the Body animation or jump semantics. **Done for Idle, Run, Backpedal, Crouch Idle, Crouch Move, Fall, Jump carry, and Land carry, with intentional unarmed ownership for Wall Brace and LedgeClimb.**
 9. Automate validation of all 19 directions, both Idle frames, all six Run and Crouch frames, full 360° mirroring, transform/pivot stability, palette/import rules, and frame synchronization. **Done; Run, the corrected origin, and revised four-frame Backpedal are human-approved as recorded below. Crouch awaits human native-scale approval.**
 10. Correct the Longwatch pointer aim origin to 38 source pixels / 2.375 Unity units above the shared renderer pivot. **Done and human-approved.**
 11. Add grounded armed Backpedal with four authored frames at all 19 directions, driven by generic aim-facing and a 4 units/s cap. **Implemented and human-approved; movement-speed feel tuning continues at 4 units/s.**
 12. Add grounded armed Crouch using one six-frame set at all 19 directions, with Crouch Idle reusing frame 0 and reverse movement following the displayed Body frame. **Implemented; human native-scale approval remains open.**
-13. Expand the Longwatch package to Fall aim and Jump/Land/Roll carry poses only after the current visual gate.
+13. Expand the Longwatch package to Fall aim and Jump/Land carry poses. **Done; Roll remains a future ability rather than a pending locomotion carry asset.**
 14. Freeze the reusable armed import/presenter contract, then scale to additional weapons.
 
 ## Non-negotiable pixel-art rules

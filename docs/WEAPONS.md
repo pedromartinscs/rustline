@@ -99,7 +99,7 @@ Current production status:
 - exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash attached beneath the recoil-driven weapon overlay;
 - the shared Idle/Run/Backpedal aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the corrected aim origin, Run presentation, and revised four-frame Backpedal presentation are human-approved; 4 units/s is the current Backpedal movement-feel target;
-- Fall aim is authored and integrated; Jump/Land remain the only pending Longwatch movement carry packages. Wall Brace intentionally renders no Longwatch carry because both hands and one leg are committed to wall contact; dedicated unarmed Arms own the overlay and firing is blocked. Dedicated Wall Kick art is not currently required because the accepted Jump/Fall fallback remains sufficient unless future native-scale testing proves otherwise.
+- Fall aim is authored and integrated. Jump uses three integrated 48×64 carry frames and Land uses two; the displayed Body frame is their sole clock, both remain non-firing, neither exposes a muzzle pose or requires muzzle metadata, and neither rotates with aim. Normal directional aim resumes in Fall and after grounded locomotion returns. No Longwatch locomotion carry assets remain pending. Wall Brace intentionally renders no Longwatch carry because both hands and one leg are committed to wall contact; dedicated unarmed Arms own the overlay and firing is blocked. Dedicated Wall Kick art is not required because the accepted Jump/Fall fallback remains sufficient.
 - Longwatch LedgeClimb carry art is not authored. The immediate committed six-frame climb has no LedgeGrab/Hang state, releases overlay ownership to the matching unarmed Arms, and remains non-firing until grounded locomotion resumes.
 
 This staged validation is intentional. Do not multiply an unproven art/runtime contract into hundreds of sprites before the first 19-direction Idle package is accepted in motion.
@@ -126,7 +126,7 @@ Do not generate all twenty complete weapon packages before validating the pipeli
 6. Expand the accepted Longwatch contract to four-frame Backpedal. **Authored, integrated, and human-approved.**
 7. Validate the first real semi-automatic continuous-aim hitscan against diagnostic targets. **Implemented in MovementLab.**
 8. Expand to Crouch. **Authored and integrated from one six-frame set per direction; human native-scale approval remains open.**
-9. Expand to Fall aim. **Authored and integrated; Fall is aim/fire-capable.** Jump/Land carry states remain pending.
+9. Expand to Fall aim and Jump/Land carry. **Authored and integrated; Fall is aim/fire-capable, while the 48×64 Jump/Land carry states retain renderer ownership but remain non-firing.**
 10. Freeze the reusable weapon art/import/runtime convention.
 11. Expand into the remaining roster in controlled batches.
 

@@ -33,6 +33,12 @@ namespace Rustline.Editor
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string LongwatchFallAimRoot =
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Aim/Fall";
+        private const string LongwatchJumpCarryPath =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Carry/Jump/" +
+            "player_salvager_longwatch_dmr_jump_carry.png";
+        private const string LongwatchLandCarryPath =
+            PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Carry/Land/" +
+            "player_salvager_longwatch_dmr_land_carry.png";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string LongwatchMuzzleFlashPath =
@@ -232,6 +238,7 @@ namespace Rustline.Editor
 
             ConfigurePlayerSheets();
             ConfigureLongwatchAimSheets();
+            ConfigureLongwatchCarrySheets();
             ConfigureLongwatchMuzzleFlash();
             ConfigureJumpDust();
             ConfigureEnvironmentAtlas();
@@ -328,6 +335,26 @@ namespace Rustline.Editor
                     new Vector2(0.3f, 8f / 96f),
                     logicalRowsRunTopToBottom: false);
             }
+        }
+
+        internal static void ConfigureLongwatchCarrySheets()
+        {
+            ConfigureFixedGrid(
+                LongwatchJumpCarryPath,
+                48,
+                64,
+                3,
+                index => "player_salvager_longwatch_dmr_jump_carry_" + index,
+                new Vector2(0.5f, 0f),
+                logicalRowsRunTopToBottom: false);
+            ConfigureFixedGrid(
+                LongwatchLandCarryPath,
+                48,
+                64,
+                2,
+                index => "player_salvager_longwatch_dmr_land_carry_" + index,
+                new Vector2(0.5f, 0f),
+                logicalRowsRunTopToBottom: false);
         }
 
         internal static void ConfigureLongwatchMuzzleFlash()
@@ -1043,6 +1070,7 @@ namespace Rustline.Editor
             ValidateLongwatchBackpedalAimSheets();
             ValidateLongwatchCrouchAimSheets();
             ValidateLongwatchFallAimSheets();
+            ValidateLongwatchCarrySheets();
             ValidateLongwatchMuzzleFlash();
 
             ValidateImporter(JumpDustPath);
@@ -1445,6 +1473,37 @@ namespace Rustline.Editor
 
             Require(importedSpriteCount == 19,
                 "Longwatch Fall aim package must import exactly 19 sprites.");
+        }
+
+        private static void ValidateLongwatchCarrySheets()
+        {
+            ValidateImporter(LongwatchJumpCarryPath);
+            ValidateSpriteGrid(
+                LongwatchJumpCarryPath,
+                48,
+                64,
+                3,
+                false,
+                index => "player_salvager_longwatch_dmr_jump_carry_" + index,
+                new Vector2(24f, 0f));
+            ValidateSourcePixels(LongwatchJumpCarryPath);
+            Texture2D jumpTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(LongwatchJumpCarryPath);
+            Require(jumpTexture != null && jumpTexture.width == 144 && jumpTexture.height == 64,
+                "Longwatch Jump carry must remain exactly 144x64 (three 48x64 cells).");
+
+            ValidateImporter(LongwatchLandCarryPath);
+            ValidateSpriteGrid(
+                LongwatchLandCarryPath,
+                48,
+                64,
+                2,
+                false,
+                index => "player_salvager_longwatch_dmr_land_carry_" + index,
+                new Vector2(24f, 0f));
+            ValidateSourcePixels(LongwatchLandCarryPath);
+            Texture2D landTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(LongwatchLandCarryPath);
+            Require(landTexture != null && landTexture.width == 96 && landTexture.height == 64,
+                "Longwatch Land carry must remain exactly 96x64 (two 48x64 cells).");
         }
 
         private static void ValidateLongwatchMuzzleFlash()

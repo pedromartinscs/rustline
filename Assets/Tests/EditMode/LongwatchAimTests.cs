@@ -23,6 +23,12 @@ namespace Rustline.Tests
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string LongwatchFallRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Fall";
+        private const string LongwatchJumpCarryPath =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Carry/Jump/" +
+            "player_salvager_longwatch_dmr_jump_carry.png";
+        private const string LongwatchLandCarryPath =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Carry/Land/" +
+            "player_salvager_longwatch_dmr_land_carry.png";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
 
@@ -361,6 +367,21 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void LongwatchJumpAndLandCarrySheets_MatchFixedBodyCellContract()
+        {
+            AssertCarrySheet(
+                LongwatchJumpCarryPath,
+                "player_salvager_longwatch_dmr_jump_carry",
+                144,
+                3);
+            AssertCarrySheet(
+                LongwatchLandCarryPath,
+                "player_salvager_longwatch_dmr_land_carry",
+                96,
+                2);
+        }
+
+        [Test]
         public void PlayerPrefab_ContainsCompleteLongwatchPoseMapping()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
@@ -375,8 +396,12 @@ namespace Rustline.Tests
             Assert.That(presenter.BackpedalAimPoseCount, Is.EqualTo(19));
             Assert.That(presenter.BodyCrouchFrameCount, Is.EqualTo(6));
             Assert.That(presenter.CrouchAimPoseCount, Is.EqualTo(19));
+            Assert.That(presenter.BodyJumpFrameCount, Is.EqualTo(3));
+            Assert.That(presenter.JumpCarryFrameCount, Is.EqualTo(3));
             Assert.That(presenter.BodyFallFrameCount, Is.EqualTo(1));
             Assert.That(presenter.FallAimPoseCount, Is.EqualTo(19));
+            Assert.That(presenter.BodyLandFrameCount, Is.EqualTo(2));
+            Assert.That(presenter.LandCarryFrameCount, Is.EqualTo(2));
             PlayerAim2D playerAim = prefab.GetComponent<PlayerAim2D>();
             Assert.That(playerAim, Is.Not.Null);
             Assert.That(presenter.PlayerAim, Is.SameAs(playerAim));
@@ -390,6 +415,20 @@ namespace Rustline.Tests
             HashSet<Sprite> mappedCrouchSprites = new HashSet<Sprite>();
             HashSet<Sprite> mappedFallSprites = new HashSet<Sprite>();
             Assert.That(presenter.GetBodyFallFrame(0).name, Is.EqualTo("player_salvager_body_fall_0"));
+            for (int frameIndex = 0; frameIndex < 3; frameIndex++)
+            {
+                Assert.That(presenter.GetBodyJumpFrame(frameIndex).name,
+                    Is.EqualTo("player_salvager_body_jump_" + frameIndex));
+                Assert.That(presenter.GetJumpCarryFrame(frameIndex).name,
+                    Is.EqualTo("player_salvager_longwatch_dmr_jump_carry_" + frameIndex));
+            }
+            for (int frameIndex = 0; frameIndex < 2; frameIndex++)
+            {
+                Assert.That(presenter.GetBodyLandFrame(frameIndex).name,
+                    Is.EqualTo("player_salvager_body_land_" + frameIndex));
+                Assert.That(presenter.GetLandCarryFrame(frameIndex).name,
+                    Is.EqualTo("player_salvager_longwatch_dmr_land_carry_" + frameIndex));
+            }
             for (int frameIndex = 0; frameIndex < 6; frameIndex++)
             {
                 Assert.That(presenter.GetBodyCrouchFrame(frameIndex).name,
@@ -478,6 +517,33 @@ namespace Rustline.Tests
             importer.ReadTextureSettings(settings);
             Assert.That(settings.spriteMeshType, Is.EqualTo(SpriteMeshType.FullRect));
             Assert.That(settings.spriteGenerateFallbackPhysicsShape, Is.False);
+        }
+
+        private static void AssertCarrySheet(
+            string path,
+            string baseName,
+            int expectedWidth,
+            int expectedFrameCount)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            Assert.That(texture, Is.Not.Null, path);
+            Assert.That(texture.width, Is.EqualTo(expectedWidth), path);
+            Assert.That(texture.height, Is.EqualTo(64), path);
+            AssertLongwatchImporter(path);
+
+            List<Sprite> sprites = LoadSprites(path);
+            Assert.That(sprites, Has.Count.EqualTo(expectedFrameCount), path);
+            for (int frameIndex = 0; frameIndex < expectedFrameCount; frameIndex++)
+            {
+                Sprite sprite = sprites[frameIndex];
+                Assert.That(sprite.name, Is.EqualTo(baseName + "_" + frameIndex));
+                Assert.That(sprite.rect, Is.EqualTo(new Rect(frameIndex * 48, 0, 48, 64)));
+                Assert.That(Vector2.Distance(sprite.pivot, new Vector2(24f, 0f)),
+                    Is.LessThan(0.001f));
+                Assert.That(sprite.pixelsPerUnit, Is.EqualTo(16f));
+            }
+
+            AssertSourcePixels(path);
         }
 
         private static List<Sprite> LoadSprites(string path)

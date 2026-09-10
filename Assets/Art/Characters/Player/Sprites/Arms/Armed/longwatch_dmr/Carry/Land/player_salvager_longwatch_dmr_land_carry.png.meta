@@ -174,12 +174,12 @@ TextureImporter:
       name: player_salvager_longwatch_dmr_land_carry_0
       rect:
         serializedVersion: 2
-        x: 25
-        y: 4
-        width: 13
-        height: 25
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -196,12 +196,12 @@ TextureImporter:
       name: player_salvager_longwatch_dmr_land_carry_1
       rect:
         serializedVersion: 2
-        x: 37
-        y: 4
-        width: 12
-        height: 18
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 48
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -214,33 +214,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: player_salvager_longwatch_dmr_land_carry_2
-      rect:
-        serializedVersion: 2
-        x: 54
-        y: 14
-        width: 40
-        height: 28
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 36a7284197f40a5d0800000000000000
-      internalID: -3053353165903463837
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 09d1fa88f16f8574fbb0acdf307a0a90
     internalID: 0
     vertices: []
     indices: 
@@ -252,7 +230,6 @@ TextureImporter:
     nameFileIdTable:
       player_salvager_longwatch_dmr_land_carry_0: 2711883259154889945
       player_salvager_longwatch_dmr_land_carry_1: -3027164120308918952
-      player_salvager_longwatch_dmr_land_carry_2: -3053353165903463837
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

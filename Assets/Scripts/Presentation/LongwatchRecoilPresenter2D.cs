@@ -65,7 +65,8 @@ namespace Rustline.Presentation
                 return;
             }
 
-            if (longwatchPresenter == null || !longwatchPresenter.OwnsRenderer)
+            if (longwatchPresenter == null ||
+                !longwatchPresenter.TryGetCurrentRenderedPose(out _))
             {
                 RestoreBaseline();
                 return;

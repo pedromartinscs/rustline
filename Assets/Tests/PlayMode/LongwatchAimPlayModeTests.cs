@@ -2,6 +2,7 @@ using System.Collections;
 using System.Reflection;
 using NUnit.Framework;
 using Rustline.Gameplay.Player;
+using Rustline.Gameplay.Weapons;
 using Rustline.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -324,7 +325,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator Longwatch_OwnsFallButReleasesForJumpAndLandThenReacquires()
+        public IEnumerator Longwatch_OwnsJumpFallAndLandWithCarryStatesWithoutMuzzlePose()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -334,8 +335,10 @@ namespace Rustline.Tests
             PlayerLongwatchAimPresenter2D armed = motor?.GetComponent<PlayerLongwatchAimPresenter2D>();
             PlayerUnarmedArmsPresenter2D unarmed = motor?.GetComponent<PlayerUnarmedArmsPresenter2D>();
             PlayerAnimator2D playerAnimator = motor?.GetComponent<PlayerAnimator2D>();
+            PlayerWeaponController2D weapon = motor?.GetComponent<PlayerWeaponController2D>();
             Transform bodyTransform = motor?.transform.Find("Visual - 48x64 Full Cell/BodySpriteRenderer");
             SpriteRenderer bodyRenderer = bodyTransform?.GetComponent<SpriteRenderer>();
+            Animator animator = bodyTransform?.GetComponent<Animator>();
             SpriteRenderer armsRenderer = motor?.transform
                 .Find("Visual - 48x64 Full Cell/ArmsWeaponSpriteRenderer")?.GetComponent<SpriteRenderer>();
 
@@ -344,6 +347,8 @@ namespace Rustline.Tests
             Assert.That(armed, Is.Not.Null);
             Assert.That(unarmed, Is.Not.Null);
             Assert.That(playerAnimator, Is.Not.Null);
+            Assert.That(weapon, Is.Not.Null);
+            Assert.That(animator, Is.Not.Null);
 
             Mouse mouse = InputSystem.AddDevice<Mouse>();
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
@@ -353,12 +358,30 @@ namespace Rustline.Tests
                 QueueWorldAim(mouse, nativePresentation, armed.AimOriginWorld,
                     DirectionAtDegrees(-28f, true));
                 yield return WaitForArmedState(armed, PlayerAnimationState.Idle, 20);
+                weapon.ResetTransientState();
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(Key.Space));
                 InputSystem.Update();
-                yield return WaitForUnarmedState(
-                    armed, unarmed, playerAnimator, PlayerAnimationState.Jump, 60);
-                AssertUnarmedOwnership(armed, unarmed, bodyRenderer, armsRenderer);
+                yield return WaitForArmedState(armed, PlayerAnimationState.Jump, 60);
+                animator.speed = 0f;
+                float[] jumpKeyTimes = { 0f, 0.1f, 0.26f };
+                for (int frameIndex = 0; frameIndex < jumpKeyTimes.Length; frameIndex++)
+                {
+                    SetAnimatorTime(animator, "Jump", jumpKeyTimes[frameIndex], 0.28f);
+                    InvokeLongwatchLateUpdate(armed);
+                    AssertCarryMatchesBodyFrame(
+                        armed,
+                        bodyRenderer,
+                        armsRenderer,
+                        PlayerAnimationState.Jump,
+                        frameIndex);
+                }
+                Assert.That(armed.TryGetCurrentRenderedPose(out _), Is.False);
+                Assert.That(weapon.TryFire(Time.time), Is.False);
+                Assert.That(weapon.ShotCount, Is.Zero);
+                Assert.That(bodyRenderer.flipX, Is.True);
+                Assert.That(armsRenderer.flipX, Is.True);
+                animator.speed = 1f;
 
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
@@ -371,15 +394,35 @@ namespace Rustline.Tests
                 Assert.That(fallPose.FacingLeft, Is.True);
                 Assert.That(armsRenderer.sprite.name,
                     Is.EqualTo("player_salvager_longwatch_dmr_fall_aim_m30_0"));
-                yield return WaitForUnarmedState(
-                    armed, unarmed, playerAnimator, PlayerAnimationState.Land, 240);
-                AssertUnarmedOwnership(armed, unarmed, bodyRenderer, armsRenderer);
+                yield return WaitForArmedState(armed, PlayerAnimationState.Land, 240);
+                animator.speed = 0f;
+                float[] landKeyTimes = { 0f, 0.125f };
+                for (int frameIndex = 0; frameIndex < landKeyTimes.Length; frameIndex++)
+                {
+                    SetAnimatorTime(animator, "Land", landKeyTimes[frameIndex], 0.25f);
+                    InvokeLongwatchLateUpdate(armed);
+                    AssertCarryMatchesBodyFrame(
+                        armed,
+                        bodyRenderer,
+                        armsRenderer,
+                        PlayerAnimationState.Land,
+                        frameIndex);
+                }
+                Assert.That(armed.TryGetCurrentRenderedPose(out _), Is.False);
+                Assert.That(weapon.TryFire(Time.time), Is.False);
+                Assert.That(weapon.ShotCount, Is.Zero);
+                Assert.That(bodyRenderer.flipX, Is.True);
+                Assert.That(armsRenderer.flipX, Is.True);
+                animator.speed = 1f;
                 yield return WaitForArmedState(armed, PlayerAnimationState.Idle, 120);
                 Assert.That(armed.Selection.AuthoredAngleDegrees, Is.EqualTo(-30));
                 Assert.That(armed.Selection.FlipX, Is.True);
+                Assert.That(armed.TryGetCurrentRenderedPose(out LongwatchRenderedPose2D idlePose), Is.True);
+                Assert.That(idlePose.State, Is.EqualTo(LongwatchMuzzleState2D.Idle));
             }
             finally
             {
+                animator.speed = 1f;
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
                 InputSystem.RemoveDevice(keyboard);
@@ -616,6 +659,42 @@ namespace Rustline.Tests
             float normalizedTime = (frameIndex + 0.01f) / frameCount;
             animator.Play(state, 0, normalizedTime);
             animator.Update(0f);
+        }
+
+        private static void SetAnimatorTime(
+            Animator animator,
+            string state,
+            float timeSeconds,
+            float clipDuration)
+        {
+            animator.Play(state, 0, timeSeconds / clipDuration);
+            animator.Update(0f);
+        }
+
+        private static void InvokeLongwatchLateUpdate(PlayerLongwatchAimPresenter2D armed)
+        {
+            typeof(PlayerLongwatchAimPresenter2D)
+                .GetMethod("LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.Invoke(armed, null);
+        }
+
+        private static void AssertCarryMatchesBodyFrame(
+            PlayerLongwatchAimPresenter2D armed,
+            SpriteRenderer bodyRenderer,
+            SpriteRenderer armsRenderer,
+            PlayerAnimationState state,
+            int frameIndex)
+        {
+            Sprite expectedBody = state == PlayerAnimationState.Jump
+                ? armed.GetBodyJumpFrame(frameIndex)
+                : armed.GetBodyLandFrame(frameIndex);
+            Sprite expectedCarry = state == PlayerAnimationState.Jump
+                ? armed.GetJumpCarryFrame(frameIndex)
+                : armed.GetLandCarryFrame(frameIndex);
+            Assert.That(bodyRenderer.sprite, Is.SameAs(expectedBody));
+            Assert.That(armsRenderer.sprite, Is.SameAs(expectedCarry));
+            Assert.That(armed.OwnsRenderer, Is.True);
+            Assert.That(armed.UnarmedPresenter.OwnsRenderer, Is.False);
         }
 
         private static void QueueWorldAim(

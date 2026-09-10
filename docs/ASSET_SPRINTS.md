@@ -50,8 +50,8 @@ Acceptance notes:
 Goal: remove unsupported-state Longwatch presentation fallbacks and complete the first weapon's art pipeline.
 
 - [x] 7. Longwatch Fall aim — 19 right-facing authored sprites, integrated as one Body-clocked frame per direction
-- [ ] 8. Longwatch Jump carry — 3 sprites
-- [ ] 9. Longwatch Land carry — 2 sprites
+- [x] 8. Longwatch Jump carry — 3 authored and integrated 48×64 sprites
+- [x] 9. Longwatch Land carry — 2 authored and integrated 48×64 sprites
 - [x] 10. Longwatch Crouch Idle — frame 0 of the shared 19 × 6 package, following static authored Body frame 0
 - [x] 11. Longwatch Crouch Move — shared 19 × 6 package, following displayed Body frames one-to-one
 - [x] 12. Longwatch Wall Brace presentation — no weapon carry by design; both hands and one leg are committed to the wall, the unarmed Wall Brace Arms own the overlay, and firing remains blocked
@@ -59,7 +59,7 @@ Goal: remove unsupported-state Longwatch presentation fallbacks and complete the
 Presentation policy:
 
 - Fall and Crouch Idle / Crouch Move are aim/fire-capable states and therefore use the 19-direction authored set.
-- Jump and Land carry art remain the only pending Longwatch movement carry packages and are non-firing. Wall Brace permanently uses its dedicated two-frame Body/Unarmed Arms presentation with no rendered Longwatch and remains non-firing. Dedicated Wall Kick art is not currently required; its accepted Jump/Fall fallback remains non-firing unless future native-scale testing proves otherwise.
+- Jump and Land carry are integrated as non-firing, Body-clocked 48×64 presentations; no Longwatch locomotion carry assets remain pending. Wall Brace permanently uses its dedicated two-frame Body/Unarmed Arms presentation with no rendered Longwatch and remains non-firing. Dedicated Wall Kick art is not required; its accepted Jump/Fall fallback remains non-firing.
 - Body animation remains the authoritative frame clock; weapon art follows the approved locomotion frame one-to-one.
 - Longwatch crouch uses one six-frame set per direction. Crouch Idle holds frame 0, forward movement follows 0..5, and presentation-only crouch backpedal reuses the same sprites through reverse Body playback 5..0.
 - Automated crouch import/runtime integration is complete; human native-scale visual approval remains a separate open gate.

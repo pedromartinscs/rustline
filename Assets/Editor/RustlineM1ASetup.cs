@@ -53,6 +53,12 @@ namespace Rustline.Editor
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Crouch";
         private const string LongwatchFallAimRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim/Fall";
+        private const string LongwatchJumpCarryPath =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Carry/Jump/" +
+            "player_salvager_longwatch_dmr_jump_carry.png";
+        private const string LongwatchLandCarryPath =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Carry/Land/" +
+            "player_salvager_longwatch_dmr_land_carry.png";
         private const string CollisionTilePath = "Assets/Art/Environment/Tiles/Generated/MovementCollisionTile.asset";
         private const string RuleTilePath = "Assets/Art/Environment/Tiles/Generated/IndustrialSurfaceRuleTile.asset";
         private const string InputPath = "Assets/InputSystem_Actions.inputactions";
@@ -273,6 +279,7 @@ namespace Rustline.Editor
             int combatTargetLayer = EnsureLayer("CombatTarget", 7);
             ConfigureRenderer2DDefaultMaterial();
             RustlineM0ArtSetup.ConfigureLongwatchAimSheets();
+            RustlineM0ArtSetup.ConfigureLongwatchCarrySheets();
             RustlineM0ArtSetup.ConfigureLongwatchMuzzleFlash();
 
             PlayerMovementConfig config = CreateConfig();
@@ -638,8 +645,12 @@ namespace Rustline.Editor
                 BodySpriteRoot + "/player_salvager_body_backpedal.png");
             List<Sprite> bodyCrouchFrames = LoadSpritesByFrameIndex(
                 BodySpriteRoot + "/player_salvager_body_crouch.png");
+            List<Sprite> bodyJumpFrames = LoadSpritesByFrameIndex(
+                BodySpriteRoot + "/player_salvager_body_jump.png");
             List<Sprite> bodyFallFrames = LoadSpritesByFrameIndex(
                 BodySpriteRoot + "/player_salvager_body_fall.png");
+            List<Sprite> bodyLandFrames = LoadSpritesByFrameIndex(
+                BodySpriteRoot + "/player_salvager_body_land.png");
             List<Sprite> longwatchIdleFrames = LoadLongwatchAimFrames(
                 LongwatchIdleAimRoot, "idle", 2);
             List<Sprite> longwatchRunFrames = LoadLongwatchAimFrames(
@@ -650,19 +661,23 @@ namespace Rustline.Editor
                 LongwatchCrouchAimRoot, "crouch", 6);
             List<Sprite> longwatchFallFrames = LoadLongwatchAimFrames(
                 LongwatchFallAimRoot, "fall", 1);
+            List<Sprite> longwatchJumpCarryFrames = LoadSpritesByFrameIndex(LongwatchJumpCarryPath);
+            List<Sprite> longwatchLandCarryFrames = LoadSpritesByFrameIndex(LongwatchLandCarryPath);
             List<Sprite> longwatchMuzzleFlashFrames = LoadLongwatchMuzzleFlashFrames();
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
             Require(bodyFrames.Count == 32 && armsFrames.Count == 32,
                 "The player prefab requires all 32 unique Body and Unarmed Arms frames.");
             Require(bodyIdleFrames.Count == 2 && bodyRunFrames.Count == 6 &&
-                bodyBackpedalFrames.Count == 4 && bodyCrouchFrames.Count == 6 && bodyFallFrames.Count == 1 &&
+                bodyBackpedalFrames.Count == 4 && bodyCrouchFrames.Count == 6 &&
+                bodyJumpFrames.Count == 3 && bodyFallFrames.Count == 1 && bodyLandFrames.Count == 2 &&
                 longwatchIdleFrames.Count == 38 && longwatchRunFrames.Count == 114 &&
                 longwatchBackpedalFrames.Count == 76 && longwatchCrouchFrames.Count == 114 &&
-                longwatchFallFrames.Count == 19 &&
+                longwatchJumpCarryFrames.Count == 3 && longwatchFallFrames.Count == 19 &&
+                longwatchLandCarryFrames.Count == 2 &&
                 longwatchMuzzleFlashFrames.Count == LongwatchMuzzleFlashPresenter2D.RequiredSpriteCount &&
                 longwatchMuzzleMetadata != null,
-                "The Longwatch presenter requires complete Idle, Run, Backpedal, and Crouch Body/armed frames.");
+                "The Longwatch presenter requires complete aim and Jump/Land carry frames.");
 
             bool editingExistingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath) != null;
             GameObject root = editingExistingPrefab
@@ -772,8 +787,12 @@ namespace Rustline.Editor
                     longwatchBackpedalFrames,
                     bodyCrouchFrames,
                     longwatchCrouchFrames,
+                    bodyJumpFrames,
+                    longwatchJumpCarryFrames,
                     bodyFallFrames,
-                    longwatchFallFrames);
+                    longwatchFallFrames,
+                    bodyLandFrames,
+                    longwatchLandCarryFrames);
 
                 GameObject traceObject = GetOrCreateChild(root.transform, "Prototype Longwatch Shot Trace");
                 LineRenderer traceRenderer = GetOrAddComponent<LineRenderer>(traceObject);
@@ -993,8 +1012,12 @@ namespace Rustline.Editor
             IReadOnlyList<Sprite> longwatchBackpedalFrames,
             IReadOnlyList<Sprite> bodyCrouchFrames,
             IReadOnlyList<Sprite> longwatchCrouchFrames,
+            IReadOnlyList<Sprite> bodyJumpFrames,
+            IReadOnlyList<Sprite> longwatchJumpCarryFrames,
             IReadOnlyList<Sprite> bodyFallFrames,
-            IReadOnlyList<Sprite> longwatchFallFrames)
+            IReadOnlyList<Sprite> longwatchFallFrames,
+            IReadOnlyList<Sprite> bodyLandFrames,
+            IReadOnlyList<Sprite> longwatchLandCarryFrames)
         {
             SerializedObject serialized = new SerializedObject(presenter);
             serialized.FindProperty("playerAim").objectReferenceValue = playerAim;
@@ -1094,6 +1117,28 @@ namespace Rustline.Editor
                 SerializedProperty pose = fallPoses.GetArrayElementAtIndex(directionIndex);
                 pose.FindPropertyRelative("angleDegrees").intValue = LongwatchDirectionAngles[directionIndex];
                 pose.FindPropertyRelative("frame0").objectReferenceValue = longwatchFallFrames[directionIndex];
+            }
+
+            SerializedProperty jumpBodyFrames = serialized.FindProperty("bodyJumpFrames");
+            jumpBodyFrames.arraySize = bodyJumpFrames.Count;
+            SerializedProperty jumpCarryFrames = serialized.FindProperty("jumpCarryFrames");
+            jumpCarryFrames.arraySize = longwatchJumpCarryFrames.Count;
+            for (int index = 0; index < bodyJumpFrames.Count; index++)
+            {
+                jumpBodyFrames.GetArrayElementAtIndex(index).objectReferenceValue = bodyJumpFrames[index];
+                jumpCarryFrames.GetArrayElementAtIndex(index).objectReferenceValue =
+                    longwatchJumpCarryFrames[index];
+            }
+
+            SerializedProperty landBodyFrames = serialized.FindProperty("bodyLandFrames");
+            landBodyFrames.arraySize = bodyLandFrames.Count;
+            SerializedProperty landCarryFrames = serialized.FindProperty("landCarryFrames");
+            landCarryFrames.arraySize = longwatchLandCarryFrames.Count;
+            for (int index = 0; index < bodyLandFrames.Count; index++)
+            {
+                landBodyFrames.GetArrayElementAtIndex(index).objectReferenceValue = bodyLandFrames[index];
+                landCarryFrames.GetArrayElementAtIndex(index).objectReferenceValue =
+                    longwatchLandCarryFrames[index];
             }
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -2308,9 +2353,13 @@ namespace Rustline.Editor
                 longwatchPresenter.BackpedalAimPoseCount == 19 &&
                 longwatchPresenter.BodyCrouchFrameCount == 6 &&
                 longwatchPresenter.CrouchAimPoseCount == 19 &&
+                longwatchPresenter.BodyJumpFrameCount == 3 &&
+                longwatchPresenter.JumpCarryFrameCount == 3 &&
                 longwatchPresenter.BodyFallFrameCount == 1 &&
-                longwatchPresenter.FallAimPoseCount == 19,
-                "Player prefab Longwatch Idle/Run/Backpedal/Crouch/Fall presenter wiring is incomplete.");
+                longwatchPresenter.FallAimPoseCount == 19 &&
+                longwatchPresenter.BodyLandFrameCount == 2 &&
+                longwatchPresenter.LandCarryFrameCount == 2,
+                "Player prefab Longwatch aim/carry presenter wiring is incomplete.");
             for (int frameIndex = 0; frameIndex < 6; frameIndex++)
             {
                 Sprite bodyCrouchFrame = longwatchPresenter.GetBodyCrouchFrame(frameIndex);
@@ -2369,6 +2418,32 @@ namespace Rustline.Editor
             Require(longwatchPresenter.GetBodyFallFrame(0) != null &&
                 longwatchPresenter.GetBodyFallFrame(0).name == "player_salvager_body_fall_0",
                 "Longwatch presenter Body Fall frame mismatch.");
+            List<Sprite> expectedBodyJumpFrames = LoadSpritesByFrameIndex(
+                BodySpriteRoot + "/player_salvager_body_jump.png");
+            List<Sprite> expectedJumpCarryFrames = LoadSpritesByFrameIndex(LongwatchJumpCarryPath);
+            for (int frameIndex = 0; frameIndex < 3; frameIndex++)
+            {
+                Require(longwatchPresenter.GetBodyJumpFrame(frameIndex) == expectedBodyJumpFrames[frameIndex] &&
+                    longwatchPresenter.GetJumpCarryFrame(frameIndex) == expectedJumpCarryFrames[frameIndex] &&
+                    expectedBodyJumpFrames[frameIndex].name ==
+                        "player_salvager_body_jump_" + frameIndex &&
+                    expectedJumpCarryFrames[frameIndex].name ==
+                        "player_salvager_longwatch_dmr_jump_carry_" + frameIndex,
+                    "Longwatch Jump carry mapping mismatch at frame " + frameIndex + ".");
+            }
+            List<Sprite> expectedBodyLandFrames = LoadSpritesByFrameIndex(
+                BodySpriteRoot + "/player_salvager_body_land.png");
+            List<Sprite> expectedLandCarryFrames = LoadSpritesByFrameIndex(LongwatchLandCarryPath);
+            for (int frameIndex = 0; frameIndex < 2; frameIndex++)
+            {
+                Require(longwatchPresenter.GetBodyLandFrame(frameIndex) == expectedBodyLandFrames[frameIndex] &&
+                    longwatchPresenter.GetLandCarryFrame(frameIndex) == expectedLandCarryFrames[frameIndex] &&
+                    expectedBodyLandFrames[frameIndex].name ==
+                        "player_salvager_body_land_" + frameIndex &&
+                    expectedLandCarryFrames[frameIndex].name ==
+                        "player_salvager_longwatch_dmr_land_carry_" + frameIndex,
+                    "Longwatch Land carry mapping mismatch at frame " + frameIndex + ".");
+            }
             PlayerJumpDustFx2D jumpDustPrefab = AssetDatabase.LoadAssetAtPath<PlayerJumpDustFx2D>(JumpDustPrefabPath);
             Require(jumpPresentation != null && jumpPresentation.Visual == visual &&
                 jumpPresentation.BodySpriteRenderer == bodyRenderer &&
