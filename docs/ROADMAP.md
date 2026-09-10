@@ -22,6 +22,8 @@ Environment collision authoring must follow [`ENVIRONMENT_GAMEPLAY_METRICS.md`](
 
 The current art-production checklist is tracked in [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md). Native-scale in-engine inspection remains the authority for visual approval.
 
+The first production-area target is now **Salvage Intake**. Its deterministic graybox builder and room contract are implemented; the generated Unity scene still requires native-scale human playtesting before the graybox is locked or environment art production begins. See [`SALVAGE_INTAKE.md`](SALVAGE_INTAKE.md).
+
 ## M0 — Visual foundation
 
 **Goal:** establish a redistributable visual baseline and integrate it correctly into Unity before production gameplay work begins.
