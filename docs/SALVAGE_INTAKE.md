@@ -32,7 +32,7 @@ These roots are deliberately preserved across rebuilds and must be used for hand
 
 Do not place permanent hand-authored dressing under a `Managed` root.
 
-## Current spatial contract — Graybox v2.1
+## Current spatial contract — Graybox v2.2
 
 The room remains **56 canonical tiles wide** at the outer boundary. All current gameplay geometry is aligned to the normal **16×16 px / 1×1 unit** structural grid.
 
@@ -44,12 +44,14 @@ Graybox v2 keeps the room envelope from the first pass but replaces the movement
 - a simple west-side entry deck;
 - a small service step leading toward the lower central bay;
 - a compact **4×2 tile** central collision plinth for the future salvage machine;
-- a **13×1 tile** upper transfer catwalk crossing part of the bay;
+- a **12×1 tile** upper transfer catwalk crossing part of the bay;
 - a one-tile-wide east catwalk support;
 - a simple east-side staging / future exit deck;
 - player spawn on the west side and exit-staging marker on the east side.
 
-The original v2 left-approach geometry used a floating ledge beginning one tile after the service step. Human playtesting exposed a real wedge/stuck case there: the combination produced a **16 px horizontal notch followed by a 16 px undercut**, both below the intended traversal-safe envelope. Graybox v2.1 closes that geometry by making the left approach a solid `4×2` block beginning exactly where the service step ends. This removes the sub-minimum notch and inaccessible undercut rather than changing the player capsule.
+The original v2 left-approach geometry used a floating ledge beginning one tile after the service step. Human playtesting exposed a real wedge/stuck case there: the combination produced a **16 px horizontal notch followed by a 16 px undercut**, both below the intended traversal-safe envelope. Graybox v2.1 closed that geometry by making the left approach a solid `4×2` block beginning exactly where the service step ends. This removes the sub-minimum notch and inaccessible undercut rather than changing the player capsule.
+
+A second playtest exposed the same class of problem at the transition from the central plinth toward the catwalk. The original catwalk began only **1 tile / 16 px** beyond the plinth edge, creating a diagonal micro-gap where the capsule could partially enter and wedge. Graybox v2.2 moves the catwalk start one tile east and shortens it correspondingly, leaving a real **2 tile / 32 px** opening. That gap is now intentionally traversable rather than an ambiguous near-fit, while the east support and overall room envelope remain unchanged.
 
 The critical route does not require a diagnostic sequence of every movement ability. The geometry should read as an industrial place first. Jump, LedgeClimb, Wall Brace/Kick, crouch, Fall aim, and future combat positioning should emerge from useful architecture rather than isolated ability-test stations.
 
@@ -108,7 +110,7 @@ Do not solve the room by adding many overlapping lights, full-screen effects, or
 
 Do **not** fill every unused slot in the structural atlas before inspecting this room in-engine.
 
-After graybox v2.1 is generated and human-tested at native scale, the first art batch should be chosen from what the room visibly needs. Expected first candidates remain:
+After graybox v2.2 is generated and human-tested at native scale, the first art batch should be chosen from what the room visibly needs. Expected first candidates remain:
 
 - top-surface variants (`industrial_surface` slots 24/25);
 - left/right wall variants (26/27);
@@ -122,7 +124,7 @@ This list is a starting expectation, not a requirement to manufacture unused ass
 
 ## Immediate acceptance gate
 
-Before environment art production begins, inspect graybox v2.1 in Unity and verify:
+Before environment art production begins, inspect graybox v2.2 in Unity and verify:
 
 - the room is traversable without getting stuck;
 - no physical opening narrower than the accepted authoring envelope invites entry;
