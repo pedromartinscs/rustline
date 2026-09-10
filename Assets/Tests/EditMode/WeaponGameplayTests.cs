@@ -1,3 +1,4 @@
+using System.Reflection;
 using NUnit.Framework;
 using Rustline.Gameplay.Weapons;
 using Rustline.Presentation;
@@ -127,6 +128,63 @@ namespace Rustline.Tests
             Assert.That(initial.magnitude,
                 Is.EqualTo(LongwatchRecoilPresenter2D.RecoilDistanceWorldUnits).Within(0.000001f));
             Assert.That(recovered, Is.EqualTo(Vector2.zero));
+        }
+
+        [Test]
+        public void ActiveMuzzleFlash_HidesWhenLongwatchOwnsCarryWithoutMuzzlePose()
+        {
+            GameObject root = new GameObject("Longwatch Carry Flash Test");
+            try
+            {
+                PlayerLongwatchAimPresenter2D longwatch = root.AddComponent<PlayerLongwatchAimPresenter2D>();
+                FieldInfo ownsRenderer = typeof(PlayerLongwatchAimPresenter2D).GetField(
+                    "_ownsRenderer", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo hasRenderedPose = typeof(PlayerLongwatchAimPresenter2D).GetField(
+                    "_hasRenderedPose", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(ownsRenderer, Is.Not.Null);
+                Assert.That(hasRenderedPose, Is.Not.Null);
+                ownsRenderer.SetValue(longwatch, true);
+                hasRenderedPose.SetValue(longwatch, false);
+
+                GameObject flashObject = new GameObject("Longwatch Muzzle Flash");
+                flashObject.transform.SetParent(root.transform, false);
+                SpriteRenderer renderer = flashObject.AddComponent<SpriteRenderer>();
+                LongwatchMuzzleFlashPresenter2D flash =
+                    flashObject.AddComponent<LongwatchMuzzleFlashPresenter2D>();
+
+                SerializedObject serialized = new SerializedObject(flash);
+                serialized.FindProperty("longwatchPresenter").objectReferenceValue = longwatch;
+                serialized.FindProperty("flashRenderer").objectReferenceValue = renderer;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                FieldInfo activeVariant = typeof(LongwatchMuzzleFlashPresenter2D).GetField(
+                    "_activeVariant", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo activeFrame = typeof(LongwatchMuzzleFlashPresenter2D).GetField(
+                    "_activeFrame", BindingFlags.Instance | BindingFlags.NonPublic);
+                FieldInfo activationFrame = typeof(LongwatchMuzzleFlashPresenter2D).GetField(
+                    "_activationFrame", BindingFlags.Instance | BindingFlags.NonPublic);
+                MethodInfo lateUpdate = typeof(LongwatchMuzzleFlashPresenter2D).GetMethod(
+                    "LateUpdate", BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(activeVariant, Is.Not.Null);
+                Assert.That(activeFrame, Is.Not.Null);
+                Assert.That(activationFrame, Is.Not.Null);
+                Assert.That(lateUpdate, Is.Not.Null);
+
+                activeVariant.SetValue(flash, 0);
+                activeFrame.SetValue(flash, 0);
+                activationFrame.SetValue(flash, Time.frameCount);
+                renderer.enabled = true;
+
+                lateUpdate.Invoke(flash, null);
+
+                Assert.That(flash.IsVisible, Is.False);
+                Assert.That(flash.ActiveVariant, Is.EqualTo(-1));
+                Assert.That(flash.ActiveFrame, Is.EqualTo(-1));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
     }
 }

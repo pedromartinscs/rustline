@@ -135,6 +135,16 @@ namespace Rustline.Presentation
                 return;
             }
 
+            // A flash is attached to an authored muzzle pose, not merely to the shared
+            // arms renderer. Jump/Land carry and unarmed traversal can take ownership
+            // immediately after a shot, so cancel an already-active flash as soon as
+            // the Longwatch presenter no longer exposes a muzzle-capable rendered pose.
+            if (longwatchPresenter == null || !longwatchPresenter.TryGetCurrentRenderedPose(out _))
+            {
+                Hide();
+                return;
+            }
+
             int renderedFrameAge = Time.frameCount - _activationFrame;
             if (renderedFrameAge == 1)
             {
