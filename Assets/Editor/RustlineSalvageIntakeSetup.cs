@@ -66,8 +66,9 @@ namespace Rustline.Editor
             // Small service step before the drop into the lower bay.
             new CellRect(-12, 0, 4, 1),
 
-            // Left approach to the upper route: a modest ledge, not a staircase course.
-            new CellRect(-7, 1, 3, 1),
+            // Left approach to the upper route. It starts exactly where the service step ends and
+            // is solid down to the floor, removing the former 16 px notch/undercut trap.
+            new CellRect(-8, 0, 4, 2),
 
             // Central salvage machinery plinth. This is intentionally much lighter than v1;
             // the eventual hero machinery will mostly extend as non-colliding background art.
