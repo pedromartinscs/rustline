@@ -30,10 +30,10 @@ Goal: remove the major player-movement presentation fallbacks before expanding a
 
 - [x] 1. Crouch Body — six authored frames integrated from `player_salvager_body_crouch.png`
 - [x] 2. Crouch Unarmed Arms — six matching frames integrated from `player_salvager_arms_crouch.png`
-- [ ] 3. Approve crouch in-engine at native gameplay scale
+- [x] 3. Approve crouch in-engine at native gameplay scale
 - [x] 4. Wall Brace Body / Unarmed Arms — two matching frames integrated from `player_salvager_body_wall_brace.png` / `player_salvager_arms_wall_brace.png`
 - [x] 5. Wall Kick uses the accepted Jump/Fall fallback; dedicated art is not currently required
-- [ ] 6. Approve wall presentation in-engine at native gameplay scale
+- [x] 6. Approve wall presentation in-engine at native gameplay scale
 - [x] LedgeClimb Body / Unarmed Arms — six matching 48×64 frames at 10 fps, integrated and human-approved as an immediate committed traversal
 
 Acceptance notes:
@@ -71,6 +71,9 @@ Presentation policy:
 
 Goal: turn the movement/combat laboratory into the first piece of a place that visibly belongs to Rustline, while keeping gameplay collision simple and authoritative.
 
+- [x] Establish the first real area concept and deterministic `SalvageIntake` graybox builder
+- [ ] Generate and inspect `Assets/Scenes/Demo/SalvageIntake.unity` in Unity at native scale
+- [ ] Lock the first-room traversal/combat graybox after human playtesting
 - [ ] Complete the useful structural tile family beyond canonical slots 00–15
 - [ ] Establish floor / wall / ceiling / inside-outside corner variants needed by the first real area
 - [ ] Establish beams, columns, brackets, and structural support language
@@ -79,6 +82,8 @@ Goal: turn the movement/combat laboratory into the first piece of a place that v
 - [ ] Establish foreground/background depth without compromising gameplay readability
 - [ ] Produce one polished playable environment slice / hero room at native scale
 - [ ] Expand the accepted visual language into the demo's single playable level
+
+The first production-area contract is documented in [`SALVAGE_INTAKE.md`](SALVAGE_INTAKE.md). Its builder owns only the deterministic graybox/player-rig roots and deliberately preserves separate `Art Dressing` and `Gameplay Content` roots across rebuilds.
 
 Do **not** build a giant generic asset library before a real scene needs it. Prefer a concrete room/sequence and author the minimum reusable pieces required to make that sequence look finished.
 
