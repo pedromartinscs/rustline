@@ -176,7 +176,8 @@ namespace Rustline.Editor
             Scene scene = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null
                 ? EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single)
                 : EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            scene.name = "SalvageIntake";
+            // Do not assign Scene.name here. Once the scene is saved, Unity derives the name from
+            // the filename and throws if code attempts to rename it during a subsequent rebuild.
 
             GameObject root = FindGameObject(scene, RootName);
             if (root == null)
