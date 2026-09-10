@@ -1321,6 +1321,14 @@ MonoBehaviour:
     frame3: {fileID: 1815168086113418463, guid: 63bcbaffd589c4d4e91058332eb0c5bc, type: 3}
     frame4: {fileID: 1860151934639821565, guid: 63bcbaffd589c4d4e91058332eb0c5bc, type: 3}
     frame5: {fileID: -3440589793527348654, guid: 63bcbaffd589c4d4e91058332eb0c5bc, type: 3}
+  bodyJumpFrames:
+  - {fileID: 8069153423872376370, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
+  - {fileID: -4116197542669697790, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
+  - {fileID: -6548528696848270277, guid: bc505baabad36b84f8139879ed0a9503, type: 3}
+  jumpCarryFrames:
+  - {fileID: 1087903105764737349, guid: 6e67bc0e423f34648be976170ae9dc35, type: 3}
+  - {fileID: -1168174451496668910, guid: 6e67bc0e423f34648be976170ae9dc35, type: 3}
+  - {fileID: 2368398046348009312, guid: 6e67bc0e423f34648be976170ae9dc35, type: 3}
   bodyFallFrames:
   - {fileID: 3318448561657881336, guid: 467ef8f65985cc44fada5f0d70207087, type: 3}
   fallAimPoses:
@@ -1362,6 +1370,12 @@ MonoBehaviour:
     frame0: {fileID: 4601709783436468705, guid: 2e5a3ea8c1eb70b498beb297fea37b89, type: 3}
   - angleDegrees: -90
     frame0: {fileID: -1400660450956173746, guid: 392f90962295d1542917af8f492f0c81, type: 3}
+  bodyLandFrames:
+  - {fileID: 6353205104408470852, guid: 0a2b19989805f054d8d884d4ffca2ef6, type: 3}
+  - {fileID: 5363521786687209104, guid: 0a2b19989805f054d8d884d4ffca2ef6, type: 3}
+  landCarryFrames:
+  - {fileID: 2711883259154889945, guid: 5d30970d7f8d8364ba540ecc39674339, type: 3}
+  - {fileID: -3027164120308918952, guid: 5d30970d7f8d8364ba540ecc39674339, type: 3}
 --- !u!114 &1662337730154184211
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1528,7 +1542,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 244a63a7cc199ed4095c7ca16ab091ad, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.LongwatchMuzzleFlashPresenter2D
   weaponController: {fileID: 1780972319499233150}
   longwatchPresenter: {fileID: 2994246285054152671}

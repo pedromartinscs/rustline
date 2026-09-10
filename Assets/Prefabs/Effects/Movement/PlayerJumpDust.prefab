@@ -102,7 +102,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2413bb6e82297574296738faea120fb7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PlayerJumpDustFx2D
   spriteRenderer: {fileID: 7314779705501159855}
   frames:
