@@ -197,7 +197,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator RunLongwatch_UsesBodyClockAndAimFacingIndependentOfMovement()
+        public IEnumerator RunAndBackpedalLongwatch_UseBodyClockAndAimFacingIndependentOfMovement()
         {
             SceneManager.LoadScene("MovementLab");
             yield return null;
@@ -281,6 +281,13 @@ namespace Rustline.Tests
                 Assert.That(armed.Selection.AuthoredAngleDegrees, Is.EqualTo(-50));
                 Assert.That(bodyRenderer.flipX, Is.False);
                 Assert.That(armsRenderer.flipX, Is.False);
+
+                AnimationClip backpedalClip = System.Array.Find(
+                    animator.runtimeAnimatorController.animationClips,
+                    clip => clip.name == "Player_Body_Backpedal");
+                Assert.That(backpedalClip, Is.Not.Null);
+                Assert.That(backpedalClip.frameRate, Is.EqualTo(8f));
+                Assert.That(backpedalClip.length, Is.EqualTo(0.5f).Within(0.0001f));
 
                 animator.speed = 0f;
                 for (int frameIndex = 0; frameIndex < 4; frameIndex++)

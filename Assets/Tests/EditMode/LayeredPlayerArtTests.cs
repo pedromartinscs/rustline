@@ -220,12 +220,12 @@ namespace Rustline.Tests
         }
 
         [Test]
-        public void BackpedalClip_PreservesFourAuthoredFramesAtSevenFps()
+        public void BackpedalClip_PreservesFourAuthoredFramesAtEightFps()
         {
             AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(
                 BodyAnimationRoot + "/Player_Body_Backpedal.anim");
             Assert.That(clip, Is.Not.Null);
-            Assert.That(clip.frameRate, Is.EqualTo(7f));
+            Assert.That(clip.frameRate, Is.EqualTo(8f));
             Assert.That(AnimationUtility.GetAnimationClipSettings(clip).loopTime, Is.True);
 
             EditorCurveBinding[] bindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
@@ -236,7 +236,7 @@ namespace Rustline.Tests
             Assert.That(keyframes, Has.Length.EqualTo(4));
             for (int index = 0; index < 4; index++)
             {
-                Assert.That(keyframes[index].time, Is.EqualTo(index / 7f).Within(0.0001f));
+                Assert.That(keyframes[index].time, Is.EqualTo(index / 8f).Within(0.0001f));
                 Assert.That(keyframes[index].value, Is.SameAs(expectedSprites[index]));
             }
         }

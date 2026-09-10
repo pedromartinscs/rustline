@@ -157,7 +157,7 @@ Do not:
 This collision contract does not change:
 
 - standing capsule `1.05 × 2.75`, offset `(0, 1.375)`;
-- Backpedal `4 u/s`, exactly 4 authored frames at `7 fps`;
+- Backpedal `4 u/s`, exactly 4 authored frames at `8 fps`;
 - Land `0.22 s`;
 - jump/coyote/buffer/gravity;
 - crouch/wall mechanics;

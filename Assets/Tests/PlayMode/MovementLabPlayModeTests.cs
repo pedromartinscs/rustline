@@ -1261,7 +1261,7 @@ namespace Rustline.Tests
                 Vector2 oppositeWallAim = wallSide > 0 ? Vector2.left : Vector2.right;
                 aim.enabled = false;
                 Assert.That(aim.ApplyWorldAimVector(oppositeWallAim), Is.True);
-                body.position = new Vector2(startingX, -1f);
+                body.position = new Vector2(startingX, -3.5f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState(inputKey));

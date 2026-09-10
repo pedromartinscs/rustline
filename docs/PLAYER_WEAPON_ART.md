@@ -83,7 +83,7 @@ Each Body/Unarmed Arms pair preserves the source sheet's frame count, frame orde
 
 The crouch pair is one authoritative six-frame sheet per layer, not separate Idle and Move artwork. `CrouchIdle` statically reuses crouch frame 0 with no breathing, while `CrouchMove` loops frames 0..5 at an initial 7 fps. The accepted two-frame breathing motion remains exclusive to standing Idle.
 
-The Wall Brace pair is two frames per layer and loops at 6 fps. It is authored touching a wall on the right: `WallSide == +1` presents unflipped and `WallSide == -1` presents with `flipX`; that visual override does not mutate continuous aim or its normal facing hemisphere. No armed Longwatch Wall Brace overlay exists yet, so unarmed Arms own the renderer during this state.
+The Wall Brace pair is two frames per layer and loops at 6 fps. It is authored touching a wall on the right: `WallSide == +1` presents unflipped and `WallSide == -1` presents with `flipX`; that visual override does not mutate continuous aim or its normal facing hemisphere. There is intentionally no armed Longwatch Wall Brace overlay: both hands and one leg are committed to wall contact, so unarmed Arms own the renderer, the weapon is not rendered, and firing is blocked.
 
 The LedgeClimb pair is exactly six frames per layer and plays once at 10 fps. Frames 0..4 are authored for a platform on the right and mirror for a left ledge; physical root motion follows the source-pixel climb/contact offsets `(0,0)`, `(8,8)`, `(14,14)`, `(18,17)`, `(19,19)`. Frame 4 remains pinned at its calibrated ledge contact for the full 0.40–0.50 s interval. Frame 5 is recovery onto the platform, not Idle: its root Y is `capture + 31` source pixels and its X is the geometry-derived final standing X. At 0.60 s the physics root/collider moves directly to the validated standing placement and normal Idle/Run follows, with no post-animation settle or easing. There is deliberately no LedgeGrab/Hang state. No Longwatch LedgeClimb carry artwork exists, so the unarmed overlay owns all six matching Arms frames and firing is blocked.
 
@@ -265,7 +265,7 @@ cell size  = 80×96 px
 frames     = x 0, 80, 160, 240
 ```
 
-Production folder is `Aim/Backpedal`, filenames follow `player_salvager_longwatch_dmr_backpedal_aim_<direction>.png`, and the 19 sheets contain exactly **76 final Backpedal armed sprites**. The Body and Unarmed Arms Backpedal sheets are each exactly `192×64`, four horizontal `48×64` frames. Four frames are the authored animation contract, not an import or storage optimization; do not duplicate, interpolate, or reorder them. The Backpedal playback rate is 7.0 fps, a small visual-cadence increase chosen after the 4 units/s movement-speed pass.
+Production folder is `Aim/Backpedal`, filenames follow `player_salvager_longwatch_dmr_backpedal_aim_<direction>.png`, and the 19 sheets contain exactly **76 final Backpedal armed sprites**. The Body and Unarmed Arms Backpedal sheets are each exactly `192×64`, four horizontal `48×64` frames. Four frames are the authored animation contract, not an import or storage optimization; do not duplicate, interpolate, or reorder them. Standing Backpedal plays at 8 fps with keys at `0`, `0.125`, `0.250`, and `0.375` seconds for a 0.50-second loop. The physical movement cap remains 4 units/s, and Longwatch inherits this cadence directly from the sole displayed Body Animator clock.
 
 The Longwatch Crouch package is one authoritative six-frame set per direction. Each of the 19 directions is one `480×96` PNG containing six horizontal `80×96` cells, stored in `Aim/Crouch` as `player_salvager_longwatch_dmr_crouch_aim_<direction>.png`, for **114 final crouch armed sprites**. Crouch Idle reuses armed frame 0 and never advances a breathing cycle. Forward Crouch Move follows displayed Body frames 0..5 one-to-one. Presentation-only crouch backpedal uses the same armed sprites as the Body Animator displays the shared crouch cycle in reverse, 5..0; there is no separately authored Longwatch CrouchBackpedal package.
 
@@ -361,9 +361,11 @@ Fall uses its authored 19-direction, one-frame package. Its visual angle is quan
 - Jump / upward launch phase
 - Land
 - Roll / dodge
-- Wall Brace / Wall Kick
+- Wall Kick
 
 The equipped weapon remains visible, but these states use a single authored carried/locked weapon presentation per animation frame rather than the 19-direction set. Firing is disabled while these states are active.
+
+Wall Brace is a deliberate exception: no Longwatch carry is planned. Both hands and one leg are committed to the wall, so the Longwatch presenter releases the overlay, dedicated unarmed Wall Brace Arms are shown, the weapon is not rendered, and firing remains blocked.
 
 Suggested filenames:
 
@@ -375,7 +377,7 @@ player_salvager_<weapon_id>_roll_carry.png
 
 Aim input may still be tracked internally so aiming resumes immediately when the character returns to an aim-capable state.
 
-`LedgeClimb` is the exception to the carried-weapon rule: no Longwatch carry art exists yet, so the equipped overlay is released and the authored six-frame unarmed Arms package is shown. Firing stays disabled, while background aim remains available again immediately after the committed climb finishes.
+`LedgeClimb` also intentionally has no Longwatch carry art, so the equipped overlay is released and the authored six-frame unarmed Arms package is shown. Firing stays disabled, while background aim remains available again immediately after the committed climb finishes.
 
 ## Facing and mirroring
 

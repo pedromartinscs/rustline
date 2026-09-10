@@ -2,6 +2,87 @@ using UnityEngine;
 
 namespace Rustline.Gameplay.Player
 {
+    /// <summary>
+    /// Art-derived contact contract for the approved 48x64 Wall Brace pose.
+    /// Heights are measured from the physical player root after the Visual child's -4 px offset.
+    /// </summary>
+    public static class PlayerWallBraceContact2D
+    {
+        public const float PixelsPerUnit = 16f;
+        public const float RequiredBottomYPixels = 14.5f;
+        public const float RequiredTopYPixels = 44.5f;
+        public const float RequiredWallPlaneXPixels = 9.5f;
+        public const float SampleStepPixels = 5f;
+        public const int SampleCount = 7;
+        public const float WallPlaneTolerancePixels = 1f;
+
+        public static float GetSampleHeightPixels(int sampleIndex)
+        {
+            return RequiredBottomYPixels +
+                Mathf.Clamp(sampleIndex, 0, SampleCount - 1) * SampleStepPixels;
+        }
+
+        public static bool HasRequiredCoverage(
+            Vector2 rootPosition,
+            int side,
+            float standingColliderWidth,
+            float wallCheckDistance,
+            float minimumWallNormalX,
+            ContactFilter2D filter,
+            RaycastHit2D[] hits)
+        {
+            if (side == 0 || standingColliderWidth <= 0f || wallCheckDistance <= 0f ||
+                hits == null || hits.Length == 0)
+            {
+                return false;
+            }
+
+            side = side < 0 ? -1 : 1;
+            Vector2 direction = Vector2.right * side;
+            float maximumReach = standingColliderWidth * 0.5f + wallCheckDistance;
+            float wallPlaneTolerance = WallPlaneTolerancePixels / PixelsPerUnit;
+            float referenceWallX = 0f;
+
+            for (int sampleIndex = 0; sampleIndex < SampleCount; sampleIndex++)
+            {
+                Vector2 origin = rootPosition + Vector2.up *
+                    (GetSampleHeightPixels(sampleIndex) / PixelsPerUnit);
+                int hitCount = Physics2D.Raycast(origin, direction, filter, hits, maximumReach);
+                bool foundWall = false;
+                float closestDistance = float.PositiveInfinity;
+                float sampleWallX = 0f;
+                for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+                {
+                    RaycastHit2D hit = hits[hitIndex];
+                    if (hit.collider != null &&
+                        -hit.normal.x * side >= minimumWallNormalX &&
+                        hit.distance < closestDistance)
+                    {
+                        foundWall = true;
+                        closestDistance = hit.distance;
+                        sampleWallX = hit.point.x;
+                    }
+                }
+
+                if (!foundWall)
+                {
+                    return false;
+                }
+
+                if (sampleIndex == 0)
+                {
+                    referenceWallX = sampleWallX;
+                }
+                else if (Mathf.Abs(sampleWallX - referenceWallX) > wallPlaneTolerance)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
     public readonly struct LedgeClimbCandidate2D
     {
         public LedgeClimbCandidate2D(
@@ -87,7 +168,16 @@ namespace Rustline.Gameplay.Player
                 RaycastHit2D hit = _hits[index];
                 if (hit.collider != null && -hit.normal.x * side >= config.MinimumWallNormalX)
                 {
-                    return side;
+                    return PlayerWallBraceContact2D.HasRequiredCoverage(
+                        transform.position,
+                        side,
+                        config.StandingColliderSize.x,
+                        config.WallCheckDistance,
+                        config.MinimumWallNormalX,
+                        _filter,
+                        _hits)
+                        ? side
+                        : 0;
                 }
             }
 

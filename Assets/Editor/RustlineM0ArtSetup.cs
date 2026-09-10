@@ -451,7 +451,7 @@ namespace Rustline.Editor
             Dictionary<string, PreviewAsset> previews = new Dictionary<string, PreviewAsset>();
             AddPreview(previews, "Idle", "idle", 0.5f, true);
             AddPreview(previews, "Run", "run", 10f, true);
-            AddPreview(previews, "Backpedal", "backpedal", 7f, true);
+            AddPreview(previews, "Backpedal", "backpedal", 8f, true);
             AddPreview(previews, "Jump", "jump", JumpClipSampleRate, false, JumpTakeoffKeyframeTimes);
             AddPreview(previews, "Fall", "fall", 1f, false);
             AddPreview(previews, "Land", "land", 8f, true);
@@ -1107,7 +1107,7 @@ namespace Rustline.Editor
                 {
                     { "Player_Body_Idle", (2, 0.5f, true, "idle") },
                     { "Player_Body_Run", (6, 10f, true, "run") },
-                    { "Player_Body_Backpedal", (4, 7f, true, "backpedal") },
+                    { "Player_Body_Backpedal", (4, 8f, true, "backpedal") },
                     { "Player_Body_Jump", (3, JumpClipSampleRate, false, "jump") },
                     { "Player_Body_Fall", (1, 1f, false, "fall") },
                     { "Player_Body_Land", (2, 8f, true, "land") },

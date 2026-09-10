@@ -329,7 +329,7 @@ namespace Rustline.Tests
             Keyboard keyboard = InputSystem.AddDevice<Keyboard>();
             try
             {
-                body.position = new Vector2(97.4f, -1f);
+                body.position = new Vector2(97.4f, -3.5f);
                 body.linearVelocity = new Vector2(0f, -9f);
                 Physics2D.SyncTransforms();
                 SetAim(aim, Vector2.right);

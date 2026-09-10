@@ -26,7 +26,7 @@ The prefab root uses a standing vertical CapsuleCollider2D with size `1.05 × 2.
 
 Ground acceleration, deceleration, direction-change acceleration, and `Mathf.MoveTowards` behavior are unchanged. Crossing the aim hemisphere while holding movement therefore approaches the new 4 or 7 units/s cap naturally instead of snapping velocity. The Backpedal cap is grounded-only and both speed values remain human-tunable in `PlayerMovementConfig`.
 
-Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, and the 5° vertical facing hysteresis. The revised four-frame Backpedal art is accepted; 4 units/s is the current movement-feel target.
+Human runtime testing confirms the generic `PlayerAim2D` architecture, Run/Backpedal switching, the mechanical 7 units/s forward versus 4 units/s Backpedal policy, and the 5° vertical facing hysteresis. The revised four-frame standing Backpedal art plays at 8 fps for a 0.50-second loop; only presentation cadence changed, and 4 units/s remains the movement-feel target. The Longwatch overlay follows those displayed Body frames from the sole Animator clock rather than advancing a separate timer.
 
 MovementLab preserves the M0 separation of concerns: `IndustrialSurfaceRuleTile` supplies visuals, while a hidden Tilemap of simple Grid collider tiles feeds `TilemapCollider2D` into a `CompositeCollider2D` to avoid per-cell seams.
 
@@ -38,7 +38,9 @@ The canonical crouch presentation comes from the single six-frame sheets `player
 
 Longwatch crouch art is implemented and fire-capable. During `CrouchIdle` and `CrouchMove`, the Longwatch presenter owns the overlay and follows the displayed shared crouch Body frame.
 
-Wall brace requires an airborne, non-ascending player to hold movement into a detected near-vertical wall. It caps descent at `4` units/s without freezing or climbing. A buffered Jump while braced launches at `8` units/s away and `11.5` units/s upward. The contacted side remains locked for `0.12` seconds; horizontal input cannot cancel the launch during that window and the same wall cannot immediately reattach. Normal air control resumes afterward. Ground contact remains solely the responsibility of `PlayerGroundProbe2D`, so walls cannot emit Land.
+Wall brace requires an airborne, non-ascending player to hold movement into a detected near-vertical wall. After the existing capsule contact gate, presentation-validity geometry requires aligned near-vertical Ground across the authored physical-root band from `+14.5` through `+44.5` source pixels. Seven horizontal probes sample `14.5`, `19.5`, `24.5`, `29.5`, `34.5`, `39.5`, and `44.5` px; all must hit wall planes aligned within one source pixel. The authored plane is approximately `±9.5` px from the root, while the unchanged standing half-width plus `WallCheckDistance` reaches `9.6` px. This prevents the pose's hands or foot bracing against empty space on short, broken, or stepped walls; it is a validity requirement for the existing move, not a new ability.
+
+Once valid, Wall Brace caps descent at `4` units/s without freezing or climbing. A buffered Jump while braced launches at `8` units/s away and `11.5` units/s upward. The contacted side remains locked for `0.12` seconds; horizontal input cannot cancel the launch during that window and the same wall cannot immediately reattach. Normal air control resumes afterward. Ground contact remains solely the responsibility of `PlayerGroundProbe2D`, so walls cannot emit Land.
 
 ## Committed ledge climb
 
@@ -98,7 +100,7 @@ These values are a starting point, not final feel approval.
 | Wall-kick input / same-wall lock | 0.12 s |
 | Ledge-climb maximum upward speed | 0.1 units/s |
 | Ledge capture tolerance | 0.25 units |
-| Ledge authored frame / committed duration | 0.10 s / 0.50 s |
+| Ledge authored frame / committed duration | 0.10 s / 0.60 s |
 
 Edit the config asset in the Inspector, then play `Assets/Scenes/MovementLab.unity`. The course exercises the original movement cases plus a crouch-only low tunnel with open auto-stand space and a deep wall-brace/wall-kick shaft. The main terrain floor remains the release-hardened Composite Tilemap; the tunnel ceiling is a deliberate precision Ground collider shifted upward by exactly **10 source pixels**, producing a 42 px opening (crouch collider 38 px fits; standing collider 44 px does not). This sub-cell ceiling is not a workaround for the historical Release floor bug. The shaft keeps the left wall at x=92, has exactly four open cells at x=93..96, and begins its right wall at x=97 so repeated alternating kicks are more comfortable without changing wall-kick tuning. The right block still ends at x=112, where the existing Longwatch firing-range floor begins. Falling below `-12` respawns the diagnostic specimen independently of the M3A enemy health/death model.
 

@@ -42,7 +42,7 @@ Acceptance notes:
 - Crouch frame counts become the authoritative N used by the armed crouch packages in Sprint 2.
 - Crouch Idle statically reuses frame 0 and intentionally has no breathing animation; Crouch Move loops frames 0..5 at the initial 7 fps visual tuning. Standing Idle remains the only breathing idle.
 - Longwatch crouch presentation now uses the completed six-frame directional package. Its presenter owns the shared overlay and firing is enabled in both crouch states.
-- Wall Brace has no Longwatch carry package yet: the unarmed overlay owns its matching Arms frames and firing remains blocked. Wall Kick uses the accepted Jump/Fall fallback and does not currently require dedicated art; the overall native-scale wall approval gate remains pending.
+- Wall Brace intentionally has no Longwatch carry package: both hands and one leg are committed to wall contact, so the unarmed overlay owns its matching Arms frames, the weapon is not rendered, and firing remains blocked. Wall Kick uses the accepted Jump/Fall fallback and does not currently require dedicated art; the overall native-scale wall approval gate remains pending.
 - LedgeClimb has no grab/hang state and no Longwatch carry package. Once its valid wall/top geometry, facing, and toward-input gate succeeds, the six-frame right-authored traversal commits, mirrors for a left ledge, releases the overlay to unarmed Arms, and blocks firing throughout. Frames 0..4 are the climb/contact motion, with frame 4 pinned to its calibrated ledge contact for the full 0.40–0.50 s interval. Frame 5 is recovery onto the platform—not Idle—with Y at `capture + 31` source pixels and X taken from the geometry-derived final standing root. At 10 fps the state ends at 0.60 s, hands off directly to the final root/collider, and then uses normal Idle/Run without any post-animation settle or easing.
 
 ## Asset Sprint 2 — Complete Longwatch locomotion presentation
@@ -54,12 +54,12 @@ Goal: remove unsupported-state Longwatch presentation fallbacks and complete the
 - [ ] 9. Longwatch Land carry — 2 sprites
 - [x] 10. Longwatch Crouch Idle — frame 0 of the shared 19 × 6 package, following static authored Body frame 0
 - [x] 11. Longwatch Crouch Move — shared 19 × 6 package, following displayed Body frames one-to-one
-- [ ] 12. Longwatch Wall carry — one carried/locked weapon presentation per approved wall animation frame
+- [x] 12. Longwatch Wall Brace presentation — no weapon carry by design; both hands and one leg are committed to the wall, the unarmed Wall Brace Arms own the overlay, and firing remains blocked
 
 Presentation policy:
 
 - Fall and Crouch Idle / Crouch Move are aim/fire-capable states and therefore use the 19-direction authored set.
-- Jump and Land carry art remain pending and non-firing. Wall Brace has dedicated two-frame Body/Unarmed Arms presentation and remains non-firing. Dedicated Wall Kick art is not currently required; its accepted Jump/Fall fallback remains non-firing unless future native-scale testing proves otherwise.
+- Jump and Land carry art remain the only pending Longwatch movement carry packages and are non-firing. Wall Brace permanently uses its dedicated two-frame Body/Unarmed Arms presentation with no rendered Longwatch and remains non-firing. Dedicated Wall Kick art is not currently required; its accepted Jump/Fall fallback remains non-firing unless future native-scale testing proves otherwise.
 - Body animation remains the authoritative frame clock; weapon art follows the approved locomotion frame one-to-one.
 - Longwatch crouch uses one six-frame set per direction. Crouch Idle holds frame 0, forward movement follows 0..5, and presentation-only crouch backpedal reuses the same sprites through reverse Body playback 5..0.
 - Automated crouch import/runtime integration is complete; human native-scale visual approval remains a separate open gate.
