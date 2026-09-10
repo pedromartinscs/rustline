@@ -2,7 +2,7 @@
 
 `SalvageIntake` is Rustline's first production-area graybox and the first step away from the diagnostic `MovementLab` toward the itch.io vertical slice.
 
-The initial goal is deliberately narrow: build one coherent industrial room that is enjoyable to traverse and aim through with the frozen player/Longwatch foundation before creating a broad environment asset library.
+The current goal is deliberately narrow: build one coherent industrial room that is enjoyable to traverse and aim through with the frozen player/Longwatch foundation before creating a broad environment asset library.
 
 ## Scene and builder
 
@@ -20,7 +20,7 @@ Unity menu:
 
 The scene itself is generated from the accepted project assets. The builder first runs the existing M1 validation, then creates/synchronizes the production-area graybox without modifying `MovementLab`.
 
-The builder owns only these roots:
+The builder owns and regenerates only these roots:
 
 - `Environment - Managed Graybox`
 - `Player Rig - Managed`
@@ -32,24 +32,25 @@ These roots are deliberately preserved across rebuilds and must be used for hand
 
 Do not place permanent hand-authored dressing under a `Managed` root.
 
-## Current spatial contract
+## Current spatial contract — Graybox v2
 
-The first room is **56 canonical tiles wide** at the outer boundary. All initial gameplay geometry is aligned to the normal **16×16 px / 1×1 unit** structural grid.
+The room remains **56 canonical tiles wide** at the outer boundary. All current gameplay geometry is aligned to the normal **16×16 px / 1×1 unit** structural grid.
 
-The first pass intentionally contains no sub-cell collision. The accepted **24 source pixel / 1.5 unit Minimum Traversable Gap** remains the hard authoring floor, while ordinary production openings should normally use at least **2 whole tiles / 32 px** when practical.
+The current pass intentionally contains no sub-cell collision. The accepted **24 source pixel / 1.5 unit Minimum Traversable Gap** remains the hard authoring floor, while ordinary production openings should normally use at least **2 whole tiles / 32 px** when practical.
 
-The room starts with:
+Graybox v2 keeps the room envelope from the first pass but replaces the movement-course-like central staircase/mass with a clearer industrial composition:
 
-- a continuous safety floor;
-- left/right bulkhead boundaries;
-- a west-side service rise with readable 1–2 tile height changes;
-- a six-unit central salvage-machinery plinth;
-- an upper solid transfer catwalk;
-- an east catwalk support and low staging/cover block;
-- a player spawn on the west side;
-- an exit-staging marker on the east side.
+- a continuous safety floor and left/right bulkhead boundaries;
+- a simple west-side entry deck;
+- a small service step leading toward the lower central bay;
+- a modest left approach ledge rather than a staircase sequence;
+- a compact **4×2 tile** central collision plinth for the future salvage machine;
+- a **13×1 tile** upper transfer catwalk crossing part of the bay;
+- a one-tile-wide east catwalk support;
+- a simple east-side staging / future exit deck;
+- player spawn on the west side and exit-staging marker on the east side.
 
-The critical route does not require a diagnostic sequence of every movement ability. The geometry should read as an industrial place first. Jump, LedgeClimb, Wall Brace/Kick, crouch, and future combat positioning should emerge from useful architecture rather than isolated ability-test stations.
+The critical route does not require a diagnostic sequence of every movement ability. The geometry should read as an industrial place first. Jump, LedgeClimb, Wall Brace/Kick, crouch, Fall aim, and future combat positioning should emerge from useful architecture rather than isolated ability-test stations.
 
 ## Visual geometry versus gameplay collision
 
@@ -81,16 +82,16 @@ Salvage Intake reuses the accepted player prefab and the same scene-level presen
 - native-pixel logical rendering;
 - integer presentation scaling;
 - palette-constrained penumbra;
-- no identity/decorative `Light2D` objects in the first graybox;
+- no identity/decorative `Light2D` objects in the graybox;
 - existing 60 FPS runtime policy unchanged.
 
 The builder wires `PlayerAim2D` to the scene's `NativePixelPresentation` and preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, or carry behavior.
 
 ## Hero-room composition
 
-The central visual idea is a **salvage transfer / sorting machine** whose eventual art occupies much more visual space than its simple collision plinth. The machine should become the first unmistakable Rustline environment silhouette.
+The central visual idea remains a **salvage transfer / sorting machine** whose eventual art occupies much more visual space than its simple collision plinth. The machine should become the first unmistakable Rustline environment silhouette.
 
-The initial background Tilemap reserves a broad central mass, overhead beam, side structural columns, and connector shapes for this composition. These are placeholders, not final environment art.
+Graybox v2 deliberately replaces the first pass's broad central background mass with an **open machinery frame**: two uprights, an upper beam, a compact central head, and small side service arms. Deep Space remains visible through the structure so the placeholder reads as machinery/background rather than a giant solid wall.
 
 The intended visual hierarchy is:
 
@@ -106,7 +107,7 @@ Do not solve the room by adding many overlapping lights, full-screen effects, or
 
 Do **not** fill every unused slot in the structural atlas before inspecting this room in-engine.
 
-After the graybox is generated and human-tested at native scale, the first art batch should be chosen from what the room visibly needs. The expected first candidates are:
+After graybox v2 is generated and human-tested at native scale, the first art batch should be chosen from what the room visibly needs. Expected first candidates remain:
 
 - top-surface variants (`industrial_surface` slots 24/25);
 - left/right wall variants (26/27);
@@ -120,12 +121,14 @@ This list is a starting expectation, not a requirement to manufacture unused ass
 
 ## Immediate acceptance gate
 
-Before environment art production begins, inspect the generated graybox in Unity and verify:
+Before environment art production begins, inspect graybox v2 in Unity and verify:
 
 - the room is traversable without getting stuck;
-- the service rise and catwalk feel like architecture rather than a movement tutorial;
-- the central plinth creates useful sightline/positioning changes with the Longwatch;
+- the west entry / lower bay / catwalk relationship feels like architecture rather than a movement tutorial;
+- the compact central plinth and catwalk create useful sightline/positioning changes with the Longwatch;
+- upper and lower routes feel meaningfully distinct even before enemies are added;
 - dropping from the upper route gives natural opportunities for Fall aim / Wall Brace without requiring them;
+- the open central machinery frame reads as background rather than collision;
 - the west-to-east route is readable under the existing penumbra;
 - no new collision seam, phantom Land, or Release-only floor regression appears;
 - the player/Longwatch presentation remains unchanged.
