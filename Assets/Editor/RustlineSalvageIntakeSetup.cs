@@ -74,8 +74,10 @@ namespace Rustline.Editor
             // the eventual hero machinery will mostly extend as non-colliding background art.
             new CellRect(-2, 0, 4, 2),
 
-            // Main catwalk crossing the lower bay and its east support.
-            new CellRect(3, 3, 13, 1),
+            // Main catwalk crossing the lower bay and its east support. The catwalk begins two
+            // whole tiles beyond the plinth edge so a falling player gets a real 32 px passage,
+            // not the former 16 px diagonal notch that could partially capture the capsule.
+            new CellRect(4, 3, 12, 1),
             new CellRect(15, 0, 1, 3),
 
             // Right-side staging / future exit deck.
