@@ -30,7 +30,7 @@ namespace Rustline.Editor
         private const string HousingPath =
             "Assets/Art/Environment/Machinery/machine_housing.png";
         private const string BulkheadPath =
-            "Assets/Art/Environment/Architecture/bulkhead_door_frame.png";
+            "Assets/Art/Environment/Architecture/bulkhead_door_frame_small.png";
 
         private readonly struct DressingPlacement
         {
@@ -63,13 +63,14 @@ namespace Rustline.Editor
         // Tilemap naturally occludes it. This lets the pieces feel massive without rescaling art.
         private static readonly DressingPlacement[] Placements =
         {
-            // The west bulkhead anchors directly on the gameplay floor: 200 px / 16 PPU = 12.5 u.
+            // The smaller west bulkhead is a source-authored 105x100 px variant. Its bottom edge
+            // rests on the entry-deck surface at y=1 while retaining native 16 PPU / scale 1.0.
             new DressingPlacement(
                 "Bulkhead Door Frame - West",
                 BulkheadPath,
-                210,
-                200,
-                new Vector2(-20f, 6.25f),
+                105,
+                100,
+                new Vector2(-20f, 4.125f),
                 -10),
 
             // Housing is intentionally sunk 3 u below floor level so only the useful upper mass
