@@ -55,10 +55,12 @@ namespace Rustline.Editor
         // stay aligned to whole 16 px tiles and comfortably exceed that minimum.
         private static readonly CellRect[] StructureRects =
         {
-            // Continuous safety floor and room boundary bulkheads.
+            // Continuous safety floor and room boundary bulkheads. The side walls rise to y=19 so
+            // the taller overhead service deck reads as part of the room envelope rather than a
+            // beam floating above shorter boundary walls.
             new CellRect(-28, -4, 56, 4),
-            new CellRect(-28, 0, 2, 16),
-            new CellRect(26, 0, 2, 16),
+            new CellRect(-28, 0, 2, 19),
+            new CellRect(26, 0, 2, 19),
 
             // Left entry deck: intentionally simple and readable.
             new CellRect(-24, 0, 8, 1),
@@ -83,9 +85,10 @@ namespace Rustline.Editor
             // Right-side staging / future exit deck.
             new CellRect(19, 0, 4, 1),
 
-            // Overhead service deck. It is real structural geometry rather than background art so
-            // the suspended handler has a physically coherent mounting surface if ever reached.
-            new CellRect(-8, 15, 16, 1),
+            // Overhead service deck. Raising it to y=18 adds three whole tiles of vertical room
+            // above the gantry tops while keeping a real structural/collision mounting surface for
+            // the suspended handler rather than reverting to background-only decoration.
+            new CellRect(-8, 18, 16, 1),
         };
 
         // The initial tile-built background machinery placeholders have been retired now that the
