@@ -79,6 +79,26 @@ Scene-specific tool while this pass is still experimental:
 
 The tool also removes only the gray visual Tilemap cells directly replaced by the 32 px-tall skin. If the Salvage Intake graybox is rebuilt, re-run the floor-dressing command afterward until this structural-skin knowledge is promoted into the general level-authoring pipeline.
 
+### Wall edge
+
+Current wall-edge family:
+
+- `Assets/Art/Environment/Architecture/Wall/wall_edge_top.png`
+- `Assets/Art/Environment/Architecture/Wall/wall_edge_mid.png`
+- `Assets/Art/Environment/Architecture/Wall/wall_edge_bottom.png`
+
+All three pieces are 50 source pixels wide. `wall_edge_top` is `50×145 px`; `wall_edge_mid` and `wall_edge_bottom` are `50×150 px`.
+
+The Salvage Intake boundary-wall test preserves native scale and aligns each wall skin's **inner visual face** to the authoritative collision inner face. Extra sprite width therefore overhangs outward beyond the playable room rather than intruding into traversal space.
+
+The 19 u boundary height is 304 source pixels. `top + bottom` total 295 px, leaving a 9 px seam. Rather than scaling either source asset, one `wall_edge_mid` is placed behind the join as a backing/fill layer; `top` and `bottom` render in front. The east wall mirrors the same family horizontally.
+
+Scene-specific tool while this pass is still experimental:
+
+**Tools -> Rustline -> Apply Salvage Intake Wall Dressing**
+
+Like the floor pass, the tool removes only the generic gray visual Tilemap cells replaced by the production wall skin and explicitly preserves the hidden collision cells.
+
 ## Production philosophy
 
 Use **Large -> Medium -> Small**.
