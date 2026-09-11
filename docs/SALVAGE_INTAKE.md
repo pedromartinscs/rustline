@@ -77,6 +77,8 @@ The scene retains three graybox Tilemaps:
 
 The original tile-built machinery/background placeholders have been retired. Production background identity now comes from non-colliding sprites under `Art Dressing - Preserve`, beginning with Macro Environment Kit v0.
 
+Production structural skins such as the catwalk are also non-colliding SpriteRenderers. They may render in front of the graybox visual Tilemap to replace its appearance, but the simple hidden Tilemap remains the sole gameplay collision authority. The current catwalk skin therefore does **not** add sprite colliders even though the player physically walks on the platform it depicts.
+
 `Ground Collision - Hidden` keeps the release-hardened contract from `RELEASE_COLLISION.md`:
 
 - Ground layer 6;
@@ -101,18 +103,30 @@ Environment sprites follow the same source-pixel contract as the player:
 
 If a production environment asset is judged too large or too small, prefer reauthoring/resampling it deliberately at source pixel resolution rather than applying arbitrary runtime Transform scale.
 
-## Macro Environment Kit v0
+## Environment production assets
 
-The first accepted Canonical-28 macro assets are:
+The accepted Canonical-28 macro/architecture assets currently include:
 
 - `Environment/Machinery/gantry_upright_a.png`;
 - `Environment/Machinery/gantry_upright_b.png`;
 - `Environment/Machinery/salvage_handler.png`;
 - `Environment/Machinery/machine_housing.png`;
+- `Environment/Machinery/gantry_overhead_rail.png`;
 - `Environment/Architecture/bulkhead_door_frame.png`;
-- `Environment/Architecture/bulkhead_door_frame_small.png` — current west-entry variant.
+- `Environment/Architecture/bulkhead_door_frame_small.png` — current west-entry variant;
+- `Environment/Architecture/catwalk_left.png`;
+- `Environment/Architecture/catwalk_mid_short.png`;
+- `Environment/Architecture/catwalk_mid_long.png`;
+- `Environment/Architecture/catwalk_right.png`;
+- `Environment/Architecture/catwalk_assembly_large.png` — reference/full assembly; prefer modular pieces for production placement when practical.
 
 The current west entry uses the **105×100 px** source-authored small bulkhead at native 16 PPU / Transform scale 1.0 rather than scaling the original 210×200 sprite in Unity. Its bottom is anchored to the entry-deck surface at `y=1`, giving a center position of `(-20, 4.125)`. The player spawn shares its horizontal center. The salvage handler is centered at `y=13.0`, **8 source pixels** above the prior pass, while its long suspension continues upward behind the structural service deck at `y=18..19`.
+
+The current **12 u** gameplay catwalk is visually dressed with `catwalk_left + catwalk_right`. Together those source sprites measure **200 px / 12.5 u**, so centering them over the authoritative 12 u collision creates only a restrained **4 source pixel** visual overhang at each outer end. The modules render at sorting order `2`: in front of the gray structural Tilemap but behind the player renderers.
+
+`catwalk_mid_short` (**100×128 px**) and `catwalk_mid_long` (**200×128 px**) are accepted reusable modules but are not required by this first 12 u assembly. They remain available for longer future spans rather than being forced into the current room.
+
+`gantry_overhead_rail.png` is accepted as Canonical-28 production art and retains native scale, but it is **not yet placed** in Salvage Intake. Its source canvas is **870×160 px = 54.375×10 u** at 16 PPU, almost the room's entire width. Placing it now would make the asset dictate the room architecture and could visually imply collision across a mostly non-colliding span. Prefer extracting/re-authoring a modular rail family or deliberately designing a later room-wide crane span before using this full-size source asset.
 
 ## Presentation/performance invariants
 
@@ -131,7 +145,7 @@ The builder wires `PlayerAim2D` to the scene's `NativePixelPresentation` and pre
 
 ## Hero-room composition
 
-The central visual idea is a **salvage transfer / sorting machine** whose production art occupies much more visual space than its simple collision plinth. The first macro kit now provides the two tall gantry uprights, suspended salvage handler, central machinery housing, and west bulkhead that begin defining this silhouette.
+The central visual idea is a **salvage transfer / sorting machine** whose production art occupies much more visual space than its simple collision plinth. The first macro kit now provides the two tall gantry uprights, suspended salvage handler, central machinery housing, west bulkhead, and first production catwalk skin that begin defining this silhouette.
 
 The intended visual hierarchy is:
 
@@ -147,17 +161,15 @@ Do not solve the room by adding many overlapping lights, full-screen effects, or
 
 Do **not** fill every unused slot in the structural atlas merely because they are available.
 
-After the current macro dressing is inspected in-engine at native scale, choose the next art batch from what the room visibly needs. Likely candidates include:
+The next useful production targets should be selected from what the dressed room visibly needs. Current high-value candidates are:
 
-- a reusable gantry/rail beam if the current silhouette needs an authored top connection;
-- catwalk visual skin/support language;
-- top-surface variants (`industrial_surface` slots 24/25);
-- left/right wall variants (26/27);
-- ceiling variant (28);
-- interior plate variants (29/30/31);
-- structural support / bracket pieces (44/45);
+- modularize or source-resize the accepted `gantry_overhead_rail` if a production top rail is still desired for this room;
+- floor-edge / deck-trim family to replace the largest remaining graybox masses;
+- vertical wall-edge / bulkhead strip family;
+- top-surface variants (`industrial_surface` slots 24/25) only where the room actually benefits;
 - one minimal pipe/conduit family;
-- vent, warning marking, and restrained status-light treatments.
+- structural support / bracket pieces where the catwalk or machinery composition visibly asks for them;
+- later, vents, warning markings, restrained status lights, cables, rust overlays, and other small-detail dressing.
 
 This list is a starting expectation, not a requirement to manufacture unused assets.
 
@@ -170,11 +182,13 @@ Inspect the current scene in Unity and verify:
 - the player visibly enters from the center of the west bulkhead and starts with clear separation from the deck before normal gravity settles it;
 - the smaller source-authored bulkhead has a better gameplay-scale relationship to the player than the original 210×200 variant;
 - the old tile-built background placeholders are gone;
-- the five placed macro sprites remain visually behind gameplay structure and introduce no colliders;
+- all managed environment sprites introduce **no colliders**;
+- `catwalk_left + catwalk_right` visually cover the existing 12 u catwalk without misleadingly changing its gameplay span;
+- the catwalk skin remains behind the player while hiding the gray structural block beneath it;
 - the raised handler reads as suspended from the overhead service deck rather than floating;
 - the taller overhead deck/side-wall envelope gives the hero machinery enough visual breathing room;
 - the overhead deck remains collision-coherent if reached;
-- player and macro assets retain coherent relative scale at native presentation;
+- player and environment assets retain coherent relative scale at native presentation;
 - the west entry / lower bay / catwalk relationship feels like architecture rather than a movement tutorial;
 - the compact central plinth and catwalk create useful sightline/positioning changes with the Longwatch;
 - upper and lower routes feel meaningfully distinct even before enemies are added;
