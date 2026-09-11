@@ -31,6 +31,10 @@ namespace Rustline.Editor
             "Assets/Art/Environment/Machinery/machine_housing.png";
         private const string BulkheadPath =
             "Assets/Art/Environment/Architecture/bulkhead_door_frame_small.png";
+        private const string CatwalkLeftPath =
+            "Assets/Art/Environment/Architecture/catwalk_left.png";
+        private const string CatwalkRightPath =
+            "Assets/Art/Environment/Architecture/catwalk_right.png";
 
         private readonly struct DressingPlacement
         {
@@ -110,6 +114,27 @@ namespace Rustline.Editor
                 250,
                 new Vector2(0f, 13f),
                 -12),
+
+            // Production catwalk skin. The authoritative collision remains the simple 12x1-tile
+            // graybox strip at x=4..16 / y=3..4. Left + right are 200 source pixels / 12.5 u wide,
+            // centered over that 12 u collision so the visual overhang is only 4 px per outer end.
+            // Their deck surface is authored a few pixels above each sprite pivot, hence y=3.84375
+            // aligns the visible walking edge with the collision top at y=4. Sorting order 2 covers
+            // the gray structural Tilemap while remaining safely behind the player renderers.
+            new DressingPlacement(
+                "Catwalk Skin - Left",
+                CatwalkLeftPath,
+                100,
+                128,
+                new Vector2(6.875f, 3.84375f),
+                2),
+            new DressingPlacement(
+                "Catwalk Skin - Right",
+                CatwalkRightPath,
+                100,
+                128,
+                new Vector2(13.125f, 3.84375f),
+                2),
         };
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Macro Dressing")]
@@ -118,7 +143,7 @@ namespace Rustline.Editor
             ApplyAndValidate();
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Macro Environment Kit v0 was applied at native scale with no gameplay colliders.",
+                "Macro environment dressing was applied at native scale with no gameplay colliders.",
                 "OK");
         }
 
@@ -131,7 +156,7 @@ namespace Rustline.Editor
             ValidateScene(scene);
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Macro Environment Kit v0 validation passed.",
+                "Macro environment dressing validation passed.",
                 "OK");
         }
 
@@ -213,7 +238,7 @@ namespace Rustline.Editor
 
             var renderers = new List<SpriteRenderer>(macroRoot.GetComponentsInChildren<SpriteRenderer>(true));
             Require(renderers.Count == Placements.Length,
-                "Macro Environment Kit v0 must contain exactly five SpriteRenderers.");
+                "Macro Environment Kit managed root must contain exactly the configured SpriteRenderers.");
             Require(macroRoot.GetComponentsInChildren<Collider2D>(true).Length == 0,
                 "Macro environment dressing must remain non-colliding.");
 
