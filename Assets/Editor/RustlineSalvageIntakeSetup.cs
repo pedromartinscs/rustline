@@ -93,10 +93,10 @@ namespace Rustline.Editor
         // a reserved layer; authored non-colliding dressing lives under Art Dressing - Preserve.
         private static readonly CellRect[] BackgroundRects = Array.Empty<CellRect>();
 
-        // The production bulkhead art is centered at x=-20. Its entry deck occupies cell y=0 and
-        // therefore has a walkable top at y=1, so preserve the accepted 0.08 u spawn clearance
-        // relative to that actual surface instead of embedding the player one tile too low.
-        private static readonly Vector3 PlayerSpawnPosition = new Vector3(-20f, 1.08f, 0f);
+        // Keep the serialized spawn visibly clear of the entry deck instead of trying to author it
+        // at an almost-touching epsilon. The deck surface is y=1; spawning at y=1.75 gives the
+        // accepted player root 12 source pixels of clearance, then normal gravity settles it.
+        private static readonly Vector3 PlayerSpawnPosition = new Vector3(-20f, 1.75f, 0f);
         private static readonly Vector3 ExitStagingPosition = new Vector3(24f, 0.08f, 0f);
 
         private readonly struct CellRect
