@@ -100,15 +100,15 @@ namespace Rustline.Editor
                 new Vector2(8f, 6.625f),
                 -14),
 
-            // Raise the handler by one canonical tile. The structural service deck generated at
-            // y=15..16 renders in front of this sprite, so the suspension now visually disappears
-            // into a physical overhead mounting surface rather than reading as free-floating.
+            // Give the claw another 8 source pixels of breathing room without changing its native
+            // scale. The taller structural service deck at y=18..19 still renders in front of the
+            // long suspension, so the handler reads as machinery hanging from the overhead system.
             new DressingPlacement(
                 "Salvage Handler - Central",
                 HandlerPath,
                 140,
                 250,
-                new Vector2(0f, 12.5f),
+                new Vector2(0f, 13f),
                 -12),
         };
 
