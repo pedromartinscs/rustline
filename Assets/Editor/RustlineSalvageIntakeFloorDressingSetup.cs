@@ -171,8 +171,11 @@ namespace Rustline.Editor
                 assetPath + " must use Point filtering.");
             Require(!importer.mipmapEnabled,
                 assetPath + " must keep mipmaps disabled.");
-            Require(!importer.spriteGenerateFallbackPhysicsShape,
-                assetPath + " must not generate a fallback physics shape.");
+
+            // Unity 6000.4 serializes spriteGenerateFallbackPhysicsShape in the .meta file but does
+            // not expose it as a public TextureImporter property. Do not bind editor validation to
+            // that unavailable API. This dressing never creates SpriteCollider2D components, and
+            // ValidateScene separately enforces that the managed floor-skin root contains no Collider2D.
 
             importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
             Require(sourceWidth == SourceWidth && sourceHeight == SourceHeight,
