@@ -82,6 +82,10 @@ namespace Rustline.Editor
 
             // Right-side staging / future exit deck.
             new CellRect(19, 0, 4, 1),
+
+            // Overhead service deck. It is real structural geometry rather than background art so
+            // the suspended handler has a physically coherent mounting surface if ever reached.
+            new CellRect(-8, 15, 16, 1),
         };
 
         // The initial tile-built background machinery placeholders have been retired now that the
@@ -89,9 +93,10 @@ namespace Rustline.Editor
         // a reserved layer; authored non-colliding dressing lives under Art Dressing - Preserve.
         private static readonly CellRect[] BackgroundRects = Array.Empty<CellRect>();
 
-        // The production bulkhead art is centered at x=-20, so the player now enters from the
-        // center of its opening rather than spawning near the west boundary wall.
-        private static readonly Vector3 PlayerSpawnPosition = new Vector3(-20f, 0.08f, 0f);
+        // The production bulkhead art is centered at x=-20. Its entry deck occupies cell y=0 and
+        // therefore has a walkable top at y=1, so preserve the accepted 0.08 u spawn clearance
+        // relative to that actual surface instead of embedding the player one tile too low.
+        private static readonly Vector3 PlayerSpawnPosition = new Vector3(-20f, 1.08f, 0f);
         private static readonly Vector3 ExitStagingPosition = new Vector3(24f, 0.08f, 0f);
 
         private readonly struct CellRect
