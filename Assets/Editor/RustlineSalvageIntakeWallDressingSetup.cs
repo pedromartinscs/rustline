@@ -12,9 +12,10 @@ namespace Rustline.Editor
     /// Applies the first production wall-edge skin to the left/right boundary walls in SalvageIntake.
     /// The sprites remain visual-only; hidden Tilemap collision stays authoritative.
     ///
-    /// Top + bottom source art are intentionally kept at native scale. They fall nine source pixels
-    /// short of the 19 u / 304 px wall height, so a common mid sprite sits behind their join and fills
-    /// only that uncovered seam while also tolerating transparent detail in the caps.
+    /// All three wall PNGs retain a 50x150 source canvas. The top asset has five transparent source
+    /// rows trimmed from its imported Sprite rect, leaving a 50x145 visible rect. Top visible art +
+    /// bottom visible art therefore fall nine source pixels short of the 19 u / 304 px wall height,
+    /// so a common mid sprite sits behind their join and fills only that uncovered seam.
     /// </summary>
     public static class RustlineSalvageIntakeWallDressingSetup
     {
@@ -35,17 +36,18 @@ namespace Rustline.Editor
             "Assets/Art/Environment/Architecture/Wall/wall_edge_bottom.png";
 
         private const int SourceWidth = 50;
-        private const int MidSourceHeight = 150;
-        private const int BottomSourceHeight = 150;
-        private const int TopSourceHeight = 145;
+        private const int SourceHeight = 150;
+        private const int MidSpriteRectHeight = 150;
+        private const int BottomSpriteRectHeight = 150;
+        private const int TopSpriteRectHeight = 145;
 
         // Visual inner faces align exactly to the collision inner faces at x=-26 and x=26.
         // The extra 18 source pixels of sprite width overhang outward, never into playable space.
         private const float LeftWallX = -27.5625f;
         private const float RightWallX = 27.5625f;
 
-        // Bottom spans y=0..9.375. Top spans y=9.9375..19. The mid is behind both and fills the
-        // 9 px seam at y=9.375..9.9375 without requiring scaling or cropping.
+        // Bottom spans y=0..9.375. Top's visible 145 px span y=9.9375..19. The mid is behind both
+        // and fills the 9 px seam at y=9.375..9.9375 without requiring scaling or cropping.
         private const float BottomY = 4.6875f;
         private const float MidY = 9.65625f;
         private const float TopY = 14.46875f;
@@ -55,14 +57,14 @@ namespace Rustline.Editor
             internal WallPlacement(
                 string name,
                 string assetPath,
-                int sourceHeight,
+                int expectedSpriteRectHeight,
                 Vector2 position,
                 int sortingOrder,
                 bool flipX)
             {
                 Name = name;
                 AssetPath = assetPath;
-                SourceHeight = sourceHeight;
+                ExpectedSpriteRectHeight = expectedSpriteRectHeight;
                 Position = position;
                 SortingOrder = sortingOrder;
                 FlipX = flipX;
@@ -70,7 +72,7 @@ namespace Rustline.Editor
 
             internal string Name { get; }
             internal string AssetPath { get; }
-            internal int SourceHeight { get; }
+            internal int ExpectedSpriteRectHeight { get; }
             internal Vector2 Position { get; }
             internal int SortingOrder { get; }
             internal bool FlipX { get; }
@@ -78,18 +80,18 @@ namespace Rustline.Editor
 
         private static readonly WallPlacement[] Placements =
         {
-            new WallPlacement("Wall Skin - West Mid Fill", WallMidPath, MidSourceHeight,
+            new WallPlacement("Wall Skin - West Mid Fill", WallMidPath, MidSpriteRectHeight,
                 new Vector2(LeftWallX, MidY), 1, false),
-            new WallPlacement("Wall Skin - West Bottom", WallBottomPath, BottomSourceHeight,
+            new WallPlacement("Wall Skin - West Bottom", WallBottomPath, BottomSpriteRectHeight,
                 new Vector2(LeftWallX, BottomY), 2, false),
-            new WallPlacement("Wall Skin - West Top", WallTopPath, TopSourceHeight,
+            new WallPlacement("Wall Skin - West Top", WallTopPath, TopSpriteRectHeight,
                 new Vector2(LeftWallX, TopY), 2, false),
 
-            new WallPlacement("Wall Skin - East Mid Fill", WallMidPath, MidSourceHeight,
+            new WallPlacement("Wall Skin - East Mid Fill", WallMidPath, MidSpriteRectHeight,
                 new Vector2(RightWallX, MidY), 1, true),
-            new WallPlacement("Wall Skin - East Bottom", WallBottomPath, BottomSourceHeight,
+            new WallPlacement("Wall Skin - East Bottom", WallBottomPath, BottomSpriteRectHeight,
                 new Vector2(RightWallX, BottomY), 2, true),
-            new WallPlacement("Wall Skin - East Top", WallTopPath, TopSourceHeight,
+            new WallPlacement("Wall Skin - East Top", WallTopPath, TopSpriteRectHeight,
                 new Vector2(RightWallX, TopY), 2, true),
         };
 
@@ -160,8 +162,7 @@ namespace Rustline.Editor
             {
                 Sprite sprite = RequireProductionSprite(
                     placement.AssetPath,
-                    SourceWidth,
-                    placement.SourceHeight);
+                    placement.ExpectedSpriteRectHeight);
 
                 GameObject spriteObject = new GameObject(placement.Name);
                 spriteObject.transform.SetParent(managedRoot.transform, false);
@@ -182,12 +183,17 @@ namespace Rustline.Editor
             ValidateScene(scene);
         }
 
-        private static Sprite RequireProductionSprite(string assetPath, int sourceWidth, int sourceHeight)
+        private static Sprite RequireProductionSprite(string assetPath, int expectedSpriteRectHeight)
         {
             Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
             Require(sprite != null, "Missing production sprite: " + assetPath);
             Require(Mathf.Approximately(sprite.pixelsPerUnit, 16f),
                 assetPath + " must import at 16 PPU.");
+            Require(Mathf.RoundToInt(sprite.rect.width) == SourceWidth &&
+                Mathf.RoundToInt(sprite.rect.height) == expectedSpriteRectHeight,
+                assetPath + " imported Sprite rect changed unexpectedly. Expected " +
+                SourceWidth + "x" + expectedSpriteRectHeight + ", got " +
+                Mathf.RoundToInt(sprite.rect.width) + "x" + Mathf.RoundToInt(sprite.rect.height) + ".");
 
             TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
             Require(importer != null, "Missing TextureImporter for production sprite: " + assetPath);
@@ -197,9 +203,9 @@ namespace Rustline.Editor
                 assetPath + " must keep mipmaps disabled.");
 
             importer.GetSourceTextureWidthAndHeight(out int actualWidth, out int actualHeight);
-            Require(actualWidth == sourceWidth && actualHeight == sourceHeight,
+            Require(actualWidth == SourceWidth && actualHeight == SourceHeight,
                 assetPath + " source dimensions changed unexpectedly. Expected " +
-                sourceWidth + "x" + sourceHeight + ", got " + actualWidth + "x" + actualHeight + ".");
+                SourceWidth + "x" + SourceHeight + ", got " + actualWidth + "x" + actualHeight + ".");
 
             return sprite;
         }
@@ -247,8 +253,7 @@ namespace Rustline.Editor
                 SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
                 Sprite expected = RequireProductionSprite(
                     placement.AssetPath,
-                    SourceWidth,
-                    placement.SourceHeight);
+                    placement.ExpectedSpriteRectHeight);
                 Require(renderer != null && renderer.sprite == expected &&
                     renderer.sortingOrder == placement.SortingOrder && renderer.flipX == placement.FlipX,
                     placement.Name + " renderer contract is invalid.");
