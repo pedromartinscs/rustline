@@ -4,7 +4,7 @@
 
 The current goal is deliberately narrow: build one coherent industrial room that is enjoyable to traverse and aim through with the frozen player/Longwatch foundation before creating a broad environment asset library.
 
-## Scene and builder
+## Scene and builders
 
 Target scene:
 
@@ -14,23 +14,28 @@ Deterministic graybox builder:
 
 `Assets/Editor/RustlineSalvageIntakeSetup.cs`
 
-Unity menu:
+Macro art-dressing setup:
 
-**Tools → Rustline → Rebuild Salvage Intake Graybox**
+`Assets/Editor/RustlineSalvageIntakeArtSetup.cs`
 
-The scene itself is generated from the accepted project assets. The builder first runs the existing M1 validation, then creates/synchronizes the production-area graybox without modifying `MovementLab`.
+Unity menus:
+
+- **Tools → Rustline → Rebuild Salvage Intake Graybox**
+- **Tools → Rustline → Apply Salvage Intake Macro Dressing**
+
+The graybox builder first runs the existing M1 validation, then creates/synchronizes the production-area collision and player rig without modifying `MovementLab`.
 
 The builder owns and regenerates only these roots:
 
 - `Environment - Managed Graybox`
 - `Player Rig - Managed`
 
-These roots are deliberately preserved across rebuilds and must be used for hand-authored work that should survive graybox regeneration:
+These roots are deliberately preserved across graybox rebuilds and must be used for hand-authored work that should survive regeneration:
 
 - `Art Dressing - Preserve`
 - `Gameplay Content - Preserve`
 
-Do not place permanent hand-authored dressing under a `Managed` root.
+The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside that managed child.
 
 ## Current spatial contract — Graybox v2.2
 
@@ -43,11 +48,11 @@ Graybox v2 keeps the room envelope from the first pass but replaces the movement
 - a continuous safety floor and left/right bulkhead boundaries;
 - a simple west-side entry deck;
 - a small service step leading toward the lower central bay;
-- a compact **4×2 tile** central collision plinth for the future salvage machine;
+- a compact **4×2 tile** central collision plinth for the salvage machine;
 - a **12×1 tile** upper transfer catwalk crossing part of the bay;
 - a one-tile-wide east catwalk support;
 - a simple east-side staging / future exit deck;
-- player spawn on the west side and exit-staging marker on the east side.
+- player spawn centered on the west production bulkhead at **x = -20** and exit-staging marker on the east side.
 
 The original v2 left-approach geometry used a floating ledge beginning one tile after the service step. Human playtesting exposed a real wedge/stuck case there: the combination produced a **16 px horizontal notch followed by a 16 px undercut**, both below the intended traversal-safe envelope. Graybox v2.1 closed that geometry by making the left approach a solid `4×2` block beginning exactly where the service step ends. This removes the sub-minimum notch and inaccessible undercut rather than changing the player capsule.
 
@@ -57,11 +62,13 @@ The critical route does not require a diagnostic sequence of every movement abil
 
 ## Visual geometry versus gameplay collision
 
-The scene contains three initial Tilemaps:
+The scene retains three graybox Tilemaps:
 
-1. `Background Structure - Visual` — non-colliding compositional masses and the placeholder footprint for the future hero machinery;
+1. `Background Structure - Visual` — currently intentionally **empty** and reserved for future tile-based background needs;
 2. `Industrial Surface - Visual` — the visible structural graybox corresponding to the current traversable solids;
 3. `Ground Collision - Hidden` — the authoritative gameplay geometry.
+
+The original tile-built machinery/background placeholders have been retired. Production background identity now comes from non-colliding sprites under `Art Dressing - Preserve`, beginning with Macro Environment Kit v0.
 
 `Ground Collision - Hidden` keeps the release-hardened contract from `RELEASE_COLLISION.md`:
 
@@ -73,7 +80,31 @@ The scene contains three initial Tilemaps:
 - `TilemapCompositeColliderInitializer2D`;
 - immediate geometry generation/validation before the scene is accepted.
 
-The current visible structural graybox mirrors the collision cells because that is useful during blockout. This is **not** a permanent requirement. As dressing begins, visual wear, cracks, recesses, machine silhouettes, pipes, foreground pieces, and background structure may diverge freely from collision while gameplay collision remains simple and traversal-safe.
+The current visible structural graybox mirrors the collision cells because that is useful during blockout. This is **not** a permanent requirement. As dressing develops, visual wear, cracks, recesses, machine silhouettes, pipes, foreground pieces, and background structure may diverge freely from collision while gameplay collision remains simple and traversal-safe.
+
+## Native-pixel environment scale
+
+Environment sprites follow the same source-pixel contract as the player:
+
+- production PNGs import at **16 PPU**;
+- macro environment SpriteRenderers remain at **Transform scale 1.0**;
+- at the base presentation scale, one source-art pixel maps to one display pixel;
+- integer presentation scaling (`2×`, `3×`, `4×`, ...) scales the complete logical frame together, preserving player/environment proportions;
+- fractional Transform scaling is not a production technique for correcting an environment asset's apparent size.
+
+If a production environment asset is judged too large or too small, prefer reauthoring/resampling it deliberately at source pixel resolution rather than applying arbitrary runtime Transform scale.
+
+## Macro Environment Kit v0
+
+The first accepted Canonical-28 macro assets are:
+
+- `Environment/Machinery/gantry_upright_a.png`;
+- `Environment/Machinery/gantry_upright_b.png`;
+- `Environment/Machinery/salvage_handler.png`;
+- `Environment/Machinery/machine_housing.png`;
+- `Environment/Architecture/bulkhead_door_frame.png`.
+
+They are currently placed as non-colliding background/architectural dressing at native scale. The bulkhead is centered at `x=-20`, and the player spawn uses the same horizontal center so the opening reads as the actual west-side entry point.
 
 ## Presentation/performance invariants
 
@@ -81,20 +112,18 @@ Salvage Intake reuses the accepted player prefab and the same scene-level presen
 
 - 16 PPU;
 - Rustline Canonical 28 production art contract;
-- `Sprite-Unlit-Default` for the initial graybox;
+- `Sprite-Unlit-Default` for current graybox and macro dressing;
 - native-pixel logical rendering;
 - integer presentation scaling;
 - palette-constrained penumbra;
-- no identity/decorative `Light2D` objects in the graybox;
+- no identity/decorative `Light2D` objects in the current pass;
 - existing 60 FPS runtime policy unchanged.
 
 The builder wires `PlayerAim2D` to the scene's `NativePixelPresentation` and preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, or carry behavior.
 
 ## Hero-room composition
 
-The central visual idea remains a **salvage transfer / sorting machine** whose eventual art occupies much more visual space than its simple collision plinth. The machine should become the first unmistakable Rustline environment silhouette.
-
-Graybox v2 deliberately replaces the first pass's broad central background mass with an **open machinery frame**: two uprights, an upper beam, a compact central head, and small side service arms. Deep Space remains visible through the structure so the placeholder reads as machinery/background rather than a giant solid wall.
+The central visual idea is a **salvage transfer / sorting machine** whose production art occupies much more visual space than its simple collision plinth. The first macro kit now provides the two tall gantry uprights, suspended salvage handler, central machinery housing, and west bulkhead that begin defining this silhouette.
 
 The intended visual hierarchy is:
 
@@ -104,37 +133,39 @@ The intended visual hierarchy is:
 4. large background structure;
 5. pipes, conduits, vents, warning markings, corrosion, and restrained foreground dressing.
 
-Do not solve the room by adding many overlapping lights, full-screen effects, or large transparent illustrations. Prefer composition, modular tiles, bounded sprites/overlays, and the existing penumbra presentation.
+Do not solve the room by adding many overlapping lights, full-screen effects, or large transparent illustrations. Prefer composition, modular pieces, bounded sprites/overlays, and the existing penumbra presentation.
 
-## First environment-asset gate
+## Next environment-asset gate
 
-Do **not** fill every unused slot in the structural atlas before inspecting this room in-engine.
+Do **not** fill every unused slot in the structural atlas merely because they are available.
 
-After graybox v2.2 is generated and human-tested at native scale, the first art batch should be chosen from what the room visibly needs. Expected first candidates remain:
+After the current macro dressing is inspected in-engine at native scale, choose the next art batch from what the room visibly needs. Likely candidates include:
 
+- a reusable gantry/rail beam if the current silhouette needs an authored top connection;
+- catwalk visual skin/support language;
 - top-surface variants (`industrial_surface` slots 24/25);
 - left/right wall variants (26/27);
 - ceiling variant (28);
 - interior plate variants (29/30/31);
 - structural support / bracket pieces (44/45);
-- one large Rustline-owned salvage-transfer-machine hero asset;
-- a minimal detail family for one pipe/conduit, vent, warning marking, and status-light treatment.
+- one minimal pipe/conduit family;
+- vent, warning marking, and restrained status-light treatments.
 
 This list is a starting expectation, not a requirement to manufacture unused assets.
 
 ## Immediate acceptance gate
 
-Before environment art production begins, inspect graybox v2.2 in Unity and verify:
+Inspect the current scene in Unity and verify:
 
 - the room is traversable without getting stuck;
 - no physical opening narrower than the accepted authoring envelope invites entry;
+- the player visibly enters from the center of the west bulkhead rather than near the boundary wall;
+- the old tile-built background placeholders are gone;
+- the five macro sprites remain visually behind gameplay structure and introduce no colliders;
+- player and macro assets retain coherent relative scale at native presentation;
 - the west entry / lower bay / catwalk relationship feels like architecture rather than a movement tutorial;
 - the compact central plinth and catwalk create useful sightline/positioning changes with the Longwatch;
 - upper and lower routes feel meaningfully distinct even before enemies are added;
-- dropping from the upper route gives natural opportunities for Fall aim / Wall Brace without requiring them;
-- the open central machinery frame reads as background rather than collision;
 - the west-to-east route is readable under the existing penumbra;
 - no new collision seam, phantom Land, or Release-only floor regression appears;
 - the player/Longwatch presentation remains unchanged.
-
-Only after this gate should the first GIMP environment-production pass begin.
