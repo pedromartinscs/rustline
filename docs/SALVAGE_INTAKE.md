@@ -37,7 +37,7 @@ These roots are deliberately preserved across graybox rebuilds and must be used 
 
 The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside that managed child.
 
-## Current spatial contract — Graybox v2.4
+## Current spatial contract — Graybox v2.5
 
 The room remains **56 canonical tiles wide** at the outer boundary. All current gameplay geometry is aligned to the normal **16×16 px / 1×1 unit** structural grid.
 
@@ -52,7 +52,8 @@ Graybox v2 keeps the room envelope from the first pass but replaces the movement
 - a **12×1 tile** upper transfer catwalk crossing part of the bay;
 - a one-tile-wide east catwalk support;
 - a simple east-side staging / future exit deck;
-- a **16×1 tile** overhead service deck at `y=15`, providing a real structural mounting surface above the salvage handler;
+- a **16×1 tile** overhead service deck at `y=18`, providing a real structural mounting surface above the salvage handler;
+- left/right boundary walls extending to `y=19`, matching the raised overhead envelope;
 - player spawn centered on the west production bulkhead at **x = -20** and serialized at **y = 1.75**, giving the player root **0.75 u / 12 source pixels** of initial clearance above the entry-deck surface at `y=1` before gravity settles it;
 - exit-staging marker on the east side.
 
@@ -60,7 +61,9 @@ The original v2 left-approach geometry used a floating ledge beginning one tile 
 
 A second playtest exposed the same class of problem at the transition from the central plinth toward the catwalk. The original catwalk began only **1 tile / 16 px** beyond the plinth edge, creating a diagonal micro-gap where the capsule could partially enter and wedge. Graybox v2.2 moves the catwalk start one tile east and shortens it correspondingly, leaving a real **2 tile / 32 px** opening. That gap is now intentionally traversable rather than an ambiguous near-fit, while the east support and overall room envelope remain unchanged.
 
-Graybox v2.3 added the authoritative overhead service deck and corrected the original west spawn from the room baseline to the entry-deck level. Graybox v2.4 keeps the same physical room but gives the serialized spawn deliberate clearance instead of authoring it at an almost-touching epsilon. The canonical standing collider has its bottom exactly at the player root, so the raised authoring position is a spawn-presentation/safety choice; normal gravity remains responsible for final grounding.
+Graybox v2.3 added the authoritative overhead service deck and corrected the original west spawn from the room baseline to the entry-deck level. Graybox v2.4 gave the serialized spawn deliberate clearance instead of authoring it at an almost-touching epsilon. The canonical standing collider has its bottom exactly at the player root, so the raised authoring position is a spawn-presentation/safety choice; normal gravity remains responsible for final grounding.
+
+Graybox v2.5 raises the overhead service deck from `y=15` to `y=18` and extends the side boundary walls to the same `y=19` top envelope. This gives the large central machinery more vertical breathing room and makes the room read as a credible industrial volume rather than machinery compressed under a low ceiling. The handler moves only **8 source pixels / 0.5 u** upward, preserving the established machine composition while reducing crowding around the housing/player line.
 
 The critical route does not require a diagnostic sequence of every movement ability. The geometry should read as an industrial place first. Jump, LedgeClimb, Wall Brace/Kick, crouch, Fall aim, and future combat positioning should emerge from useful architecture rather than isolated ability-test stations.
 
@@ -109,7 +112,7 @@ The first accepted Canonical-28 macro assets are:
 - `Environment/Architecture/bulkhead_door_frame.png`;
 - `Environment/Architecture/bulkhead_door_frame_small.png` — current west-entry variant.
 
-The current west entry uses the **105×100 px** source-authored small bulkhead at native 16 PPU / Transform scale 1.0 rather than scaling the original 210×200 sprite in Unity. Its bottom is anchored to the entry-deck surface at `y=1`, giving a center position of `(-20, 4.125)`. The player spawn shares its horizontal center. The salvage handler remains centered at `y=12.5`, so its suspension intersects the structural service deck at `y=15..16` and reads as mounted machinery rather than a free-floating object.
+The current west entry uses the **105×100 px** source-authored small bulkhead at native 16 PPU / Transform scale 1.0 rather than scaling the original 210×200 sprite in Unity. Its bottom is anchored to the entry-deck surface at `y=1`, giving a center position of `(-20, 4.125)`. The player spawn shares its horizontal center. The salvage handler is centered at `y=13.0`, **8 source pixels** above the prior pass, while its long suspension continues upward behind the structural service deck at `y=18..19`.
 
 ## Presentation/performance invariants
 
@@ -169,6 +172,7 @@ Inspect the current scene in Unity and verify:
 - the old tile-built background placeholders are gone;
 - the five placed macro sprites remain visually behind gameplay structure and introduce no colliders;
 - the raised handler reads as suspended from the overhead service deck rather than floating;
+- the taller overhead deck/side-wall envelope gives the hero machinery enough visual breathing room;
 - the overhead deck remains collision-coherent if reached;
 - player and macro assets retain coherent relative scale at native presentation;
 - the west entry / lower bay / catwalk relationship feels like architecture rather than a movement tutorial;
