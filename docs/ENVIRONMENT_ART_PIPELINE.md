@@ -87,11 +87,11 @@ Current wall-edge family:
 - `Assets/Art/Environment/Architecture/Wall/wall_edge_mid.png`
 - `Assets/Art/Environment/Architecture/Wall/wall_edge_bottom.png`
 
-All three pieces are 50 source pixels wide. `wall_edge_top` is `50×145 px`; `wall_edge_mid` and `wall_edge_bottom` are `50×150 px`.
+All three PNG source canvases are `50×150 px`. The imported `wall_edge_top` Sprite rect is `50×145 px` because five transparent source rows are trimmed from the visible sprite; `wall_edge_mid` and `wall_edge_bottom` retain `50×150 px` Sprite rects.
 
 The Salvage Intake boundary-wall test preserves native scale and aligns each wall skin's **inner visual face** to the authoritative collision inner face. Extra sprite width therefore overhangs outward beyond the playable room rather than intruding into traversal space.
 
-The 19 u boundary height is 304 source pixels. `top + bottom` total 295 px, leaving a 9 px seam. Rather than scaling either source asset, one `wall_edge_mid` is placed behind the join as a backing/fill layer; `top` and `bottom` render in front. The east wall mirrors the same family horizontally.
+The 19 u boundary height is 304 source pixels. The visible `top + bottom` rects total 295 px, leaving a 9 px seam. Rather than scaling either source asset, one `wall_edge_mid` is placed behind the join as a backing/fill layer; `top` and `bottom` render in front. The east wall mirrors the same family horizontally.
 
 Scene-specific tool while this pass is still experimental:
 
