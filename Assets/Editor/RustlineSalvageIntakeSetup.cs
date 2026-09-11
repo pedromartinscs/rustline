@@ -84,25 +84,14 @@ namespace Rustline.Editor
             new CellRect(19, 0, 4, 1),
         };
 
-        // Background-only masses now form an open machinery frame rather than a central wall.
-        // They deliberately have no Collider2D and are never traversal authority.
-        private static readonly CellRect[] BackgroundRects =
-        {
-            // Overhead room beam / upper structure.
-            new CellRect(-26, 12, 52, 1),
+        // The initial tile-built background machinery placeholders have been retired now that the
+        // first Canonical-28 production machinery kit exists. Keep the background Tilemap empty as
+        // a reserved layer; authored non-colliding dressing lives under Art Dressing - Preserve.
+        private static readonly CellRect[] BackgroundRects = Array.Empty<CellRect>();
 
-            // Hero machinery frame: uprights, top beam, and compact central head, open inside.
-            new CellRect(-6, 3, 1, 7),
-            new CellRect(5, 3, 1, 7),
-            new CellRect(-6, 9, 12, 1),
-            new CellRect(-2, 5, 4, 2),
-
-            // Small service arms suggesting industrial function without reading as platforms.
-            new CellRect(-11, 6, 4, 1),
-            new CellRect(7, 5, 4, 1),
-        };
-
-        private static readonly Vector3 PlayerSpawnPosition = new Vector3(-24f, 0.08f, 0f);
+        // The production bulkhead art is centered at x=-20, so the player now enters from the
+        // center of its opening rather than spawning near the west boundary wall.
+        private static readonly Vector3 PlayerSpawnPosition = new Vector3(-20f, 0.08f, 0f);
         private static readonly Vector3 ExitStagingPosition = new Vector3(24f, 0.08f, 0f);
 
         private readonly struct CellRect
