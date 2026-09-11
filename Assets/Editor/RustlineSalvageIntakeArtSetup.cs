@@ -185,9 +185,16 @@ namespace Rustline.Editor
             Require(sprite != null, "Missing production sprite: " + placement.AssetPath);
             Require(Mathf.Approximately(sprite.pixelsPerUnit, 16f),
                 placement.AssetPath + " must import at 16 PPU.");
-            Require(Mathf.RoundToInt(sprite.rect.width) == placement.SourceWidth &&
-                Mathf.RoundToInt(sprite.rect.height) == placement.SourceHeight,
-                placement.AssetPath + " source dimensions changed unexpectedly.");
+
+            TextureImporter importer = AssetImporter.GetAtPath(placement.AssetPath) as TextureImporter;
+            Require(importer != null,
+                "Missing TextureImporter for production sprite: " + placement.AssetPath);
+            importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
+            Require(sourceWidth == placement.SourceWidth && sourceHeight == placement.SourceHeight,
+                placement.AssetPath + " source dimensions changed unexpectedly. Expected " +
+                placement.SourceWidth + "x" + placement.SourceHeight + ", got " +
+                sourceWidth + "x" + sourceHeight + ".");
+
             return sprite;
         }
 
