@@ -49,11 +49,11 @@ namespace Rustline.Editor
         private const string PlayerSpawnName = "Player Spawn";
         private const string ExitStagingName = "Exit Staging";
 
-        // Graybox v2 keeps the 56-tile room envelope but replaces the test-course-like service
-        // staircase with a cleaner entry deck, a lower central bay, and a genuine upper catwalk route.
-        // The 24 px / 1.5 u Minimum Traversable Gap remains the authoring floor; ordinary openings
-        // stay aligned to whole 16 px tiles and comfortably exceed that minimum.
-        private static readonly CellRect[] StructureRects =
+        // Graybox v2.6 deliberately separates visual structure from gameplay collision where a
+        // production structural skin exists. The catwalk is the first such case: its authored
+        // sprites are the visible surface while a clean hidden 12x1 rect remains authoritative for
+        // traversal. The former east support wall is gone from both visual and collision geometry.
+        private static readonly CellRect[] VisualStructureRects =
         {
             // Continuous safety floor and room boundary bulkheads. The side walls rise to y=19 so
             // the taller overhead service deck reads as part of the room envelope rather than a
@@ -73,14 +73,8 @@ namespace Rustline.Editor
             new CellRect(-8, 0, 4, 2),
 
             // Central salvage machinery plinth. This is intentionally much lighter than v1;
-            // the eventual hero machinery will mostly extend as non-colliding background art.
+            // the hero machinery extends mainly as non-colliding background art.
             new CellRect(-2, 0, 4, 2),
-
-            // Main catwalk crossing the lower bay and its east support. The catwalk begins two
-            // whole tiles beyond the plinth edge so a falling player gets a real 32 px passage,
-            // not the former 16 px diagonal notch that could partially capture the capsule.
-            new CellRect(4, 3, 12, 1),
-            new CellRect(15, 0, 1, 3),
 
             // Right-side staging / future exit deck.
             new CellRect(19, 0, 4, 1),
@@ -88,6 +82,24 @@ namespace Rustline.Editor
             // Overhead service deck. Raising it to y=18 adds three whole tiles of vertical room
             // above the gantry tops while keeping a real structural/collision mounting surface for
             // the suspended handler rather than reverting to background-only decoration.
+            new CellRect(-8, 18, 16, 1),
+        };
+
+        private static readonly CellRect[] CollisionRects =
+        {
+            new CellRect(-28, -4, 56, 4),
+            new CellRect(-28, 0, 2, 19),
+            new CellRect(26, 0, 2, 19),
+            new CellRect(-24, 0, 8, 1),
+            new CellRect(-12, 0, 4, 1),
+            new CellRect(-8, 0, 4, 2),
+            new CellRect(-2, 0, 4, 2),
+
+            // Hidden catwalk floor only. There is intentionally no support wall on the east end;
+            // the space below the platform remains open and traversable.
+            new CellRect(4, 3, 12, 1),
+
+            new CellRect(19, 0, 4, 1),
             new CellRect(-8, 18, 16, 1),
         };
 
@@ -238,11 +250,12 @@ namespace Rustline.Editor
             TilemapCompositeColliderInitializer2D initializer =
                 collision.gameObject.AddComponent<TilemapCompositeColliderInitializer2D>();
 
-            Vector3Int[] structureCells = CollectCells(StructureRects);
+            Vector3Int[] visualStructureCells = CollectCells(VisualStructureRects);
+            Vector3Int[] collisionCells = CollectCells(CollisionRects);
             Vector3Int[] backgroundCells = CollectCells(BackgroundRects);
             SetTiles(background, backgroundCells, ruleTile);
-            SetTiles(structure, structureCells, ruleTile);
-            SetTiles(collision, structureCells, collisionTile);
+            SetTiles(structure, visualStructureCells, ruleTile);
+            SetTiles(collision, collisionCells, collisionTile);
 
             // Preserve the release-critical immediate generation sequence used by MovementLab.
             collision.RefreshAllTiles();
@@ -370,16 +383,22 @@ namespace Rustline.Editor
                 background != null && structure != null && collision != null,
                 "SalvageIntake Tilemap dependencies are incomplete.");
 
-            Vector3Int[] structureCells = CollectCells(StructureRects);
+            Vector3Int[] visualStructureCells = CollectCells(VisualStructureRects);
+            Vector3Int[] collisionCells = CollectCells(CollisionRects);
             Vector3Int[] backgroundCells = CollectCells(BackgroundRects);
-            Require(CountOccupiedCells(structure) == structureCells.Length &&
-                CountOccupiedCells(collision) == structureCells.Length &&
+            Require(CountOccupiedCells(structure) == visualStructureCells.Length &&
+                CountOccupiedCells(collision) == collisionCells.Length &&
                 CountOccupiedCells(background) == backgroundCells.Length,
                 "SalvageIntake serialized Tilemap cell counts differ from the managed graybox contract.");
-            foreach (Vector3Int cell in structureCells)
+            foreach (Vector3Int cell in visualStructureCells)
             {
-                Require(structure.GetTile(cell) == ruleTile && collision.GetTile(cell) == collisionTile,
-                    "SalvageIntake visual/collision graybox mismatch at " + cell + ".");
+                Require(structure.GetTile(cell) == ruleTile,
+                    "SalvageIntake visual graybox is missing its structural tile at " + cell + ".");
+            }
+            foreach (Vector3Int cell in collisionCells)
+            {
+                Require(collision.GetTile(cell) == collisionTile,
+                    "SalvageIntake hidden collision is missing its tile at " + cell + ".");
             }
             foreach (Vector3Int cell in backgroundCells)
             {
