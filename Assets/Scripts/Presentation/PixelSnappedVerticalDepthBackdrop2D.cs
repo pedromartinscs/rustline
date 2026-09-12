@@ -3,10 +3,11 @@ using UnityEngine;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// Pixel-snapped vertical depth backdrop. The layer follows camera X exactly while its Y offset
-    /// reveals progressively higher portions of a non-repeating source image as camera altitude rises.
-    /// The complete phase height drives the mapping, with a configurable minimum virtual span so short
-    /// phases intentionally reveal only part of the backdrop.
+    /// Pixel-snapped vertical depth backdrop. The layer follows the rendered camera for framing while
+    /// its Y offset reveals progressively higher portions of a non-repeating source image as the
+    /// camera's underlying follow altitude rises. Presentation-only camera impulses do not change the
+    /// sampled altitude. Short phases use a configurable minimum virtual span so they intentionally
+    /// reveal only part of the backdrop.
     /// </summary>
     [DefaultExecutionOrder(260)]
     [DisallowMultipleComponent]
@@ -20,6 +21,7 @@ namespace Rustline.Presentation
 
         private Camera _camera;
         private Transform _cameraTransform;
+        private PixelCameraFollow2D _cameraFollow;
         private float _layerZ;
 
         public float PhaseBottomWorldY => phaseBottomWorldY;
@@ -36,6 +38,7 @@ namespace Rustline.Presentation
         {
             _camera = null;
             _cameraTransform = null;
+            _cameraFollow = null;
             _layerZ = transform.position.z;
             TryResolveCamera();
         }
@@ -53,7 +56,13 @@ namespace Rustline.Presentation
             float viewportHeightWorld = _camera.orthographicSize * 2f;
             float revealTravelWorld = Mathf.Max(0f, sourceHeightWorld - viewportHeightWorld);
 
-            float altitudeAboveBottom = Mathf.Max(0f, cameraPosition.y - phaseBottomWorldY);
+            // Framing follows the final rendered camera, including presentation feedback, but the
+            // long-range altitude field must not move through its source because of recoil/impulse.
+            // PixelCameraFollow2D exposes the continuous base follow position before that offset.
+            float altitudeSampleY = _cameraFollow != null
+                ? _cameraFollow.ContinuousFollowPosition.y
+                : cameraPosition.y;
+            float altitudeAboveBottom = Mathf.Max(0f, altitudeSampleY - phaseBottomWorldY);
             float altitudeT = Mathf.Clamp01(altitudeAboveBottom / EffectivePhaseHeightWorldUnits);
 
             // At the phase bottom the sprite is shifted upward so the camera sees the lowest portion
@@ -94,6 +103,7 @@ namespace Rustline.Presentation
             pixelsPerUnit = Mathf.Max(1, sourcePixelsPerUnit);
             _camera = null;
             _cameraTransform = null;
+            _cameraFollow = null;
         }
 
         private bool TryResolveCamera()
@@ -111,6 +121,7 @@ namespace Rustline.Presentation
 
             _camera = mainCamera;
             _cameraTransform = mainCamera.transform;
+            _cameraFollow = mainCamera.GetComponent<PixelCameraFollow2D>();
             return true;
         }
     }
