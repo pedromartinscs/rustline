@@ -84,20 +84,7 @@ namespace Rustline.Editor
             desired.AddRange(current.Where(scene =>
                 !CanonicalLeadingScenes.Contains(scene.path, StringComparer.Ordinal)));
 
-            bool alreadyCanonical = current.Length == desired.Count;
-            if (alreadyCanonical)
-            {
-                for (int i = 0; i < current.Length; i++)
-                {
-                    if (current[i].path != desired[i].path || current[i].enabled != desired[i].enabled)
-                    {
-                        alreadyCanonical = false;
-                        break;
-                    }
-                }
-            }
-
-            if (alreadyCanonical)
+            if (Matches(current, desired))
             {
                 return;
             }
@@ -110,6 +97,55 @@ namespace Rustline.Editor
             finally
             {
                 _isApplying = false;
+            }
+        }
+
+        /// <summary>
+        /// Runs a legacy M1A/foundation validation while temporarily presenting the historical
+        /// MovementLab(0), ArtShowcase(1) build order that validator still expects. The current
+        /// production contract is restored in a finally block, including when validation throws.
+        ///
+        /// This compatibility bridge exists only because the frozen M1A validator predates
+        /// SalvageIntake becoming the release entry scene. New production code must never treat the
+        /// temporary order as authoritative.
+        /// </summary>
+        public static void RunWithFoundationValidationOrder(Action action)
+        {
+            if (action == null)
+            {
+                throw new ArgumentNullException(nameof(action));
+            }
+
+            RequireScene(MovementLabPath);
+            RequireScene(ArtShowcasePath);
+
+            EditorBuildSettingsScene[] current = EditorBuildSettings.scenes;
+            var temporary = new List<EditorBuildSettingsScene>(current.Length + 2)
+            {
+                new EditorBuildSettingsScene(MovementLabPath, true),
+                new EditorBuildSettingsScene(ArtShowcasePath, true)
+            };
+
+            temporary.AddRange(current.Where(scene =>
+                !string.Equals(scene.path, MovementLabPath, StringComparison.Ordinal) &&
+                !string.Equals(scene.path, ArtShowcasePath, StringComparison.Ordinal)));
+
+            bool previousApplying = _isApplying;
+            try
+            {
+                // Keep the sceneListChanged callback from immediately restoring the production order
+                // while the legacy validator is deliberately observing its historical lab-first view.
+                _isApplying = true;
+                EditorBuildSettings.scenes = temporary.ToArray();
+                action();
+            }
+            finally
+            {
+                _isApplying = previousApplying;
+                if (!previousApplying)
+                {
+                    EnsureCanonicalOrder();
+                }
             }
         }
 
@@ -130,6 +166,35 @@ namespace Rustline.Editor
                         "Rustline build-scene order is invalid. Expected index " + i + " to be enabled scene " +
                         CanonicalLeadingScenes[i] + ".");
                 }
+            }
+        }
+
+        private static bool Matches(
+            IReadOnlyList<EditorBuildSettingsScene> current,
+            IReadOnlyList<EditorBuildSettingsScene> desired)
+        {
+            if (current.Count != desired.Count)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < current.Count; i++)
+            {
+                if (current[i].path != desired[i].path || current[i].enabled != desired[i].enabled)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static void RequireScene(string path)
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(path) == null)
+            {
+                throw new InvalidOperationException(
+                    "Rustline foundation-validation scene is missing: " + path);
             }
         }
     }
