@@ -31,7 +31,7 @@ TextureImporter:
   cubemapConvolution: 0
   seamlessCubemap: 0
   textureFormat: 1
-  maxTextureSize: 4096
+  maxTextureSize: 8192
   textureSettings:
     serializedVersion: 2
     filterMode: 0
