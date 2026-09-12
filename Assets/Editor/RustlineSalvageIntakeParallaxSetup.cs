@@ -8,9 +8,9 @@ using UnityEngine.SceneManagement;
 namespace Rustline.Editor
 {
     /// <summary>
-    /// Applies the first far-background parallax layer to SalvageIntake. The layer is presentation
-    /// only, lives under Art Dressing - Preserve, and resolves the runtime Main Camera dynamically so
-    /// rebuilding the managed player/camera rig cannot leave a stale serialized camera reference.
+    /// Applies the production horizontal far-parallax layer to SalvageIntake. The layer is
+    /// presentation-only, lives under Art Dressing - Preserve, repeats seamlessly on X, and is
+    /// screen-locked on Y so vertical camera movement never makes the backdrop float in the frame.
     /// </summary>
     public static class RustlineSalvageIntakeParallaxSetup
     {
@@ -23,17 +23,25 @@ namespace Rustline.Editor
         private const string SpriteUnlitMaterialPath =
             "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
 
-        private const int SourceWidth = 1296;
-        private const int SourceHeight = 410;
+        private const int SourceWidth = 2160;
+        private const int SourceHeight = 1080;
         private const int PixelsPerUnit = 16;
+        private const int MinimumImporterSize = 4096;
         private const int SortingOrder = -30;
         private const float HorizontalFollow = 0.94f;
-        private const float VerticalFollow = 0.96f;
+        private const int HorizontalPhaseSourcePixels = 0;
+        private const int VerticalScreenOffsetSourcePixels = 0;
 
-        // 1296x410 at 16 PPU is 81x25.625 u. This anchor covers the west-entry camera while leaving
-        // deliberate Deep Space negative space, and the near-camera follow keeps the same panorama
-        // useful as the player moves through the east shaft/continuation.
-        private static readonly Vector3 AnchorPosition = new Vector3(-3.5f, 4.8125f, 0f);
+        private static readonly string[] SegmentNames =
+        {
+            "Segment - Left",
+            "Segment - Center",
+            "Segment - Right"
+        };
+
+        private static readonly int[] SegmentOffsets = { -1, 0, 1 };
+
+        private static float TileWidthWorldUnits => SourceWidth / (float)PixelsPerUnit;
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Far Parallax")]
         public static void ApplyFromMenu()
@@ -41,7 +49,7 @@ namespace Rustline.Editor
             ApplyAndValidate();
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Far industrial parallax was applied at 0.94x / 0.96y camera follow with 1/16-unit pixel snapping.",
+                "Horizontal far parallax was applied as a seamless 2160x1080 loop: 0.94x follow on X, screen-locked Y, and 1/16-unit final snapping.",
                 "OK");
         }
 
@@ -55,7 +63,7 @@ namespace Rustline.Editor
             ValidateScene(scene);
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Far industrial parallax validation passed.",
+                "Horizontal far-parallax validation passed.",
                 "OK");
         }
 
@@ -85,23 +93,51 @@ namespace Rustline.Editor
 
             GameObject parallaxObject = new GameObject(ManagedRootName);
             parallaxObject.transform.SetParent(artRoot, false);
-            parallaxObject.transform.position = AnchorPosition;
+            parallaxObject.transform.position = Vector3.zero;
             parallaxObject.transform.localScale = Vector3.one;
 
-            SpriteRenderer renderer = parallaxObject.AddComponent<SpriteRenderer>();
-            renderer.sprite = sprite;
-            renderer.sharedMaterial = unlitMaterial;
-            renderer.sortingOrder = SortingOrder;
+            for (int i = 0; i < SegmentNames.Length; i++)
+            {
+                CreateSegment(
+                    parallaxObject.transform,
+                    SegmentNames[i],
+                    SegmentOffsets[i],
+                    sprite,
+                    unlitMaterial);
+            }
 
             PixelSnappedParallax2D parallax = parallaxObject.AddComponent<PixelSnappedParallax2D>();
-            parallax.Configure(HorizontalFollow, VerticalFollow, PixelsPerUnit);
+            parallax.ConfigureHorizontalLoop(
+                HorizontalFollow,
+                SourceWidth,
+                PixelsPerUnit,
+                HorizontalPhaseSourcePixels,
+                VerticalScreenOffsetSourcePixels);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Require(EditorSceneManager.SaveScene(scene, ScenePath),
-                "Could not save SalvageIntake after applying far parallax.");
+                "Could not save SalvageIntake after applying horizontal far parallax.");
             AssetDatabase.SaveAssets();
 
             ValidateScene(scene);
+        }
+
+        private static void CreateSegment(
+            Transform parent,
+            string name,
+            int horizontalTileOffset,
+            Sprite sprite,
+            Material material)
+        {
+            GameObject segment = new GameObject(name);
+            segment.transform.SetParent(parent, false);
+            segment.transform.localPosition = new Vector3(horizontalTileOffset * TileWidthWorldUnits, 0f, 0f);
+            segment.transform.localScale = Vector3.one;
+
+            SpriteRenderer renderer = segment.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sharedMaterial = material;
+            renderer.sortingOrder = SortingOrder;
         }
 
         private static void ConfigureSpriteImporter()
@@ -140,6 +176,11 @@ namespace Rustline.Editor
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 changed = true;
             }
+            if (importer.maxTextureSize < MinimumImporterSize)
+            {
+                importer.maxTextureSize = MinimumImporterSize;
+                changed = true;
+            }
             if (!importer.alphaIsTransparency)
             {
                 importer.alphaIsTransparency = true;
@@ -174,37 +215,56 @@ namespace Rustline.Editor
             Transform artRoot = root.transform.Find(ArtDressingPreserveName);
             Transform managedRoot = artRoot?.Find(ManagedRootName);
             Require(managedRoot != null, "Far Parallax v0 managed root is missing.");
-            Require(managedRoot.position == AnchorPosition,
-                "Far parallax anchor moved away from its native-pixel composition position.");
+            Require(managedRoot.position == Vector3.zero,
+                "Horizontal far-parallax managed root must keep its authored world origin at zero outside Play mode.");
             Require(managedRoot.localScale == Vector3.one,
                 "Far parallax must remain at native Transform scale 1.0.");
+            Require(managedRoot.GetComponent<SpriteRenderer>() == null,
+                "Horizontal far-parallax root is a controller; rendering belongs to its three child segments.");
             Require(managedRoot.GetComponentsInChildren<Collider2D>(true).Length == 0,
                 "Far parallax must remain presentation-only and contain no Collider2D.");
+            Require(managedRoot.childCount == SegmentNames.Length,
+                "Horizontal far parallax must contain exactly three adjacent managed segments.");
 
             Sprite expectedSprite = AssetDatabase.LoadAssetAtPath<Sprite>(SpritePath);
             Material expectedMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
-            SpriteRenderer renderer = managedRoot.GetComponent<SpriteRenderer>();
-            Require(renderer != null && renderer.sprite == expectedSprite &&
-                renderer.sharedMaterial == expectedMaterial && renderer.sortingOrder == SortingOrder,
-                "Far parallax renderer contract is invalid.");
+            Require(expectedSprite != null && expectedMaterial != null,
+                "Horizontal far-parallax sprite/material assets are unavailable during validation.");
+
+            for (int i = 0; i < SegmentNames.Length; i++)
+            {
+                Transform segment = managedRoot.Find(SegmentNames[i]);
+                Require(segment != null, "Missing horizontal far-parallax segment: " + SegmentNames[i]);
+                Vector3 expectedLocalPosition = new Vector3(SegmentOffsets[i] * TileWidthWorldUnits, 0f, 0f);
+                Require(segment.localPosition == expectedLocalPosition && segment.localScale == Vector3.one,
+                    SegmentNames[i] + " is not aligned at one exact 2160-pixel tile interval.");
+
+                SpriteRenderer renderer = segment.GetComponent<SpriteRenderer>();
+                Require(renderer != null && renderer.sprite == expectedSprite &&
+                    renderer.sharedMaterial == expectedMaterial && renderer.sortingOrder == SortingOrder,
+                    SegmentNames[i] + " renderer contract is invalid.");
+            }
 
             PixelSnappedParallax2D parallax = managedRoot.GetComponent<PixelSnappedParallax2D>();
             Require(parallax != null &&
                 Mathf.Approximately(parallax.HorizontalFollow, HorizontalFollow) &&
-                Mathf.Approximately(parallax.VerticalFollow, VerticalFollow) &&
+                parallax.TileWidthSourcePixels == SourceWidth &&
+                parallax.HorizontalPhaseSourcePixels == HorizontalPhaseSourcePixels &&
+                parallax.VerticalScreenOffsetSourcePixels == VerticalScreenOffsetSourcePixels &&
                 parallax.PixelsPerUnit == PixelsPerUnit,
-                "Far parallax camera-follow/pixel-snap contract is invalid.");
+                "Horizontal far-parallax loop/pixel-snap contract is invalid.");
 
             TextureImporter importer = AssetImporter.GetAtPath(SpritePath) as TextureImporter;
             Require(importer != null && importer.textureType == TextureImporterType.Sprite &&
                 importer.spriteImportMode == SpriteImportMode.Single &&
                 Mathf.Approximately(importer.spritePixelsPerUnit, PixelsPerUnit) &&
                 importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
-                importer.textureCompression == TextureImporterCompression.Uncompressed,
-                "Far parallax import settings must remain 16 PPU / Point / no mipmaps / uncompressed.");
+                importer.textureCompression == TextureImporterCompression.Uncompressed &&
+                importer.maxTextureSize >= MinimumImporterSize,
+                "Far parallax import settings must remain 16 PPU / Point / no mipmaps / uncompressed / >=4096 max texture size.");
             importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
             Require(sourceWidth == SourceWidth && sourceHeight == SourceHeight,
-                "Far parallax source dimensions no longer match the accepted 1296x410 source.");
+                "Far parallax source dimensions no longer match the accepted 2160x1080 source.");
         }
 
         private static GameObject FindGameObject(Scene scene, string name)
