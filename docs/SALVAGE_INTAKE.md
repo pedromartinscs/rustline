@@ -2,228 +2,237 @@
 
 `SalvageIntake` is Rustline's first production-area scene and the first step away from the diagnostic `MovementLab` toward the itch.io vertical slice.
 
-The current goal is deliberately narrow: build one coherent industrial route that is enjoyable to traverse and aim through with the frozen player/Longwatch foundation before expanding into a broad environment asset library.
+The current goal remains deliberately narrow: build one coherent industrial route that is enjoyable to traverse and aim through with the frozen player/Longwatch foundation before expanding into a broader environment library.
 
-## Scene and builders
+## Scene and production tooling
 
 Target scene:
 
 `Assets/Scenes/Demo/SalvageIntake.unity`
 
-Deterministic layout builder:
+Canonical geometry builder:
 
 `Assets/Editor/RustlineSalvageIntakeSetup.cs`
 
-Macro art-dressing setup:
+Specialized production passes remain implemented as separate deterministic editor classes, but they are no longer exposed individually in `Tools/Rustline`.
 
-`Assets/Editor/RustlineSalvageIntakeArtSetup.cs`
+The normal authoring entry point is now intentionally a single command:
 
-Horizontal far-parallax setup:
+**Tools → Rustline → Apply Production Setup**
 
-`Assets/Editor/RustlineSalvageIntakeParallaxSetup.cs`
+`RustlineProductionTools` orchestrates the current production chain in order:
 
-Vertical depth-backdrop setup:
+1. rebuild canonical Salvage Intake geometry;
+2. enforce industrial-surface variation;
+3. apply macro environment dressing;
+4. apply lower-bay floor dressing;
+5. apply west wall dressing;
+6. apply service-shaft wall dressing;
+7. apply horizontal far parallax;
+8. apply the vertical-depth backdrop;
+9. enforce and validate canonical release build-scene order.
 
-`Assets/Editor/RustlineSalvageIntakeVerticalDepthSetup.cs`
+The specialized setup classes remain callable internally and from command-line workflows. The collapsed menu is a UI cleanup, not a removal of deterministic tooling.
 
-Primary Unity menus:
-
-- **Tools → Rustline → Rebuild Salvage Intake Graybox**
-- **Tools → Rustline → Apply Salvage Intake Macro Dressing**
-- **Tools → Rustline → Apply Salvage Intake Floor Dressing**
-- **Tools → Rustline → Apply Salvage Intake Wall Dressing**
-- **Tools → Rustline → Apply Salvage Intake Far Parallax**
-- **Tools → Rustline → Apply Salvage Intake Vertical Depth Backdrop**
-
-The layout builder first runs the existing M1 validation, then recreates the production-area collision and player rig without modifying `MovementLab`.
-
-The builder owns and regenerates only these roots:
+The builder owns and regenerates only:
 
 - `Environment - Managed Graybox`
 - `Player Rig - Managed`
 
-These roots are preserved across graybox rebuilds and are used for hand-authored work that should survive regeneration:
+Preserved authoring roots:
 
 - `Art Dressing - Preserve`
 - `Gameplay Content - Preserve`
 
-The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. The horizontal far-parallax tool owns only `Art Dressing - Preserve/Far Parallax v0 - Managed`. The vertical-depth tool owns only `Art Dressing - Preserve/Vertical Depth Backdrop v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside those managed children.
+Production setup classes may own named managed children under `Art Dressing - Preserve`; unrelated hand-authored content must not be placed inside those managed children.
 
 ## Current spatial contract
 
-All gameplay geometry is aligned to the normal **16×16 px / 1×1 unit** structural grid. The accepted **24 source pixel / 1.5 unit Minimum Traversable Gap** remains the hard authoring floor, while ordinary production openings should normally be more generous when movement readability benefits.
+Gameplay geometry uses the normal **16×16 px / 1×1 unit** structural grid. The accepted **24 source pixel / 1.5 u Minimum Traversable Gap** remains the hard authoring floor.
 
-The current route contains:
+Current route:
 
 - west production bulkhead and entry deck;
 - small service step and solid left approach into the hero room;
 - compact **4×2 tile** central collision plinth for the salvage machine;
-- **12×1 tile** transfer catwalk represented physically only by hidden collision and visually by production catwalk sprites;
-- no east catwalk support wall — the space below/right of the catwalk remains open;
+- **12×1 tile** transfer catwalk represented physically by hidden collision and visually by production catwalk sprites;
+- no east catwalk support wall;
 - east staging platform leading into the permanent service shaft;
-- **4 u / 64 px**-wide vertical service shaft using the human-tested MovementLab wall-kick spacing;
+- **4 u / 64 px**-wide service shaft using the accepted MovementLab wall-kick spacing;
 - lower shaft entry with **4 u / 64 px** of clear standing height;
 - left shaft wall at `x=26..27`, `y=4..18`;
 - open shaft interior at `x=28..31`;
 - right shaft wall at `x=32..33`, `y=0..14`;
-- upper continuation deck at `x=34..45`, `y=14`, with walkable surface at `y=15`;
-- `Exit Staging` at `(42, 15.08, 0)` on that upper-right deck;
-- **16×1 tile** overhead service deck at `y=18`, used as the structural mounting surface above the salvage handler;
-- player spawn centered on the west production bulkhead at `x=-20`, serialized at `y=1.75` for deliberate initial ground clearance.
+- upper continuation deck at `x=34..45`, `y=14`, walkable surface `y=15`;
+- `Exit Staging` at `(42, 15.08, 0)`;
+- handler overhead support at `x=-8..24`, cell row `y=19`, with upper surface at `y=20`;
+- one full cell at `x=25` intentionally left between the overhead support and the shaft wall for a future authored transition;
+- player spawn centered on the west production bulkhead at `x=-20`, serialized at `y=1.75`.
 
-The service shaft is no longer an experimental overlay. It is part of `RustlineSalvageIntakeSetup` and is reproduced by every normal Salvage Intake rebuild. See [`SALVAGE_INTAKE_SERVICE_SHAFT.md`](SALVAGE_INTAKE_SERVICE_SHAFT.md) for the exact traversal contract.
+The service shaft and handler-overhead support are now part of the canonical builder and are reproduced by a normal production rebuild.
 
-Historical graybox labels such as `v2.1` through `v2.6` were only internal iteration markers while the hero room was changing rapidly; they are not game or content-version numbers. The current documentation uses the canonical spatial contract directly instead of assigning a new arbitrary graybox version to each accepted change.
+See [`SALVAGE_INTAKE_SERVICE_SHAFT.md`](SALVAGE_INTAKE_SERVICE_SHAFT.md) for the traversal contract.
 
 ## Traversal intent
 
 The critical route should read as industrial architecture first, not as a sequence of movement tutorials.
 
-The east shaft deliberately turns Wall Brace / Wall Kick into required spatial progression without reducing the geometry to the technical 24 px minimum. Its four-cell width matches the already human-tested MovementLab shaft spacing. Continuous wall coverage supports the accepted seven-probe Wall Brace presentation rule.
+The east shaft turns Wall Brace / Wall Kick into required spatial progression without reducing geometry to the 24 px technical minimum. Its four-cell width matches the already human-tested MovementLab shaft spacing. Continuous wall coverage supports the accepted seven-probe Wall Brace presentation rule.
 
-The player crosses Salvage Intake at floor level, enters the shaft through the lower opening, climbs between the walls, reaches the right-wall top/ledge at `y=15`, then exits onto the upper deck toward the next section of the level.
-
-Jump, LedgeClimb, Wall Brace/Kick, crouch, Fall aim, and future combat positioning should continue to emerge from useful architecture rather than isolated ability stations.
+The player crosses Salvage Intake at floor level, enters the shaft through the lower opening, climbs between the walls, reaches the right-wall top/ledge at `y=15`, then exits onto the upper deck toward the next production section.
 
 ## Visual geometry versus gameplay collision
 
-The scene retains three structural Tilemaps:
+Three structural Tilemaps remain authoritative:
 
-1. `Background Structure - Visual` — currently intentionally empty and reserved for future tile-based background needs;
-2. `Industrial Surface - Visual` — visible generic structural surfaces where production structural skins have not replaced them;
-3. `Ground Collision - Hidden` — authoritative gameplay geometry.
+1. `Background Structure - Visual` — currently intentionally empty;
+2. `Industrial Surface - Visual` — generic visible structure where production skins have not replaced it;
+3. `Ground Collision - Hidden` — authoritative gameplay collision.
 
-Production background identity comes primarily from non-colliding sprites under `Art Dressing - Preserve`.
+Production structural skins are non-colliding `SpriteRenderer`s. The visual/collision rule remains explicit:
 
-Production structural skins such as catwalk, floor edges, and wall edges are also non-colliding `SpriteRenderer`s. They may visually represent walkable or braceable structure while the hidden Tilemap remains the sole gameplay collision authority.
+`visual geometry != gameplay collision`
 
-`visual geometry != gameplay collision` is an explicit production rule. Visual wear, holes, brackets, diagonals, railing, rust, transparent negative space, pipes, foreground pieces, and machinery silhouettes do not need to generate matching physical shapes. Gameplay collision should remain simple, continuous, readable, and traversal-safe.
+Visual wear, holes, brackets, diagonals, rust, pipes and transparent negative space do not need matching physical shapes. Hidden collision should remain simple, continuous, readable and traversal-safe.
 
-`Ground Collision - Hidden` keeps the release-hardened contract from `RELEASE_COLLISION.md`:
+`Ground Collision - Hidden` keeps the release-hardened contract:
 
 - Ground layer 6;
 - renderer disabled;
 - static `Rigidbody2D`;
-- `TilemapCollider2D` with `Merge`;
+- `TilemapCollider2D` using `Merge`;
 - polygon `CompositeCollider2D`;
 - `TilemapCompositeColliderInitializer2D`;
-- immediate geometry generation/validation before the scene is accepted.
+- deterministic geometry generation and validation.
 
-## Visual readability hierarchy
+## Current production art
 
-Canonical 28 is a gameplay-readability tool, not only an art restriction.
-
-1. **Player / combat information** gets the strongest local readability.
-2. **Gameplay structure** — floors, walls, catwalks, ledges and other usable surfaces — sits one restrained value/contrast step above background dressing.
-3. **Background machinery / dressing** favors darker palette families and lower local contrast.
-4. **Horizontal far parallax** is quieter still: large distant silhouettes with minimal internal information.
-5. **Vertical Depth Backdrop** is the deepest and most atmospheric plane, carrying long-range altitude color rather than readable architecture.
-6. **Foreground dressing** may be stronger locally when useful for depth, but must not obscure gameplay-critical information for sustained periods.
-
-This does not mean walkable surfaces should become bright or saturated. Rustline remains dark industrial pixel art; the requirement is relative separation inside the Canonical 28.
-
-## Native-pixel environment scale
-
-Environment sprites follow the same source-pixel contract as the player:
-
-- production PNGs import at **16 PPU**;
-- environment SpriteRenderers remain at **Transform scale 1.0**;
-- at base presentation scale, one source-art pixel maps to one display pixel;
-- integer presentation scaling scales the complete logical frame together, preserving player/environment proportions;
-- fractional Transform scaling is not a production technique for fixing an asset's apparent size.
-
-If a production environment asset is the wrong apparent size, re-author/resample the source PNG rather than arbitrarily scaling it in Unity.
-
-## Current environment production assets
-
-Accepted macro/architecture families include:
+Accepted families currently include:
 
 - gantry uprights;
 - suspended salvage handler;
 - machine housing;
-- source-authored small west bulkhead;
+- small west bulkhead;
 - modular catwalk family;
 - floor-edge family;
-- wall-edge family;
-- far-industrial horizontal parallax family;
-- vertical-depth backdrop family;
+- west wall-edge family;
+- service-shaft wall A/B family;
+- horizontal far-industrial parallax;
+- vertical-depth backdrop;
 - accepted but currently unplaced full-size `gantry_overhead_rail.png`.
 
-The west entry uses the **105×100 px** small bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
+The west entry uses the **105×100 px** bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
 
-The accepted floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the common/default center module; `floor_edge_mid_b` carries stronger rust and should remain less frequent.
+The floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the common center module; `floor_edge_mid_b` carries stronger rust and remains less frequent.
 
-The wall-edge family currently dresses the **west outer boundary only**. The former mirrored east outer-wall skin was retired when that boundary became the service-shaft entrance. Shaft-specific skins may be authored later, but the generic old east wall must never visually seal the approved route.
+The west wall-edge family dresses only the west outer boundary. The old mirrored east boundary skin must not return because the east side is the approved service-shaft route.
 
-The production horizontal far-parallax asset is `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`, authored at **2160×1080 px** and native **16 PPU**. In Salvage Intake it renders at sorting order `-30`, uses three adjacent seamless copies at exact **135 u** intervals, follows World Camera X at `0.94`, follows camera Y exactly, wraps by whole tile widths, and snaps its final managed-root transform to `1/16 u` through `PixelSnappedParallax2D`.
+The service shaft currently uses:
 
-The production vertical-depth asset is `Assets/Art/Environment/Parallax/VerticalDepth/vertical_depth_backdrop_a.png`, authored at **1080×2160 px** and native **16 PPU**. It renders behind the horizontal layer at sorting order `-40` and is controlled by `PixelSnappedVerticalDepthBackdrop2D`. It follows World Camera X exactly, does not repeat vertically, and reveals higher source rows as camera altitude increases. The current Salvage Intake test span is `y=0..19`, but the mapping enforces the canonical minimum phase-height reference of **4320 source px / 270 u**, so the current room intentionally exposes only a small fraction of the complete altitude field. See [`PARALLAX_BACKDROPS.md`](PARALLAX_BACKDROPS.md) for the exact mapping and accepted dither bands.
+- `Assets/Art/Environment/Architecture/ServiceShaft/shaft_wall_a.png`
+- `Assets/Art/Environment/Architecture/ServiceShaft/shaft_wall_b.png`
 
-The native presentation viewport is dynamic and currently capped at 1072 logical pixels per axis. The 1080-pixel vertical-depth source width therefore provides a small native-pixel overscan margin instead of requiring runtime scaling.
+These sprites align their straight interior faces to the hidden collision planes while growing outward from the 64 px playable opening. They contain no colliders.
 
-`gantry_overhead_rail.png` remains valid production art, but its 870×160 px source canvas is effectively room-wide at native scale. Do not force it into Salvage Intake; modularize or deliberately design a later crane span before using it.
+## Parallax / depth contract
 
-## Presentation / performance invariants
+Horizontal production asset:
 
-Salvage Intake reuses the accepted player prefab and presentation architecture proven in MovementLab:
+`Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`
 
+- **2160×1080 px**;
 - 16 PPU;
-- Canonical 28 production art contract;
+- sorting order `-30`;
+- three adjacent seamless copies at exact **135 u** intervals;
+- World Camera X follow `0.94`;
+- camera Y screen-lock;
+- final `1/16 u` snap.
+
+Vertical production asset:
+
+`Assets/Art/Environment/Parallax/VerticalDepth/vertical_depth_backdrop_a.png`
+
+- **1080×4320 px**;
+- 16 PPU;
+- Point filtering, no mipmaps, uncompressed;
+- importer `maxTextureSize >= 8192` so Unity cannot downscale the 4320 px source;
+- sorting order `-40`;
+- non-repeating;
+- X screen-locked to the World Camera;
+- vertical reveal driven by base camera altitude rather than raw player jumps or recoil;
+- current Salvage Intake altitude span `0..20 u`;
+- canonical minimum virtual phase span **4320 source px / 270 u**.
+
+The new 1080×4320 backdrop is procedurally authored using exact Canonical 28 colors and irregular multi-scale masses rather than the previous uniform ordered-dot field. It intentionally provides much more visible Deep Navy / Shadow / Steel Shadow structure while keeping warmer corrosion concentrated toward the surface direction.
+
+See [`PARALLAX_BACKDROPS.md`](PARALLAX_BACKDROPS.md) for the exact motion and art contract.
+
+## Visual readability hierarchy
+
+Canonical 28 remains a gameplay-readability tool, not only a palette restriction.
+
+1. player / combat information;
+2. gameplay structure;
+3. hero transfer machinery;
+4. normal background machinery;
+5. horizontal far parallax;
+6. vertical-depth field;
+7. restrained foreground dressing where useful.
+
+The vertical depth layer should communicate atmosphere and altitude, not become a high-frequency texture competing with the foreground.
+
+## Native-pixel invariants
+
+- 16 PPU production art;
+- Transform scale `1,1,1` for pixel-authored environment sprites;
+- Canonical 28 only;
 - `Sprite-Unlit-Default` for current environment rendering;
 - native-pixel logical rendering;
 - integer presentation scaling;
-- horizontal far-parallax motion quantized to the same `1/16 u` source-pixel grid;
-- no relative Y movement on the horizontal far-parallax plane;
-- horizontal wrap distances are exact whole source-tile widths;
-- vertical-depth X is screen-locked to the World Camera;
-- vertical-depth reveal is camera-altitude-driven and non-repeating;
-- vertical-depth phase mapping uses `max(actualPhaseHeight, 4320 source px)`;
-- vertical-depth final X/Y placement is quantized to `1/16 u`;
+- no fractional Transform scaling as an asset-sizing technique;
+- horizontal parallax wraps by whole source-tile intervals;
+- vertical-depth final placement snaps to `1/16 u`;
+- no gameplay colliders on dressing/parallax objects;
 - palette-constrained penumbra;
-- no identity/decorative `Light2D` objects in the current pass;
-- existing 60 FPS runtime policy unchanged.
+- no decorative `Light2D` identity layer in the current pass;
+- existing runtime performance policy unchanged.
 
-The builder preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, carry, Wall Brace, LedgeClimb, or animation behavior. Both backdrop controllers resolve the active `MainCamera` dynamically, so preserved art does not retain a stale reference when the managed player/camera rig is rebuilt.
+If a production environment asset is the wrong apparent size, re-author/resample the source rather than scaling its Transform fractionally.
 
 ## Hero-room composition
 
-The central visual idea remains a **salvage transfer / sorting machine** whose production art occupies much more visual space than its simple collision plinth.
+The central visual idea remains a **salvage transfer / sorting machine** whose art occupies much more visual space than its simple collision plinth.
 
-The intended hierarchy is:
+Current hierarchy:
 
-1. readable player and combat silhouettes;
+1. readable player/combat silhouette;
 2. clearly readable gameplay structural edges;
 3. hero transfer machine;
 4. normal background machinery/structure;
-5. horizontal far industrial silhouettes;
-6. vertical altitude/depth field;
-7. pipes, conduits, vents, warning markings, corrosion, and restrained foreground dressing where appropriate.
+5. horizontal distant industrial silhouette;
+6. vertical altitude/depth field.
 
-Do not solve the room with many overlapping lights, full-screen effects, or giant transparent illustrations. Prefer composition, modular pieces, bounded sprites/overlays, and the existing penumbra presentation.
+The handler overhead support now extends east toward the service shaft but deliberately stops before it. The final authored visual connection between overhead architecture and the shaft is deferred until the surrounding composition is approved.
 
 ## Immediate acceptance gate
 
 When rebuilding or extending Salvage Intake, verify:
 
-- the room is traversable without getting stuck;
-- no unintended physical opening below the accepted authoring envelope invites entry;
-- player spawn remains clear of the west deck before gravity settles it;
-- all managed environment sprites remain collider-free;
+- the complete route is traversable without getting stuck;
+- no unintended opening below the accepted authoring envelope invites entry;
+- player spawn remains clear before gravity settles it;
+- all managed production sprites remain collider-free;
 - catwalk visual skin and hidden collision remain aligned;
-- the service-shaft lower entrance stays 4 u high;
-- the service-shaft interior stays exactly 4 u / 64 px wide;
-- Wall Brace engages naturally on the shaft walls;
-- alternating Wall Kicks remain comfortable rather than precision-gated;
+- shaft lower entrance stays 4 u high;
+- shaft interior stays exactly 4 u / 64 px wide;
+- Wall Brace and alternating Wall Kicks remain comfortable;
+- shaft wall art never visually intrudes into the playable opening in a misleading way;
 - the right-wall top leads naturally into the upper continuation deck;
-- the old full-height east boundary wall skin never returns;
-- far parallax remains visually quieter than normal background machinery and never reads as reachable gameplay space;
-- the horizontal far backdrop never exposes a left/right edge or visible seam while traversing laterally;
-- vertical camera movement keeps the horizontal far backdrop fixed in the frame rather than making it float;
-- horizontal parallax remains subtle and free of shimmer, subpixel crawl or visible wrap pops;
-- the Vertical Depth Backdrop stays horizontally fixed in the frame while traversing laterally;
-- climbing the shaft reveals the Vertical Depth Backdrop gradually rather than making it track raw player jumps;
-- the Vertical Depth Backdrop never exposes its top/bottom source edge during the accepted altitude mapping;
-- the vertical layer remains visually behind the horizontal far silhouettes at sorting `-40` versus `-30`;
-- the route remains readable under native-pixel presentation and penumbra;
-- no new collision seam, phantom Land, or Release-only floor regression appears;
+- the old full-height east boundary never returns;
+- the handler overhead support is at `y=19`, extends through `x=24`, and keeps `x=25` reserved;
+- far parallax remains quieter than normal background machinery and exposes no seam;
+- Vertical Depth stays behind the horizontal far layer and does not expose its source edges;
+- climbing reveals the Vertical Depth gradually from camera altitude rather than raw jumps;
+- the 4320 px vertical source is imported without 4096 px downscaling;
+- no shimmer, subpixel crawl, wrap pop or Release-only collision regression appears;
 - player and Longwatch presentation remain unchanged.
