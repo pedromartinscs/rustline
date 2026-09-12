@@ -32,11 +32,11 @@ namespace Rustline.Editor
         private const int SortingOrder = -40;
 
         // Current Salvage Intake test span: the canonical lower floor surface is y=0 and the highest
-        // local walkable structural surface is the handler-overhead support top at y=20. The 4320-pixel
-        // minimum virtual phase height still dominates this small room, so only a small fraction of
-        // the backdrop is intentionally revealed while climbing the current route.
+        // local walkable structural surface is the raised handler-overhead support top at y=21. The
+        // 4320-pixel minimum virtual phase height still dominates this small room, so only a small
+        // fraction of the backdrop is intentionally revealed while climbing the current route.
         private const float PhaseBottomWorldY = 0f;
-        private const float PhaseTopWorldY = 20f;
+        private const float PhaseTopWorldY = 21f;
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Vertical Depth Backdrop")]
         public static void ApplyFromMenu()
