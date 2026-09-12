@@ -4,7 +4,8 @@ This document records the canonical artistic and technical direction for Rustlin
 
 ## Shared presentation contract
 
-- Native logical presentation reference: **1080x1080 px**.
+- Source-art design reference: **1080x1080 px**.
+- Runtime native logical viewport is dynamic and currently capped by `NativePixelViewportMath.MaximumLogicalDimension = 1072` px per axis.
 - Canonical 28 palette only.
 - 16 PPU.
 - Point filtering.
@@ -14,6 +15,8 @@ This document records the canonical artistic and technical direction for Rustlin
 - No fractional unsnapped runtime movement.
 - Final backdrop positions are snapped to the same `1/16 u` source-pixel grid as the rest of Rustline's native-pixel presentation.
 - Backdrops must not contain shapes whose readability strongly implies reachable gameplay structure unless that implication is intentional.
+
+The 1080-pixel source reference remains intentional even though the runtime logical viewport currently tops out at 1072 px. The extra source pixels provide a small amount of overscan rather than requiring runtime scaling.
 
 The initial `1296x410` far-industrial panorama was a successful technical prototype for pixel-snapped parallax, but its bounded transparent canvas made the sprite read as a floating object. It is retained only as historical prototype context; it is no longer the production composition contract.
 
@@ -54,72 +57,110 @@ Do not replace this with fractional unsnapped Transform motion, UV scrolling, fi
 
 The horizontal layer represents very distant industrial infrastructure: large masses, towers, pipes, trusses, service structures and silhouettes. It should remain visually quieter than normal background machinery.
 
-The preferred language is sparse and low-value. Deep Space `#01020b` can dominate the image, with one or a small number of dark Canonical 28 structural colors. Ordered pixel dithering may imply intermediate values without alpha blending or non-canonical colors.
+The preferred language is sparse and low-value. Deep Space `#01020b` may appear inside authored industrial masses, with one or a small number of dark Canonical 28 structural colors. Ordered pixel dithering may imply intermediate values without alpha blending or non-canonical colors.
 
 The source must be horizontally seamless. Important forms may continue through the left/right boundaries, and those boundaries must join without a visible discontinuity. The repeated image should read as one continuous industrial plane rather than three copies or an isolated rectangular sprite.
 
+Where the deeper Vertical Depth Backdrop is intended to remain visible, the horizontal layer must preserve transparent/negative-space regions rather than covering the entire frame with an opaque Deep Space rectangle.
+
 ## Vertical Depth Backdrop
 
-A second, deeper layer is planned as a **1080x2160 px** non-repeating vertical backdrop.
+The accepted production vertical layer is:
 
-This layer is not primarily a traditional scrolling panorama. It acts as a subtle visual **altitude/depth indicator** for the phase: as the camera rises through the installation, progressively higher portions of the backdrop are revealed.
+`Assets/Art/Environment/Parallax/VerticalDepth/vertical_depth_backdrop_a.png`
+
+The source is **1080x2160 px** at native **16 PPU** and does not repeat vertically. It is the deepest current environment plane and renders behind the horizontal far parallax.
+
+Runtime motion is driven by `PixelSnappedVerticalDepthBackdrop2D`.
 
 ### Motion
 
 - The layer is always horizontally framed to the camera. It has **no relative horizontal parallax**.
-- Its X position follows the camera exactly, then remains pixel-snapped.
-- The asset does **not** repeat vertically.
-- The bottom of the backdrop corresponds to the lowest canonical altitude of the phase.
-- The top of the backdrop corresponds to the highest altitude reference used by the mapping.
-- Camera altitude, not momentary player jump height, drives the reveal.
+- Its X position follows the already pixel-snapped World Camera exactly.
+- Camera altitude, not momentary raw player jump height, drives the vertical reveal.
+- The asset never repeats vertically.
+- At the phase bottom, the camera sees the lowest available portion of the source.
+- As camera altitude increases, progressively higher source rows are revealed.
+- Final X/Y placement is snapped to `1/16 u`.
 
-The visible 1080 px viewport inside the 2160 px source leaves **1080 px of total vertical reveal travel**.
+The runtime does **not** hardcode a 1080-pixel viewport. It reads the World Camera's actual orthographic height and computes:
 
-### Effective phase-height rule
+`revealTravelWorld = max(0, sourceHeightWorld - currentViewportHeightWorld)`
 
-The vertical mapping uses the height of the complete phase, with a minimum reference span of **four logical screens**:
-
-`effectivePhaseHeight = max(actualPhaseHeight, 4 * 1080 px)`
-
-Therefore:
-
-`minimumEffectivePhaseHeight = 4320 px`
-
-If a phase is vertically shorter than four screens, the backdrop still maps as though the phase were 4320 px tall. The player may therefore never reveal the entire `1080x2160` backdrop, and that is intentional: the deepest plane should suggest a world larger than the currently reachable route.
-
-If the actual phase exceeds four screens vertically, the real full phase height becomes the mapping span.
+At the current maximum logical viewport height of 1072 px, the 2160-pixel source has **1088 px of available vertical reveal travel**. At smaller logical viewports the available reveal travel is correspondingly larger. This keeps the source edge-safe without scaling it.
 
 Conceptually:
 
 `altitudeT = clamp01((cameraAltitude - phaseBottom) / effectivePhaseHeight)`
 
-`verticalReveal = altitudeT * 1080 px`
+`verticalOffset = lerp(+revealTravel / 2, -revealTravel / 2, altitudeT)`
 
-The resulting placement must be quantized to whole source pixels / `1/16 u` before rendering.
+The backdrop center is then placed at:
 
-## Vertical color language
+`(cameraX, cameraY + verticalOffset)`
 
-The Vertical Depth Backdrop should be much simpler than the horizontal industrial silhouette. Its primary job is atmospheric altitude communication, not readable machinery.
+and snapped to the normal source-pixel grid.
 
-The baseline is Deep Space `#01020b`. Warm Canonical 28 pixels become progressively more frequent toward the upper/surface end of the asset.
+### Effective phase-height rule
 
-The transition should be created through **ordered dithering / density changes**, not a conventional smooth gradient, runtime alpha or arbitrary blended colors. Near the deepest region the image may be almost pure Deep Space. With increasing altitude, sparse warm-brown pixels appear, then grow denser; higher regions may introduce a second lighter warm Canonical 28 tone if needed.
+The vertical mapping uses the height of the complete phase, with a minimum reference span of **four 1080-pixel source-design screens**:
 
-The intended read is not simply `black -> brown`. It is closer to:
+`effectivePhaseHeight = max(actualPhaseHeight, 4320 px)`
 
-- deep region: almost pure Deep Space;
-- lower/mid region: rare dark warm pixels dispersed through Deep Space;
-- upper region: increasing warm-pixel density;
-- near-surface region: visibly warmer, while Deep Space still remains a major part of the pattern.
+At 16 PPU:
 
-Exact warm colors and density thresholds should be chosen in GIMP while evaluating the asset at native presentation scale. Rust Dark `#b0461c` is a likely dark warm candidate, but the final palette combination is an art decision rather than a hardcoded runtime rule.
+`minimumEffectivePhaseHeight = 4320 / 16 = 270 u`
+
+If a phase is vertically shorter than 270 world units, the backdrop still maps as though the phase were 270 u tall. The player may therefore never reveal the entire `1080x2160` source, and that is intentional: the deepest plane should suggest a world larger than the currently reachable route.
+
+If the actual complete phase exceeds 270 u vertically, the real full phase height becomes the mapping span.
+
+The current Salvage Intake test configuration uses `phaseBottom = 0 u` and `phaseTop = 19 u`; the 270 u minimum therefore dominates and only a small fraction of the backdrop is intentionally revealed while climbing the current room.
+
+### Authored vertical color progression
+
+`vertical_depth_backdrop_a.png` uses Deep Space `#01020b` as the continuous base. Warm colors increase toward the source top / surface direction, then transition into cooler Shadow pixels and finally almost pure Deep Space toward the source bottom / deepest direction.
+
+The accepted authored bands, measured downward from the top of the 2160-pixel source, are:
+
+- `0–100 px`: 37.5% warm total — 25% Rust Dark `#b0461c`, 12.5% Concrete `#be997e`;
+- `100–200 px`: 25% warm total — 18.75% Rust Dark, 6.25% Concrete;
+- `200–300 px`: 18.75% warm total — 12.5% Rust Dark, 6.25% Concrete;
+- `300–400 px`: 12.5% Rust Dark;
+- `400–700 px`: 6.25% Rust Dark;
+- `700–1000 px`: 3.125% Rust Dark;
+- `1000–1100 px`: temperature transition — 4.6875% Shadow `#22374d` plus 1.5625% Rust Dark;
+- `1100–1300 px`: 6.25% Shadow;
+- `1300–1600 px`: 3.125% Shadow;
+- `1600–1900 px`: 1.5625% Shadow;
+- `1900–2160 px`: 0.78125% Shadow, using a sparse 16x16 ordered pattern.
+
+These are ordered static pixel patterns, not gradients, runtime noise or alpha fades. The result should read as **surface = warmer, depth = colder, abyss = Deep Space**, while remaining visibly part of the same Canonical-28 pixel language.
+
+## Salvage Intake integration
+
+Horizontal layer:
+
+**Tools -> Rustline -> Apply Salvage Intake Far Parallax**
+
+Vertical layer:
+
+**Tools -> Rustline -> Apply Salvage Intake Vertical Depth Backdrop**
+
+The vertical managed root is:
+
+`Art Dressing - Preserve/Vertical Depth Backdrop v0 - Managed`
+
+and renders at sorting order `-40`. The horizontal far parallax renders at `-30`, so the vertical altitude field remains the deeper plane.
+
+Both roots resolve `Camera.main` dynamically and survive normal Salvage Intake graybox rebuilding because they live below `Art Dressing - Preserve`.
 
 ## Layer relationship
 
-The intended deepest-to-nearest ordering is conceptually:
+The intended deepest-to-nearest ordering is:
 
-1. **Vertical Depth Backdrop** — non-repeating altitude field, deepest plane.
-2. **Horizontal Far Parallax** — seamless/repeating distant industrial silhouettes.
+1. **Vertical Depth Backdrop** — non-repeating altitude field, sorting `-40` in Salvage Intake.
+2. **Horizontal Far Parallax** — seamless/repeating distant industrial silhouettes, sorting `-30`.
 3. **Normal background dressing** — world-space machinery, pipes, gantries and architecture.
 4. **Gameplay structure / player / foreground** according to the established environment hierarchy.
 
