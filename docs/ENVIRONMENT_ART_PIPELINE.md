@@ -47,17 +47,32 @@ The first reusable far-background family lives under:
 
 `Assets/Art/Environment/Parallax/FarIndustrial/`
 
-The current `far_industrial_silhouette_a.png` **1296×410 px** source proved the pixel-snapped motion technically, but its bounded transparent composition reads as a floating sprite and is now considered a prototype. The same asset identity is being re-authored as the production **2160×1080 px** horizontally seamless backdrop described in `PARALLAX_BACKDROPS.md`.
+The production horizontal source is:
 
-The far layer is intentionally closer to a two-color silhouette than to ordinary environment art. Deep Space `#01020b` plus a dark structural color such as Shadow `#22374d` can use ordered pixel dithering to imply intermediate darkness without runtime alpha blending, gradients, or non-canonical colors. Large towers, pipes, trusses and facility masses are appropriate; small doors, readable platforms and other forms that imply reachable gameplay space should be avoided.
+`far_industrial_silhouette_a.png` — **2160×1080 px** at native **16 PPU**.
 
-`PixelSnappedParallax2D` established the required native-pixel motion principle: consume the already pixel-snapped World Camera movement and snap the backdrop's own final position to the same `1/16 u` source-pixel grid. The initial Salvage Intake prototype uses `0.94` horizontal and `0.96` vertical camera follow, but the production horizontal backdrop will become screen-locked on Y and wrap seamlessly on X. Do not implement parallax with fractional unsnapped transforms; that would reintroduce subpixel shimmer into the native-pixel presentation.
+The earlier `1296×410` version is historical prototype context only. It proved the pixel-snapped camera-relative motion but its bounded composition read as a floating sprite.
+
+The production horizontal layer is intentionally closer to a two-color silhouette than to ordinary environment art. Deep Space `#01020b` plus a dark structural color such as Shadow `#22374d` can use ordered pixel dithering to imply intermediate darkness without runtime alpha blending, gradients, or non-canonical colors. Large towers, pipes, trusses and facility masses are appropriate; small doors, readable platforms and other forms that imply reachable gameplay space should be avoided.
+
+`PixelSnappedParallax2D` now implements the production horizontal contract:
+
+- consume the already pixel-snapped World Camera position;
+- follow camera X at `0.94`;
+- follow camera Y exactly, producing **zero relative vertical parallax**;
+- render three adjacent copies separated by exactly `2160 px / 16 PPU = 135 u`;
+- re-center the repeating strip by exact 135 u tile intervals as the camera travels;
+- snap the final managed-root Transform to the same `1/16 u` source-pixel grid.
+
+The source must therefore be horizontally seamless. Whole-tile wrapping must never reveal a seam, pop or isolated sprite edge. Do not implement this layer with fractional unsnapped transforms, runtime scaling or filtered UV scrolling.
 
 The component resolves the active `MainCamera` dynamically rather than serializing a scene-camera reference. This is deliberate: Salvage Intake preserves art dressing while its normal rebuild regenerates the managed player/camera rig.
 
-Current scene-specific prototype application tool:
+Scene-specific application tool:
 
 **Tools -> Rustline -> Apply Salvage Intake Far Parallax**
+
+The setup also enforces a texture-import ceiling of at least 4096 so the 2160 px-wide production source cannot be silently reduced by the importer.
 
 ## Structural Tilemap
 
