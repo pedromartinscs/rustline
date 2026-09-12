@@ -148,7 +148,9 @@ The accepted floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the
 
 The wall-edge family currently dresses the **west outer boundary only**. The former mirrored east outer-wall skin was retired when that boundary became the service-shaft entrance. Shaft-specific skins may be authored later, but the generic old east wall must never visually seal the approved route.
 
-The first far-parallax asset is `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`, authored at **1296×410 px** and native **16 PPU**. It intentionally uses a sparse, extremely dark industrial silhouette language rather than the lighter blue/steel vocabulary of ordinary background machinery. In Salvage Intake it renders at sorting order `-30`, follows the World Camera at `0.94x / 0.96y`, and snaps its final transform to `1/16 u` through `PixelSnappedParallax2D`.
+The production horizontal far-parallax asset is `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`, authored at **2160×1080 px** and native **16 PPU**. It intentionally uses a sparse, extremely dark industrial silhouette language rather than the lighter blue/steel vocabulary of ordinary background machinery. In Salvage Intake it renders at sorting order `-30`, uses three adjacent seamless copies at exact **135 u** intervals, follows World Camera X at `0.94`, follows camera Y exactly, wraps by whole tile widths, and snaps its final managed-root transform to `1/16 u` through `PixelSnappedParallax2D`.
+
+The horizontal backdrop is the nearer of the two planned deepest planes. The future `1080×2160` Vertical Depth Backdrop will sit behind it and own the long-range altitude/depth color progression described in [`PARALLAX_BACKDROPS.md`](PARALLAX_BACKDROPS.md).
 
 `gantry_overhead_rail.png` remains valid production art, but its 870×160 px source canvas is effectively room-wide at native scale. Do not force it into Salvage Intake; modularize or deliberately design a later crane span before using it.
 
@@ -161,7 +163,9 @@ Salvage Intake reuses the accepted player prefab and presentation architecture p
 - `Sprite-Unlit-Default` for current environment rendering;
 - native-pixel logical rendering;
 - integer presentation scaling;
-- far parallax motion quantized to the same `1/16 u` source-pixel grid;
+- horizontal far-parallax motion quantized to the same `1/16 u` source-pixel grid;
+- no relative Y movement on the horizontal far-parallax plane;
+- horizontal wrap distances are exact whole source-tile widths;
 - palette-constrained penumbra;
 - no identity/decorative `Light2D` objects in the current pass;
 - existing 60 FPS runtime policy unchanged.
@@ -199,7 +203,9 @@ When rebuilding or extending Salvage Intake, verify:
 - the right-wall top leads naturally into the upper continuation deck;
 - the old full-height east boundary wall skin never returns;
 - far parallax remains visually quieter than normal background machinery and never reads as reachable gameplay space;
-- far parallax moves subtly with the camera without shimmer, subpixel crawl, or abrupt re-anchoring;
+- the horizontal far backdrop never exposes a left/right edge or visible seam while traversing laterally;
+- vertical camera movement keeps the horizontal far backdrop fixed in the frame rather than making it float;
+- horizontal parallax remains subtle and free of shimmer, subpixel crawl or visible wrap pops;
 - the route remains readable under native-pixel presentation and penumbra;
 - no new collision seam, phantom Land, or Release-only floor regression appears;
 - player and Longwatch presentation remain unchanged.
