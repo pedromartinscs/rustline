@@ -41,28 +41,21 @@ Gameplay surfaces do not need to be bright. They need to read faster than non-in
 
 ## Far industrial parallax
 
+The canonical dual-backdrop architecture is specified in [`PARALLAX_BACKDROPS.md`](PARALLAX_BACKDROPS.md). That document is authoritative for backdrop dimensions, axis-specific motion, horizontal wrapping, vertical altitude mapping and ordered-dither art direction.
+
 The first reusable far-background family lives under:
 
 `Assets/Art/Environment/Parallax/FarIndustrial/`
 
-The first accepted source is:
-
-`far_industrial_silhouette_a.png` — **1296×410 px** at native **16 PPU**.
+The current `far_industrial_silhouette_a.png` **1296×410 px** source proved the pixel-snapped motion technically, but its bounded transparent composition reads as a floating sprite and is now considered a prototype. The same asset identity is being re-authored as the production **2160×1080 px** horizontally seamless backdrop described in `PARALLAX_BACKDROPS.md`.
 
 The far layer is intentionally closer to a two-color silhouette than to ordinary environment art. Deep Space `#01020b` plus a dark structural color such as Shadow `#22374d` can use ordered pixel dithering to imply intermediate darkness without runtime alpha blending, gradients, or non-canonical colors. Large towers, pipes, trusses and facility masses are appropriate; small doors, readable platforms and other forms that imply reachable gameplay space should be avoided.
 
-Runtime motion uses `PixelSnappedParallax2D`. The layer follows most, but not all, of the already pixel-snapped World Camera movement, then snaps its own final position to the same `1/16 u` source-pixel grid. The first Salvage Intake tuning is:
-
-- horizontal camera follow: `0.94`;
-- vertical camera follow: `0.96`;
-- final parallax snap: `16 PPU` / `1/16 u`;
-- sorting order: `-30`, behind the reserved background Tilemap (`-20`) and normal background machinery.
-
-This means camera motion creates only a subtle relative drift instead of making the distant installation slide aggressively. Do not implement far parallax with fractional unsnapped transforms; that would reintroduce subpixel shimmer into the native-pixel presentation.
+`PixelSnappedParallax2D` established the required native-pixel motion principle: consume the already pixel-snapped World Camera movement and snap the backdrop's own final position to the same `1/16 u` source-pixel grid. The initial Salvage Intake prototype uses `0.94` horizontal and `0.96` vertical camera follow, but the production horizontal backdrop will become screen-locked on Y and wrap seamlessly on X. Do not implement parallax with fractional unsnapped transforms; that would reintroduce subpixel shimmer into the native-pixel presentation.
 
 The component resolves the active `MainCamera` dynamically rather than serializing a scene-camera reference. This is deliberate: Salvage Intake preserves art dressing while its normal rebuild regenerates the managed player/camera rig.
 
-Scene-specific application tool:
+Current scene-specific prototype application tool:
 
 **Tools -> Rustline -> Apply Salvage Intake Far Parallax**
 
