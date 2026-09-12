@@ -77,6 +77,8 @@ Runtime motion is driven by `PixelSnappedVerticalDepthBackdrop2D`.
 
 - The layer is always horizontally framed to the camera. It has **no relative horizontal parallax**.
 - Its X position follows the already pixel-snapped World Camera exactly.
+- The final rendered camera position owns framing, including presentation feedback such as recoil.
+- Altitude mapping uses `PixelCameraFollow2D.ContinuousFollowPosition.y` when available, so presentation-only recoil/impulse does **not** advance or retreat the geological altitude field. If that component is unavailable, the rendered camera Y is the fallback sample.
 - Camera altitude, not momentary raw player jump height, drives the vertical reveal.
 - The asset never repeats vertically.
 - At the phase bottom, the camera sees the lowest available portion of the source.
@@ -91,13 +93,13 @@ At the current maximum logical viewport height of 1072 px, the 2160-pixel source
 
 Conceptually:
 
-`altitudeT = clamp01((cameraAltitude - phaseBottom) / effectivePhaseHeight)`
+`altitudeT = clamp01((baseCameraAltitude - phaseBottom) / effectivePhaseHeight)`
 
 `verticalOffset = lerp(+revealTravel / 2, -revealTravel / 2, altitudeT)`
 
-The backdrop center is then placed at:
+The backdrop center is then placed relative to the final rendered camera at:
 
-`(cameraX, cameraY + verticalOffset)`
+`(renderedCameraX, renderedCameraY + verticalOffset)`
 
 and snapped to the normal source-pixel grid.
 
