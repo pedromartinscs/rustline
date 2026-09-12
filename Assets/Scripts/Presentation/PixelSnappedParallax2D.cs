@@ -3,54 +3,69 @@ using UnityEngine;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// Camera-relative parallax that preserves Rustline's native-pixel presentation contract.
-    /// The rendered camera is already snapped by PixelCameraFollow2D; this component runs later,
-    /// follows only a configured fraction of that camera delta, then snaps its own transform to the
-    /// same source-pixel grid so relative motion remains integer-pixel stable.
+    /// Horizontal, pixel-snapped backdrop parallax for seamless repeating source art.
+    /// The World Camera is already snapped by PixelCameraFollow2D; this component runs later,
+    /// follows a configured fraction of camera X, follows camera Y exactly, recenters itself by
+    /// whole tile widths when necessary, then snaps its final transform to the same source-pixel grid.
     /// </summary>
     [DefaultExecutionOrder(250)]
     [DisallowMultipleComponent]
     public sealed class PixelSnappedParallax2D : MonoBehaviour
     {
         [SerializeField, Range(0f, 1f)] private float horizontalFollow = 0.94f;
-        [SerializeField, Range(0f, 1f)] private float verticalFollow = 0.96f;
+        [SerializeField, Min(1)] private int tileWidthSourcePixels = 2160;
+        [SerializeField] private int horizontalPhaseSourcePixels;
+        [SerializeField] private int verticalScreenOffsetSourcePixels;
         [SerializeField, Min(1)] private int pixelsPerUnit = 16;
 
         private Transform _cameraTransform;
-        private Vector3 _cameraOrigin;
-        private Vector3 _layerOrigin;
-        private bool _anchorsCaptured;
+        private float _layerZ;
 
         public float HorizontalFollow => horizontalFollow;
-        public float VerticalFollow => verticalFollow;
+        public int TileWidthSourcePixels => tileWidthSourcePixels;
+        public int HorizontalPhaseSourcePixels => horizontalPhaseSourcePixels;
+        public int VerticalScreenOffsetSourcePixels => verticalScreenOffsetSourcePixels;
         public int PixelsPerUnit => pixelsPerUnit;
+        public float TileWidthWorldUnits => tileWidthSourcePixels / (float)pixelsPerUnit;
 
         private void OnEnable()
         {
             _cameraTransform = null;
-            _anchorsCaptured = false;
-            TryCaptureAnchors();
+            _layerZ = transform.position.z;
+            TryResolveCamera();
         }
 
         private void LateUpdate()
         {
-            if (!TryCaptureAnchors())
+            if (!TryResolveCamera())
             {
                 return;
             }
 
             Vector3 cameraPosition = _cameraTransform.position;
-            Vector3 cameraDelta = cameraPosition - _cameraOrigin;
-            Vector3 desiredPosition = new Vector3(
-                _layerOrigin.x + cameraDelta.x * horizontalFollow,
-                _layerOrigin.y + cameraDelta.y * verticalFollow,
-                _layerOrigin.z);
-
             float scale = pixelsPerUnit;
+            float tileWidth = TileWidthWorldUnits;
+            float phaseOffset = horizontalPhaseSourcePixels / scale;
+            float verticalOffset = verticalScreenOffsetSourcePixels / scale;
+
+            // Absolute world-phase parallax keeps the pattern deterministic regardless of where the
+            // component was enabled. The managed root is then wrapped around the camera by exact
+            // tile-width multiples. Because the source is horizontally seamless, that wrap is
+            // visually identical while preventing the finite three-segment strip from drifting away.
+            float rawParallaxX = cameraPosition.x * horizontalFollow + phaseOffset;
+            float relativeX = rawParallaxX - cameraPosition.x;
+            float wrappedRelativeX = WrapCentered(relativeX, tileWidth);
+            float desiredX = cameraPosition.x + wrappedRelativeX;
+
+            // Horizontal far parallax is deliberately screen-locked vertically. Camera climbs do
+            // not make this plane float up/down inside the viewport; the future Vertical Depth
+            // Backdrop owns long-range altitude communication instead.
+            float desiredY = cameraPosition.y + verticalOffset;
+
             Vector3 snappedPosition = new Vector3(
-                Mathf.Round(desiredPosition.x * scale) / scale,
-                Mathf.Round(desiredPosition.y * scale) / scale,
-                _layerOrigin.z);
+                Mathf.Round(desiredX * scale) / scale,
+                Mathf.Round(desiredY * scale) / scale,
+                _layerZ);
 
             if (!transform.position.Equals(snappedPosition))
             {
@@ -58,18 +73,24 @@ namespace Rustline.Presentation
             }
         }
 
-        public void Configure(float horizontalFollowFactor, float verticalFollowFactor, int sourcePixelsPerUnit)
+        public void ConfigureHorizontalLoop(
+            float horizontalFollowFactor,
+            int sourceTileWidthPixels,
+            int sourcePixelsPerUnit,
+            int horizontalPhasePixels = 0,
+            int verticalScreenOffsetPixels = 0)
         {
             horizontalFollow = Mathf.Clamp01(horizontalFollowFactor);
-            verticalFollow = Mathf.Clamp01(verticalFollowFactor);
+            tileWidthSourcePixels = Mathf.Max(1, sourceTileWidthPixels);
             pixelsPerUnit = Mathf.Max(1, sourcePixelsPerUnit);
+            horizontalPhaseSourcePixels = horizontalPhasePixels;
+            verticalScreenOffsetSourcePixels = verticalScreenOffsetPixels;
             _cameraTransform = null;
-            _anchorsCaptured = false;
         }
 
-        private bool TryCaptureAnchors()
+        private bool TryResolveCamera()
         {
-            if (_anchorsCaptured && _cameraTransform != null)
+            if (_cameraTransform != null)
             {
                 return true;
             }
@@ -81,10 +102,18 @@ namespace Rustline.Presentation
             }
 
             _cameraTransform = mainCamera.transform;
-            _cameraOrigin = _cameraTransform.position;
-            _layerOrigin = transform.position;
-            _anchorsCaptured = true;
             return true;
+        }
+
+        private static float WrapCentered(float value, float period)
+        {
+            if (period <= 0f)
+            {
+                return value;
+            }
+
+            float halfPeriod = period * 0.5f;
+            return value - Mathf.Floor((value + halfPeriod) / period) * period;
         }
     }
 }
