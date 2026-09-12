@@ -23,18 +23,20 @@ namespace Rustline.Editor
             "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
 
         private const int SourceWidth = 1080;
-        private const int SourceHeight = 2160;
+        private const int SourceHeight = 4320;
         private const int PixelsPerUnit = 16;
-        private const int MinimumImporterSize = 4096;
+        // 4320 source pixels exceed Unity's 4096 texture cap, so the production importer must use
+        // the next supported ceiling. Otherwise Unity would silently downscale the pixel-art source.
+        private const int MinimumImporterSize = 8192;
         private const int MinimumPhaseHeightPixels = 4320;
         private const int SortingOrder = -40;
 
         // Current Salvage Intake test span: the canonical lower floor surface is y=0 and the highest
-        // local walkable structural surface is the overhead deck top at y=19. The 4320-pixel minimum
-        // virtual phase height dominates this small room, so only a small fraction of the backdrop is
-        // intentionally revealed while climbing the current route.
+        // local walkable structural surface is the handler-overhead support top at y=20. The 4320-pixel
+        // minimum virtual phase height still dominates this small room, so only a small fraction of
+        // the backdrop is intentionally revealed while climbing the current route.
         private const float PhaseBottomWorldY = 0f;
-        private const float PhaseTopWorldY = 19f;
+        private const float PhaseTopWorldY = 20f;
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Vertical Depth Backdrop")]
         public static void ApplyFromMenu()
@@ -42,7 +44,7 @@ namespace Rustline.Editor
             ApplyAndValidate();
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Vertical Depth Backdrop applied: screen-locked X, altitude-mapped Y, 4320 px minimum phase span, and 1/16-unit final snapping.",
+                "Vertical Depth Backdrop applied: 1080x4320 source, screen-locked X, altitude-mapped Y, 4320 px minimum phase span, and 1/16-unit final snapping.",
                 "OK");
         }
 
@@ -222,10 +224,10 @@ namespace Rustline.Editor
                 importer.filterMode == FilterMode.Point && !importer.mipmapEnabled &&
                 importer.textureCompression == TextureImporterCompression.Uncompressed &&
                 importer.maxTextureSize >= MinimumImporterSize,
-                "Vertical Depth import settings must remain 16 PPU / Point / no mipmaps / uncompressed / >=4096 max texture size.");
+                "Vertical Depth import settings must remain 16 PPU / Point / no mipmaps / uncompressed / >=8192 max texture size.");
             importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
             Require(sourceWidth == SourceWidth && sourceHeight == SourceHeight,
-                "Vertical Depth source dimensions no longer match the accepted 1080x2160 source.");
+                "Vertical Depth source dimensions no longer match the accepted 1080x4320 source.");
         }
 
         private static GameObject FindGameObject(Scene scene, string name)
