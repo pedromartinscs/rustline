@@ -15,7 +15,7 @@ namespace Rustline.Presentation
     {
         [SerializeField] private float phaseBottomWorldY;
         [SerializeField] private float phaseTopWorldY = 19f;
-        [SerializeField, Min(1)] private int sourceHeightPixels = 2160;
+        [SerializeField, Min(1)] private int sourceHeightPixels = 4320;
         [SerializeField, Min(1)] private int minimumPhaseHeightPixels = 4320;
         [SerializeField, Min(1)] private int pixelsPerUnit = 16;
 
