@@ -65,12 +65,16 @@ namespace Rustline.Editor
 
         private static readonly ProductionStep[] DressingSteps =
         {
-            // Geometry migration runs immediately after the canonical graybox rebuild. Keeping it
-            // here lets the production command own the accepted raised crane/handler support without
-            // exposing another authoring menu entry while we finish visual evaluation of the joint.
+            // Geometry migrations run immediately after the canonical graybox rebuild. Keeping them
+            // here lets the production command own accepted route refinements without exposing more
+            // authoring menu entries while the first production area is still being composed.
             new ProductionStep(
                 "Connecting handler overhead support to service shaft",
                 typeof(RustlineSalvageIntakeHandlerOverheadSetup),
+                "ApplyAndValidate"),
+            new ProductionStep(
+                "Raising shaft exit and anchoring west entry deck",
+                typeof(RustlineSalvageIntakeRouteRefinementSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
                 "Applying macro environment dressing",
@@ -130,12 +134,12 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, handler support finalized, production dressing refreshed, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, route refinements applied, production dressing refreshed, " +
                     "parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt, the accepted handler/shaft structural connection was applied, " +
+                    "Salvage Intake was rebuilt, accepted structural/route refinements were applied, " +
                     "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
                     "OK");
             }
