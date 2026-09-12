@@ -107,7 +107,11 @@ namespace Rustline.Editor
                 int completedSteps = 0;
 
                 ShowProgress("Rebuilding canonical Salvage Intake", completedSteps++, totalSteps);
-                InvokeNonPublicStatic(typeof(RustlineSalvageIntakeSetup), "BuildAndValidate");
+                // The frozen M1A validator inside the Salvage builder still expects its historical
+                // MovementLab/ArtShowcase-first build order. Present that view only for the duration
+                // of foundation validation, then automatically restore the production release order.
+                RustlineBuildSceneOrder.RunWithFoundationValidationOrder(
+                    () => InvokeNonPublicStatic(typeof(RustlineSalvageIntakeSetup), "BuildAndValidate"));
 
                 ShowProgress("Applying industrial-surface variation", completedSteps++, totalSteps);
                 ApplyIndustrialSurfaceVariation();
