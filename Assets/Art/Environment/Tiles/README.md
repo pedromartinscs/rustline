@@ -34,6 +34,8 @@ Unity imports the complete atlas at 16 PPU with Point filtering, no mipmaps or c
 
 The generated `IndustrialSurfaceRuleTile` uses only the four cardinal neighbors. A present direction requires `This`; an absent direction requires `NotThis`; diagonal cells are ignored. Rebuild or validate it through the Rustline tools in Unity's **Tools** menu.
 
+Canonical slot `15` (`N+E+S+W`, fully connected interior) is the one deliberate transform exception. Because it has no exposed structural edge, the same authored 16×16 sprite may be rotated deterministically in `0° / 90° / 180° / 270°` increments per cell to break visible fill repetition. Slots `00–14` remain fixed-orientation rules. Configure/validate this contract through **Tools → Rustline → Apply/Validate Industrial Surface Interior Variation**. The save guard reapplies the slot-15 rule after deterministic M0 Rule Tile rebuilds.
+
 ## Editing workflow
 
 Generated environment images may be used as Rustline-owned source/reference material, but final structural tiles are intentionally cleaned and reconstructed at 16×16 where required. Do not assume a generated image is geometrically tileable merely because it visually resembles pixel art.
