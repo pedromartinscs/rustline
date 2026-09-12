@@ -18,9 +18,13 @@ Macro art-dressing setup:
 
 `Assets/Editor/RustlineSalvageIntakeArtSetup.cs`
 
-Far-parallax setup:
+Horizontal far-parallax setup:
 
 `Assets/Editor/RustlineSalvageIntakeParallaxSetup.cs`
+
+Vertical depth-backdrop setup:
+
+`Assets/Editor/RustlineSalvageIntakeVerticalDepthSetup.cs`
 
 Primary Unity menus:
 
@@ -29,6 +33,7 @@ Primary Unity menus:
 - **Tools → Rustline → Apply Salvage Intake Floor Dressing**
 - **Tools → Rustline → Apply Salvage Intake Wall Dressing**
 - **Tools → Rustline → Apply Salvage Intake Far Parallax**
+- **Tools → Rustline → Apply Salvage Intake Vertical Depth Backdrop**
 
 The layout builder first runs the existing M1 validation, then recreates the production-area collision and player rig without modifying `MovementLab`.
 
@@ -42,7 +47,7 @@ These roots are preserved across graybox rebuilds and are used for hand-authored
 - `Art Dressing - Preserve`
 - `Gameplay Content - Preserve`
 
-The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. The far-parallax tool owns only `Art Dressing - Preserve/Far Parallax v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside either managed child.
+The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. The horizontal far-parallax tool owns only `Art Dressing - Preserve/Far Parallax v0 - Managed`. The vertical-depth tool owns only `Art Dressing - Preserve/Vertical Depth Backdrop v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside those managed children.
 
 ## Current spatial contract
 
@@ -111,8 +116,9 @@ Canonical 28 is a gameplay-readability tool, not only an art restriction.
 1. **Player / combat information** gets the strongest local readability.
 2. **Gameplay structure** — floors, walls, catwalks, ledges and other usable surfaces — sits one restrained value/contrast step above background dressing.
 3. **Background machinery / dressing** favors darker palette families and lower local contrast.
-4. **Far parallax** is quieter still: large distant silhouettes with minimal internal information.
-5. **Foreground dressing** may be stronger locally when useful for depth, but must not obscure gameplay-critical information for sustained periods.
+4. **Horizontal far parallax** is quieter still: large distant silhouettes with minimal internal information.
+5. **Vertical Depth Backdrop** is the deepest and most atmospheric plane, carrying long-range altitude color rather than readable architecture.
+6. **Foreground dressing** may be stronger locally when useful for depth, but must not obscure gameplay-critical information for sustained periods.
 
 This does not mean walkable surfaces should become bright or saturated. Rustline remains dark industrial pixel art; the requirement is relative separation inside the Canonical 28.
 
@@ -139,7 +145,8 @@ Accepted macro/architecture families include:
 - modular catwalk family;
 - floor-edge family;
 - wall-edge family;
-- far-industrial parallax silhouette family;
+- far-industrial horizontal parallax family;
+- vertical-depth backdrop family;
 - accepted but currently unplaced full-size `gantry_overhead_rail.png`.
 
 The west entry uses the **105×100 px** small bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
@@ -148,9 +155,11 @@ The accepted floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the
 
 The wall-edge family currently dresses the **west outer boundary only**. The former mirrored east outer-wall skin was retired when that boundary became the service-shaft entrance. Shaft-specific skins may be authored later, but the generic old east wall must never visually seal the approved route.
 
-The production horizontal far-parallax asset is `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`, authored at **2160×1080 px** and native **16 PPU**. It intentionally uses a sparse, extremely dark industrial silhouette language rather than the lighter blue/steel vocabulary of ordinary background machinery. In Salvage Intake it renders at sorting order `-30`, uses three adjacent seamless copies at exact **135 u** intervals, follows World Camera X at `0.94`, follows camera Y exactly, wraps by whole tile widths, and snaps its final managed-root transform to `1/16 u` through `PixelSnappedParallax2D`.
+The production horizontal far-parallax asset is `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`, authored at **2160×1080 px** and native **16 PPU**. In Salvage Intake it renders at sorting order `-30`, uses three adjacent seamless copies at exact **135 u** intervals, follows World Camera X at `0.94`, follows camera Y exactly, wraps by whole tile widths, and snaps its final managed-root transform to `1/16 u` through `PixelSnappedParallax2D`.
 
-The horizontal backdrop is the nearer of the two planned deepest planes. The future `1080×2160` Vertical Depth Backdrop will sit behind it and own the long-range altitude/depth color progression described in [`PARALLAX_BACKDROPS.md`](PARALLAX_BACKDROPS.md).
+The production vertical-depth asset is `Assets/Art/Environment/Parallax/VerticalDepth/vertical_depth_backdrop_a.png`, authored at **1080×2160 px** and native **16 PPU**. It renders behind the horizontal layer at sorting order `-40` and is controlled by `PixelSnappedVerticalDepthBackdrop2D`. It follows World Camera X exactly, does not repeat vertically, and reveals higher source rows as camera altitude increases. The current Salvage Intake test span is `y=0..19`, but the mapping enforces the canonical minimum phase-height reference of **4320 source px / 270 u**, so the current room intentionally exposes only a small fraction of the complete altitude field. See [`PARALLAX_BACKDROPS.md`](PARALLAX_BACKDROPS.md) for the exact mapping and accepted dither bands.
+
+The native presentation viewport is dynamic and currently capped at 1072 logical pixels per axis. The 1080-pixel vertical-depth source width therefore provides a small native-pixel overscan margin instead of requiring runtime scaling.
 
 `gantry_overhead_rail.png` remains valid production art, but its 870×160 px source canvas is effectively room-wide at native scale. Do not force it into Salvage Intake; modularize or deliberately design a later crane span before using it.
 
@@ -166,11 +175,15 @@ Salvage Intake reuses the accepted player prefab and presentation architecture p
 - horizontal far-parallax motion quantized to the same `1/16 u` source-pixel grid;
 - no relative Y movement on the horizontal far-parallax plane;
 - horizontal wrap distances are exact whole source-tile widths;
+- vertical-depth X is screen-locked to the World Camera;
+- vertical-depth reveal is camera-altitude-driven and non-repeating;
+- vertical-depth phase mapping uses `max(actualPhaseHeight, 4320 source px)`;
+- vertical-depth final X/Y placement is quantized to `1/16 u`;
 - palette-constrained penumbra;
 - no identity/decorative `Light2D` objects in the current pass;
 - existing 60 FPS runtime policy unchanged.
 
-The builder preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, carry, Wall Brace, LedgeClimb, or animation behavior. Far parallax resolves the active `MainCamera` dynamically, so preserved art does not retain a stale reference when the managed player/camera rig is rebuilt.
+The builder preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, carry, Wall Brace, LedgeClimb, or animation behavior. Both backdrop controllers resolve the active `MainCamera` dynamically, so preserved art does not retain a stale reference when the managed player/camera rig is rebuilt.
 
 ## Hero-room composition
 
@@ -182,8 +195,9 @@ The intended hierarchy is:
 2. clearly readable gameplay structural edges;
 3. hero transfer machine;
 4. normal background machinery/structure;
-5. far industrial silhouettes;
-6. pipes, conduits, vents, warning markings, corrosion, and restrained foreground dressing.
+5. horizontal far industrial silhouettes;
+6. vertical altitude/depth field;
+7. pipes, conduits, vents, warning markings, corrosion, and restrained foreground dressing where appropriate.
 
 Do not solve the room with many overlapping lights, full-screen effects, or giant transparent illustrations. Prefer composition, modular pieces, bounded sprites/overlays, and the existing penumbra presentation.
 
@@ -206,6 +220,10 @@ When rebuilding or extending Salvage Intake, verify:
 - the horizontal far backdrop never exposes a left/right edge or visible seam while traversing laterally;
 - vertical camera movement keeps the horizontal far backdrop fixed in the frame rather than making it float;
 - horizontal parallax remains subtle and free of shimmer, subpixel crawl or visible wrap pops;
+- the Vertical Depth Backdrop stays horizontally fixed in the frame while traversing laterally;
+- climbing the shaft reveals the Vertical Depth Backdrop gradually rather than making it track raw player jumps;
+- the Vertical Depth Backdrop never exposes its top/bottom source edge during the accepted altitude mapping;
+- the vertical layer remains visually behind the horizontal far silhouettes at sorting `-40` versus `-30`;
 - the route remains readable under native-pixel presentation and penumbra;
 - no new collision seam, phantom Land, or Release-only floor regression appears;
 - player and Longwatch presentation remain unchanged.
