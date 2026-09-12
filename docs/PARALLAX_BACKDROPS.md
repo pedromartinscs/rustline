@@ -15,24 +15,40 @@ This document records the canonical artistic and technical direction for Rustlin
 - Final backdrop positions are snapped to the same `1/16 u` source-pixel grid as the rest of Rustline's native-pixel presentation.
 - Backdrops must not contain shapes whose readability strongly implies reachable gameplay structure unless that implication is intentional.
 
-The initial `1296x410` far-industrial panorama was a successful technical prototype for pixel-snapped parallax, but its bounded transparent canvas made the sprite read as a floating object. It is therefore not the final backdrop composition contract.
+The initial `1296x410` far-industrial panorama was a successful technical prototype for pixel-snapped parallax, but its bounded transparent canvas made the sprite read as a floating object. It is retained only as historical prototype context; it is no longer the production composition contract.
 
 ## Horizontal Far Parallax
 
-The first production horizontal layer uses the existing asset identity:
+The first production horizontal layer uses:
 
 `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`
 
-The production source is being re-authored as **2160x1080 px**.
+The accepted production source is **2160x1080 px** at native **16 PPU**, giving an exact horizontal tile width of **135 world units**.
 
 ### Motion
 
 - The layer is always vertically framed to the camera. It has **no relative vertical parallax**.
-- Its Y position follows the camera exactly, then remains pixel-snapped.
+- Its Y position follows the already pixel-snapped World Camera exactly, then receives the normal final `1/16 u` snap.
 - Relative parallax occurs only on X.
-- Horizontal motion remains deliberately subtle; the first tuning target stays near the current `0.94` camera-follow factor unless playtesting motivates a change.
+- The current horizontal camera-follow factor is `0.94`.
 - The asset repeats/wraps horizontally so the camera can never expose a left or right edge of the backdrop.
-- Runtime implementation may keep multiple adjacent instances and recycle instances that leave the visible range, but the visible result must read as one continuous world plane.
+- Runtime motion is driven by `PixelSnappedParallax2D`, which resolves `Camera.main` dynamically so a Salvage Intake graybox rebuild cannot leave a stale serialized camera reference.
+
+The managed Salvage Intake implementation uses **three adjacent instances** of the same seamless source:
+
+`[ left ][ center ][ right ]`
+
+Each segment is separated by exactly `2160 px / 16 PPU = 135 u`. The controller keeps the three-segment strip near the camera. When the relative X displacement crosses half a tile width, the complete managed root is re-centered by one exact `135 u` tile interval. Because the source is seamless and the wrap distance is an exact source-pixel multiple, the re-centering must be visually indistinguishable from continuous scrolling.
+
+The runtime order is important:
+
+1. `PixelCameraFollow2D` finishes the World Camera's native-pixel position.
+2. `PixelSnappedParallax2D` consumes that camera position.
+3. horizontal parallax and whole-tile wrapping are evaluated;
+4. the backdrop Y is locked to camera Y;
+5. the final backdrop transform is snapped to `1/16 u`.
+
+Do not replace this with fractional unsnapped Transform motion, UV scrolling, filtering, or runtime scaling.
 
 ### Art direction
 
@@ -40,7 +56,7 @@ The horizontal layer represents very distant industrial infrastructure: large ma
 
 The preferred language is sparse and low-value. Deep Space `#01020b` can dominate the image, with one or a small number of dark Canonical 28 structural colors. Ordered pixel dithering may imply intermediate values without alpha blending or non-canonical colors.
 
-The source should be authored so horizontal repetition does not reveal a seam or an obvious isolated rectangular sprite. Important forms may continue through the left/right boundaries when useful for seamless tiling.
+The source must be horizontally seamless. Important forms may continue through the left/right boundaries, and those boundaries must join without a visible discontinuity. The repeated image should read as one continuous industrial plane rather than three copies or an isolated rectangular sprite.
 
 ## Vertical Depth Backdrop
 
