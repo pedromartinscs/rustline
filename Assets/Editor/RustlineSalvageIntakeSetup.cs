@@ -85,9 +85,10 @@ namespace Rustline.Editor
             new CellRect(32, 0, 2, 15),
             new CellRect(34, 14, 12, 1),
 
-            // Overhead service deck. It remains at y=18 as the structural mounting surface for the
-            // suspended handler and part of the hero-room envelope.
-            new CellRect(-8, 18, 16, 1),
+            // Handler overhead support. Raised one tile to y=19 and extended east through x=24,
+            // deliberately stopping one full cell before the service-shaft wall at x=26 so the
+            // eventual authored transition can be designed independently.
+            new CellRect(-8, 19, 33, 1),
         };
 
         private static readonly CellRect[] CollisionRects =
@@ -107,7 +108,7 @@ namespace Rustline.Editor
             new CellRect(19, 0, 4, 1),
             new CellRect(32, 0, 2, 15),
             new CellRect(34, 14, 12, 1),
-            new CellRect(-8, 18, 16, 1),
+            new CellRect(-8, 19, 33, 1),
         };
 
         // The initial tile-built background machinery placeholders have been retired now that the
