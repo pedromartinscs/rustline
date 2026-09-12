@@ -110,8 +110,16 @@ namespace Rustline.Editor
             Require(importer != null, "Missing TextureImporter for far parallax: " + SpritePath);
 
             bool changed = false;
-            changed |= SetIfDifferent(ref importer.textureType, TextureImporterType.Sprite);
-            changed |= SetIfDifferent(ref importer.spriteImportMode, SpriteImportMode.Single);
+            if (importer.textureType != TextureImporterType.Sprite)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                changed = true;
+            }
+            if (importer.spriteImportMode != SpriteImportMode.Single)
+            {
+                importer.spriteImportMode = SpriteImportMode.Single;
+                changed = true;
+            }
             if (!Mathf.Approximately(importer.spritePixelsPerUnit, PixelsPerUnit))
             {
                 importer.spritePixelsPerUnit = PixelsPerUnit;
@@ -197,16 +205,6 @@ namespace Rustline.Editor
             importer.GetSourceTextureWidthAndHeight(out int sourceWidth, out int sourceHeight);
             Require(sourceWidth == SourceWidth && sourceHeight == SourceHeight,
                 "Far parallax source dimensions no longer match the accepted 1296x410 source.");
-        }
-
-        private static bool SetIfDifferent<T>(ref T current, T desired) where T : struct, Enum
-        {
-            if (current.Equals(desired))
-            {
-                return false;
-            }
-            current = desired;
-            return true;
         }
 
         private static GameObject FindGameObject(Scene scene, string name)
