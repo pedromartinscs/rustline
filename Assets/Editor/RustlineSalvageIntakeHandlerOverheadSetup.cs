@@ -22,12 +22,28 @@ namespace Rustline.Editor
         private const string CollisionTilePath =
             "Assets/Art/Environment/Tiles/Generated/MovementCollisionTile.asset";
 
-        private const int OldLeft = -8;
-        private const int OldBottom = 18;
-        private const int OldWidth = 16;
-        private const int NewLeft = -8;
-        private const int NewBottom = 19;
-        private const int NewWidth = 33;
+        // Historical first graybox support.
+        private const int LegacyLeft = -8;
+        private const int LegacyBottom = 18;
+        private const int LegacyWidth = 16;
+
+        // Previous production support: y=19, x=-8..24.
+        private const int PreviousLeft = -8;
+        private const int PreviousBottom = 19;
+        private const int PreviousWidth = 33;
+
+        // Current production support. Raising the main span to y=20 gives the crane/handler more
+        // vertical breathing room. Extending through x=27 reaches exactly across the left service-
+        // shaft wall mass without entering the playable shaft interior at x=28..31.
+        private const int CurrentLeft = -8;
+        private const int CurrentBottom = 20;
+        private const int CurrentWidth = 36; // x=-8..27 inclusive.
+
+        // A two-cell structural key grows one tile above the accepted shaft wall (x=26..27,
+        // y=4..18), joining its y=19 top extension directly into the raised overhead span.
+        private const int ShaftJointLeft = 26;
+        private const int ShaftJointBottom = 19;
+        private const int ShaftJointWidth = 2;
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Handler Overhead Support")]
         public static void ApplyFromMenu()
@@ -35,7 +51,7 @@ namespace Rustline.Editor
             ApplyAndValidate();
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Handler overhead support raised to y=19 and extended east through x=24.",
+                "Handler overhead support raised to y=20, extended through x=27, and keyed into the left service-shaft wall.",
                 "OK");
         }
 
@@ -68,13 +84,21 @@ namespace Rustline.Editor
             Require(structure != null && collision != null,
                 "SalvageIntake structural Tilemaps are missing.");
 
-            ClearHorizontalStrip(structure, OldLeft, OldBottom, OldWidth);
-            ClearHorizontalStrip(collision, OldLeft, OldBottom, OldWidth);
-            ClearHorizontalStrip(structure, NewLeft, NewBottom, NewWidth);
-            ClearHorizontalStrip(collision, NewLeft, NewBottom, NewWidth);
+            // Clear every historical support span that this migration has owned. The shaft wall
+            // itself ends at y=18, so clearing the y=19 joint cells cannot erase canonical wall data.
+            ClearHorizontalStrip(structure, LegacyLeft, LegacyBottom, LegacyWidth);
+            ClearHorizontalStrip(collision, LegacyLeft, LegacyBottom, LegacyWidth);
+            ClearHorizontalStrip(structure, PreviousLeft, PreviousBottom, PreviousWidth);
+            ClearHorizontalStrip(collision, PreviousLeft, PreviousBottom, PreviousWidth);
+            ClearHorizontalStrip(structure, CurrentLeft, CurrentBottom, CurrentWidth);
+            ClearHorizontalStrip(collision, CurrentLeft, CurrentBottom, CurrentWidth);
+            ClearHorizontalStrip(structure, ShaftJointLeft, ShaftJointBottom, ShaftJointWidth);
+            ClearHorizontalStrip(collision, ShaftJointLeft, ShaftJointBottom, ShaftJointWidth);
 
-            SetHorizontalStrip(structure, NewLeft, NewBottom, NewWidth, ruleTile);
-            SetHorizontalStrip(collision, NewLeft, NewBottom, NewWidth, collisionTile);
+            SetHorizontalStrip(structure, CurrentLeft, CurrentBottom, CurrentWidth, ruleTile);
+            SetHorizontalStrip(collision, CurrentLeft, CurrentBottom, CurrentWidth, collisionTile);
+            SetHorizontalStrip(structure, ShaftJointLeft, ShaftJointBottom, ShaftJointWidth, ruleTile);
+            SetHorizontalStrip(collision, ShaftJointLeft, ShaftJointBottom, ShaftJointWidth, collisionTile);
 
             structure.RefreshAllTiles();
             collision.RefreshAllTiles();
@@ -110,24 +134,48 @@ namespace Rustline.Editor
             Require(ruleTile != null && collisionTile != null && structure != null && collision != null,
                 "Handler-overhead validation dependencies are incomplete.");
 
-            for (int x = OldLeft; x < OldLeft + OldWidth; x++)
+            for (int x = LegacyLeft; x < LegacyLeft + LegacyWidth; x++)
             {
-                Require(!structure.HasTile(new Vector3Int(x, OldBottom, 0)) &&
-                    !collision.HasTile(new Vector3Int(x, OldBottom, 0)),
-                    "Old handler-overhead support remains at x=" + x + ", y=" + OldBottom + ".");
+                Require(!structure.HasTile(new Vector3Int(x, LegacyBottom, 0)) &&
+                    !collision.HasTile(new Vector3Int(x, LegacyBottom, 0)),
+                    "Legacy handler-overhead support remains at x=" + x + ", y=" + LegacyBottom + ".");
             }
 
-            for (int x = NewLeft; x < NewLeft + NewWidth; x++)
+            for (int x = PreviousLeft; x < PreviousLeft + PreviousWidth; x++)
             {
-                Vector3Int cell = new Vector3Int(x, NewBottom, 0);
+                Require(!structure.HasTile(new Vector3Int(x, PreviousBottom, 0)) &&
+                    !collision.HasTile(new Vector3Int(x, PreviousBottom, 0)),
+                    "Previous handler-overhead support remains at x=" + x + ", y=" + PreviousBottom + ".");
+            }
+
+            for (int x = CurrentLeft; x < CurrentLeft + CurrentWidth; x++)
+            {
+                Vector3Int cell = new Vector3Int(x, CurrentBottom, 0);
                 Require(structure.GetTile(cell) == ruleTile && collision.GetTile(cell) == collisionTile,
                     "Handler-overhead support is incomplete at " + cell + ".");
             }
 
-            // Keep one full cell of visual/physical separation before the shaft wall starts at x=26.
-            Vector3Int reservedGap = new Vector3Int(25, NewBottom, 0);
-            Require(!structure.HasTile(reservedGap) && !collision.HasTile(reservedGap),
-                "Handler-overhead support must stop at x=24 and leave x=25 open for the future transition.");
+            for (int x = ShaftJointLeft; x < ShaftJointLeft + ShaftJointWidth; x++)
+            {
+                Vector3Int joint = new Vector3Int(x, ShaftJointBottom, 0);
+                Vector3Int wallBelow = new Vector3Int(x, ShaftJointBottom - 1, 0);
+                Require(structure.GetTile(joint) == ruleTile && collision.GetTile(joint) == collisionTile,
+                    "Handler/shaft structural joint is incomplete at " + joint + ".");
+                Require(collision.HasTile(wallBelow),
+                    "Left shaft wall no longer reaches the handler/shaft joint at " + wallBelow + ".");
+            }
+
+            // The new connection must never cross the accepted x=28 inner face of the left wall.
+            // Keep both the joint row and raised support row empty throughout the playable 64 px shaft.
+            for (int x = 28; x <= 31; x++)
+            {
+                Vector3Int jointRowCell = new Vector3Int(x, ShaftJointBottom, 0);
+                Vector3Int supportRowCell = new Vector3Int(x, CurrentBottom, 0);
+                Require(!structure.HasTile(jointRowCell) && !collision.HasTile(jointRowCell),
+                    "Handler/shaft joint intrudes into the playable shaft at " + jointRowCell + ".");
+                Require(!structure.HasTile(supportRowCell) && !collision.HasTile(supportRowCell),
+                    "Raised handler support intrudes into the playable shaft at " + supportRowCell + ".");
+            }
         }
 
         private static void ClearHorizontalStrip(Tilemap tilemap, int left, int y, int width)
