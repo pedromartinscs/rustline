@@ -82,7 +82,7 @@ At 16 PPU:
 
 The source height and the minimum phase-height are separate concepts. The new source happens to be 4320 px tall, but the minimum phase-height remains an intentional altitude-mapping rule rather than a texture-size-derived value.
 
-The current Salvage Intake span is `phaseBottom = 0 u` and `phaseTop = 20 u`. The 270 u minimum therefore dominates, so the room reveals only a small portion of the complete 1080x4320 altitude field. If the reveal feels too fast or too slow during human testing, tune the virtual phase span rather than scaling the sprite or changing its PPU.
+The current Salvage Intake span is `phaseBottom = 0 u` and `phaseTop = 21 u`, matching the top surface of the raised handler-overhead support. The 270 u minimum therefore dominates, so the room reveals only a small portion of the complete 1080x4320 altitude field. If the reveal feels too fast or too slow during human testing, tune the virtual phase span rather than scaling the sprite or changing its PPU.
 
 ## Procedural Canonical-28 composition
 
@@ -114,7 +114,7 @@ The normal authoring entry point is now a single command:
 
 **Tools -> Rustline -> Apply Production Setup**
 
-That command rebuilds the canonical Salvage Intake geometry and reapplies the current production dressing, including both parallax layers.
+That command rebuilds the base Salvage Intake geometry, applies the accepted route refinements, and reapplies the current production dressing, including both parallax layers.
 
 Managed roots:
 
