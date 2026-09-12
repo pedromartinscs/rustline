@@ -18,12 +18,17 @@ Macro art-dressing setup:
 
 `Assets/Editor/RustlineSalvageIntakeArtSetup.cs`
 
+Far-parallax setup:
+
+`Assets/Editor/RustlineSalvageIntakeParallaxSetup.cs`
+
 Primary Unity menus:
 
 - **Tools → Rustline → Rebuild Salvage Intake Graybox**
 - **Tools → Rustline → Apply Salvage Intake Macro Dressing**
 - **Tools → Rustline → Apply Salvage Intake Floor Dressing**
 - **Tools → Rustline → Apply Salvage Intake Wall Dressing**
+- **Tools → Rustline → Apply Salvage Intake Far Parallax**
 
 The layout builder first runs the existing M1 validation, then recreates the production-area collision and player rig without modifying `MovementLab`.
 
@@ -37,7 +42,7 @@ These roots are preserved across graybox rebuilds and are used for hand-authored
 - `Art Dressing - Preserve`
 - `Gameplay Content - Preserve`
 
-The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside that managed child.
+The macro-dressing tool owns only `Art Dressing - Preserve/Macro Environment Kit v0 - Managed`. The far-parallax tool owns only `Art Dressing - Preserve/Far Parallax v0 - Managed`. Do not place unrelated permanent hand-authored dressing inside either managed child.
 
 ## Current spatial contract
 
@@ -106,7 +111,8 @@ Canonical 28 is a gameplay-readability tool, not only an art restriction.
 1. **Player / combat information** gets the strongest local readability.
 2. **Gameplay structure** — floors, walls, catwalks, ledges and other usable surfaces — sits one restrained value/contrast step above background dressing.
 3. **Background machinery / dressing** favors darker palette families and lower local contrast.
-4. **Foreground dressing** may be stronger locally when useful for depth, but must not obscure gameplay-critical information for sustained periods.
+4. **Far parallax** is quieter still: large distant silhouettes with minimal internal information.
+5. **Foreground dressing** may be stronger locally when useful for depth, but must not obscure gameplay-critical information for sustained periods.
 
 This does not mean walkable surfaces should become bright or saturated. Rustline remains dark industrial pixel art; the requirement is relative separation inside the Canonical 28.
 
@@ -133,6 +139,7 @@ Accepted macro/architecture families include:
 - modular catwalk family;
 - floor-edge family;
 - wall-edge family;
+- far-industrial parallax silhouette family;
 - accepted but currently unplaced full-size `gantry_overhead_rail.png`.
 
 The west entry uses the **105×100 px** small bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
@@ -140,6 +147,8 @@ The west entry uses the **105×100 px** small bulkhead at native scale. The curr
 The accepted floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the common/default center module; `floor_edge_mid_b` carries stronger rust and should remain less frequent.
 
 The wall-edge family currently dresses the **west outer boundary only**. The former mirrored east outer-wall skin was retired when that boundary became the service-shaft entrance. Shaft-specific skins may be authored later, but the generic old east wall must never visually seal the approved route.
+
+The first far-parallax asset is `Assets/Art/Environment/Parallax/FarIndustrial/far_industrial_silhouette_a.png`, authored at **1296×410 px** and native **16 PPU**. It intentionally uses a sparse, extremely dark industrial silhouette language rather than the lighter blue/steel vocabulary of ordinary background machinery. In Salvage Intake it renders at sorting order `-30`, follows the World Camera at `0.94x / 0.96y`, and snaps its final transform to `1/16 u` through `PixelSnappedParallax2D`.
 
 `gantry_overhead_rail.png` remains valid production art, but its 870×160 px source canvas is effectively room-wide at native scale. Do not force it into Salvage Intake; modularize or deliberately design a later crane span before using it.
 
@@ -152,11 +161,12 @@ Salvage Intake reuses the accepted player prefab and presentation architecture p
 - `Sprite-Unlit-Default` for current environment rendering;
 - native-pixel logical rendering;
 - integer presentation scaling;
+- far parallax motion quantized to the same `1/16 u` source-pixel grid;
 - palette-constrained penumbra;
 - no identity/decorative `Light2D` objects in the current pass;
 - existing 60 FPS runtime policy unchanged.
 
-The builder preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, carry, Wall Brace, LedgeClimb, or animation behavior.
+The builder preserves the accepted Longwatch camera-impulse integration without changing player, movement, weapon, muzzle, recoil, carry, Wall Brace, LedgeClimb, or animation behavior. Far parallax resolves the active `MainCamera` dynamically, so preserved art does not retain a stale reference when the managed player/camera rig is rebuilt.
 
 ## Hero-room composition
 
@@ -167,8 +177,9 @@ The intended hierarchy is:
 1. readable player and combat silhouettes;
 2. clearly readable gameplay structural edges;
 3. hero transfer machine;
-4. large background structure;
-5. pipes, conduits, vents, warning markings, corrosion, and restrained foreground dressing.
+4. normal background machinery/structure;
+5. far industrial silhouettes;
+6. pipes, conduits, vents, warning markings, corrosion, and restrained foreground dressing.
 
 Do not solve the room with many overlapping lights, full-screen effects, or giant transparent illustrations. Prefer composition, modular pieces, bounded sprites/overlays, and the existing penumbra presentation.
 
@@ -187,6 +198,8 @@ When rebuilding or extending Salvage Intake, verify:
 - alternating Wall Kicks remain comfortable rather than precision-gated;
 - the right-wall top leads naturally into the upper continuation deck;
 - the old full-height east boundary wall skin never returns;
+- far parallax remains visually quieter than normal background machinery and never reads as reachable gameplay space;
+- far parallax moves subtly with the camera without shimmer, subpixel crawl, or abrupt re-anchoring;
 - the route remains readable under native-pixel presentation and penumbra;
 - no new collision seam, phantom Land, or Release-only floor regression appears;
 - player and Longwatch presentation remain unchanged.
