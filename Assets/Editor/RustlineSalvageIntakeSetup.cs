@@ -49,18 +49,18 @@ namespace Rustline.Editor
         private const string PlayerSpawnName = "Player Spawn";
         private const string ExitStagingName = "Exit Staging";
 
-        // Graybox v2.6 deliberately separates visual structure from gameplay collision where a
-        // production structural skin exists. The catwalk is the first such case: its authored
-        // sprites are the visible surface while a clean hidden 12x1 rect remains authoritative for
-        // traversal. The former east support wall is gone from both visual and collision geometry.
+        // Canonical production-layout contract. Production structural skins may replace visual cells,
+        // but hidden collision remains simple and authoritative. The east side now permanently opens
+        // into the approved 4 u / 64 px service shaft and upper continuation deck.
         private static readonly CellRect[] VisualStructureRects =
         {
-            // Continuous safety floor and room boundary bulkheads. The side walls rise to y=19 so
-            // the taller overhead service deck reads as part of the room envelope rather than a
-            // beam floating above shorter boundary walls.
-            new CellRect(-28, -4, 56, 4),
+            // Safety floor now extends beneath the approved service shaft through x=33.
+            new CellRect(-28, -4, 62, 4),
+
+            // West room boundary remains full-height. The former east boundary is now only the upper
+            // left wall of the service shaft, leaving a 4 u-high lower entrance at y=0..4.
             new CellRect(-28, 0, 2, 19),
-            new CellRect(26, 0, 2, 19),
+            new CellRect(26, 4, 2, 15),
 
             // Left entry deck: intentionally simple and readable.
             new CellRect(-24, 0, 8, 1),
@@ -76,20 +76,25 @@ namespace Rustline.Editor
             // the hero machinery extends mainly as non-colliding background art.
             new CellRect(-2, 0, 4, 2),
 
-            // Right-side staging / future exit deck.
+            // East-side staging before the service-shaft entrance.
             new CellRect(19, 0, 4, 1),
 
-            // Overhead service deck. Raising it to y=18 adds three whole tiles of vertical room
-            // above the gantry tops while keeping a real structural/collision mounting surface for
-            // the suspended handler rather than reverting to background-only decoration.
+            // Approved vertical service shaft. Four open cells at x=28..31 match the comfortable
+            // MovementLab wall-kick spacing. The right wall tops out at y=15 and becomes the ledge
+            // onto the upper continuation deck toward the next production section.
+            new CellRect(32, 0, 2, 15),
+            new CellRect(34, 14, 12, 1),
+
+            // Overhead service deck. It remains at y=18 as the structural mounting surface for the
+            // suspended handler and part of the hero-room envelope.
             new CellRect(-8, 18, 16, 1),
         };
 
         private static readonly CellRect[] CollisionRects =
         {
-            new CellRect(-28, -4, 56, 4),
+            new CellRect(-28, -4, 62, 4),
             new CellRect(-28, 0, 2, 19),
-            new CellRect(26, 0, 2, 19),
+            new CellRect(26, 4, 2, 15),
             new CellRect(-24, 0, 8, 1),
             new CellRect(-12, 0, 4, 1),
             new CellRect(-8, 0, 4, 2),
@@ -100,6 +105,8 @@ namespace Rustline.Editor
             new CellRect(4, 3, 12, 1),
 
             new CellRect(19, 0, 4, 1),
+            new CellRect(32, 0, 2, 15),
+            new CellRect(34, 14, 12, 1),
             new CellRect(-8, 18, 16, 1),
         };
 
@@ -112,7 +119,7 @@ namespace Rustline.Editor
         // at an almost-touching epsilon. The deck surface is y=1; spawning at y=1.75 gives the
         // accepted player root 12 source pixels of clearance, then normal gravity settles it.
         private static readonly Vector3 PlayerSpawnPosition = new Vector3(-20f, 1.75f, 0f);
-        private static readonly Vector3 ExitStagingPosition = new Vector3(24f, 0.08f, 0f);
+        private static readonly Vector3 ExitStagingPosition = new Vector3(42f, 15.08f, 0f);
 
         private readonly struct CellRect
         {
@@ -404,6 +411,25 @@ namespace Rustline.Editor
             {
                 Require(background.GetTile(cell) == ruleTile,
                     "SalvageIntake background composition is missing its structural tile at " + cell + ".");
+            }
+
+            // Canonical service-shaft traversal envelope: the lower entrance is four units high and
+            // the shaft interior is exactly four open cells wide through the climb to the exit ledge.
+            for (int x = 26; x <= 27; x++)
+            {
+                for (int y = 0; y < 4; y++)
+                {
+                    Require(!collision.HasTile(new Vector3Int(x, y, 0)),
+                        "SalvageIntake service-shaft lower entrance must remain open for 4 full units.");
+                }
+            }
+            for (int x = 28; x <= 31; x++)
+            {
+                for (int y = 0; y < 15; y++)
+                {
+                    Require(!collision.HasTile(new Vector3Int(x, y, 0)),
+                        "SalvageIntake service-shaft interior must remain exactly four open cells wide.");
+                }
             }
 
             TilemapRenderer backgroundRenderer = background.GetComponent<TilemapRenderer>();
