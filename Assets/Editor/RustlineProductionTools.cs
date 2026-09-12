@@ -65,6 +65,13 @@ namespace Rustline.Editor
 
         private static readonly ProductionStep[] DressingSteps =
         {
+            // Geometry migration runs immediately after the canonical graybox rebuild. Keeping it
+            // here lets the production command own the accepted raised crane/handler support without
+            // exposing another authoring menu entry while we finish visual evaluation of the joint.
+            new ProductionStep(
+                "Connecting handler overhead support to service shaft",
+                typeof(RustlineSalvageIntakeHandlerOverheadSetup),
+                "ApplyAndValidate"),
             new ProductionStep(
                 "Applying macro environment dressing",
                 typeof(RustlineSalvageIntakeArtSetup),
@@ -119,13 +126,13 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, production dressing refreshed, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, handler support finalized, production dressing refreshed, " +
                     "parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt from the canonical geometry, all current production " +
-                    "dressing/parallax passes were reapplied, and the release scene order was validated.",
+                    "Salvage Intake was rebuilt, the accepted handler/shaft structural connection was applied, " +
+                    "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
                     "OK");
             }
             catch (Exception exception)
