@@ -9,13 +9,10 @@ using UnityEngine.Tilemaps;
 namespace Rustline.Editor
 {
     /// <summary>
-    /// Applies the first production wall-edge skin to the left/right boundary walls in SalvageIntake.
+    /// Applies the accepted production wall-edge skin to the permanent west boundary wall in
+    /// SalvageIntake. The east side is intentionally not dressed by this family anymore: it now
+    /// opens into the canonical service shaft and will receive shaft-specific structural art later.
     /// The sprites remain visual-only; hidden Tilemap collision stays authoritative.
-    ///
-    /// All three wall PNGs retain a 50x150 source canvas. The top asset has five transparent source
-    /// rows trimmed from its imported Sprite rect, leaving a 50x145 visible rect. Top visible art +
-    /// bottom visible art therefore fall nine source pixels short of the 19 u / 304 px wall height,
-    /// so a common mid sprite sits behind their join and fills only that uncovered seam.
     /// </summary>
     public static class RustlineSalvageIntakeWallDressingSetup
     {
@@ -41,13 +38,9 @@ namespace Rustline.Editor
         private const int BottomSpriteRectHeight = 150;
         private const int TopSpriteRectHeight = 145;
 
-        // Visual inner faces align exactly to the collision inner faces at x=-26 and x=26.
-        // The extra 18 source pixels of sprite width overhang outward, never into playable space.
-        private const float LeftWallX = -27.5625f;
-        private const float RightWallX = 27.5625f;
-
-        // Bottom spans y=0..9.375. Top's visible 145 px span y=9.9375..19. The mid is behind both
-        // and fills the 9 px seam at y=9.375..9.9375 without requiring scaling or cropping.
+        // The west visual inner face aligns exactly to collision x=-26. The extra source width
+        // overhangs outside the playable room rather than intruding into traversal space.
+        private const float WestWallX = -27.5625f;
         private const float BottomY = 4.6875f;
         private const float MidY = 9.65625f;
         private const float TopY = 14.46875f;
@@ -59,15 +52,13 @@ namespace Rustline.Editor
                 string assetPath,
                 int expectedSpriteRectHeight,
                 Vector2 position,
-                int sortingOrder,
-                bool flipX)
+                int sortingOrder)
             {
                 Name = name;
                 AssetPath = assetPath;
                 ExpectedSpriteRectHeight = expectedSpriteRectHeight;
                 Position = position;
                 SortingOrder = sortingOrder;
-                FlipX = flipX;
             }
 
             internal string Name { get; }
@@ -75,24 +66,16 @@ namespace Rustline.Editor
             internal int ExpectedSpriteRectHeight { get; }
             internal Vector2 Position { get; }
             internal int SortingOrder { get; }
-            internal bool FlipX { get; }
         }
 
         private static readonly WallPlacement[] Placements =
         {
             new WallPlacement("Wall Skin - West Mid Fill", WallMidPath, MidSpriteRectHeight,
-                new Vector2(LeftWallX, MidY), 1, false),
+                new Vector2(WestWallX, MidY), 1),
             new WallPlacement("Wall Skin - West Bottom", WallBottomPath, BottomSpriteRectHeight,
-                new Vector2(LeftWallX, BottomY), 2, false),
+                new Vector2(WestWallX, BottomY), 2),
             new WallPlacement("Wall Skin - West Top", WallTopPath, TopSpriteRectHeight,
-                new Vector2(LeftWallX, TopY), 2, false),
-
-            new WallPlacement("Wall Skin - East Mid Fill", WallMidPath, MidSpriteRectHeight,
-                new Vector2(RightWallX, MidY), 1, true),
-            new WallPlacement("Wall Skin - East Bottom", WallBottomPath, BottomSpriteRectHeight,
-                new Vector2(RightWallX, BottomY), 2, true),
-            new WallPlacement("Wall Skin - East Top", WallTopPath, TopSpriteRectHeight,
-                new Vector2(RightWallX, TopY), 2, true),
+                new Vector2(WestWallX, TopY), 2),
         };
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Wall Dressing")]
@@ -101,7 +84,7 @@ namespace Rustline.Editor
             ApplyAndValidate();
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Boundary-wall dressing was applied at native scale. Hidden gameplay collision was preserved.",
+                "West boundary-wall dressing was applied at native scale. The east service shaft remains open.",
                 "OK");
         }
 
@@ -114,7 +97,7 @@ namespace Rustline.Editor
             ValidateScene(scene);
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "Boundary-wall dressing validation passed.",
+                "West boundary-wall dressing validation passed.",
                 "OK");
         }
 
@@ -139,11 +122,10 @@ namespace Rustline.Editor
             Require(structure != null && collision != null,
                 "SalvageIntake visual/collision Tilemaps are missing. Rebuild the graybox first.");
 
-            // Replace only the generic visual boundary-wall cells. Collision remains untouched.
             foreach (Vector3Int cell in EnumerateReplacedVisualCells())
             {
                 Require(collision.HasTile(cell),
-                    "Expected hidden wall collision is missing at " + cell + ".");
+                    "Expected hidden west-wall collision is missing at " + cell + ".");
                 structure.SetTile(cell, null);
             }
             structure.RefreshAllTiles();
@@ -173,7 +155,6 @@ namespace Rustline.Editor
                 renderer.sprite = sprite;
                 renderer.sharedMaterial = unlitMaterial;
                 renderer.sortingOrder = placement.SortingOrder;
-                renderer.flipX = placement.FlipX;
             }
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -229,14 +210,14 @@ namespace Rustline.Editor
             foreach (Vector3Int cell in EnumerateReplacedVisualCells())
             {
                 Require(!structure.HasTile(cell),
-                    "Gray visual wall tile was restored beneath production wall skin at " + cell + ".");
+                    "Generic visual wall tile was restored beneath production west-wall skin at " + cell + ".");
                 Require(collision.HasTile(cell),
-                    "Production wall skin must not remove hidden collision at " + cell + ".");
+                    "Production west-wall skin must not remove hidden collision at " + cell + ".");
             }
 
             var renderers = new List<SpriteRenderer>(managedRoot.GetComponentsInChildren<SpriteRenderer>(true));
             Require(renderers.Count == Placements.Length,
-                "Structural Wall Skin v0 must contain exactly the configured SpriteRenderers.");
+                "Structural Wall Skin v0 must contain exactly the configured west-wall SpriteRenderers.");
             Require(managedRoot.GetComponentsInChildren<Collider2D>(true).Length == 0,
                 "Wall dressing must remain non-colliding.");
 
@@ -255,7 +236,7 @@ namespace Rustline.Editor
                     placement.AssetPath,
                     placement.ExpectedSpriteRectHeight);
                 Require(renderer != null && renderer.sprite == expected &&
-                    renderer.sortingOrder == placement.SortingOrder && renderer.flipX == placement.FlipX,
+                    renderer.sortingOrder == placement.SortingOrder && !renderer.flipX,
                     placement.Name + " renderer contract is invalid.");
             }
         }
@@ -266,8 +247,6 @@ namespace Rustline.Editor
             {
                 yield return new Vector3Int(-28, y, 0);
                 yield return new Vector3Int(-27, y, 0);
-                yield return new Vector3Int(26, y, 0);
-                yield return new Vector3Int(27, y, 0);
             }
         }
 
