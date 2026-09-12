@@ -1,6 +1,6 @@
 # Environment Art Pipeline
 
-This document captures the production rules established while turning `SalvageIntake` from graybox into the first Rustline demo room.
+This document captures the production rules established while turning `SalvageIntake` from graybox into the first Rustline demo route.
 
 ## Core separation
 
@@ -22,39 +22,45 @@ Production environment sprites follow the same scale contract as the player:
 - Transform scale `1,1,1`;
 - Point filtering;
 - mipmaps off;
-- no texture compression for the canonical source presentation;
+- no texture compression for canonical source presentation;
 - no fallback sprite physics shapes;
 - no fractional runtime scaling to fix apparent size.
 
-If an asset is the wrong apparent size, re-author/resample the source PNG deliberately rather than applying arbitrary Transform scale.
+If an asset is the wrong apparent size, re-author/resample the source PNG rather than applying arbitrary Transform scale.
 
 ## Gameplay readability by value
 
-Rustline uses the Canonical 28 not only as a palette restriction but as a gameplay-reading tool.
-
 - Background machinery should generally live lower in the value hierarchy: Deep Space / Deep Navy / Shadow / Steel Shadow / Dark Metal dominate.
 - Walkable/collidable structural skins should sit **one restrained readability step above background** through clearer edge contrast and slightly stronger Steel-class values.
-- The player and combat information retain visual priority over both.
+- Player and combat information retain visual priority over both.
 - Bright warning/status accents remain rare and deliberate.
 
-This is not a rule that gameplay surfaces must be bright. They must simply read faster than non-interactive background dressing.
+Gameplay surfaces do not need to be bright. They need to read faster than non-interactive background dressing.
+
+## Structural Tilemap
+
+`industrial_surface.png` remains the canonical structural atlas. Slots `00–15` keep their fixed N/E/S/W connectivity semantics.
+
+The fully-connected interior slot `15` is allowed deterministic RuleTile rotation in `0/90/180/270°` steps. This breaks obvious fill repetition without changing connectivity. Canonical slots `00–14` remain fixed-orientation rules.
+
+The Tilemap is structural grammar and fill, not the entire final art layer. Production skins may replace visible Tilemap cells at important edges while hidden collision stays authoritative.
 
 ## Current modular architecture families
 
 ### Catwalk
 
-Current reusable production pieces:
+Reusable production pieces:
 
 - `Assets/Art/Environment/Architecture/catwalk_left.png`
 - `Assets/Art/Environment/Architecture/catwalk_mid_short.png`
 - `Assets/Art/Environment/Architecture/catwalk_mid_long.png`
 - `Assets/Art/Environment/Architecture/catwalk_right.png`
 
-The Salvage Intake catwalk uses authored sprites for presentation and a separate hidden 12×1 collision strip. Gray visual tiles are intentionally absent beneath the production catwalk skin.
+The Salvage Intake catwalk uses authored sprites for presentation and a separate hidden 12×1 collision strip. Generic structural visual tiles are intentionally absent beneath the production catwalk skin.
 
 ### Floor edge
 
-Current floor-edge family:
+Current family:
 
 - `Assets/Art/Environment/Architecture/Floor/floor_edge_left.png`
 - `Assets/Art/Environment/Architecture/Floor/floor_edge_mid_a.png`
@@ -63,41 +69,44 @@ Current floor-edge family:
 
 All four source canvases are `48×32 px` (`3×2 u` at 16 PPU).
 
-`floor_edge_mid_a` is the **common/default** center module. It may be mirrored horizontally for additional repetition control.
+`floor_edge_mid_a` is the common/default center module and may be mirrored horizontally for repetition control. `floor_edge_mid_b` carries stronger rust and should appear less frequently.
 
-`floor_edge_mid_b` carries visibly stronger rust and should be used **less frequently** so corrosion remains localized variation rather than the baseline material language.
-
-The first Salvage Intake floor test uses this six-module sequence across the long lower bay:
-
-`left -> mid_a -> mid_a (flip X) -> mid_b -> mid_a -> right`
-
-That gives three A mids for one B mid. The six modules span exactly 18 u from `x=1` to `x=19`. Their top edge aligns with the lower-bay floor surface at `y=0`; the sprites remain visual-only while the original hidden floor collision is preserved.
-
-Scene-specific tool while this pass is still experimental:
+Scene-specific application tool while this family is still being integrated:
 
 **Tools -> Rustline -> Apply Salvage Intake Floor Dressing**
 
-The tool also removes only the gray visual Tilemap cells directly replaced by the 32 px-tall skin. If the Salvage Intake graybox is rebuilt, re-run the floor-dressing command afterward until this structural-skin knowledge is promoted into the general level-authoring pipeline.
+The tool removes only generic visual Tilemap cells directly replaced by the skin. Hidden collision is preserved.
 
 ### Wall edge
 
-Current wall-edge family:
+Current family:
 
 - `Assets/Art/Environment/Architecture/Wall/wall_edge_top.png`
 - `Assets/Art/Environment/Architecture/Wall/wall_edge_mid.png`
 - `Assets/Art/Environment/Architecture/Wall/wall_edge_bottom.png`
 
-All three PNG source canvases are `50×150 px`. The imported `wall_edge_top` Sprite rect is `50×145 px` because five transparent source rows are trimmed from the visible sprite; `wall_edge_mid` and `wall_edge_bottom` retain `50×150 px` Sprite rects.
+All source canvases are `50×150 px`. The imported `wall_edge_top` visible Sprite rect is `50×145 px`; `mid` and `bottom` remain `50×150 px`.
 
-The Salvage Intake boundary-wall test preserves native scale and aligns each wall skin's **inner visual face** to the authoritative collision inner face. Extra sprite width therefore overhangs outward beyond the playable room rather than intruding into traversal space.
+This family now dresses the **west outer boundary only** in Salvage Intake. The former mirrored east boundary skin was retired when the east side became the permanent service-shaft entrance. Do not use the old full-height east-wall composition there again.
 
-The 19 u boundary height is 304 source pixels. The visible `top + bottom` rects total 295 px, leaving a 9 px seam. Rather than scaling either source asset, one `wall_edge_mid` is placed behind the join as a backing/fill layer; `top` and `bottom` render in front. The east wall mirrors the same family horizontally.
-
-Scene-specific tool while this pass is still experimental:
+Scene-specific application tool:
 
 **Tools -> Rustline -> Apply Salvage Intake Wall Dressing**
 
-Like the floor pass, the tool removes only the generic gray visual Tilemap cells replaced by the production wall skin and explicitly preserves the hidden collision cells.
+The current tool replaces only the west generic wall cells and preserves the west hidden collision.
+
+### East service shaft
+
+The approved east service shaft is generated directly by `RustlineSalvageIntakeSetup` and is gameplay architecture, not decorative dressing.
+
+Its fixed traversal envelope is:
+
+- 4 u / 64 px lower entry height;
+- 4 u / 64 px open shaft width;
+- continuous left/right wall coverage suitable for Wall Brace;
+- right-wall top and upper deck at walkable `y=15`.
+
+The shaft currently uses `Industrial Surface - Visual` directly. Future shaft-specific wall/floor skins should be visual-only and must preserve the accepted hidden collision geometry unless traversal is deliberately re-tested.
 
 ## Production philosophy
 
