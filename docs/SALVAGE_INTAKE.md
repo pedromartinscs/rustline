@@ -117,7 +117,7 @@ Visual wear, holes, brackets, diagonals, rust, pipes and transparent negative sp
 
 ## Industrial structural tiles
 
-`Assets/Art/Environment/Tiles/industrial_surface.png` remains a **128×96 px / 48-slot** atlas at 16 PPU.
+`Assets/Art/Environment/Tiles/industrial_surface.png` is the accepted **128×96 px / 48-slot** atlas at 16 PPU.
 
 Slots `00..15` are the canonical cardinal-connectivity family:
 
@@ -125,16 +125,32 @@ Slots `00..15` are the canonical cardinal-connectivity family:
 
 The letters mean **solid neighbors**: a listed side has adjacent solid structure and therefore does not draw an external border. `NONE` is an isolated box with four exposed borders; `ALL` is fully surrounded interior mass.
 
-The current core interior material intentionally uses only Deep Navy `#0d172c` and Shadow `#22374d`; rust, bolts, holes, dents and seams are reserved for future rare detail/event tiles rather than being baked into every structural cell.
+The core interior material intentionally uses only Deep Navy `#0d172c` and Shadow `#22374d`. Rust, bolts, holes, dents and seams are authored as rare event tiles instead of being baked into every structural cell.
 
-Slots `16..31` currently provide deterministic visual variation for the high-frequency connectivity classes:
+Slots `16..31` provide deterministic normal-material variation for the high-frequency connectivity classes:
 
 - `ALL_B`, `ALL_C`, `ALL_D`, `ALL_E`;
 - `ESW_B/C` and `WNE_B/C` for long horizontal mass edges;
 - `NES_B/C` and `SWN_B/C` for long vertical mass edges;
 - `EW_B/C` and `NS_B/C` for thin horizontal/vertical structural runs.
 
-The RuleTile keeps the same 16 connectivity rules; eligible rules select among their canonical sprite plus the matching variants through deterministic Perlin output. No border-changing rotation is allowed on directional variants. Fully surrounded `ALL` may rotate in 90-degree steps because its connectivity is symmetric.
+Slots `32..39` are rare fully-surrounded `ALL` events:
+
+- two localized rust/corrosion treatments;
+- single bolt;
+- bolt pair;
+- opaque visual hole/recess;
+- dent;
+- horizontal seam;
+- vertical seam.
+
+Slots `40..47` are rare exposed-edge events for the four common mass-edge rules: one rust treatment and one bolt treatment each for `ESW`, `WNE`, `NES`, and `SWN`.
+
+The RuleTile keeps the same 16 connectivity rules. Normal variants are selected through deterministic Perlin output. Rare-event weighting is deliberately sparse: fully surrounded `ALL` uses **8 rare entries in a 128-entry deterministic sprite array (6.25%)**; each common exposed edge uses **2 rare entries in a 40-entry array (5%)**. Rare entries are distributed through the weighted arrays rather than grouped together, while all remaining entries cycle through the canonical and normal-variant sprites.
+
+No border-changing rotation is allowed on directional variants. Fully surrounded `ALL` may rotate in 90-degree steps because its connectivity is symmetric; this also safely varies its internal wear/mechanical events. `NS` and `EW` currently receive normal blue-material variants only and no rare semantic events.
+
+The frozen M0 validator still expects one canonical sprite per connectivity rule. `Apply Production Setup` therefore presents that canonical compatibility view only while foundation validation runs, then deterministically restores the complete normal + rare production mapping.
 
 ## Current production art
 
@@ -262,6 +278,7 @@ When rebuilding or extending Salvage Intake, verify:
 - the right support remains aligned to the far safety-floor edge rather than drifting back beside the left support;
 - no legacy tile-based west-entry support columns remain visible after the production dressing pass;
 - structural RuleTile variants preserve their canonical border/connectivity silhouettes;
+- rare rust/bolt/hole/dent/seam tiles remain sparse enough to read as authored events rather than a repeating texture;
 - catwalk visual skin and hidden collision remain aligned;
 - shaft lower entrance stays 4 u high;
 - shaft interior stays exactly 4 u / 64 px wide;
