@@ -30,8 +30,12 @@ namespace Rustline.Editor
         private const string FloorRightPath =
             "Assets/Art/Environment/Architecture/Floor/floor_edge_right.png";
 
-        private const int SourceWidth = 48;
-        private const int SourceHeight = 32;
+        private const int SourceTextureWidth = 48;
+        private const int SourceTextureHeight = 32;
+        private const int LeftSpriteWidth = 48;
+        private const int MidSpriteWidth = 48;
+        private const int RightSpriteWidth = 47;
+        private const int SpriteHeight = 32;
         private const int PixelsPerUnit = 16;
         private const int SortingOrder = 2;
 
@@ -40,11 +44,14 @@ namespace Rustline.Editor
         private const int ArmorBottomCell = -4;
         private const int ArmorTopExclusiveCell = -2;
 
-        // Exact 62 u safety-floor span: 3 u left cap + 56 u tiled middle + 3 u right cap.
-        private static readonly Vector2 LeftPosition = new Vector2(-26.5f, -3f);
-        private static readonly Vector2 MidPosition = new Vector2(3f, -3f);
-        private static readonly Vector2 MidSize = new Vector2(56f, 2f);
-        private static readonly Vector2 RightPosition = new Vector2(32.5f, -3f);
+        // All Floor sprites use a bottom-left pivot. The right cap is intentionally sliced to 47 px
+        // even though its source PNG is 48 px wide, so the tiled middle absorbs that one-pixel
+        // difference. The complete composition remains exactly 62 u / 992 px wide and 2 u / 32 px
+        // tall: x=-28..34, y=-4..-2, with no fractional-pixel placement or Transform scaling.
+        private static readonly Vector2 LeftPosition = new Vector2(-28f, -4f);
+        private static readonly Vector2 MidPosition = new Vector2(-25f, -4f);
+        private static readonly Vector2 MidSize = new Vector2(56.0625f, 2f);
+        private static readonly Vector2 RightPosition = new Vector2(31.0625f, -4f);
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Safety Floor Armor")]
         public static void ApplyFromMenu()
@@ -77,9 +84,9 @@ namespace Rustline.Editor
             Material material = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(material != null, "Sprite-Unlit-Default material is unavailable.");
 
-            Sprite leftSprite = RequireProductionSprite(FloorLeftPath);
-            Sprite midSprite = RequireProductionSprite(FloorMidPath);
-            Sprite rightSprite = RequireProductionSprite(FloorRightPath);
+            Sprite leftSprite = RequireProductionSprite(FloorLeftPath, LeftSpriteWidth);
+            Sprite midSprite = RequireProductionSprite(FloorMidPath, MidSpriteWidth);
+            Sprite rightSprite = RequireProductionSprite(FloorRightPath, RightSpriteWidth);
 
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             GameObject root = FindGameObject(scene, RootName);
@@ -165,15 +172,19 @@ namespace Rustline.Editor
             renderer.size = size;
         }
 
-        private static Sprite RequireProductionSprite(string assetPath)
+        private static Sprite RequireProductionSprite(string assetPath, int expectedSpriteWidth)
         {
             Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(assetPath);
             Require(sprite != null, "Missing production sprite: " + assetPath);
             Require(Mathf.Approximately(sprite.pixelsPerUnit, PixelsPerUnit),
                 assetPath + " must import at 16 PPU.");
-            Require(Mathf.RoundToInt(sprite.rect.width) == SourceWidth &&
-                Mathf.RoundToInt(sprite.rect.height) == SourceHeight,
-                assetPath + " imported Sprite rect changed unexpectedly.");
+            Require(Mathf.RoundToInt(sprite.rect.width) == expectedSpriteWidth &&
+                Mathf.RoundToInt(sprite.rect.height) == SpriteHeight,
+                assetPath + " imported Sprite rect changed unexpectedly. Expected " +
+                expectedSpriteWidth + "x" + SpriteHeight + ", got " +
+                Mathf.RoundToInt(sprite.rect.width) + "x" + Mathf.RoundToInt(sprite.rect.height) + ".");
+            Require(Mathf.Approximately(sprite.pivot.x, 0f) && Mathf.Approximately(sprite.pivot.y, 0f),
+                assetPath + " must keep its accepted bottom-left Sprite pivot.");
 
             TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
             Require(importer != null, "Missing TextureImporter for production sprite: " + assetPath);
@@ -183,8 +194,10 @@ namespace Rustline.Editor
                 assetPath + " must keep mipmaps disabled.");
 
             importer.GetSourceTextureWidthAndHeight(out int actualWidth, out int actualHeight);
-            Require(actualWidth == SourceWidth && actualHeight == SourceHeight,
-                assetPath + " source dimensions changed unexpectedly.");
+            Require(actualWidth == SourceTextureWidth && actualHeight == SourceTextureHeight,
+                assetPath + " source dimensions changed unexpectedly. Expected " +
+                SourceTextureWidth + "x" + SourceTextureHeight + ", got " +
+                actualWidth + "x" + actualHeight + ".");
             return sprite;
         }
 
@@ -218,15 +231,16 @@ namespace Rustline.Editor
             Require(managedRoot.childCount == 3,
                 "Safety-floor armor must contain exactly left, tiled-middle, and right renderers.");
 
-            ValidateSimplePiece(managedRoot, "Safety Floor Armor - Left", FloorLeftPath, LeftPosition);
-            ValidateTiledPiece(managedRoot, "Safety Floor Armor - Mid", FloorMidPath, MidPosition, MidSize);
-            ValidateSimplePiece(managedRoot, "Safety Floor Armor - Right", FloorRightPath, RightPosition);
+            ValidateSimplePiece(managedRoot, "Safety Floor Armor - Left", FloorLeftPath, LeftSpriteWidth, LeftPosition);
+            ValidateTiledPiece(managedRoot, "Safety Floor Armor - Mid", FloorMidPath, MidSpriteWidth, MidPosition, MidSize);
+            ValidateSimplePiece(managedRoot, "Safety Floor Armor - Right", FloorRightPath, RightSpriteWidth, RightPosition);
         }
 
         private static void ValidateSimplePiece(
             Transform root,
             string name,
             string spritePath,
+            int expectedSpriteWidth,
             Vector2 expectedPosition)
         {
             Transform child = root.Find(name);
@@ -239,7 +253,7 @@ namespace Rustline.Editor
 
             SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
             Require(renderer != null &&
-                renderer.sprite == RequireProductionSprite(spritePath) &&
+                renderer.sprite == RequireProductionSprite(spritePath, expectedSpriteWidth) &&
                 renderer.sortingOrder == SortingOrder &&
                 renderer.drawMode == SpriteDrawMode.Simple,
                 name + " renderer contract is invalid.");
@@ -249,6 +263,7 @@ namespace Rustline.Editor
             Transform root,
             string name,
             string spritePath,
+            int expectedSpriteWidth,
             Vector2 expectedPosition,
             Vector2 expectedSize)
         {
@@ -262,7 +277,7 @@ namespace Rustline.Editor
 
             SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
             Require(renderer != null &&
-                renderer.sprite == RequireProductionSprite(spritePath) &&
+                renderer.sprite == RequireProductionSprite(spritePath, expectedSpriteWidth) &&
                 renderer.sortingOrder == SortingOrder &&
                 renderer.drawMode == SpriteDrawMode.Tiled &&
                 renderer.size == expectedSize,
