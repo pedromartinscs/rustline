@@ -39,6 +39,24 @@ The managed scene root is:
 
 This pass is part of **Tools -> Rustline -> Apply Production Setup** and runs after the existing lower-bay floor dressing.
 
+## One-tile micro-gap traversal test
+
+Before runtime breaching is implemented, Salvage Intake carries a temporary deterministic stress test for the smallest possible structural opening.
+
+The base graybox naturally leaves a two-cell gap at `x=-4..-3` between the raised left approach and the central machinery plinth. `RustlineSalvageIntakeMicroGapTestSetup` fills only `x=-4`, leaving exactly one empty structural column at:
+
+- gap column: `x=-3`;
+- empty vertical cells: `y=0..1`;
+- width: **1 u / 16 px**;
+- depth from the raised surface to the preserved base floor: **2 u / 32 px**;
+- the protected floor collision at `(-3,-1)` remains present beneath the slot.
+
+Both `Industrial Surface - Visual` and `Ground Collision - Hidden` use the same one-cell opening, and the CompositeCollider2D is explicitly regenerated after the mutation. This makes the specimen representative of the collision topology future runtime breaching will create rather than a presentation-only mockup.
+
+This gap is diagnostic, not an accepted minimum traversal opening. Human testing should cover walking slowly across it, running across it, stopping directly over it, crouching over it, jumping onto it, and falling onto it from above. The result determines whether a separate micro-gap bridging rule is necessary before Longwatch breaching is enabled.
+
+The test is part of **Tools -> Rustline -> Apply Production Setup** while the destructible-environment behavior is being established. Once the one-cell safety policy is decided, the diagnostic geometry may be removed or repurposed.
+
 ## Future breaching constraints
 
 The first runtime implementation should remain deliberately small:
@@ -50,4 +68,4 @@ The first runtime implementation should remain deliberately small:
 5. authored production sprites remain untouched;
 6. no debris physics, structural-stability simulation, collapse propagation, or tile HP is required.
 
-A separate movement-safety rule is still required before enabling the feature: a one-cell / 16 px opening must not be able to trap the player. That problem is intentionally handled after the level envelope protection and before runtime breaching ships.
+A separate movement-safety rule is still required before enabling the feature: a one-cell / 16 px opening must not be able to trap the player. The Salvage Intake micro-gap specimen above is the current acceptance test for that requirement.
