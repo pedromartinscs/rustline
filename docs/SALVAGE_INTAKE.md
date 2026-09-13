@@ -23,16 +23,17 @@ The normal authoring entry point is intentionally a single command:
 `RustlineProductionTools` orchestrates the current production chain in order:
 
 1. rebuild base Salvage Intake geometry;
-2. enforce industrial-surface variation;
+2. enforce deterministic industrial-surface variation;
 3. connect and raise the handler-overhead support into the left shaft wall;
-4. apply route refinements: raise the shaft exit and add west-entry visual support columns;
-5. apply macro environment dressing;
-6. apply lower-bay floor dressing;
-7. apply west wall dressing;
-8. apply service-shaft wall dressing;
-9. apply horizontal far parallax;
-10. apply the vertical-depth backdrop;
-11. enforce and validate canonical release build-scene order.
+4. apply route refinements, including the raised shaft exit;
+5. replace the temporary west-entry RuleTile supports with architectural support pillars;
+6. apply macro environment dressing;
+7. apply lower-bay floor dressing;
+8. apply west wall dressing;
+9. apply service-shaft wall dressing;
+10. apply horizontal far parallax;
+11. apply the vertical-depth backdrop;
+12. enforce and validate canonical release build-scene order.
 
 The specialized setup classes remain callable internally and from command-line workflows. The collapsed menu is a UI cleanup, not a removal of deterministic tooling.
 
@@ -57,7 +58,7 @@ Gameplay geometry uses the normal **16×16 px / 1×1 unit** structural grid. The
 Current production route:
 
 - west production bulkhead and entry deck;
-- two visual-only background support columns beneath the starting area at `x=-23..-22` and `x=-19..-18`, descending through `y=-12..-5` so the opening platform does not read as suspended;
+- two visual-only architectural support pillars centered at `x=-22` and `x=-18`, each using the accepted 50 px-wide Wall art family at native scale; their top edges meet the safety-floor underside at `y=-4` and the repeated mid sections continue to approximately `y=-50.56`, well below the current visible area;
 - small service step and solid left approach into the hero room;
 - compact **4×2 tile** central collision plinth for the salvage machine;
 - **12×1 tile** transfer catwalk represented physically by hidden collision and visually by production catwalk sprites;
@@ -92,11 +93,11 @@ Because the exit height changed while the shaft width and movement tuning stayed
 
 Three structural Tilemaps remain authoritative for their respective roles:
 
-1. `Background Structure - Visual` — presentation-only distant/support structure; currently includes the two west-entry support columns;
+1. `Background Structure - Visual` — presentation-only tile structure where explicitly needed; the old west-entry tile columns are cleared by the architectural-pillar dressing pass;
 2. `Industrial Surface - Visual` — generic visible structure where production skins have not replaced it;
 3. `Ground Collision - Hidden` — authoritative gameplay collision.
 
-The west-entry columns exist only on `Background Structure - Visual`. They do **not** create collision or alter the safety-floor gameplay envelope.
+The west-entry support pillars are non-colliding `SpriteRenderer`s under `Art Dressing - Preserve/Entry Support Pillars v0 - Managed`. They do **not** create collision or alter the safety-floor gameplay envelope.
 
 Production structural skins are non-colliding `SpriteRenderer`s. The visual/collision rule remains explicit:
 
@@ -114,6 +115,27 @@ Visual wear, holes, brackets, diagonals, rust, pipes and transparent negative sp
 - `TilemapCompositeColliderInitializer2D`;
 - deterministic geometry generation and validation after route refinement.
 
+## Industrial structural tiles
+
+`Assets/Art/Environment/Tiles/industrial_surface.png` remains a **128×96 px / 48-slot** atlas at 16 PPU.
+
+Slots `00..15` are the canonical cardinal-connectivity family:
+
+`NONE, N, E, S, W, NE, ES, WS, NW, NS, EW, NES, ESW, SWN, WNE, ALL`.
+
+The letters mean **solid neighbors**: a listed side has adjacent solid structure and therefore does not draw an external border. `NONE` is an isolated box with four exposed borders; `ALL` is fully surrounded interior mass.
+
+The current core interior material intentionally uses only Deep Navy `#0d172c` and Shadow `#22374d`; rust, bolts, holes, dents and seams are reserved for future rare detail/event tiles rather than being baked into every structural cell.
+
+Slots `16..31` currently provide deterministic visual variation for the high-frequency connectivity classes:
+
+- `ALL_B`, `ALL_C`, `ALL_D`, `ALL_E`;
+- `ESW_B/C` and `WNE_B/C` for long horizontal mass edges;
+- `NES_B/C` and `SWN_B/C` for long vertical mass edges;
+- `EW_B/C` and `NS_B/C` for thin horizontal/vertical structural runs.
+
+The RuleTile keeps the same 16 connectivity rules; eligible rules select among their canonical sprite plus the matching variants through deterministic Perlin output. No border-changing rotation is allowed on directional variants. Fully surrounded `ALL` may rotate in 90-degree steps because its connectivity is symmetric.
+
 ## Current production art
 
 Accepted families currently include:
@@ -125,12 +147,15 @@ Accepted families currently include:
 - modular catwalk family;
 - floor-edge family;
 - west wall-edge family;
+- west-entry architectural support pillars built from `wall_edge_top` + repeated `wall_edge_mid` sections;
 - service-shaft wall A/B family;
 - horizontal far-industrial parallax;
 - vertical-depth backdrop;
 - accepted but currently unplaced full-size `gantry_overhead_rail.png`.
 
 The west entry uses the **105×100 px** bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
+
+The entry-support pillars reuse the existing Wall family rather than stretching sprites or adding collision. Each pillar uses one `wall_edge_top` section beneath the floor and four `wall_edge_mid` sections below it. The second pillar is mirrored horizontally for visual variation. No bottom cap is used because the structure is intended to continue below the visible space.
 
 The floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the common center module; `floor_edge_mid_b` carries stronger rust and remains less frequent.
 
@@ -223,7 +248,7 @@ Current hierarchy:
 
 The handler-overhead support now reaches the left shaft-wall mass and is connected through the `x=26..27, y=19` structural joint. A dedicated production-art skin for that joint remains optional; the gameplay opening at `x=28..31` must never be narrowed to make the connection prettier.
 
-The west starting platform now receives two deep background columns so the first screen reads as part of a larger industrial installation instead of a platform suspended in empty space.
+The west starting platform now receives two deep architectural pillars so the first screen reads as part of a larger industrial installation instead of a platform suspended in empty space.
 
 ## Immediate acceptance gate
 
@@ -233,7 +258,9 @@ When rebuilding or extending Salvage Intake, verify:
 - no unintended opening below the accepted authoring envelope invites entry;
 - player spawn remains clear before gravity settles it;
 - all managed production sprites remain collider-free;
-- west-entry support columns remain visual-only and visually continue below the initial camera frame;
+- west-entry support pillars remain visual-only, meet the floor underside cleanly, and continue below the initial camera frame;
+- no legacy tile-based west-entry support columns remain visible after the production dressing pass;
+- structural RuleTile variants preserve their canonical border/connectivity silhouettes;
 - catwalk visual skin and hidden collision remain aligned;
 - shaft lower entrance stays 4 u high;
 - shaft interior stays exactly 4 u / 64 px wide;
