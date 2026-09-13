@@ -89,6 +89,10 @@ namespace Rustline.Editor
                 typeof(RustlineSalvageIntakeFloorDressingSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
+                "Armoring lower safety-floor envelope",
+                typeof(RustlineSalvageIntakeSafetyFloorArmorSetup),
+                "ApplyAndValidate"),
+            new ProductionStep(
                 "Applying west wall dressing",
                 typeof(RustlineSalvageIntakeWallDressingSetup),
                 "ApplyAndValidate"),
@@ -140,12 +144,12 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements and architectural entry supports applied, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, architectural supports, and safety-floor armor applied, " +
                     "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt, deterministic industrial-surface variants, accepted structural/route refinements, and architectural entry supports were applied, " +
+                    "Salvage Intake was rebuilt, deterministic industrial-surface variants, accepted structural/route refinements, architectural supports, and the protected lower safety-floor envelope were applied, " +
                     "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
                     "OK");
             }
