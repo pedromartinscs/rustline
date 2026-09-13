@@ -77,7 +77,7 @@ namespace Rustline.Editor
                 typeof(RustlineSalvageIntakeRouteRefinementSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
-                "Applying one-tile micro-gap traversal test",
+                "Applying protected one-tile micro-aperture test",
                 typeof(RustlineSalvageIntakeMicroGapTestSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
@@ -107,6 +107,10 @@ namespace Rustline.Editor
             new ProductionStep(
                 "Applying service-shaft wall dressing",
                 typeof(RustlineSalvageIntakeServiceShaftDressingSetup),
+                "ApplyAndValidate"),
+            new ProductionStep(
+                "Configuring controlled structural breaching",
+                typeof(RustlineSalvageIntakeBreachableSurfaceSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
                 "Applying horizontal far parallax",
@@ -152,13 +156,13 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, one-tile micro-gap test, architectural supports, catwalk clearance, and safety-floor armor applied, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, protected micro-aperture, architectural supports, catwalk clearance, safety-floor armor, and controlled Longwatch breaching applied, " +
                     "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt, deterministic industrial-surface variants, accepted structural/route refinements, the one-tile micro-gap traversal test, architectural supports, raised catwalk clearance, and the protected lower safety-floor envelope were applied, " +
-                    "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
+                    "Salvage Intake was rebuilt with deterministic industrial-surface variants, accepted structural/route refinements, the protected one-tile micro-aperture test, architectural supports, raised catwalk clearance, the protected lower safety-floor envelope, and controlled Longwatch structural breaching. " +
+                    "All current production dressing/parallax passes were refreshed and the release scene order was validated.",
                     "OK");
             }
             catch (Exception exception)
