@@ -25,7 +25,7 @@ Visual absence alone never means "destroyed". `BreachableTilemap2D` keeps explic
 1. **Temporary bounded safety seal** — visual tile removed, collision temporarily retained because the destroyed run is a genuinely enclosed micro-aperture below the safe traversal threshold;
 2. **Open breach** — visual tile removed and collision removed.
 
-The important constraint is that retained collision is **not** a generic third state for every first hit. It is only legal when the destroyed run is physically bounded by solid collision at both ends of its relevant axis. A corner, exposed ledge, step, protrusion, platform edge, or any other run that opens directly to air cannot keep ghost collision after its visual disappears.
+Retained collision is only legal when the destroyed run is physically bounded by solid collision at both ends of its relevant axis. A corner, exposed ledge, step, protrusion, platform edge, or any other run that opens directly to air cannot keep ghost collision after its visual disappears.
 
 Every hit reconciles all still-pending breached cells, not only the newest one. Destroying a neighboring tile can therefore invalidate an earlier safety seal; if one of its supporting ends becomes breached or exposed, that old retained collision is removed immediately.
 
@@ -46,7 +46,7 @@ For a run that is still bounded by solid collision on both left and right ends:
 - 1 destroyed cell = **16 px visual hole, temporary collision retained**;
 - 2 contiguous destroyed cells = **32 px aperture, collision released for the run**.
 
-If either horizontal end is already open to air or becomes breached, the run is no longer a protected aperture and any retained collision is released immediately. This is what prevents shots on platform corners and one-tile steps from creating invisible stair blocks.
+If either horizontal end is already open to air or becomes breached, the run is no longer a protected aperture and any retained collision is released immediately. This prevents shots on platform corners and one-tile steps from creating invisible stair blocks.
 
 ### Vertical wall surfaces
 
@@ -84,28 +84,15 @@ The safety floor spans `x=-28..33` and `y=-4..-1` in structural cells. `Rustline
 - hidden collision is preserved in every protected cell;
 - the upper safety-floor rows remain structurally independent and are breachable wherever their generic visual RuleTiles are still present.
 
-The protected rows are covered by the existing 48x32 px Floor family at native 16 PPU:
+The protected rows are covered by the existing Floor family at native 16 PPU. The armor renderers contain no Collider2D; `Ground Collision - Hidden` remains authoritative. Because those protected cells start without `Industrial Surface - Visual`, the runtime breaching authority rejects them automatically.
 
-- `floor_edge_left.png`: left cap;
-- `floor_edge_mid_a.png`: tiled continuous middle;
-- `floor_edge_right.png`: right cap.
+## Retired micro-aperture fixture
 
-Together they cover exactly `x=-28..34` and `y=-4..-2` with no Transform scaling. The armor renderers contain no Collider2D; `Ground Collision - Hidden` remains authoritative. Because those protected cells start without `Industrial Surface - Visual`, the runtime breaching authority rejects them automatically.
+The temporary authored one-tile diagnostic fixture has been retired. Human testing already established that a real **16 px physical opening can trap the player**, and the runtime bounded-safety-seal logic now owns that requirement directly.
 
-## Protected one-tile diagnostic specimen
+`RustlineSalvageIntakeMicroGapTestSetup` is no longer part of the repository or **Apply Production Setup**. Salvage Intake therefore keeps its normal authored geometry, and protected 16 px apertures are created only by actual runtime Longwatch breaches when the surrounding topology qualifies for temporary protection.
 
-Human testing proved that a real **16 px physical opening can trap the player**. Salvage Intake therefore keeps the earlier diagnostic location but models the protected micro-aperture state deliberately.
-
-The base graybox naturally leaves a two-cell gap at `x=-4..-3` between the raised left approach and the central machinery plinth. `RustlineSalvageIntakeMicroGapTestSetup` fills the west half and leaves the `x=-3, y=0..1` column:
-
-- visually empty on `Industrial Surface - Visual`;
-- physically solid on `Ground Collision - Hidden`;
-- one cell / **16 px** wide;
-- explicitly outside `BreachableTilemap2D`'s runtime state because it is authored by the diagnostic setup rather than destroyed during play.
-
-This specimen verifies two invariants at once: the player can no longer fall into the invalid slot, and authored `visual absent + collision present` geometry is not mistaken for runtime-destroyed material.
-
-The test is temporary diagnostic geometry and may be retired after the runtime breaching behavior is human-approved.
+This avoids permanently authored `visual absent + collision present` test cells being mistaken for gameplay content or indestructible invisible blocks.
 
 ## Production setup contract
 
@@ -130,7 +117,7 @@ Before this feature is considered frozen, runtime testing in Salvage Intake must
 - destroying a neighbor of an existing protected aperture can invalidate that protection and removes stale retained collision immediately;
 - two visually absent runtime-breached cells cannot remain side-by-side as stale ghost collision after their enclosing topology has opened;
 - Floor/Wall/ServiceShaft/catwalk/armor architecture remains indestructible;
-- the authored protected diagnostic micro-aperture remains physically solid despite being visually empty;
+- rebuilding production setup does not introduce any pre-authored invisible micro-aperture collider;
 - RuleTile neighbors refresh cleanly around destroyed cells;
 - repeated breaching does not produce CompositeCollider2D jitter, stale collision, or Release-only divergence;
 - player movement, Wall Brace, Wall Kick, LedgeClimb, crouch, and Longwatch presentation remain unchanged.
