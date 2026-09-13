@@ -58,7 +58,7 @@ Gameplay geometry uses the normal **16×16 px / 1×1 unit** structural grid. The
 Current production route:
 
 - west production bulkhead and entry deck;
-- two visual-only architectural support pillars centered at `x=-22` and `x=-18`, each using the accepted 50 px-wide Wall art family at native scale; their top edges meet the safety-floor underside at `y=-4` and the repeated mid sections continue to approximately `y=-50.56`, well below the current visible area;
+- two visual-only architectural support pillars centered at `x=-22` and `x=31.4375`, each using the accepted 50 px-wide Wall art family at native scale; the left pillar remains under the west entry while the right pillar's outer edge aligns with the safety-floor end at `x=33`; their top edges meet the floor underside at `y=-4` and the repeated mid sections continue to approximately `y=-50.56`, well below the current visible area;
 - small service step and solid left approach into the hero room;
 - compact **4×2 tile** central collision plinth for the salvage machine;
 - **12×1 tile** transfer catwalk represented physically by hidden collision and visually by production catwalk sprites;
@@ -97,7 +97,7 @@ Three structural Tilemaps remain authoritative for their respective roles:
 2. `Industrial Surface - Visual` — generic visible structure where production skins have not replaced it;
 3. `Ground Collision - Hidden` — authoritative gameplay collision.
 
-The west-entry support pillars are non-colliding `SpriteRenderer`s under `Art Dressing - Preserve/Entry Support Pillars v0 - Managed`. They do **not** create collision or alter the safety-floor gameplay envelope.
+The distributed support pillars are non-colliding `SpriteRenderer`s under `Art Dressing - Preserve/Entry Support Pillars v0 - Managed`. They do **not** create collision or alter the safety-floor gameplay envelope.
 
 Production structural skins are non-colliding `SpriteRenderer`s. The visual/collision rule remains explicit:
 
@@ -147,7 +147,7 @@ Accepted families currently include:
 - modular catwalk family;
 - floor-edge family;
 - west wall-edge family;
-- west-entry architectural support pillars built from `wall_edge_top` + repeated `wall_edge_mid` sections;
+- distributed architectural support pillars built from `wall_edge_top` + repeated `wall_edge_mid` sections;
 - service-shaft wall A/B family;
 - horizontal far-industrial parallax;
 - vertical-depth backdrop;
@@ -155,7 +155,7 @@ Accepted families currently include:
 
 The west entry uses the **105×100 px** bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
 
-The entry-support pillars reuse the existing Wall family rather than stretching sprites or adding collision. Each pillar uses one `wall_edge_top` section beneath the floor and four `wall_edge_mid` sections below it. The second pillar is mirrored horizontally for visual variation. No bottom cap is used because the structure is intended to continue below the visible space.
+The two deep support pillars reuse the existing Wall family rather than stretching sprites or adding collision. Each pillar uses one `wall_edge_top` section beneath the floor and four `wall_edge_mid` sections below it. The left pillar stays centered at `x=-22`; the right pillar is distributed to the far end at `x=31.4375` and mirrored horizontally. No bottom cap is used because the structure is intended to continue below the visible space.
 
 The floor-edge family uses 48×32 px modules. `floor_edge_mid_a` is the common center module; `floor_edge_mid_b` carries stronger rust and remains less frequent.
 
@@ -248,7 +248,7 @@ Current hierarchy:
 
 The handler-overhead support now reaches the left shaft-wall mass and is connected through the `x=26..27, y=19` structural joint. A dedicated production-art skin for that joint remains optional; the gameplay opening at `x=28..31` must never be narrowed to make the connection prettier.
 
-The west starting platform now receives two deep architectural pillars so the first screen reads as part of a larger industrial installation instead of a platform suspended in empty space.
+The safety-floor mass now reads as a larger installation supported at two widely separated points: one under the west entry and one at the far-right edge, rather than as a local pair of columns.
 
 ## Immediate acceptance gate
 
@@ -258,7 +258,8 @@ When rebuilding or extending Salvage Intake, verify:
 - no unintended opening below the accepted authoring envelope invites entry;
 - player spawn remains clear before gravity settles it;
 - all managed production sprites remain collider-free;
-- west-entry support pillars remain visual-only, meet the floor underside cleanly, and continue below the initial camera frame;
+- the two deep support pillars remain visual-only, meet the floor underside cleanly, and continue below the initial camera frame;
+- the right support remains aligned to the far safety-floor edge rather than drifting back beside the left support;
 - no legacy tile-based west-entry support columns remain visible after the production dressing pass;
 - structural RuleTile variants preserve their canonical border/connectivity silhouettes;
 - catwalk visual skin and hidden collision remain aligned;
