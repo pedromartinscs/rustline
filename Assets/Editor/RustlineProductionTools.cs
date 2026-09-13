@@ -65,12 +65,16 @@ namespace Rustline.Editor
 
         private static readonly ProductionStep[] DressingSteps =
         {
-            // Geometry migration runs immediately after the canonical graybox rebuild. Keeping it
-            // here lets the production command own the accepted raised crane/handler support without
-            // exposing another authoring menu entry while we finish visual evaluation of the joint.
+            // Geometry migrations run immediately after the canonical graybox rebuild. Keeping them
+            // here lets the production command own accepted route refinements without exposing more
+            // authoring menu entries while the first production area is still being composed.
             new ProductionStep(
                 "Connecting handler overhead support to service shaft",
                 typeof(RustlineSalvageIntakeHandlerOverheadSetup),
+                "ApplyAndValidate"),
+            new ProductionStep(
+                "Raising shaft exit and anchoring west entry deck",
+                typeof(RustlineSalvageIntakeRouteRefinementSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
                 "Applying macro environment dressing",
@@ -107,11 +111,13 @@ namespace Rustline.Editor
                 int completedSteps = 0;
 
                 ShowProgress("Rebuilding canonical Salvage Intake", completedSteps++, totalSteps);
-                // The frozen M1A validator inside the Salvage builder still expects its historical
-                // MovementLab/ArtShowcase-first build order. Present that view only for the duration
-                // of foundation validation, then automatically restore the production release order.
-                RustlineBuildSceneOrder.RunWithFoundationValidationOrder(
-                    () => InvokeNonPublicStatic(typeof(RustlineSalvageIntakeSetup), "BuildAndValidate"));
+                // Two frozen foundation contracts predate the current production scene: M1A expects
+                // MovementLab/ArtShowcase at the head of Build Settings, and M0 expects exactly one
+                // canonical sprite per RuleTile connectivity rule. Present both compatibility views
+                // only while foundation validation runs, then restore production ordering/variation.
+                RustlineIndustrialSurfaceVariationSetup.RunWithFoundationCompatibility(
+                    () => RustlineBuildSceneOrder.RunWithFoundationValidationOrder(
+                        () => InvokeNonPublicStatic(typeof(RustlineSalvageIntakeSetup), "BuildAndValidate")));
 
                 ShowProgress("Applying industrial-surface variation", completedSteps++, totalSteps);
                 ApplyIndustrialSurfaceVariation();
@@ -130,12 +136,12 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, handler support finalized, production dressing refreshed, " +
-                    "parallax layers applied, and release build-scene order validated.");
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements applied, " +
+                    "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt, the accepted handler/shaft structural connection was applied, " +
+                    "Salvage Intake was rebuilt, deterministic industrial-surface variants and accepted structural/route refinements were applied, " +
                     "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
                     "OK");
             }
@@ -163,7 +169,7 @@ namespace Rustline.Editor
                     "IndustrialSurfaceRuleTile.asset is missing. The accepted M0 foundation must exist before production setup.");
             }
 
-            if (RustlineIndustrialSurfaceVariationSetup.EnsureInteriorVariation(ruleTile))
+            if (RustlineIndustrialSurfaceVariationSetup.EnsureSurfaceVariation(ruleTile))
             {
                 EditorUtility.SetDirty(ruleTile);
                 AssetDatabase.SaveAssets();
