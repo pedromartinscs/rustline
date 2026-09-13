@@ -44,14 +44,17 @@ namespace Rustline.Editor
         private const int ArmorBottomCell = -4;
         private const int ArmorTopExclusiveCell = -2;
 
-        // All Floor sprites use a bottom-left pivot. The right cap is intentionally sliced to 47 px
-        // even though its source PNG is 48 px wide, so the tiled middle absorbs that one-pixel
-        // difference. The complete composition remains exactly 62 u / 992 px wide and 2 u / 32 px
-        // tall: x=-28..34, y=-4..-2, with no fractional-pixel placement or Transform scaling.
-        private static readonly Vector2 LeftPosition = new Vector2(-28f, -4f);
-        private static readonly Vector2 MidPosition = new Vector2(-25f, -4f);
+        // Unity imports these Floor slices with center alignment. The right cap is intentionally
+        // 47 px wide even though its source PNG is 48 px, so the tiled middle absorbs that one-pixel
+        // difference. Positions below are the geometric centers of the authored spans. The odd-width
+        // right cap therefore lands on a half-source-pixel center so its left/right edges still sit
+        // on exact source-pixel boundaries. No Transform scaling is used.
+        //
+        // Complete envelope: 992 px / 62 u wide, 32 px / 2 u tall, x=-28..34 and y=-4..-2.
+        private static readonly Vector2 LeftPosition = new Vector2(-26.5f, -3f);
+        private static readonly Vector2 MidPosition = new Vector2(3.03125f, -3f);
         private static readonly Vector2 MidSize = new Vector2(56.0625f, 2f);
-        private static readonly Vector2 RightPosition = new Vector2(31.0625f, -4f);
+        private static readonly Vector2 RightPosition = new Vector2(32.53125f, -3f);
 
         [MenuItem("Tools/Rustline/Apply Salvage Intake Safety Floor Armor")]
         public static void ApplyFromMenu()
@@ -183,8 +186,14 @@ namespace Rustline.Editor
                 assetPath + " imported Sprite rect changed unexpectedly. Expected " +
                 expectedSpriteWidth + "x" + SpriteHeight + ", got " +
                 Mathf.RoundToInt(sprite.rect.width) + "x" + Mathf.RoundToInt(sprite.rect.height) + ".");
-            Require(Mathf.Approximately(sprite.pivot.x, 0f) && Mathf.Approximately(sprite.pivot.y, 0f),
-                assetPath + " must keep its accepted bottom-left Sprite pivot.");
+
+            // Sprite.pivot is reported in sprite-rect pixels, not normalized coordinates. These
+            // imported slices use alignment=Center, so their effective pivots are half their rect
+            // dimensions even though the serialized metadata also contains a legacy pivot field.
+            Vector2 expectedPivot = new Vector2(expectedSpriteWidth * 0.5f, SpriteHeight * 0.5f);
+            Require(Vector2.Distance(sprite.pivot, expectedPivot) < 0.001f,
+                assetPath + " must keep its accepted centered Sprite pivot. Expected " +
+                expectedPivot + ", got " + sprite.pivot + ".");
 
             TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
             Require(importer != null, "Missing TextureImporter for production sprite: " + assetPath);
