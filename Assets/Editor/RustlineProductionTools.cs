@@ -77,6 +77,10 @@ namespace Rustline.Editor
                 typeof(RustlineSalvageIntakeRouteRefinementSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
+                "Applying one-tile micro-gap traversal test",
+                typeof(RustlineSalvageIntakeMicroGapTestSetup),
+                "ApplyAndValidate"),
+            new ProductionStep(
                 "Replacing tile supports with architectural entry pillars",
                 typeof(RustlineSalvageIntakeEntrySupportDressingSetup),
                 "ApplyAndValidate"),
@@ -148,12 +152,12 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, architectural supports, catwalk clearance, and safety-floor armor applied, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, one-tile micro-gap test, architectural supports, catwalk clearance, and safety-floor armor applied, " +
                     "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt, deterministic industrial-surface variants, accepted structural/route refinements, architectural supports, raised catwalk clearance, and the protected lower safety-floor envelope were applied, " +
+                    "Salvage Intake was rebuilt, deterministic industrial-surface variants, accepted structural/route refinements, the one-tile micro-gap traversal test, architectural supports, raised catwalk clearance, and the protected lower safety-floor envelope were applied, " +
                     "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
                     "OK");
             }
