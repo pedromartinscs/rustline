@@ -85,7 +85,7 @@ namespace Rustline.Gameplay.Environment
             return false;
         }
 
-        public void ReceiveWeaponHit(in WeaponHitInfo2D hit)
+        public void ReceiveHit(in WeaponHitInfo2D hit)
         {
             if (!AllowsWeapon(hit.Weapon) || structuralVisualTilemap == null)
             {
