@@ -9,11 +9,12 @@ namespace Rustline.Gameplay.Environment
     /// <summary>
     /// Runtime authority for breaching the modular industrial structural Tilemap.
     ///
-    /// Visual destruction happens one 16 px cell at a time. Collision is deliberately retained
-    /// until the destroyed run is large enough to be physically traversable: two contiguous cells
-    /// for a horizontal floor/ceiling aperture and three contiguous cells for a vertical wall
-    /// aperture. Authored cells that start with hidden collision but no structural visual are never
-    /// considered breached unless this component created their runtime breach state itself.
+    /// A valid hit removes the impacted structural visual immediately. The matching hidden
+    /// collision normally disappears with it. Collision is retained only as a temporary movement
+    /// safety seal when the destroyed cells form a genuinely bounded aperture: fewer than two
+    /// contiguous cells across a horizontal floor/ceiling opening, or fewer than three contiguous
+    /// cells across a vertical wall opening. Corners, ledges, steps and other openings that are not
+    /// bounded by solid collision at both ends can never leave ghost collision behind.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Tilemap), typeof(TilemapCollider2D), typeof(CompositeCollider2D))]
@@ -48,6 +49,7 @@ namespace Rustline.Gameplay.Environment
 
         private readonly Dictionary<Vector3Int, BreachState> _breachedCells =
             new Dictionary<Vector3Int, BreachState>();
+        private readonly List<Vector3Int> _reconcileBuffer = new List<Vector3Int>();
 
         private Tilemap _collisionTilemap;
         private TilemapCollider2D _tilemapCollider;
@@ -98,8 +100,8 @@ namespace Rustline.Gameplay.Environment
                 return;
             }
 
-            BreachAxis axis = ClassifyAxis(hit.Normal, hit.Direction);
             Vector3Int cell = ResolveImpactedCell(hit.Point, hit.Normal, hit.Direction);
+            BreachAxis axis = ClassifyAxis(hit.Normal, hit.Direction);
 
             bool hadRuntimeState = _breachedCells.TryGetValue(cell, out BreachState state);
             if (!hadRuntimeState)
@@ -113,17 +115,20 @@ namespace Rustline.Gameplay.Environment
                 }
 
                 state = new BreachState(axis);
+                _breachedCells.Add(cell, state);
                 structuralVisualTilemap.SetTile(cell, null);
                 structuralVisualTilemap.RefreshAllTiles();
             }
             else
             {
                 state.Axes |= axis;
+                _breachedCells[cell] = state;
             }
 
-            _breachedCells[cell] = state;
-
-            if (TryReleaseQualifiedRun(cell, axis))
+            // Reconcile every pending breach, not only the latest one. Destroying a neighboring
+            // cell can turn an earlier bounded micro-aperture into an exposed edge, in which case
+            // its retained collision must disappear immediately as well.
+            if (ReconcilePendingCollision())
             {
                 RebuildCollisionGeometry();
             }
@@ -156,7 +161,59 @@ namespace Rustline.Gameplay.Environment
                 : BreachAxis.Vertical;
         }
 
-        private bool TryReleaseQualifiedRun(Vector3Int origin, BreachAxis axis)
+        private bool ReconcilePendingCollision()
+        {
+            _reconcileBuffer.Clear();
+            foreach (KeyValuePair<Vector3Int, BreachState> pair in _breachedCells)
+            {
+                if (!pair.Value.CollisionReleased)
+                {
+                    _reconcileBuffer.Add(pair.Key);
+                }
+            }
+
+            bool collisionChanged = false;
+            for (int i = 0; i < _reconcileBuffer.Count; i++)
+            {
+                Vector3Int cell = _reconcileBuffer[i];
+                BreachState state = _breachedCells[cell];
+
+                if (ShouldRetainSafetyCollision(cell, state))
+                {
+                    continue;
+                }
+
+                if (_collisionTilemap.HasTile(cell))
+                {
+                    _collisionTilemap.SetTile(cell, null);
+                    collisionChanged = true;
+                }
+
+                state.CollisionReleased = true;
+                _breachedCells[cell] = state;
+            }
+
+            return collisionChanged;
+        }
+
+        private bool ShouldRetainSafetyCollision(Vector3Int cell, BreachState state)
+        {
+            if ((state.Axes & BreachAxis.Horizontal) != 0 &&
+                IsBoundedNarrowRun(cell, BreachAxis.Horizontal))
+            {
+                return true;
+            }
+
+            if ((state.Axes & BreachAxis.Vertical) != 0 &&
+                IsBoundedNarrowRun(cell, BreachAxis.Vertical))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsBoundedNarrowRun(Vector3Int origin, BreachAxis axis)
         {
             Vector3Int step = axis == BreachAxis.Horizontal ? Vector3Int.right : Vector3Int.up;
             int threshold = axis == BreachAxis.Horizontal
@@ -177,36 +234,28 @@ namespace Rustline.Gameplay.Environment
                 cursor += step;
             }
 
-            if (runLength < threshold)
+            if (runLength >= threshold)
             {
                 return false;
             }
 
-            bool collisionChanged = false;
-            cursor = first;
-            for (int i = 0; i < runLength; i++, cursor += step)
-            {
-                BreachState state = _breachedCells[cursor];
-                if (!state.CollisionReleased)
-                {
-                    if (_collisionTilemap.HasTile(cursor))
-                    {
-                        _collisionTilemap.SetTile(cursor, null);
-                        collisionChanged = true;
-                    }
-
-                    state.CollisionReleased = true;
-                    _breachedCells[cursor] = state;
-                }
-            }
-
-            return collisionChanged;
+            Vector3Int before = first - step;
+            Vector3Int after = cursor;
+            return IsSolidBoundary(before) && IsSolidBoundary(after);
         }
 
         private bool QualifiesForAxis(Vector3Int cell, BreachAxis axis)
         {
             return _breachedCells.TryGetValue(cell, out BreachState state) &&
                 (state.Axes & axis) != 0;
+        }
+
+        private bool IsSolidBoundary(Vector3Int cell)
+        {
+            // A breached cell is never allowed to serve as an aperture support, even if its
+            // temporary collision has not yet been reconciled away. Collision-only production
+            // architecture, however, is a valid physical boundary and may safely bound a seal.
+            return !_breachedCells.ContainsKey(cell) && _collisionTilemap.HasTile(cell);
         }
 
         private void CacheRequiredComponents()
