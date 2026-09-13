@@ -77,10 +77,6 @@ namespace Rustline.Editor
                 typeof(RustlineSalvageIntakeRouteRefinementSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
-                "Applying protected one-tile micro-aperture test",
-                typeof(RustlineSalvageIntakeMicroGapTestSetup),
-                "ApplyAndValidate"),
-            new ProductionStep(
                 "Replacing tile supports with architectural entry pillars",
                 typeof(RustlineSalvageIntakeEntrySupportDressingSetup),
                 "ApplyAndValidate"),
@@ -156,12 +152,12 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, protected micro-aperture, architectural supports, catwalk clearance, safety-floor armor, and controlled Longwatch breaching applied, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, architectural supports, catwalk clearance, safety-floor armor, and controlled Longwatch breaching applied, " +
                     "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt with deterministic industrial-surface variants, accepted structural/route refinements, the protected one-tile micro-aperture test, architectural supports, raised catwalk clearance, the protected lower safety-floor envelope, and controlled Longwatch structural breaching. " +
+                    "Salvage Intake was rebuilt with deterministic industrial-surface variants, accepted structural/route refinements, architectural supports, raised catwalk clearance, the protected lower safety-floor envelope, and controlled Longwatch structural breaching. " +
                     "All current production dressing/parallax passes were refreshed and the release scene order was validated.",
                     "OK");
             }
