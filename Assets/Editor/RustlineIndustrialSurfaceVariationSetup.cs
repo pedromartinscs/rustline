@@ -10,8 +10,8 @@ namespace Rustline.Editor
     /// <summary>
     /// Adds deterministic visual variation to the high-frequency industrial-surface connectivity
     /// rules while preserving the accepted 16-rule cardinal-neighbor contract. The source atlas
-    /// keeps the canonical rules in slots 00-15; rows 3-4 (slots 16-31) contain presentation-only
-    /// variants whose border pixels are authored to match their corresponding canonical rule.
+    /// keeps canonical rules in slots 00-15, normal material variants in slots 16-31, and rare
+    /// authored wear/mechanical events in slots 32-47. Border connectivity never changes.
     /// </summary>
     public static class RustlineIndustrialSurfaceVariationSetup
     {
@@ -20,38 +20,53 @@ namespace Rustline.Editor
             "Assets/Art/Environment/Tiles/Generated/IndustrialSurfaceRuleTile.asset";
         private const int TileSize = 16;
         private const int AtlasColumns = 8;
+        private const int AtlasRows = 6;
+        private const int AtlasSlotCount = AtlasColumns * AtlasRows;
         private const float SurfacePerlinScale = 0.37f;
 
-        // Canonical slot -> additional atlas slots.
-        // 09 NS: vertical strip.
-        // 10 EW: horizontal strip.
-        // 11 NES: exposed west/left edge.
-        // 12 ESW: exposed north/top edge.
-        // 13 SWN: exposed east/right edge.
-        // 14 WNE: exposed south/underside edge.
-        // 15 ALL: fully surrounded interior.
+        // Normal slots preserve the blue structural material language established in rows 1-4.
+        // Rare slots are intentionally sparse visual events from rows 5-6. RareStride means one
+        // rare entry per N entries in the deterministic RuleTile random sprite array.
+        //
+        // 09 NS: vertical strip (normal variation only).
+        // 10 EW: horizontal strip (normal variation only).
+        // 11 NES: exposed west/left edge; rare west-edge rust/bolt = 42/46.
+        // 12 ESW: exposed north/top edge; rare top rust/bolt = 40/44.
+        // 13 SWN: exposed east/right edge; rare right-edge rust/bolt = 43/47.
+        // 14 WNE: exposed south/underside edge; rare underside rust/bolt = 41/45.
+        // 15 ALL: fully surrounded interior; rare authored events = 32-39.
         private static readonly VariationSpec[] VariationSpecs =
         {
-            new VariationSpec(9,  new[] { 24, 30 }, false),
-            new VariationSpec(10, new[] { 23, 29 }, false),
-            new VariationSpec(11, new[] { 21, 27 }, false),
-            new VariationSpec(12, new[] { 19, 25 }, false),
-            new VariationSpec(13, new[] { 22, 28 }, false),
-            new VariationSpec(14, new[] { 20, 26 }, false),
-            new VariationSpec(15, new[] { 16, 17, 18, 31 }, true),
+            new VariationSpec(9,  new[] { 24, 30 }, Array.Empty<int>(), 0, false),
+            new VariationSpec(10, new[] { 23, 29 }, Array.Empty<int>(), 0, false),
+            new VariationSpec(11, new[] { 21, 27 }, new[] { 42, 46 }, 20, false),
+            new VariationSpec(12, new[] { 19, 25 }, new[] { 40, 44 }, 20, false),
+            new VariationSpec(13, new[] { 22, 28 }, new[] { 43, 47 }, 20, false),
+            new VariationSpec(14, new[] { 20, 26 }, new[] { 41, 45 }, 20, false),
+            new VariationSpec(15, new[] { 16, 17, 18, 31 },
+                new[] { 32, 33, 34, 35, 36, 37, 38, 39 }, 16, true),
         };
 
         private readonly struct VariationSpec
         {
-            internal VariationSpec(int canonicalSlot, int[] variantSlots, bool allowQuarterTurns)
+            internal VariationSpec(
+                int canonicalSlot,
+                int[] normalVariantSlots,
+                int[] rareVariantSlots,
+                int rareStride,
+                bool allowQuarterTurns)
             {
                 CanonicalSlot = canonicalSlot;
-                VariantSlots = variantSlots;
+                NormalVariantSlots = normalVariantSlots;
+                RareVariantSlots = rareVariantSlots;
+                RareStride = rareStride;
                 AllowQuarterTurns = allowQuarterTurns;
             }
 
             internal int CanonicalSlot { get; }
-            internal int[] VariantSlots { get; }
+            internal int[] NormalVariantSlots { get; }
+            internal int[] RareVariantSlots { get; }
+            internal int RareStride { get; }
             internal bool AllowQuarterTurns { get; }
             internal int RuleId => 1000 + CanonicalSlot;
         }
@@ -71,7 +86,7 @@ namespace Rustline.Editor
             ValidateOrThrow(ruleTile);
             EditorUtility.DisplayDialog(
                 "Rustline Industrial Surface",
-                "Deterministic variants are active for ALL, exposed cardinal edges, and thin horizontal/vertical runs.",
+                "Deterministic structural variants and rare rust/bolt/hole/dent/seam events are active.",
                 "OK");
         }
 
@@ -88,7 +103,7 @@ namespace Rustline.Editor
         /// <summary>
         /// The frozen M0 validator predates multi-sprite RuleTile outputs and still requires one
         /// canonical sprite per connectivity rule. Production setup enters this compatibility scope
-        /// only while that validator runs, then restores the visual variants even when validation
+        /// only while that validator runs, then restores production variation even when validation
         /// throws. This changes presentation data only; connectivity and collision never change.
         /// </summary>
         internal static void RunWithFoundationCompatibility(Action action)
@@ -131,12 +146,7 @@ namespace Rustline.Editor
             foreach (VariationSpec spec in VariationSpecs)
             {
                 RuleTile.TilingRule rule = RequireRule(ruleTile, spec.RuleId);
-                Sprite[] desiredSprites = new Sprite[1 + spec.VariantSlots.Length];
-                desiredSprites[0] = atlasSlots[spec.CanonicalSlot];
-                for (int index = 0; index < spec.VariantSlots.Length; index++)
-                {
-                    desiredSprites[index + 1] = atlasSlots[spec.VariantSlots[index]];
-                }
+                Sprite[] desiredSprites = BuildDesiredSprites(atlasSlots, spec);
 
                 if (rule.m_Output != RuleTile.TilingRuleOutput.OutputSprite.Random)
                 {
@@ -207,16 +217,65 @@ namespace Rustline.Editor
                 Require(rule.m_RandomTransform == expectedTransform,
                     "Variant slot " + spec.CanonicalSlot + " uses an unsafe random transform.");
 
-                Sprite[] expectedSprites = new Sprite[1 + spec.VariantSlots.Length];
-                expectedSprites[0] = atlasSlots[spec.CanonicalSlot];
-                for (int index = 0; index < spec.VariantSlots.Length; index++)
-                {
-                    expectedSprites[index + 1] = atlasSlots[spec.VariantSlots[index]];
-                }
-
+                Sprite[] expectedSprites = BuildDesiredSprites(atlasSlots, spec);
                 Require(SpriteArraysMatch(rule.m_Sprites, expectedSprites),
                     "Variant sprite mapping is incorrect for canonical slot " + spec.CanonicalSlot + ".");
+
+                if (spec.RareVariantSlots.Length > 0)
+                {
+                    int expectedLength = spec.RareVariantSlots.Length * spec.RareStride;
+                    Require(rule.m_Sprites.Length == expectedLength,
+                        "Rare-event weighting array has the wrong length for canonical slot " +
+                        spec.CanonicalSlot + ".");
+                }
             }
+        }
+
+        private static Sprite[] BuildDesiredSprites(Sprite[] atlasSlots, VariationSpec spec)
+        {
+            int[] normalSlots = new int[1 + spec.NormalVariantSlots.Length];
+            normalSlots[0] = spec.CanonicalSlot;
+            Array.Copy(spec.NormalVariantSlots, 0, normalSlots, 1, spec.NormalVariantSlots.Length);
+
+            if (spec.RareVariantSlots.Length == 0)
+            {
+                Sprite[] normalSprites = new Sprite[normalSlots.Length];
+                for (int index = 0; index < normalSlots.Length; index++)
+                {
+                    normalSprites[index] = atlasSlots[normalSlots[index]];
+                }
+                return normalSprites;
+            }
+
+            Require(spec.RareStride > 1,
+                "Rare-event stride must be greater than one for canonical slot " + spec.CanonicalSlot + ".");
+
+            int totalEntries = spec.RareVariantSlots.Length * spec.RareStride;
+            Sprite[] weighted = new Sprite[totalEntries];
+            int normalIndex = 0;
+            int rareIndex = 0;
+            int firstRareEntry = spec.RareStride / 2;
+
+            for (int entry = 0; entry < totalEntries; entry++)
+            {
+                bool isRareEntry = rareIndex < spec.RareVariantSlots.Length &&
+                    entry == firstRareEntry + rareIndex * spec.RareStride;
+                if (isRareEntry)
+                {
+                    weighted[entry] = atlasSlots[spec.RareVariantSlots[rareIndex]];
+                    rareIndex++;
+                }
+                else
+                {
+                    weighted[entry] = atlasSlots[normalSlots[normalIndex % normalSlots.Length]];
+                    normalIndex++;
+                }
+            }
+
+            Require(rareIndex == spec.RareVariantSlots.Length,
+                "Rare-event weighting failed to place every authored detail slot for canonical slot " +
+                spec.CanonicalSlot + ".");
+            return weighted;
         }
 
         private static bool EnsureCanonicalSingles(RuleTile ruleTile)
@@ -253,21 +312,19 @@ namespace Rustline.Editor
         {
             Texture2D atlas = AssetDatabase.LoadAssetAtPath<Texture2D>(AtlasPath);
             Require(atlas != null, "Industrial surface atlas is missing: " + AtlasPath);
-            Require(atlas.width == AtlasColumns * TileSize && atlas.height >= 4 * TileSize &&
-                atlas.height % TileSize == 0,
-                "Industrial surface atlas must remain 128 px wide and contain at least four 16 px rows.");
+            Require(atlas.width == AtlasColumns * TileSize && atlas.height == AtlasRows * TileSize,
+                "Industrial surface atlas must remain exactly 128x96 px / 48 slots.");
 
             Sprite[] sprites = AssetDatabase.LoadAllAssetsAtPath(AtlasPath).OfType<Sprite>().ToArray();
-            Require(sprites.Length >= 32,
-                "Industrial surface atlas must expose at least the 32 core + variation slots.");
+            Require(sprites.Length == AtlasSlotCount,
+                "Industrial surface atlas must expose exactly 48 sliced sprites.");
 
-            Sprite[] slots = new Sprite[sprites.Length];
-            int logicalRows = atlas.height / TileSize;
+            Sprite[] slots = new Sprite[AtlasSlotCount];
             foreach (Sprite sprite in sprites)
             {
                 int column = Mathf.RoundToInt(sprite.rect.x / TileSize);
                 int unityRow = Mathf.RoundToInt(sprite.rect.y / TileSize);
-                int logicalRow = logicalRows - 1 - unityRow;
+                int logicalRow = AtlasRows - 1 - unityRow;
                 int slot = logicalRow * AtlasColumns + column;
                 Require(slot >= 0 && slot < slots.Length,
                     "Industrial surface sprite rect resolves outside the atlas slot range: " + sprite.name);
@@ -276,7 +333,7 @@ namespace Rustline.Editor
                 slots[slot] = sprite;
             }
 
-            for (int slot = 0; slot <= 31; slot++)
+            for (int slot = 0; slot < AtlasSlotCount; slot++)
             {
                 Require(slots[slot] != null,
                     "Industrial surface atlas is missing required slot " + slot + ".");
