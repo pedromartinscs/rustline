@@ -44,9 +44,10 @@ namespace Rustline.Editor
             new CellRect(-19, -12, 2, 8),
         };
 
-        // Preserve the original support centers while replacing the narrow 2u RuleTile shafts with
-        // the 50px / 3.125u production wall architecture.
-        private static readonly float[] PillarCenterX = { -22f, -18f };
+        // Keep the accepted left support beneath the west entry. Move the second support to the far
+        // right end of the 62u safety-floor mass so the two pillars visually carry the whole deck
+        // instead of reading as a tight local pair. The right sprite edge lands exactly on x=33.
+        private static readonly float[] PillarCenterX = { -22f, 31.4375f };
 
         // The visible safety-floor mass ends at y=-4. The odd 145px top sprite therefore uses a
         // half-source-pixel center so its upper edge lands exactly on y=-4 without scaling.
