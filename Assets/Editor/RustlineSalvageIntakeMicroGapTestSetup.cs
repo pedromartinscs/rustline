@@ -8,14 +8,14 @@ using UnityEngine.Tilemaps;
 namespace Rustline.Editor
 {
     /// <summary>
-    /// Creates a deliberate one-cell-wide traversal stress test in Salvage Intake before
-    /// destructible terrain is enabled. The production graybox naturally leaves a two-cell gap
+    /// Creates a deliberate one-cell-wide protected micro-aperture in Salvage Intake before
+    /// destructible terrain is accepted. The production graybox naturally leaves a two-cell gap
     /// between the raised left approach and the central machinery plinth; this pass fills only the
-    /// west half of that gap so x=-3 remains a 16 px slot over the base floor.
+    /// west half visually, leaving x=-3 as a 16 px visual slot while preserving hidden collision.
     ///
-    /// This is intentionally production-scene geometry rather than a MovementLab-only specimen:
-    /// the test exercises the exact RuleTile, hidden collision Tilemap and CompositeCollider2D path
-    /// that future Longwatch breaching will mutate at runtime.
+    /// The fixture models the first-shot breaching state directly: structure may disappear, but a
+    /// physically invalid 16 px opening must remain solid until enough adjacent runtime cells are
+    /// destroyed to satisfy the minimum aperture rule.
     /// </summary>
     public static class RustlineSalvageIntakeMicroGapTestSetup
     {
@@ -39,7 +39,7 @@ namespace Rustline.Editor
             ApplyAndValidate();
             EditorUtility.DisplayDialog(
                 "Rustline Salvage Intake",
-                "The one-tile micro-gap traversal test was applied and validated.",
+                "The protected one-tile micro-aperture test was applied and validated.",
                 "OK");
         }
 
@@ -63,8 +63,9 @@ namespace Rustline.Editor
             Require(collisionBottom != null && collisionTop != null,
                 "The accepted left-approach collision source cells are missing.");
 
-            // Extend the west block by exactly one column. Keep x=-3 explicitly empty so the
-            // resulting slot is one source tile / 16 px wide and two tiles / 32 px deep.
+            // Extend the west block by exactly one column. The x=-3 cells deliberately have no
+            // structural visual but retain collision, representing a destroyed micro-aperture that
+            // is too narrow to become a real traversal opening.
             structure.SetTile(ExtensionBottom, structureBottom);
             structure.SetTile(ExtensionTop, structureTop);
             collision.SetTile(ExtensionBottom, collisionBottom);
@@ -72,8 +73,8 @@ namespace Rustline.Editor
 
             structure.SetTile(GapBottom, null);
             structure.SetTile(GapTop, null);
-            collision.SetTile(GapBottom, null);
-            collision.SetTile(GapTop, null);
+            collision.SetTile(GapBottom, collisionBottom);
+            collision.SetTile(GapTop, collisionTop);
 
             structure.RefreshAllTiles();
             collision.RefreshAllTiles();
@@ -81,7 +82,7 @@ namespace Rustline.Editor
 
             EditorSceneManager.MarkSceneDirty(scene);
             Require(EditorSceneManager.SaveScene(scene, ScenePath),
-                "Could not save SalvageIntake after applying the micro-gap test.");
+                "Could not save SalvageIntake after applying the protected micro-gap test.");
             AssetDatabase.SaveAssets();
 
             ValidateScene(scene);
@@ -104,8 +105,8 @@ namespace Rustline.Editor
 
             Require(!structure.HasTile(GapBottom) && !structure.HasTile(GapTop),
                 "The diagnostic slot must remain visually empty at x=-3, y=0..1.");
-            Require(!collision.HasTile(GapBottom) && !collision.HasTile(GapTop),
-                "The diagnostic slot must remain collision-empty at x=-3, y=0..1.");
+            Require(collision.HasTile(GapBottom) && collision.HasTile(GapTop),
+                "The 16 px diagnostic micro-aperture must preserve hidden collision at x=-3, y=0..1.");
 
             Require(structure.HasTile(RightBlockBottom) && structure.HasTile(RightBlockTop),
                 "The central plinth must still bound the micro-gap on the east side.");
