@@ -77,6 +77,10 @@ namespace Rustline.Editor
                 typeof(RustlineSalvageIntakeRouteRefinementSetup),
                 "ApplyAndValidate"),
             new ProductionStep(
+                "Replacing tile supports with architectural entry pillars",
+                typeof(RustlineSalvageIntakeEntrySupportDressingSetup),
+                "ApplyAndValidate"),
+            new ProductionStep(
                 "Applying macro environment dressing",
                 typeof(RustlineSalvageIntakeArtSetup),
                 "ApplyAndValidate"),
@@ -136,12 +140,12 @@ namespace Rustline.Editor
                 AssetDatabase.Refresh();
 
                 Debug.Log(
-                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements applied, " +
+                    "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements and architectural entry supports applied, " +
                     "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
-                    "Salvage Intake was rebuilt, deterministic industrial-surface variants and accepted structural/route refinements were applied, " +
+                    "Salvage Intake was rebuilt, deterministic industrial-surface variants, accepted structural/route refinements, and architectural entry supports were applied, " +
                     "all current production dressing/parallax passes were refreshed, and the release scene order was validated.",
                     "OK");
             }
