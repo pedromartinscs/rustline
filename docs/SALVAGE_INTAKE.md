@@ -28,12 +28,14 @@ The normal authoring entry point is intentionally a single command:
 4. apply route refinements, including the raised shaft exit;
 5. replace the temporary west-entry RuleTile supports with architectural support pillars;
 6. apply macro environment dressing;
-7. apply lower-bay floor dressing;
-8. apply west wall dressing;
-9. apply service-shaft wall dressing;
-10. apply horizontal far parallax;
-11. apply the vertical-depth backdrop;
-12. enforce and validate canonical release build-scene order.
+7. raise the transfer-catwalk collision/art by one cell for full standing clearance beneath it;
+8. apply lower-bay floor dressing;
+9. armor the two lowest safety-floor rows with non-RuleTile Floor architecture;
+10. apply west wall dressing;
+11. apply service-shaft wall dressing;
+12. apply horizontal far parallax;
+13. apply the vertical-depth backdrop;
+14. enforce and validate canonical release build-scene order.
 
 The specialized setup classes remain callable internally and from command-line workflows. The collapsed menu is a UI cleanup, not a removal of deterministic tooling.
 
@@ -49,7 +51,7 @@ Preserved authoring roots:
 
 Production setup classes may own named managed children under `Art Dressing - Preserve`; unrelated hand-authored content must not be placed inside those managed children.
 
-While Salvage Intake is still being composed, accepted geometry refinements that have not yet been folded back into the large base builder are applied immediately after rebuild by deterministic production passes. Running **Apply Production Setup** is therefore the current source-of-truth authoring workflow.
+While Salvage Intake is still being composed, accepted geometry refinements that have not yet been folded back into the large base builder are applied immediately after rebuild by deterministic production passes. Running **Apply Production Setup** is therefore the current source-of-truth authoring workflow. The canonical base builder still authors the historical transfer-catwalk strip at `y=3`; `RustlineSalvageIntakeCatwalkClearanceSetup` deterministically moves that strip and its production skin to the accepted final height during the production chain.
 
 ## Current spatial contract
 
@@ -61,7 +63,7 @@ Current production route:
 - two visual-only architectural support pillars centered at `x=-22` and `x=31.4375`, each using the accepted 50 px-wide Wall art family at native scale; the left pillar remains under the west entry while the right pillar's outer edge aligns with the safety-floor end at `x=33`; their top edges meet the floor underside at `y=-4` and the repeated mid sections continue to approximately `y=-50.56`, well below the current visible area;
 - small service step and solid left approach into the hero room;
 - compact **4×2 tile** central collision plinth for the salvage machine;
-- **12×1 tile** transfer catwalk represented physically by hidden collision and visually by production catwalk sprites;
+- **12×1 tile** transfer catwalk with hidden collision at `x=4..15, y=4`, underside `y=4`, walkable surface `y=5`, and exactly **4 u / 64 px** of clear space above the main `y=0` floor;
 - no east catwalk support wall;
 - east staging platform leading into the permanent service shaft;
 - **4 u / 64 px**-wide service shaft using the accepted MovementLab wall-kick spacing;
@@ -75,6 +77,8 @@ Current production route:
 - structural joint at `x=26..27`, `y=19`, tying the overhead support directly into the left shaft wall while preserving `x=28..31` as the playable opening;
 - player spawn centered on the west production bulkhead at `x=-20`, serialized at `y=1.75`.
 
+The catwalk was raised from its historical `y=4` walkable surface to `y=5` because the old 48 px physical opening left only 4 px beyond the 44 px standing capsule and allowed the taller authored player silhouette to visually intersect the underside. The player collider and movement tuning remain frozen; the environment now supplies the needed visual clearance instead.
+
 The raised shaft exit reduces the vertical difference to the handler support from the former 6 u to **4 u**, while retaining a clear visual hierarchy and the accepted 64 px shaft width.
 
 See [`SALVAGE_INTAKE_SERVICE_SHAFT.md`](SALVAGE_INTAKE_SERVICE_SHAFT.md) for the traversal contract.
@@ -87,7 +91,9 @@ The east shaft turns Wall Brace / Wall Kick into required spatial progression wi
 
 The player crosses Salvage Intake at floor level, enters the shaft through the lower opening, climbs between the walls, reaches the raised right-wall top/ledge at `y=17`, then exits onto the upper deck toward the next production section.
 
-Because the exit height changed while the shaft width and movement tuning stayed frozen, the raised landing requires a quick human traversal re-test before it is considered fully accepted.
+The transfer catwalk remains a one-cell-thick collision strip with production art aligned to the same deck surface. Its new `y=5` surface requires a human traversal re-test from the central plinth/adjacent route before final acceptance; the clearance fix must not be paid for by making the intended route awkward.
+
+Because the shaft exit height changed while the shaft width and movement tuning stayed frozen, the raised landing also requires a quick human traversal re-test before it is considered fully accepted.
 
 ## Visual geometry versus gameplay collision
 
@@ -113,7 +119,7 @@ Visual wear, holes, brackets, diagonals, rust, pipes and transparent negative sp
 - `TilemapCollider2D` using `Merge`;
 - polygon `CompositeCollider2D`;
 - `TilemapCompositeColliderInitializer2D`;
-- deterministic geometry generation and validation after route refinement.
+- deterministic geometry generation and validation after route/catwalk refinement.
 
 ## Industrial structural tiles
 
@@ -169,7 +175,7 @@ Accepted families currently include:
 - vertical-depth backdrop;
 - accepted but currently unplaced full-size `gantry_overhead_rail.png`.
 
-The west entry uses the **105×100 px** bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. Gray structural tiles are intentionally absent behind that production catwalk skin.
+The west entry uses the **105×100 px** bulkhead at native scale. The current catwalk uses `catwalk_left + catwalk_right` over a separate hidden `12×1` collision strip. The deterministic clearance pass raises both art pieces by exactly 1 u after macro dressing, leaving the authored walking edge aligned to the hidden collision top at `y=5`. Gray structural tiles are intentionally absent behind that production catwalk skin.
 
 The two deep support pillars reuse the existing Wall family rather than stretching sprites or adding collision. Each pillar uses one `wall_edge_top` section beneath the floor and four `wall_edge_mid` sections below it. The left pillar stays centered at `x=-22`; the right pillar is distributed to the far end at `x=31.4375` and mirrored horizontally. No bottom cap is used because the structure is intended to continue below the visible space.
 
@@ -223,11 +229,10 @@ Canonical 28 remains a gameplay-readability tool, not only a palette restriction
 
 1. player / combat information;
 2. gameplay structure;
-3. hero transfer machinery;
-4. normal background machinery;
-5. horizontal far parallax;
-6. vertical-depth field;
-7. restrained foreground dressing where useful.
+3. hero transfer machine;
+4. normal background machinery/structure;
+5. horizontal distant industrial silhouette;
+6. vertical altitude/depth field.
 
 The vertical depth layer should communicate atmosphere and altitude, not become a high-frequency texture competing with the foreground.
 
@@ -279,7 +284,9 @@ When rebuilding or extending Salvage Intake, verify:
 - no legacy tile-based west-entry support columns remain visible after the production dressing pass;
 - structural RuleTile variants preserve their canonical border/connectivity silhouettes;
 - rare rust/bolt/hole/dent/seam tiles remain sparse enough to read as authored events rather than a repeating texture;
-- catwalk visual skin and hidden collision remain aligned;
+- catwalk visual skin and hidden collision remain aligned at walkable `y=5`, with a full **4 u / 64 px** opening beneath the collision underside;
+- the player's authored head silhouette no longer visually enters the catwalk while walking underneath it;
+- the raised catwalk remains comfortably reachable from the intended route/central plinth after the 1 u clearance change;
 - shaft lower entrance stays 4 u high;
 - shaft interior stays exactly 4 u / 64 px wide;
 - Wall Brace and alternating Wall Kicks remain comfortable;
