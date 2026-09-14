@@ -166,11 +166,17 @@ namespace Rustline.Presentation
 
             UpdateAimSelection();
             int directionIndex = _selection.DirectionIndex;
-            PlayerAnimationState state = playerAnimator.CurrentState;
+            PlayerAnimationState? state = playerAnimator.CurrentState;
+            if (!state.HasValue)
+            {
+                ReleaseRenderer();
+                return;
+            }
+
             Sprite bodySprite = bodySpriteRenderer.sprite;
             Sprite nextSprite;
 
-            switch (state)
+            switch (state.Value)
             {
                 case PlayerAnimationState.Idle:
                     if (directionIndex < 0 || directionIndex >= idleAimPoses.Length ||
@@ -220,8 +226,9 @@ namespace Rustline.Presentation
                 return false;
             }
 
-            PlayerAnimationState state = playerAnimator.CurrentState;
-            return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run;
+            PlayerAnimationState? state = playerAnimator.CurrentState;
+            return state.HasValue &&
+                (state.Value == PlayerAnimationState.Idle || state.Value == PlayerAnimationState.Run);
         }
 
         private static bool TryResolveFrame(Sprite[] bodyFrames, Sprite displayedBody, out int frameIndex)
