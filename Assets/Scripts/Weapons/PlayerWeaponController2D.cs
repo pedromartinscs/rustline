@@ -30,10 +30,13 @@ namespace Rustline.Gameplay.Weapons
         private readonly SemiAutomaticWeaponCooldown2D _cooldown = new SemiAutomaticWeaponCooldown2D();
         private Collider2D _playerCollider;
         private ContactFilter2D _hitFilter;
+        private WeaponFireMode2D _currentFireMode = WeaponFireMode2D.SemiAutomatic;
 
         public event Action<WeaponShotResult2D> ShotResolved;
+        public event Action<WeaponFireMode2D> FireModeChanged;
 
         public WeaponDefinition2D WeaponDefinition => weaponDefinition;
+        public WeaponFireMode2D CurrentFireMode => _currentFireMode;
         public LayerMask HitLayers => hitLayers;
         public PrototypeWeaponShotFeedback2D ShotFeedback => shotFeedback;
         public int ShotCount { get; private set; }
@@ -42,6 +45,9 @@ namespace Rustline.Gameplay.Weapons
         private void Awake()
         {
             _playerCollider = GetComponent<Collider2D>();
+            _currentFireMode = weaponDefinition != null
+                ? weaponDefinition.FireMode
+                : WeaponFireMode2D.SemiAutomatic;
             RebuildHitFilter();
         }
 
@@ -52,12 +58,27 @@ namespace Rustline.Gameplay.Weapons
 
         private void Update()
         {
-            if (input == null || !input.ConsumeFirePressed())
+            if (input == null)
             {
                 return;
             }
 
-            TryFire(Time.time);
+            if (input.ConsumeToggleFireModePressed())
+            {
+                CycleFireMode();
+            }
+
+            // Always consume the press edge even in automatic mode so switching back to semi-auto
+            // while the button is still held cannot replay an old click.
+            bool firePressed = input.ConsumeFirePressed();
+            bool wantsFire = _currentFireMode == WeaponFireMode2D.Automatic
+                ? input.IsFireHeld
+                : firePressed;
+
+            if (wantsFire)
+            {
+                TryFire(Time.time);
+            }
         }
 
         public bool TryFire(float currentTime)
@@ -65,6 +86,7 @@ namespace Rustline.Gameplay.Weapons
             using (FireMarker.Auto())
             {
                 if (weaponDefinition == null || !weaponDefinition.IsSane(out _) ||
+                    !weaponDefinition.SupportsFireMode(_currentFireMode) ||
                     playerAim == null || !playerAim.HasValidAim ||
                     playerAnimator == null || playerMotor == null ||
                     !WeaponFirePolicy2D.CanFire(
@@ -92,6 +114,23 @@ namespace Rustline.Gameplay.Weapons
             _cooldown.Reset();
             input?.ClearTransientState();
             shotFeedback?.Hide();
+        }
+
+        private void CycleFireMode()
+        {
+            if (weaponDefinition == null || !weaponDefinition.SupportsMultipleFireModes)
+            {
+                return;
+            }
+
+            WeaponFireMode2D nextMode = weaponDefinition.GetNextSupportedFireMode(_currentFireMode);
+            if (nextMode == _currentFireMode)
+            {
+                return;
+            }
+
+            _currentFireMode = nextMode;
+            FireModeChanged?.Invoke(_currentFireMode);
         }
 
         private void ResolveHitscan(Vector2 origin, Vector2 direction, out WeaponShotResult2D result)
