@@ -9,12 +9,12 @@ namespace Rustline.Gameplay.Environment
     /// <summary>
     /// Runtime authority for breaching the modular industrial structural Tilemap.
     ///
-    /// A valid hit removes the impacted structural visual immediately. The matching hidden
-    /// collision normally disappears with it. Collision is retained only as a temporary movement
-    /// safety seal when the destroyed cells form a genuinely bounded aperture: fewer than two
-    /// contiguous cells across a horizontal floor/ceiling opening, or fewer than three contiguous
-    /// cells across a vertical wall opening. Corners, ledges, steps and other openings that are not
-    /// bounded by solid collision at both ends can never leave ghost collision behind.
+    /// A valid hit always removes both the impacted structural visual and its matching Tilemap
+    /// collision cell. If the resulting opening is a genuinely bounded micro-aperture below the
+    /// safe traversal threshold, movement safety is restored with a separate temporary BoxCollider2D
+    /// marked as weapon-raycast passthrough. This keeps player traversal protection independent from
+    /// ballistic occlusion: corners, ledges and valid open breaches never retain hidden Tilemap
+    /// collision, while narrow enclosed apertures can still support the player without stopping fire.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Tilemap), typeof(TilemapCollider2D), typeof(CompositeCollider2D))]
@@ -23,6 +23,7 @@ namespace Rustline.Gameplay.Environment
         private const float InwardSampleDistance = 1f / 32f;
         private const int HorizontalReleaseThreshold = 2;
         private const int VerticalReleaseThreshold = 3;
+        private const string SafetySealRootName = "Breach Safety Seals - Runtime";
 
         [Flags]
         private enum BreachAxis
@@ -37,11 +38,9 @@ namespace Rustline.Gameplay.Environment
             internal BreachState(BreachAxis axes)
             {
                 Axes = axes;
-                CollisionReleased = false;
             }
 
             internal BreachAxis Axes;
-            internal bool CollisionReleased;
         }
 
         [SerializeField] private Tilemap structuralVisualTilemap;
@@ -49,11 +48,14 @@ namespace Rustline.Gameplay.Environment
 
         private readonly Dictionary<Vector3Int, BreachState> _breachedCells =
             new Dictionary<Vector3Int, BreachState>();
+        private readonly Dictionary<Vector3Int, GameObject> _safetySeals =
+            new Dictionary<Vector3Int, GameObject>();
         private readonly List<Vector3Int> _reconcileBuffer = new List<Vector3Int>();
 
         private Tilemap _collisionTilemap;
         private TilemapCollider2D _tilemapCollider;
         private CompositeCollider2D _compositeCollider;
+        private Transform _safetySealRoot;
 
         public Tilemap StructuralVisualTilemap => structuralVisualTilemap;
         public int BreachingWeaponCount => breachingWeapons?.Length ?? 0;
@@ -61,6 +63,14 @@ namespace Rustline.Gameplay.Environment
         private void Awake()
         {
             CacheRequiredComponents();
+        }
+
+        private void OnDestroy()
+        {
+            if (_safetySealRoot != null)
+            {
+                Destroy(_safetySealRoot.gameObject);
+            }
         }
 
         public void Configure(Tilemap visualTilemap, params WeaponDefinition2D[] allowedWeapons)
@@ -116,8 +126,13 @@ namespace Rustline.Gameplay.Environment
 
                 state = new BreachState(axis);
                 _breachedCells.Add(cell, state);
+
+                // Tilemap collision and structural presentation always agree about destruction.
+                // Any traversal-only protection is represented separately by a safety seal collider.
                 structuralVisualTilemap.SetTile(cell, null);
+                _collisionTilemap.SetTile(cell, null);
                 structuralVisualTilemap.RefreshAllTiles();
+                _collisionTilemap.RefreshAllTiles();
             }
             else
             {
@@ -125,13 +140,8 @@ namespace Rustline.Gameplay.Environment
                 _breachedCells[cell] = state;
             }
 
-            // Reconcile every pending breach, not only the latest one. Destroying a neighboring
-            // cell can turn an earlier bounded micro-aperture into an exposed edge, in which case
-            // its retained collision must disappear immediately as well.
-            if (ReconcilePendingCollision())
-            {
-                RebuildCollisionGeometry();
-            }
+            ReconcileSafetySeals();
+            RebuildCollisionGeometry();
         }
 
         private Vector3Int ResolveImpactedCell(Vector2 point, Vector2 normal, Vector2 direction)
@@ -161,39 +171,33 @@ namespace Rustline.Gameplay.Environment
                 : BreachAxis.Vertical;
         }
 
-        private bool ReconcilePendingCollision()
+        private void ReconcileSafetySeals()
         {
             _reconcileBuffer.Clear();
-            foreach (KeyValuePair<Vector3Int, BreachState> pair in _breachedCells)
+            foreach (Vector3Int cell in _breachedCells.Keys)
             {
-                if (!pair.Value.CollisionReleased)
-                {
-                    _reconcileBuffer.Add(pair.Key);
-                }
+                _reconcileBuffer.Add(cell);
             }
 
-            bool collisionChanged = false;
             for (int i = 0; i < _reconcileBuffer.Count; i++)
             {
                 Vector3Int cell = _reconcileBuffer[i];
                 BreachState state = _breachedCells[cell];
+                bool shouldSeal = ShouldRetainSafetyCollision(cell, state);
+                bool hasSeal = _safetySeals.TryGetValue(cell, out GameObject seal) && seal != null;
 
-                if (ShouldRetainSafetyCollision(cell, state))
+                if (shouldSeal)
                 {
-                    continue;
+                    if (!hasSeal)
+                    {
+                        CreateSafetySeal(cell);
+                    }
                 }
-
-                if (_collisionTilemap.HasTile(cell))
+                else if (hasSeal)
                 {
-                    _collisionTilemap.SetTile(cell, null);
-                    collisionChanged = true;
+                    RemoveSafetySeal(cell, seal);
                 }
-
-                state.CollisionReleased = true;
-                _breachedCells[cell] = state;
             }
-
-            return collisionChanged;
         }
 
         private bool ShouldRetainSafetyCollision(Vector3Int cell, BreachState state)
@@ -252,10 +256,62 @@ namespace Rustline.Gameplay.Environment
 
         private bool IsSolidBoundary(Vector3Int cell)
         {
-            // A breached cell is never allowed to serve as an aperture support, even if its
-            // temporary collision has not yet been reconciled away. Collision-only production
-            // architecture, however, is a valid physical boundary and may safely bound a seal.
+            // A breached cell never serves as an aperture support. Safety seals are intentionally
+            // absent from this test because they protect traversal only; they are not structure.
             return !_breachedCells.ContainsKey(cell) && _collisionTilemap.HasTile(cell);
+        }
+
+        private void CreateSafetySeal(Vector3Int cell)
+        {
+            Transform root = GetOrCreateSafetySealRoot();
+            var seal = new GameObject($"Safety Seal [{cell.x},{cell.y}]");
+            seal.layer = _collisionTilemap.gameObject.layer;
+            seal.transform.SetParent(root, true);
+            seal.transform.position = _collisionTilemap.GetCellCenterWorld(cell);
+            seal.transform.rotation = _collisionTilemap.transform.rotation;
+            seal.transform.localScale = Vector3.one;
+
+            Vector3 cellSize = _collisionTilemap.layoutGrid.cellSize;
+            BoxCollider2D collider = seal.AddComponent<BoxCollider2D>();
+            collider.isTrigger = false;
+            collider.size = new Vector2(Mathf.Abs(cellSize.x), Mathf.Abs(cellSize.y));
+            seal.AddComponent<WeaponRaycastPassthrough2D>();
+
+            _safetySeals[cell] = seal;
+        }
+
+        private void RemoveSafetySeal(Vector3Int cell, GameObject seal)
+        {
+            _safetySeals.Remove(cell);
+            if (seal == null)
+            {
+                return;
+            }
+
+            // Disable immediately so the current frame cannot observe stale movement collision;
+            // Destroy then cleans up the runtime-only object normally at end of frame.
+            seal.SetActive(false);
+            Destroy(seal);
+        }
+
+        private Transform GetOrCreateSafetySealRoot()
+        {
+            if (_safetySealRoot != null)
+            {
+                return _safetySealRoot;
+            }
+
+            var root = new GameObject(SafetySealRootName);
+            root.layer = _collisionTilemap.gameObject.layer;
+
+            Transform gridParent = _collisionTilemap.transform.parent;
+            if (gridParent != null)
+            {
+                root.transform.SetParent(gridParent, false);
+            }
+
+            _safetySealRoot = root.transform;
+            return _safetySealRoot;
         }
 
         private void CacheRequiredComponents()
