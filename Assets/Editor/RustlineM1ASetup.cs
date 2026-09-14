@@ -355,7 +355,7 @@ namespace Rustline.Editor
             supportedFireModes.arraySize = 2;
             supportedFireModes.GetArrayElementAtIndex(0).enumValueIndex = (int)WeaponFireMode2D.SemiAutomatic;
             supportedFireModes.GetArrayElementAtIndex(1).enumValueIndex = (int)WeaponFireMode2D.Automatic;
-            serialized.FindProperty("shotInterval").floatValue = 0.25f;
+            serialized.FindProperty("shotInterval").floatValue = 1f / 12f;
             serialized.FindProperty("range").floatValue = 80f;
             serialized.FindProperty("damage").intValue = 40;
             serialized.ApplyModifiedPropertiesWithoutUndo();
@@ -2275,10 +2275,10 @@ namespace Rustline.Editor
                 longwatchDefinition.SupportsMultipleFireModes &&
                 longwatchDefinition.SupportsFireMode(WeaponFireMode2D.SemiAutomatic) &&
                 longwatchDefinition.SupportsFireMode(WeaponFireMode2D.Automatic) &&
-                Mathf.Approximately(longwatchDefinition.ShotInterval, 0.25f) &&
+                Mathf.Approximately(longwatchDefinition.ShotInterval, 1f / 12f) &&
                 Mathf.Approximately(longwatchDefinition.Range, 80f) &&
                 longwatchDefinition.Damage == 40,
-                "Longwatch prototype definition changed from semi+auto / 0.25 s / 80 u / 40 damage.");
+                "Longwatch prototype definition changed from semi+auto / 1/12 s (12 shots/s) / 80 u / 40 damage.");
             LongwatchMuzzleMetadata2D longwatchMuzzleMetadata =
                 AssetDatabase.LoadAssetAtPath<LongwatchMuzzleMetadata2D>(
                     LongwatchMuzzleMetadataAssetPath);
