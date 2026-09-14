@@ -11,6 +11,7 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string jumpActionName = "Jump";
         [SerializeField] private string crouchActionName = "Crouch";
         [SerializeField] private string fireActionName = "Fire";
+        [SerializeField] private string toggleFireModeActionName = "ToggleFireMode";
         [SerializeField] private string pointerPositionActionName = "PointerPosition";
 
         private InputActionMap _actionMap;
@@ -18,15 +19,18 @@ namespace Rustline.Gameplay.Player
         private InputAction _jumpAction;
         private InputAction _crouchAction;
         private InputAction _fireAction;
+        private InputAction _toggleFireModeAction;
         private InputAction _pointerPositionAction;
         private bool _jumpPressed;
         private bool _jumpReleased;
         private bool _firePressed;
         private bool _fireHeld;
+        private bool _toggleFireModePressed;
 
         public float MoveX { get; private set; }
         public bool JumpHeld { get; private set; }
         public bool CrouchHeld { get; private set; }
+        public bool IsFireHeld => _fireHeld;
         public Vector2 PointerScreenPosition { get; private set; }
 
         private void OnEnable()
@@ -45,6 +49,7 @@ namespace Rustline.Gameplay.Player
             _crouchAction.canceled += OnCrouch;
             _fireAction.performed += OnFirePerformed;
             _fireAction.canceled += OnFireCanceled;
+            _toggleFireModeAction.performed += OnToggleFireModePerformed;
             _pointerPositionAction.performed += OnPointerPosition;
             _pointerPositionAction.canceled += OnPointerPosition;
             _actionMap.Enable();
@@ -63,6 +68,7 @@ namespace Rustline.Gameplay.Player
                 _crouchAction.canceled -= OnCrouch;
                 _fireAction.performed -= OnFirePerformed;
                 _fireAction.canceled -= OnFireCanceled;
+                _toggleFireModeAction.performed -= OnToggleFireModePerformed;
                 _pointerPositionAction.performed -= OnPointerPosition;
                 _pointerPositionAction.canceled -= OnPointerPosition;
                 _actionMap.Disable();
@@ -96,11 +102,19 @@ namespace Rustline.Gameplay.Player
             return value;
         }
 
+        public bool ConsumeToggleFireModePressed()
+        {
+            bool value = _toggleFireModePressed;
+            _toggleFireModePressed = false;
+            return value;
+        }
+
         public void ClearTransientState()
         {
             _jumpPressed = false;
             _jumpReleased = false;
             _firePressed = false;
+            _toggleFireModePressed = false;
         }
 
         private void ResolveActions()
@@ -110,13 +124,14 @@ namespace Rustline.Gameplay.Player
             _jumpAction = _actionMap?.FindAction(jumpActionName, false);
             _crouchAction = _actionMap?.FindAction(crouchActionName, false);
             _fireAction = _actionMap?.FindAction(fireActionName, false);
+            _toggleFireModeAction = _actionMap?.FindAction(toggleFireModeActionName, false);
             _pointerPositionAction = _actionMap?.FindAction(pointerPositionActionName, false);
 
             if (_actionMap == null || _moveAction == null || _jumpAction == null || _crouchAction == null ||
-                _fireAction == null || _pointerPositionAction == null)
+                _fireAction == null || _toggleFireModeAction == null || _pointerPositionAction == null)
             {
                 Debug.LogError(
-                    "Rustline player input requires Player/Move, Player/Jump, Player/Crouch, Player/Fire, and Player/PointerPosition actions.",
+                    "Rustline player input requires Player/Move, Player/Jump, Player/Crouch, Player/Fire, Player/ToggleFireMode, and Player/PointerPosition actions.",
                     this);
                 _actionMap = null;
             }
@@ -161,6 +176,11 @@ namespace Rustline.Gameplay.Player
         private void OnFireCanceled(InputAction.CallbackContext context)
         {
             _fireHeld = false;
+        }
+
+        private void OnToggleFireModePerformed(InputAction.CallbackContext context)
+        {
+            _toggleFireModePressed = true;
         }
 
         private void OnPointerPosition(InputAction.CallbackContext context)
