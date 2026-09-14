@@ -115,7 +115,8 @@ namespace Rustline.Gameplay.Weapons
 
                 Collider2D candidateCollider = candidate.collider;
                 if (candidateCollider == null || candidateCollider == _playerCollider ||
-                    candidateCollider.transform.IsChildOf(transform))
+                    candidateCollider.transform.IsChildOf(transform) ||
+                    candidateCollider.GetComponent<WeaponRaycastPassthrough2D>() != null)
                 {
                     continue;
                 }
