@@ -34,10 +34,56 @@ namespace Rustline.Presentation
         }
     }
 
+    [Serializable]
+    public struct Latch9RunAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+        [SerializeField] private Sprite frame1;
+        [SerializeField] private Sprite frame2;
+        [SerializeField] private Sprite frame3;
+        [SerializeField] private Sprite frame4;
+        [SerializeField] private Sprite frame5;
+
+        public Latch9RunAimPose(
+            int angleDegrees,
+            Sprite frame0,
+            Sprite frame1,
+            Sprite frame2,
+            Sprite frame3,
+            Sprite frame4,
+            Sprite frame5)
+        {
+            this.angleDegrees = angleDegrees;
+            this.frame0 = frame0;
+            this.frame1 = frame1;
+            this.frame2 = frame2;
+            this.frame3 = frame3;
+            this.frame4 = frame4;
+            this.frame5 = frame5;
+        }
+
+        public int AngleDegrees => angleDegrees;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            switch (frameIndex)
+            {
+                case 0: return frame0;
+                case 1: return frame1;
+                case 2: return frame2;
+                case 3: return frame3;
+                case 4: return frame4;
+                case 5: return frame5;
+                default: throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
+    }
+
     /// <summary>
-    /// Incremental Latch-9 armed presenter. The current authored package contains
-    /// directional Idle only, so every unsupported locomotion state deliberately
-    /// releases the shared overlay renderer back to the unarmed presenter.
+    /// Incremental Latch-9 armed presenter. It owns the shared overlay renderer only
+    /// for authored Latch-9 states; every unsupported locomotion state deliberately
+    /// releases the renderer back to the unarmed presenter.
     /// </summary>
     [DefaultExecutionOrder(105)]
     [DisallowMultipleComponent]
@@ -50,6 +96,8 @@ namespace Rustline.Presentation
         [SerializeField] private SpriteRenderer armsWeaponSpriteRenderer;
         [SerializeField] private Sprite[] bodyIdleFrames = Array.Empty<Sprite>();
         [SerializeField] private Latch9IdleAimPose[] idleAimPoses = Array.Empty<Latch9IdleAimPose>();
+        [SerializeField] private Sprite[] bodyRunFrames = Array.Empty<Sprite>();
+        [SerializeField] private Latch9RunAimPose[] runAimPoses = Array.Empty<Latch9RunAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -63,6 +111,7 @@ namespace Rustline.Presentation
 
         public bool OwnsRenderer => _ownsRenderer;
         public int IdleAimPoseCount => idleAimPoses?.Length ?? 0;
+        public int RunAimPoseCount => runAimPoses?.Length ?? 0;
         public LongwatchAimSelection Selection => _selection;
 
         public void Configure(
@@ -72,7 +121,9 @@ namespace Rustline.Presentation
             SpriteRenderer bodyRenderer,
             SpriteRenderer armsRenderer,
             IReadOnlyList<Sprite> idleBodyFrames,
-            IReadOnlyList<Latch9IdleAimPose> poses)
+            IReadOnlyList<Latch9IdleAimPose> idlePoses,
+            IReadOnlyList<Sprite> runBodyFrames,
+            IReadOnlyList<Latch9RunAimPose> runPoses)
         {
             ReleaseRenderer();
 
@@ -82,13 +133,15 @@ namespace Rustline.Presentation
             bodySpriteRenderer = bodyRenderer;
             armsWeaponSpriteRenderer = armsRenderer;
             bodyIdleFrames = Copy(idleBodyFrames);
-            idleAimPoses = Copy(poses);
+            idleAimPoses = Copy(idlePoses);
+            bodyRunFrames = Copy(runBodyFrames);
+            runAimPoses = Copy(runPoses);
 
             _configurationValid = ValidateConfiguration();
             ResetCachedState();
             if (!_configurationValid)
             {
-                Debug.LogError("Latch-9 Idle presenter received an incomplete preview configuration.", this);
+                Debug.LogError("Latch-9 presenter received an incomplete Idle/Run preview configuration.", this);
             }
         }
 
@@ -113,17 +166,37 @@ namespace Rustline.Presentation
 
             UpdateAimSelection();
             int directionIndex = _selection.DirectionIndex;
-            if (directionIndex < 0 || directionIndex >= idleAimPoses.Length)
-            {
-                ReleaseRenderer();
-                return;
-            }
-
+            PlayerAnimationState state = playerAnimator.CurrentState;
             Sprite bodySprite = bodySpriteRenderer.sprite;
-            if (!TryResolveIdleFrame(bodySprite, out int frameIndex))
+            Sprite nextSprite;
+
+            switch (state)
             {
-                ReleaseRenderer();
-                return;
+                case PlayerAnimationState.Idle:
+                    if (directionIndex < 0 || directionIndex >= idleAimPoses.Length ||
+                        !TryResolveFrame(bodyIdleFrames, bodySprite, out int idleFrameIndex))
+                    {
+                        ReleaseRenderer();
+                        return;
+                    }
+
+                    nextSprite = idleAimPoses[directionIndex].GetFrame(idleFrameIndex);
+                    break;
+
+                case PlayerAnimationState.Run:
+                    if (directionIndex < 0 || directionIndex >= runAimPoses.Length ||
+                        !TryResolveFrame(bodyRunFrames, bodySprite, out int runFrameIndex))
+                    {
+                        ReleaseRenderer();
+                        return;
+                    }
+
+                    nextSprite = runAimPoses[directionIndex].GetFrame(runFrameIndex);
+                    break;
+
+                default:
+                    ReleaseRenderer();
+                    return;
             }
 
             AcquireRenderer();
@@ -134,7 +207,7 @@ namespace Rustline.Presentation
                 return;
             }
 
-            armsWeaponSpriteRenderer.sprite = idleAimPoses[directionIndex].GetFrame(frameIndex);
+            armsWeaponSpriteRenderer.sprite = nextSprite;
             _lastBodySprite = bodySprite;
             _lastDirectionIndex = directionIndex;
             _lastFacingLeft = facingLeft;
@@ -142,14 +215,20 @@ namespace Rustline.Presentation
 
         private bool CanOwnRenderer()
         {
-            return _configurationValid && playerAnimator.CurrentState == PlayerAnimationState.Idle;
+            if (!_configurationValid)
+            {
+                return false;
+            }
+
+            PlayerAnimationState state = playerAnimator.CurrentState;
+            return state == PlayerAnimationState.Idle || state == PlayerAnimationState.Run;
         }
 
-        private bool TryResolveIdleFrame(Sprite displayedBody, out int frameIndex)
+        private static bool TryResolveFrame(Sprite[] bodyFrames, Sprite displayedBody, out int frameIndex)
         {
-            for (int index = 0; index < bodyIdleFrames.Length; index++)
+            for (int index = 0; index < bodyFrames.Length; index++)
             {
-                if (displayedBody == bodyIdleFrames[index])
+                if (displayedBody == bodyFrames[index])
                 {
                     frameIndex = index;
                     return true;
@@ -187,16 +266,29 @@ namespace Rustline.Presentation
             if (playerAim == null || playerAnimator == null || unarmedPresenter == null ||
                 bodySpriteRenderer == null || armsWeaponSpriteRenderer == null ||
                 bodyIdleFrames == null || bodyIdleFrames.Length != 2 ||
-                idleAimPoses == null || idleAimPoses.Length != 19)
+                idleAimPoses == null || idleAimPoses.Length != 19 ||
+                bodyRunFrames == null || bodyRunFrames.Length != 6 ||
+                runAimPoses == null || runAimPoses.Length != 19)
             {
                 return false;
             }
 
-            for (int index = 0; index < idleAimPoses.Length; index++)
+            for (int directionIndex = 0; directionIndex < idleAimPoses.Length; directionIndex++)
             {
-                if (idleAimPoses[index].Frame0 == null || idleAimPoses[index].Frame1 == null)
+                if (idleAimPoses[directionIndex].Frame0 == null || idleAimPoses[directionIndex].Frame1 == null)
                 {
                     return false;
+                }
+            }
+
+            for (int directionIndex = 0; directionIndex < runAimPoses.Length; directionIndex++)
+            {
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    if (runAimPoses[directionIndex].GetFrame(frameIndex) == null)
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -264,6 +356,22 @@ namespace Rustline.Presentation
             }
 
             Latch9IdleAimPose[] copy = new Latch9IdleAimPose[source.Count];
+            for (int index = 0; index < source.Count; index++)
+            {
+                copy[index] = source[index];
+            }
+
+            return copy;
+        }
+
+        private static Latch9RunAimPose[] Copy(IReadOnlyList<Latch9RunAimPose> source)
+        {
+            if (source == null)
+            {
+                return Array.Empty<Latch9RunAimPose>();
+            }
+
+            Latch9RunAimPose[] copy = new Latch9RunAimPose[source.Count];
             for (int index = 0; index < source.Count; index++)
             {
                 copy[index] = source[index];
