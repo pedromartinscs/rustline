@@ -15,6 +15,9 @@ MonoBehaviour:
   weaponId: longwatch_dmr
   displayName: Longwatch DMR
   fireMode: 0
+  supportedFireModes:
+  - 0
+  - 1
   shotInterval: 0.25
   range: 80
   damage: 40
