@@ -8,7 +8,7 @@ namespace Rustline.Editor
 {
     /// <summary>
     /// Temporary incremental-art harness for the Latch-9. During Editor Play Mode,
-    /// it replaces Longwatch presentation with the authored Latch-9 Idle and Run packages.
+    /// it replaces Longwatch presentation with authored Latch-9 Idle, Run, and Backpedal packages.
     /// States without Latch-9 art remain unarmed. Nothing is persisted to the scene
     /// or player prefab, and Longwatch gameplay is disabled for this visual preview.
     /// </summary>
@@ -19,12 +19,17 @@ namespace Rustline.Editor
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Idle";
         private const string RunRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Run";
+        private const string BackpedalRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Backpedal";
         private const string BodyRunPath =
             "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_run.png";
+        private const string BodyBackpedalPath =
+            "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_backpedal.png";
         private const int CellWidth = 80;
         private const int CellHeight = 96;
         private const int IdleFrameCount = 2;
         private const int RunFrameCount = 6;
+        private const int BackpedalFrameCount = 4;
         private const float PixelsPerUnit = 16f;
 
         private static readonly string[] DirectionSuffixes =
@@ -70,10 +75,16 @@ namespace Rustline.Editor
 
             if (!TryBuildIdlePoses(out Latch9IdleAimPose[] idlePoses) ||
                 !TryBuildRunPoses(out Latch9RunAimPose[] runPoses) ||
-                !TryLoadBodyRunFrames(out Sprite[] bodyRunFrames))
+                !TryBuildBackpedalPoses(out Latch9BackpedalAimPose[] backpedalPoses) ||
+                !TryLoadBodyFrames(BodyRunPath, RunFrameCount, "Run", out Sprite[] bodyRunFrames) ||
+                !TryLoadBodyFrames(
+                    BodyBackpedalPath,
+                    BackpedalFrameCount,
+                    "Backpedal",
+                    out Sprite[] bodyBackpedalFrames))
             {
                 Debug.LogError(
-                    "Latch-9 Idle/Run preview was not installed because its authored package is incomplete.");
+                    "Latch-9 Idle/Run/Backpedal preview was not installed because its authored package is incomplete.");
                 return;
             }
 
@@ -123,7 +134,9 @@ namespace Rustline.Editor
                     bodyIdleFrames,
                     idlePoses,
                     bodyRunFrames,
-                    runPoses);
+                    runPoses,
+                    bodyBackpedalFrames,
+                    backpedalPoses);
                 latchPresenter.enabled = true;
                 installedCount++;
             }
@@ -131,8 +144,8 @@ namespace Rustline.Editor
             if (installedCount > 0)
             {
                 Debug.Log(
-                    $"Latch-9 Idle/Run preview active on {installedCount} player instance(s): " +
-                    "19-direction Idle and Run use Latch-9; all unsupported states use Unarmed; " +
+                    $"Latch-9 Idle/Run/Backpedal preview active on {installedCount} player instance(s): " +
+                    "19-direction Idle, Run, and Backpedal use Latch-9; all unsupported states use Unarmed; " +
                     "weapon gameplay is disabled for this presentation-only test.");
             }
         }
@@ -187,20 +200,50 @@ namespace Rustline.Editor
             return true;
         }
 
-        private static bool TryLoadBodyRunFrames(out Sprite[] frames)
+        private static bool TryBuildBackpedalPoses(out Latch9BackpedalAimPose[] poses)
         {
-            frames = AssetDatabase.LoadAllAssetsAtPath(BodyRunPath)
+            poses = new Latch9BackpedalAimPose[DirectionSuffixes.Length];
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string suffix = DirectionSuffixes[directionIndex];
+                string path = BackpedalRoot +
+                    "/player_salvager_latch_9_backpedal_aim_" + suffix + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (!ValidateSheet(texture, BackpedalFrameCount, "Backpedal", path))
+                {
+                    poses = null;
+                    return false;
+                }
+
+                poses[directionIndex] = new Latch9BackpedalAimPose(
+                    DirectionAngles[directionIndex],
+                    CreatePreviewSprite(texture, 0, suffix, "backpedal"),
+                    CreatePreviewSprite(texture, 1, suffix, "backpedal"),
+                    CreatePreviewSprite(texture, 2, suffix, "backpedal"),
+                    CreatePreviewSprite(texture, 3, suffix, "backpedal"));
+            }
+
+            return true;
+        }
+
+        private static bool TryLoadBodyFrames(
+            string path,
+            int expectedFrameCount,
+            string stateName,
+            out Sprite[] frames)
+        {
+            frames = AssetDatabase.LoadAllAssetsAtPath(path)
                 .OfType<Sprite>()
                 .OrderBy(sprite => ParseTrailingIndex(sprite.name))
                 .ToArray();
 
-            if (frames.Length == RunFrameCount)
+            if (frames.Length == expectedFrameCount)
             {
                 return true;
             }
 
             Debug.LogError(
-                $"Latch-9 Run preview requires exactly {RunFrameCount} canonical body Run frames: {BodyRunPath}");
+                $"Latch-9 {stateName} preview requires exactly {expectedFrameCount} canonical body frames: {path}");
             frames = null;
             return false;
         }
