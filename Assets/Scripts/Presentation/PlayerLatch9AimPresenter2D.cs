@@ -214,6 +214,10 @@ namespace Rustline.Presentation
         [SerializeField] private Latch9CrouchAimPose[] crouchAimPoses = Array.Empty<Latch9CrouchAimPose>();
         [SerializeField] private Sprite[] bodyFallFrames = Array.Empty<Sprite>();
         [SerializeField] private Latch9FallAimPose[] fallAimPoses = Array.Empty<Latch9FallAimPose>();
+        [SerializeField] private Sprite[] bodyJumpFrames = Array.Empty<Sprite>();
+        [SerializeField] private Sprite[] jumpCarryFrames = Array.Empty<Sprite>();
+        [SerializeField] private Sprite[] bodyLandFrames = Array.Empty<Sprite>();
+        [SerializeField] private Sprite[] landCarryFrames = Array.Empty<Sprite>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -231,6 +235,8 @@ namespace Rustline.Presentation
         public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
         public int CrouchAimPoseCount => crouchAimPoses?.Length ?? 0;
         public int FallAimPoseCount => fallAimPoses?.Length ?? 0;
+        public int JumpCarryFrameCount => jumpCarryFrames?.Length ?? 0;
+        public int LandCarryFrameCount => landCarryFrames?.Length ?? 0;
         public LongwatchAimSelection Selection => _selection;
 
         public void Configure(
@@ -248,7 +254,11 @@ namespace Rustline.Presentation
             IReadOnlyList<Sprite> crouchBodyFrames,
             IReadOnlyList<Latch9CrouchAimPose> crouchPoses,
             IReadOnlyList<Sprite> fallBodyFrames,
-            IReadOnlyList<Latch9FallAimPose> fallPoses)
+            IReadOnlyList<Latch9FallAimPose> fallPoses,
+            IReadOnlyList<Sprite> jumpBodyFrames,
+            IReadOnlyList<Sprite> jumpCarry,
+            IReadOnlyList<Sprite> landBodyFrames,
+            IReadOnlyList<Sprite> landCarry)
         {
             ReleaseRenderer();
 
@@ -267,13 +277,17 @@ namespace Rustline.Presentation
             crouchAimPoses = Copy(crouchPoses);
             bodyFallFrames = Copy(fallBodyFrames);
             fallAimPoses = Copy(fallPoses);
+            bodyJumpFrames = Copy(jumpBodyFrames);
+            jumpCarryFrames = Copy(jumpCarry);
+            bodyLandFrames = Copy(landBodyFrames);
+            landCarryFrames = Copy(landCarry);
 
             _configurationValid = ValidateConfiguration();
             ResetCachedState();
             if (!_configurationValid)
             {
                 Debug.LogError(
-                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch/Fall preview configuration.",
+                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch/Jump/Fall/Land preview configuration.",
                     this);
             }
         }
@@ -356,6 +370,16 @@ namespace Rustline.Presentation
                     nextSprite = crouchAimPoses[directionIndex].GetFrame(crouchFrameIndex);
                     break;
 
+                case PlayerAnimationState.Jump:
+                    if (!TryResolveFrame(bodyJumpFrames, bodySprite, out int jumpFrameIndex))
+                    {
+                        ReleaseRenderer();
+                        return;
+                    }
+
+                    nextSprite = jumpCarryFrames[jumpFrameIndex];
+                    break;
+
                 case PlayerAnimationState.Fall:
                     if (directionIndex < 0 || directionIndex >= fallAimPoses.Length ||
                         !TryResolveFrame(bodyFallFrames, bodySprite, out int fallFrameIndex))
@@ -365,6 +389,16 @@ namespace Rustline.Presentation
                     }
 
                     nextSprite = fallAimPoses[directionIndex].GetFrame(fallFrameIndex);
+                    break;
+
+                case PlayerAnimationState.Land:
+                    if (!TryResolveFrame(bodyLandFrames, bodySprite, out int landFrameIndex))
+                    {
+                        ReleaseRenderer();
+                        return;
+                    }
+
+                    nextSprite = landCarryFrames[landFrameIndex];
                     break;
 
                 default:
@@ -400,7 +434,9 @@ namespace Rustline.Presentation
                  state.Value == PlayerAnimationState.Backpedal ||
                  state.Value == PlayerAnimationState.CrouchIdle ||
                  state.Value == PlayerAnimationState.CrouchMove ||
-                 state.Value == PlayerAnimationState.Fall);
+                 state.Value == PlayerAnimationState.Jump ||
+                 state.Value == PlayerAnimationState.Fall ||
+                 state.Value == PlayerAnimationState.Land);
         }
 
         private static bool TryResolveFrame(Sprite[] bodyFrames, Sprite displayedBody, out int frameIndex)
@@ -453,7 +489,11 @@ namespace Rustline.Presentation
                 bodyCrouchFrames == null || bodyCrouchFrames.Length != 6 ||
                 crouchAimPoses == null || crouchAimPoses.Length != 19 ||
                 bodyFallFrames == null || bodyFallFrames.Length != 1 ||
-                fallAimPoses == null || fallAimPoses.Length != 19)
+                fallAimPoses == null || fallAimPoses.Length != 19 ||
+                bodyJumpFrames == null || bodyJumpFrames.Length != 3 ||
+                jumpCarryFrames == null || jumpCarryFrames.Length != 3 ||
+                bodyLandFrames == null || bodyLandFrames.Length != 2 ||
+                landCarryFrames == null || landCarryFrames.Length != 2)
             {
                 return false;
             }
@@ -502,6 +542,22 @@ namespace Rustline.Presentation
             for (int directionIndex = 0; directionIndex < fallAimPoses.Length; directionIndex++)
             {
                 if (fallAimPoses[directionIndex].Frame0 == null)
+                {
+                    return false;
+                }
+            }
+
+            for (int frameIndex = 0; frameIndex < jumpCarryFrames.Length; frameIndex++)
+            {
+                if (jumpCarryFrames[frameIndex] == null)
+                {
+                    return false;
+                }
+            }
+
+            for (int frameIndex = 0; frameIndex < landCarryFrames.Length; frameIndex++)
+            {
+                if (landCarryFrames[frameIndex] == null)
                 {
                     return false;
                 }

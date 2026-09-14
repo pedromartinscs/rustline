@@ -8,7 +8,7 @@ namespace Rustline.Editor
 {
     /// <summary>
     /// Temporary incremental-art harness for the Latch-9. During Editor Play Mode,
-    /// it replaces Longwatch presentation with authored Latch-9 Idle, Run, Backpedal, Crouch, and Fall packages.
+    /// it replaces Longwatch presentation with authored Latch-9 Idle, Run, Backpedal, Crouch, Fall, Jump carry, and Land carry packages.
     /// States without Latch-9 art remain unarmed. Nothing is persisted to the scene
     /// or player prefab, and Longwatch gameplay is disabled for this visual preview.
     /// </summary>
@@ -25,6 +25,10 @@ namespace Rustline.Editor
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Crouch";
         private const string FallRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Fall";
+        private const string JumpCarryPath =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Carry/Jump/player_salvager_latch_9_jump_carry.png";
+        private const string LandCarryPath =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Carry/Land/player_salvager_latch_9_land_carry.png";
         private const string BodyRunPath =
             "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_run.png";
         private const string BodyBackpedalPath =
@@ -33,13 +37,21 @@ namespace Rustline.Editor
             "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_crouch.png";
         private const string BodyFallPath =
             "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_fall.png";
+        private const string BodyJumpPath =
+            "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_jump.png";
+        private const string BodyLandPath =
+            "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_land.png";
         private const int CellWidth = 80;
         private const int CellHeight = 96;
+        private const int CarryCellWidth = 48;
+        private const int CarryCellHeight = 64;
         private const int IdleFrameCount = 2;
         private const int RunFrameCount = 6;
         private const int BackpedalFrameCount = 4;
         private const int CrouchFrameCount = 6;
+        private const int JumpFrameCount = 3;
         private const int FallFrameCount = 1;
+        private const int LandFrameCount = 2;
         private const float PixelsPerUnit = 16f;
 
         private static readonly string[] DirectionSuffixes =
@@ -88,6 +100,8 @@ namespace Rustline.Editor
                 !TryBuildBackpedalPoses(out Latch9BackpedalAimPose[] backpedalPoses) ||
                 !TryBuildCrouchPoses(out Latch9CrouchAimPose[] crouchPoses) ||
                 !TryBuildFallPoses(out Latch9FallAimPose[] fallPoses) ||
+                !TryBuildCarryFrames(JumpCarryPath, JumpFrameCount, "Jump", out Sprite[] jumpCarryFrames) ||
+                !TryBuildCarryFrames(LandCarryPath, LandFrameCount, "Land", out Sprite[] landCarryFrames) ||
                 !TryLoadBodyFrames(BodyRunPath, RunFrameCount, "Run", out Sprite[] bodyRunFrames) ||
                 !TryLoadBodyFrames(
                     BodyBackpedalPath,
@@ -103,10 +117,20 @@ namespace Rustline.Editor
                     BodyFallPath,
                     FallFrameCount,
                     "Fall",
-                    out Sprite[] bodyFallFrames))
+                    out Sprite[] bodyFallFrames) ||
+                !TryLoadBodyFrames(
+                    BodyJumpPath,
+                    JumpFrameCount,
+                    "Jump",
+                    out Sprite[] bodyJumpFrames) ||
+                !TryLoadBodyFrames(
+                    BodyLandPath,
+                    LandFrameCount,
+                    "Land",
+                    out Sprite[] bodyLandFrames))
             {
                 Debug.LogError(
-                    "Latch-9 Idle/Run/Backpedal/Crouch/Fall preview was not installed because its authored package is incomplete.");
+                    "Latch-9 Idle/Run/Backpedal/Crouch/Jump/Fall/Land preview was not installed because its authored package is incomplete.");
                 return;
             }
 
@@ -162,7 +186,11 @@ namespace Rustline.Editor
                     bodyCrouchFrames,
                     crouchPoses,
                     bodyFallFrames,
-                    fallPoses);
+                    fallPoses,
+                    bodyJumpFrames,
+                    jumpCarryFrames,
+                    bodyLandFrames,
+                    landCarryFrames);
                 latchPresenter.enabled = true;
                 installedCount++;
             }
@@ -170,8 +198,9 @@ namespace Rustline.Editor
             if (installedCount > 0)
             {
                 Debug.Log(
-                    $"Latch-9 Idle/Run/Backpedal/Crouch/Fall preview active on {installedCount} player instance(s): " +
-                    "19-direction Idle, Run, Backpedal, Crouch, and Fall use Latch-9; all unsupported states use Unarmed; " +
+                    $"Latch-9 full locomotion preview active on {installedCount} player instance(s): " +
+                    "19-direction Idle, Run, Backpedal, Crouch, and Fall plus fixed Jump/Land carries use Latch-9; " +
+                    "unsupported states use Unarmed; " +
                     "weapon gameplay is disabled for this presentation-only test.");
             }
         }
@@ -300,6 +329,45 @@ namespace Rustline.Editor
             }
 
             return true;
+        }
+
+        private static bool TryBuildCarryFrames(
+            string path,
+            int frameCount,
+            string stateName,
+            out Sprite[] frames)
+        {
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+            int expectedWidth = CarryCellWidth * frameCount;
+            if (texture == null || texture.width != expectedWidth || texture.height != CarryCellHeight)
+            {
+                Debug.LogError(
+                    $"Latch-9 {stateName} carry sheet must be exactly {expectedWidth}x{CarryCellHeight}: {path}");
+                frames = null;
+                return false;
+            }
+
+            frames = new Sprite[frameCount];
+            for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
+            {
+                frames[frameIndex] = CreateCarryPreviewSprite(texture, frameIndex, stateName.ToLowerInvariant());
+            }
+
+            return true;
+        }
+
+        private static Sprite CreateCarryPreviewSprite(Texture2D texture, int frameIndex, string stateId)
+        {
+            Sprite sprite = Sprite.Create(
+                texture,
+                new Rect(frameIndex * CarryCellWidth, 0f, CarryCellWidth, CarryCellHeight),
+                new Vector2(0.5f, 0f),
+                PixelsPerUnit,
+                0,
+                SpriteMeshType.FullRect);
+            sprite.name = $"latch_9_{stateId}_carry_{frameIndex}_preview";
+            sprite.hideFlags = HideFlags.HideAndDontSave;
+            return sprite;
         }
 
         private static bool TryLoadBodyFrames(
