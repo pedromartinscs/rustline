@@ -349,6 +349,12 @@ namespace Rustline.Editor
             serialized.FindProperty("weaponId").stringValue = "longwatch_dmr";
             serialized.FindProperty("displayName").stringValue = "Longwatch DMR";
             serialized.FindProperty("fireMode").enumValueIndex = (int)WeaponFireMode2D.SemiAutomatic;
+            SerializedProperty supportedFireModes = serialized.FindProperty("supportedFireModes");
+            Require(supportedFireModes != null && supportedFireModes.isArray,
+                "Longwatch supported-fire-mode contract is unavailable.");
+            supportedFireModes.arraySize = 2;
+            supportedFireModes.GetArrayElementAtIndex(0).enumValueIndex = (int)WeaponFireMode2D.SemiAutomatic;
+            supportedFireModes.GetArrayElementAtIndex(1).enumValueIndex = (int)WeaponFireMode2D.Automatic;
             serialized.FindProperty("shotInterval").floatValue = 0.25f;
             serialized.FindProperty("range").floatValue = 80f;
             serialized.FindProperty("damage").intValue = 40;
@@ -705,6 +711,7 @@ namespace Rustline.Editor
                 PlayerInputReader input = GetOrAddComponent<PlayerInputReader>(root);
                 SetObjectReference(input, "inputActions", inputActions);
                 SetString(input, "fireActionName", "Fire");
+                SetString(input, "toggleFireModeActionName", "ToggleFireMode");
                 PlayerGroundProbe2D probe = GetOrAddComponent<PlayerGroundProbe2D>(root);
                 SetObjectReference(probe, "config", config);
                 SetInteger(probe, "groundLayers", 1 << groundLayer);
@@ -887,7 +894,7 @@ namespace Rustline.Editor
                 SetObjectReference(effect, "spriteRenderer", renderer);
                 SetObjectReferenceArray(effect, "frames", frames);
 
-                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, JumpDustPrefabPath);
+                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
                 Require(prefab != null, "Failed to create the jump dust prefab.");
                 return prefab.GetComponent<PlayerJumpDustFx2D>();
             }
@@ -2182,12 +2189,13 @@ namespace Rustline.Editor
             InputActionMap playerMap = input?.FindActionMap("Player", false);
             Require(input != null && input.actionMaps.Count == 1 && playerMap != null,
                 "Input asset must contain only the focused Player action map for M1A.");
-            Require(playerMap.actions.Count == 5 && playerMap.FindAction("Move", false) != null &&
+            Require(playerMap.actions.Count == 6 && playerMap.FindAction("Move", false) != null &&
                 playerMap.FindAction("Jump", false) != null &&
                 playerMap.FindAction("Crouch", false) != null &&
                 playerMap.FindAction("Fire", false) != null &&
+                playerMap.FindAction("ToggleFireMode", false) != null &&
                 playerMap.FindAction("PointerPosition", false) != null,
-                "Player input must contain Move, Jump, Crouch, Fire, and PointerPosition.");
+                "Player input must contain Move, Jump, Crouch, Fire, ToggleFireMode, and PointerPosition.");
             Require(playerMap.FindAction("Move").bindings.Any(binding => binding.path == "<Gamepad>/dpad"),
                 "Move must support the gamepad D-pad.");
             Require(playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Keyboard>/space") &&
@@ -2203,6 +2211,13 @@ namespace Rustline.Editor
                 fire.bindings.Count == 1 && fire.bindings[0].path == "<Mouse>/leftButton" &&
                 fire.bindings[0].interactions == "Press",
                 "Fire must be a Button action bound only to mouse-left with Press semantics.");
+            InputAction toggleFireMode = playerMap.FindAction("ToggleFireMode");
+            Require(toggleFireMode.type == InputActionType.Button &&
+                toggleFireMode.expectedControlType == "Button" &&
+                toggleFireMode.bindings.Count == 1 &&
+                toggleFireMode.bindings[0].path == "<Mouse>/rightButton" &&
+                toggleFireMode.bindings[0].interactions == "Press",
+                "ToggleFireMode must be a Button action bound only to mouse-right with Press semantics.");
             InputAction pointerPosition = playerMap.FindAction("PointerPosition");
             Require(pointerPosition.type == InputActionType.PassThrough &&
                 pointerPosition.expectedControlType == "Vector2" &&
@@ -2256,10 +2271,14 @@ namespace Rustline.Editor
             Require(longwatchDefinition.WeaponId == "longwatch_dmr" &&
                 longwatchDefinition.DisplayName == "Longwatch DMR" &&
                 longwatchDefinition.FireMode == WeaponFireMode2D.SemiAutomatic &&
+                longwatchDefinition.SupportedFireModeCount == 2 &&
+                longwatchDefinition.SupportsMultipleFireModes &&
+                longwatchDefinition.SupportsFireMode(WeaponFireMode2D.SemiAutomatic) &&
+                longwatchDefinition.SupportsFireMode(WeaponFireMode2D.Automatic) &&
                 Mathf.Approximately(longwatchDefinition.ShotInterval, 0.25f) &&
                 Mathf.Approximately(longwatchDefinition.Range, 80f) &&
                 longwatchDefinition.Damage == 40,
-                "Longwatch prototype definition changed from semi-auto / 0.25 s / 80 u / 40 damage.");
+                "Longwatch prototype definition changed from semi+auto / 0.25 s / 80 u / 40 damage.");
             LongwatchMuzzleMetadata2D longwatchMuzzleMetadata =
                 AssetDatabase.LoadAssetAtPath<LongwatchMuzzleMetadata2D>(
                     LongwatchMuzzleMetadataAssetPath);
