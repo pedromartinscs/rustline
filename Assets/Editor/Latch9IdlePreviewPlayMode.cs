@@ -1,3 +1,4 @@
+using System.Linq;
 using Rustline.Gameplay.Weapons;
 using Rustline.Presentation;
 using UnityEditor;
@@ -7,7 +8,7 @@ namespace Rustline.Editor
 {
     /// <summary>
     /// Temporary incremental-art harness for the Latch-9. During Editor Play Mode,
-    /// it replaces Longwatch presentation with the authored Latch-9 Idle package.
+    /// it replaces Longwatch presentation with the authored Latch-9 Idle and Run packages.
     /// States without Latch-9 art remain unarmed. Nothing is persisted to the scene
     /// or player prefab, and Longwatch gameplay is disabled for this visual preview.
     /// </summary>
@@ -16,9 +17,14 @@ namespace Rustline.Editor
     {
         private const string IdleRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Idle";
+        private const string RunRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Run";
+        private const string BodyRunPath =
+            "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_run.png";
         private const int CellWidth = 80;
         private const int CellHeight = 96;
-        private const int SheetWidth = CellWidth * 2;
+        private const int IdleFrameCount = 2;
+        private const int RunFrameCount = 6;
         private const float PixelsPerUnit = 16f;
 
         private static readonly string[] DirectionSuffixes =
@@ -62,6 +68,15 @@ namespace Rustline.Editor
                     FindObjectsInactive.Include,
                     FindObjectsSortMode.None);
 
+            if (!TryBuildIdlePoses(out Latch9IdleAimPose[] idlePoses) ||
+                !TryBuildRunPoses(out Latch9RunAimPose[] runPoses) ||
+                !TryLoadBodyRunFrames(out Sprite[] bodyRunFrames))
+            {
+                Debug.LogError(
+                    "Latch-9 Idle/Run preview was not installed because its authored package is incomplete.");
+                return;
+            }
+
             int installedCount = 0;
             foreach (PlayerLongwatchAimPresenter2D longwatchPresenter in longwatchPresenters)
             {
@@ -71,15 +86,9 @@ namespace Rustline.Editor
                     continue;
                 }
 
-                if (!TryBuildIdlePoses(out Latch9IdleAimPose[] poses))
+                if (longwatchPresenter.BodyIdleFrameCount != IdleFrameCount)
                 {
-                    Debug.LogError("Latch-9 Idle preview was not installed because its 19 authored sheets are incomplete.");
-                    return;
-                }
-
-                if (longwatchPresenter.BodyIdleFrameCount != 2)
-                {
-                    Debug.LogError("Latch-9 Idle preview requires the canonical two-frame player Idle body.");
+                    Debug.LogError("Latch-9 preview requires the canonical two-frame player Idle body.");
                     return;
                 }
 
@@ -112,7 +121,9 @@ namespace Rustline.Editor
                     longwatchPresenter.BodySpriteRenderer,
                     longwatchPresenter.ArmsWeaponSpriteRenderer,
                     bodyIdleFrames,
-                    poses);
+                    idlePoses,
+                    bodyRunFrames,
+                    runPoses);
                 latchPresenter.enabled = true;
                 installedCount++;
             }
@@ -120,8 +131,8 @@ namespace Rustline.Editor
             if (installedCount > 0)
             {
                 Debug.Log(
-                    $"Latch-9 Idle preview active on {installedCount} player instance(s): " +
-                    "19-direction Idle uses Latch-9; all unsupported states use Unarmed; " +
+                    $"Latch-9 Idle/Run preview active on {installedCount} player instance(s): " +
+                    "19-direction Idle and Run use Latch-9; all unsupported states use Unarmed; " +
                     "weapon gameplay is disabled for this presentation-only test.");
             }
         }
@@ -134,16 +145,14 @@ namespace Rustline.Editor
                 string suffix = DirectionSuffixes[directionIndex];
                 string path = IdleRoot + "/player_salvager_latch_9_idle_aim_" + suffix + ".png";
                 Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                if (texture == null || texture.width != SheetWidth || texture.height != CellHeight)
+                if (!ValidateSheet(texture, IdleFrameCount, "Idle", path))
                 {
-                    Debug.LogError(
-                        $"Latch-9 Idle sheet must be exactly {SheetWidth}x{CellHeight}: {path}");
                     poses = null;
                     return false;
                 }
 
-                Sprite frame0 = CreatePreviewSprite(texture, 0, suffix);
-                Sprite frame1 = CreatePreviewSprite(texture, 1, suffix);
+                Sprite frame0 = CreatePreviewSprite(texture, 0, suffix, "idle");
+                Sprite frame1 = CreatePreviewSprite(texture, 1, suffix, "idle");
                 poses[directionIndex] =
                     new Latch9IdleAimPose(DirectionAngles[directionIndex], frame0, frame1);
             }
@@ -151,7 +160,69 @@ namespace Rustline.Editor
             return true;
         }
 
-        private static Sprite CreatePreviewSprite(Texture2D texture, int frameIndex, string suffix)
+        private static bool TryBuildRunPoses(out Latch9RunAimPose[] poses)
+        {
+            poses = new Latch9RunAimPose[DirectionSuffixes.Length];
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string suffix = DirectionSuffixes[directionIndex];
+                string path = RunRoot + "/player_salvager_latch_9_run_aim_" + suffix + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (!ValidateSheet(texture, RunFrameCount, "Run", path))
+                {
+                    poses = null;
+                    return false;
+                }
+
+                poses[directionIndex] = new Latch9RunAimPose(
+                    DirectionAngles[directionIndex],
+                    CreatePreviewSprite(texture, 0, suffix, "run"),
+                    CreatePreviewSprite(texture, 1, suffix, "run"),
+                    CreatePreviewSprite(texture, 2, suffix, "run"),
+                    CreatePreviewSprite(texture, 3, suffix, "run"),
+                    CreatePreviewSprite(texture, 4, suffix, "run"),
+                    CreatePreviewSprite(texture, 5, suffix, "run"));
+            }
+
+            return true;
+        }
+
+        private static bool TryLoadBodyRunFrames(out Sprite[] frames)
+        {
+            frames = AssetDatabase.LoadAllAssetsAtPath(BodyRunPath)
+                .OfType<Sprite>()
+                .OrderBy(sprite => ParseTrailingIndex(sprite.name))
+                .ToArray();
+
+            if (frames.Length == RunFrameCount)
+            {
+                return true;
+            }
+
+            Debug.LogError(
+                $"Latch-9 Run preview requires exactly {RunFrameCount} canonical body Run frames: {BodyRunPath}");
+            frames = null;
+            return false;
+        }
+
+        private static bool ValidateSheet(Texture2D texture, int frameCount, string stateName, string path)
+        {
+            int expectedWidth = CellWidth * frameCount;
+            if (texture != null && texture.width == expectedWidth && texture.height == CellHeight)
+            {
+                return true;
+            }
+
+            Debug.LogError(
+                $"Latch-9 {stateName} sheet must be exactly {expectedWidth}x{CellHeight}: {path}");
+            return false;
+        }
+
+        private static Sprite CreatePreviewSprite(
+            Texture2D texture,
+            int frameIndex,
+            string suffix,
+            string stateId)
         {
             Sprite sprite = Sprite.Create(
                 texture,
@@ -160,9 +231,18 @@ namespace Rustline.Editor
                 PixelsPerUnit,
                 0,
                 SpriteMeshType.FullRect);
-            sprite.name = $"latch_9_idle_aim_{suffix}_{frameIndex}_preview";
+            sprite.name = $"latch_9_{stateId}_aim_{suffix}_{frameIndex}_preview";
             sprite.hideFlags = HideFlags.HideAndDontSave;
             return sprite;
+        }
+
+        private static int ParseTrailingIndex(string spriteName)
+        {
+            int separatorIndex = spriteName.LastIndexOf('_');
+            return separatorIndex >= 0 &&
+                   int.TryParse(spriteName.Substring(separatorIndex + 1), out int frameIndex)
+                ? frameIndex
+                : int.MaxValue;
         }
     }
 }
