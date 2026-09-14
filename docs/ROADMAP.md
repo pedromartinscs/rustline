@@ -123,7 +123,7 @@ The first-weapon locomotion presentation package is considered **closed for the 
 - [ ] Production impact FX
 - [ ] Combat audio
 
-The current Longwatch uses mouse-left fire, `0.25 s` shot interval, `80` unit range, and `40` prototype damage. Hitscan direction remains exact continuous aim rather than the quantized visual angle. Muzzle metadata drives presentation only; ballistics and the distal tracer still originate at `AimOriginWorld`. An active muzzle flash is canceled immediately when presentation enters a state that no longer exposes a muzzle-capable Longwatch pose, preventing a flash from bleeding into Jump/Land carry or unarmed traversal.
+The current Longwatch uses mouse-left fire, `1/12 s` shot interval (**12 shots/s**), `80` unit range, and `40` prototype damage. Hitscan direction remains exact continuous aim rather than the quantized visual angle. Muzzle metadata drives presentation only; ballistics and the distal tracer still originate at `AimOriginWorld`. An active muzzle flash is canceled immediately when presentation enters a state that no longer exposes a muzzle-capable Longwatch pose, preventing a flash from bleeding into Jump/Land carry or unarmed traversal.
 
 **Exit criterion:** shooting targets while moving feels deliberate and responsive, and authored weapon presentation remains coherent across locomotion/facing changes. **Satisfied for the Longwatch proof weapon; second-weapon/ammo work belongs to the demo-content pass.**
 
