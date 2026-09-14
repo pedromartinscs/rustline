@@ -18,7 +18,7 @@ namespace Rustline.Gameplay.Weapons
         {
             WeaponFireMode2D.SemiAutomatic,
         };
-        [SerializeField, Min(0.01f)] private float shotInterval = 0.25f;
+        [SerializeField, Min(0.01f)] private float shotInterval = 1f / 12f;
         [SerializeField, Min(0.01f)] private float range = 80f;
         [SerializeField, Min(0)] private int damage = 40;
 

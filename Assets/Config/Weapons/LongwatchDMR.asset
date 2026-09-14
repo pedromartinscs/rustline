@@ -18,6 +18,6 @@ MonoBehaviour:
   supportedFireModes:
   - 0
   - 1
-  shotInterval: 0.25
+  shotInterval: 0.083333336
   range: 80
   damage: 40

@@ -22,7 +22,7 @@ namespace Rustline.Tests
             Assert.That(definition.WeaponId, Is.EqualTo("longwatch_dmr"));
             Assert.That(definition.DisplayName, Is.EqualTo("Longwatch DMR"));
             Assert.That(definition.FireMode, Is.EqualTo(WeaponFireMode2D.SemiAutomatic));
-            Assert.That(definition.ShotInterval, Is.EqualTo(0.25f));
+            Assert.That(definition.ShotInterval, Is.EqualTo(1f / 12f));
             Assert.That(definition.Range, Is.EqualTo(80f));
             Assert.That(definition.Damage, Is.EqualTo(40));
         }

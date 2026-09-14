@@ -100,7 +100,7 @@ Current production status:
 - LedgeClimb intentionally renders no Longwatch and releases to the accepted six-frame unarmed traversal overlay;
 - Wall Kick keeps the accepted Jump/Fall presentation fallback and remains non-firing;
 - generic `PlayerAim2D` owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
-- mouse-left primary fire drives a semi-automatic Longwatch hitscan from exact continuous aim at a `0.25 s` interval, `80` unit range, and `40` prototype damage;
+- mouse-left primary fire drives the Longwatch hitscan from exact continuous aim at a `1/12 s` interval (**12 shots/s**), `80` unit range, and `40` prototype damage;
 - firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall; Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked;
 - exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash beneath the recoil-driven weapon overlay;
 - an active muzzle flash is canceled immediately if presentation transitions to a state with no muzzle-capable Longwatch pose, preventing carry/traversal bleed;
