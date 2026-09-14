@@ -164,6 +164,32 @@ namespace Rustline.Presentation
         }
     }
 
+    [Serializable]
+    public struct Latch9FallAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+
+        public Latch9FallAimPose(int angleDegrees, Sprite frame0)
+        {
+            this.angleDegrees = angleDegrees;
+            this.frame0 = frame0;
+        }
+
+        public int AngleDegrees => angleDegrees;
+        public Sprite Frame0 => frame0;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            if (frameIndex != 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+
+            return frame0;
+        }
+    }
+
     /// <summary>
     /// Incremental Latch-9 armed presenter. It owns the shared overlay renderer only
     /// for authored Latch-9 states; every unsupported locomotion state deliberately
@@ -186,6 +212,8 @@ namespace Rustline.Presentation
         [SerializeField] private Latch9BackpedalAimPose[] backpedalAimPoses = Array.Empty<Latch9BackpedalAimPose>();
         [SerializeField] private Sprite[] bodyCrouchFrames = Array.Empty<Sprite>();
         [SerializeField] private Latch9CrouchAimPose[] crouchAimPoses = Array.Empty<Latch9CrouchAimPose>();
+        [SerializeField] private Sprite[] bodyFallFrames = Array.Empty<Sprite>();
+        [SerializeField] private Latch9FallAimPose[] fallAimPoses = Array.Empty<Latch9FallAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -202,6 +230,7 @@ namespace Rustline.Presentation
         public int RunAimPoseCount => runAimPoses?.Length ?? 0;
         public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
         public int CrouchAimPoseCount => crouchAimPoses?.Length ?? 0;
+        public int FallAimPoseCount => fallAimPoses?.Length ?? 0;
         public LongwatchAimSelection Selection => _selection;
 
         public void Configure(
@@ -217,7 +246,9 @@ namespace Rustline.Presentation
             IReadOnlyList<Sprite> backpedalBodyFrames,
             IReadOnlyList<Latch9BackpedalAimPose> backpedalPoses,
             IReadOnlyList<Sprite> crouchBodyFrames,
-            IReadOnlyList<Latch9CrouchAimPose> crouchPoses)
+            IReadOnlyList<Latch9CrouchAimPose> crouchPoses,
+            IReadOnlyList<Sprite> fallBodyFrames,
+            IReadOnlyList<Latch9FallAimPose> fallPoses)
         {
             ReleaseRenderer();
 
@@ -234,13 +265,15 @@ namespace Rustline.Presentation
             backpedalAimPoses = Copy(backpedalPoses);
             bodyCrouchFrames = Copy(crouchBodyFrames);
             crouchAimPoses = Copy(crouchPoses);
+            bodyFallFrames = Copy(fallBodyFrames);
+            fallAimPoses = Copy(fallPoses);
 
             _configurationValid = ValidateConfiguration();
             ResetCachedState();
             if (!_configurationValid)
             {
                 Debug.LogError(
-                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch preview configuration.",
+                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch/Fall preview configuration.",
                     this);
             }
         }
@@ -323,6 +356,17 @@ namespace Rustline.Presentation
                     nextSprite = crouchAimPoses[directionIndex].GetFrame(crouchFrameIndex);
                     break;
 
+                case PlayerAnimationState.Fall:
+                    if (directionIndex < 0 || directionIndex >= fallAimPoses.Length ||
+                        !TryResolveFrame(bodyFallFrames, bodySprite, out int fallFrameIndex))
+                    {
+                        ReleaseRenderer();
+                        return;
+                    }
+
+                    nextSprite = fallAimPoses[directionIndex].GetFrame(fallFrameIndex);
+                    break;
+
                 default:
                     ReleaseRenderer();
                     return;
@@ -355,7 +399,8 @@ namespace Rustline.Presentation
                  state.Value == PlayerAnimationState.Run ||
                  state.Value == PlayerAnimationState.Backpedal ||
                  state.Value == PlayerAnimationState.CrouchIdle ||
-                 state.Value == PlayerAnimationState.CrouchMove);
+                 state.Value == PlayerAnimationState.CrouchMove ||
+                 state.Value == PlayerAnimationState.Fall);
         }
 
         private static bool TryResolveFrame(Sprite[] bodyFrames, Sprite displayedBody, out int frameIndex)
@@ -406,7 +451,9 @@ namespace Rustline.Presentation
                 bodyBackpedalFrames == null || bodyBackpedalFrames.Length != 4 ||
                 backpedalAimPoses == null || backpedalAimPoses.Length != 19 ||
                 bodyCrouchFrames == null || bodyCrouchFrames.Length != 6 ||
-                crouchAimPoses == null || crouchAimPoses.Length != 19)
+                crouchAimPoses == null || crouchAimPoses.Length != 19 ||
+                bodyFallFrames == null || bodyFallFrames.Length != 1 ||
+                fallAimPoses == null || fallAimPoses.Length != 19)
             {
                 return false;
             }
@@ -449,6 +496,14 @@ namespace Rustline.Presentation
                     {
                         return false;
                     }
+                }
+            }
+
+            for (int directionIndex = 0; directionIndex < fallAimPoses.Length; directionIndex++)
+            {
+                if (fallAimPoses[directionIndex].Frame0 == null)
+                {
+                    return false;
                 }
             }
 
@@ -564,6 +619,22 @@ namespace Rustline.Presentation
             }
 
             Latch9CrouchAimPose[] copy = new Latch9CrouchAimPose[source.Count];
+            for (int index = 0; index < source.Count; index++)
+            {
+                copy[index] = source[index];
+            }
+
+            return copy;
+        }
+
+        private static Latch9FallAimPose[] Copy(IReadOnlyList<Latch9FallAimPose> source)
+        {
+            if (source == null)
+            {
+                return Array.Empty<Latch9FallAimPose>();
+            }
+
+            Latch9FallAimPose[] copy = new Latch9FallAimPose[source.Count];
             for (int index = 0; index < source.Count; index++)
             {
                 copy[index] = source[index];
