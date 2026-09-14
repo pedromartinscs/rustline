@@ -894,7 +894,7 @@ namespace Rustline.Editor
                 SetObjectReference(effect, "spriteRenderer", renderer);
                 SetObjectReferenceArray(effect, "frames", frames);
 
-                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, PlayerPrefabPath);
+                GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, JumpDustPrefabPath);
                 Require(prefab != null, "Failed to create the jump dust prefab.");
                 return prefab.GetComponent<PlayerJumpDustFx2D>();
             }
