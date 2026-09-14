@@ -8,7 +8,7 @@ namespace Rustline.Editor
 {
     /// <summary>
     /// Temporary incremental-art harness for the Latch-9. During Editor Play Mode,
-    /// it replaces Longwatch presentation with authored Latch-9 Idle, Run, and Backpedal packages.
+    /// it replaces Longwatch presentation with authored Latch-9 Idle, Run, Backpedal, and Crouch packages.
     /// States without Latch-9 art remain unarmed. Nothing is persisted to the scene
     /// or player prefab, and Longwatch gameplay is disabled for this visual preview.
     /// </summary>
@@ -21,15 +21,20 @@ namespace Rustline.Editor
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Run";
         private const string BackpedalRoot =
             "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Backpedal";
+        private const string CrouchRoot =
+            "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim/Crouch";
         private const string BodyRunPath =
             "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_run.png";
         private const string BodyBackpedalPath =
             "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_backpedal.png";
+        private const string BodyCrouchPath =
+            "Assets/Art/Characters/Player/Sprites/Body/player_salvager_body_crouch.png";
         private const int CellWidth = 80;
         private const int CellHeight = 96;
         private const int IdleFrameCount = 2;
         private const int RunFrameCount = 6;
         private const int BackpedalFrameCount = 4;
+        private const int CrouchFrameCount = 6;
         private const float PixelsPerUnit = 16f;
 
         private static readonly string[] DirectionSuffixes =
@@ -76,15 +81,21 @@ namespace Rustline.Editor
             if (!TryBuildIdlePoses(out Latch9IdleAimPose[] idlePoses) ||
                 !TryBuildRunPoses(out Latch9RunAimPose[] runPoses) ||
                 !TryBuildBackpedalPoses(out Latch9BackpedalAimPose[] backpedalPoses) ||
+                !TryBuildCrouchPoses(out Latch9CrouchAimPose[] crouchPoses) ||
                 !TryLoadBodyFrames(BodyRunPath, RunFrameCount, "Run", out Sprite[] bodyRunFrames) ||
                 !TryLoadBodyFrames(
                     BodyBackpedalPath,
                     BackpedalFrameCount,
                     "Backpedal",
-                    out Sprite[] bodyBackpedalFrames))
+                    out Sprite[] bodyBackpedalFrames) ||
+                !TryLoadBodyFrames(
+                    BodyCrouchPath,
+                    CrouchFrameCount,
+                    "Crouch",
+                    out Sprite[] bodyCrouchFrames))
             {
                 Debug.LogError(
-                    "Latch-9 Idle/Run/Backpedal preview was not installed because its authored package is incomplete.");
+                    "Latch-9 Idle/Run/Backpedal/Crouch preview was not installed because its authored package is incomplete.");
                 return;
             }
 
@@ -136,7 +147,9 @@ namespace Rustline.Editor
                     bodyRunFrames,
                     runPoses,
                     bodyBackpedalFrames,
-                    backpedalPoses);
+                    backpedalPoses,
+                    bodyCrouchFrames,
+                    crouchPoses);
                 latchPresenter.enabled = true;
                 installedCount++;
             }
@@ -144,8 +157,8 @@ namespace Rustline.Editor
             if (installedCount > 0)
             {
                 Debug.Log(
-                    $"Latch-9 Idle/Run/Backpedal preview active on {installedCount} player instance(s): " +
-                    "19-direction Idle, Run, and Backpedal use Latch-9; all unsupported states use Unarmed; " +
+                    $"Latch-9 Idle/Run/Backpedal/Crouch preview active on {installedCount} player instance(s): " +
+                    "19-direction Idle, Run, Backpedal, and Crouch use Latch-9; all unsupported states use Unarmed; " +
                     "weapon gameplay is disabled for this presentation-only test.");
             }
         }
@@ -221,6 +234,34 @@ namespace Rustline.Editor
                     CreatePreviewSprite(texture, 1, suffix, "backpedal"),
                     CreatePreviewSprite(texture, 2, suffix, "backpedal"),
                     CreatePreviewSprite(texture, 3, suffix, "backpedal"));
+            }
+
+            return true;
+        }
+
+        private static bool TryBuildCrouchPoses(out Latch9CrouchAimPose[] poses)
+        {
+            poses = new Latch9CrouchAimPose[DirectionSuffixes.Length];
+            for (int directionIndex = 0; directionIndex < DirectionSuffixes.Length; directionIndex++)
+            {
+                string suffix = DirectionSuffixes[directionIndex];
+                string path = CrouchRoot +
+                    "/player_salvager_latch_9_crouch_aim_" + suffix + ".png";
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (!ValidateSheet(texture, CrouchFrameCount, "Crouch", path))
+                {
+                    poses = null;
+                    return false;
+                }
+
+                poses[directionIndex] = new Latch9CrouchAimPose(
+                    DirectionAngles[directionIndex],
+                    CreatePreviewSprite(texture, 0, suffix, "crouch"),
+                    CreatePreviewSprite(texture, 1, suffix, "crouch"),
+                    CreatePreviewSprite(texture, 2, suffix, "crouch"),
+                    CreatePreviewSprite(texture, 3, suffix, "crouch"),
+                    CreatePreviewSprite(texture, 4, suffix, "crouch"),
+                    CreatePreviewSprite(texture, 5, suffix, "crouch"));
             }
 
             return true;
