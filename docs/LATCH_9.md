@@ -1,6 +1,6 @@
 # Latch-9 Plasma Sidearm
 
-This document records the current gameplay/design contract for the **Latch-9**, Rustline's second demo weapon. It is a design target only until the runtime and presentation package are implemented.
+This document records the current gameplay/design contract for the **Latch-9**, Rustline's second demo weapon. Its gameplay runtime remains a design target while the player presentation package is being authored incrementally.
 
 The Latch-9 is intended to complement, not compete with, the Longwatch DMR. The Longwatch remains the stronger limited-ammunition primary weapon; the Latch-9 is the always-available fallback.
 
@@ -77,9 +77,9 @@ The Bouncing mode is intended as a tactical geometry tool, not a raw-DPS upgrade
 
 ## Presentation direction
 
-The visual concept is intentionally not locked until the reference/model image for the weapon is chosen.
+The approved concept establishes a compact rustic plasma pistol with an industrial/salvage silhouette. Production player art must remain inside Rustline Canonical 28 and follow the established layered-player presentation conventions.
 
-Current direction only:
+Current visual direction:
 
 - compact pistol-scale silhouette;
 - rustic plasma / industrial salvage construction;
@@ -87,15 +87,31 @@ Current direction only:
 - should not look like a clean modern ballistic handgun or polished sci-fi service pistol;
 - charging/cooling feedback should make the slow shot cadence readable without requiring ammunition UI.
 
-The final art package must be based on the approved reference/model and then integrated according to Rustline's established player/weapon presentation conventions.
+## Incremental player-art integration — 2026-09-14
+
+The first production package is now authored:
+
+- Idle uses all **19 canonical right-facing aim directions** from `+90°` through `-90°`;
+- each direction contains the canonical **two Idle frames**;
+- the opposite hemisphere continues to use runtime horizontal mirroring;
+- the source sheets are `160×96`, representing two horizontal `80×96` armed cells with the shared body pivot at `(24, 8)` source pixels.
+
+The current integration is deliberately a **presentation-only Editor Play Mode preview**. `PlayerLatch9AimPresenter2D` owns the shared Arms/Weapon renderer only while the body is in Idle. Any state without authored Latch-9 art — currently Run, Backpedal, Crouch, Jump, Fall, Land, Wall Brace, Wall Kick, LedgeClimb, and any other unsupported state — immediately releases the renderer to `PlayerUnarmedArmsPresenter2D`, so the existing unarmed animation is shown instead.
+
+`Latch9IdlePreviewPlayMode` temporarily disables Longwatch presentation and weapon gameplay only for the running Editor play session, builds the 19 Latch-9 Idle directions from their full fixed-cell textures, and leaves the prefab/scene untouched. This exists so angle, scale, hand placement, mirroring, and silhouette can be human-tested in-engine before hundreds of additional Latch-9 frames are authored. It is not the final weapon-selection architecture and is not included as a claim that Latch-9 gameplay exists.
+
+The committed Unity sprite metadata for this first art pass currently contains tight per-sprite rectangles rather than the final fixed `80×96` import rectangles. The preview intentionally constructs fixed-cell sprites in memory from each `160×96` texture, so the visual test uses the canonical body-relative pivot without mutating the imported assets. Production integration should normalize the importer metadata when the package is promoted from preview to permanent runtime content.
 
 ## Current status
 
 - gameplay behavior: **documented / approved direction**;
+- visual concept: **approved as the production reference direction**;
+- Idle player art: **19 directions × 2 frames authored**;
+- Idle in-engine angle preview: **implemented for Editor Play Mode**;
+- unsupported Latch-9 states: **explicit Unarmed fallback during preview**;
 - Standard Plasma runtime: **not implemented**;
 - Bouncing Plasma runtime: **not implemented**;
 - fire-mode toggle runtime: **not implemented**;
-- Latch-9 art/reference: **not yet approved**;
-- player presentation package: **not implemented**.
+- remaining player presentation package: **in progress**.
 
-Do not generate or lock production weapon art from this document alone. The approved visual reference/model remains the authority for the eventual Latch-9 appearance.
+The approved concept and authored player overlays are the authority for the eventual Latch-9 appearance. Do not treat the temporary Idle preview harness as the final weapon-selection or gameplay implementation.
