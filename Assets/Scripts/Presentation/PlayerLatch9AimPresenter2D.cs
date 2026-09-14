@@ -118,6 +118,52 @@ namespace Rustline.Presentation
         }
     }
 
+    [Serializable]
+    public struct Latch9CrouchAimPose
+    {
+        [SerializeField] private int angleDegrees;
+        [SerializeField] private Sprite frame0;
+        [SerializeField] private Sprite frame1;
+        [SerializeField] private Sprite frame2;
+        [SerializeField] private Sprite frame3;
+        [SerializeField] private Sprite frame4;
+        [SerializeField] private Sprite frame5;
+
+        public Latch9CrouchAimPose(
+            int angleDegrees,
+            Sprite frame0,
+            Sprite frame1,
+            Sprite frame2,
+            Sprite frame3,
+            Sprite frame4,
+            Sprite frame5)
+        {
+            this.angleDegrees = angleDegrees;
+            this.frame0 = frame0;
+            this.frame1 = frame1;
+            this.frame2 = frame2;
+            this.frame3 = frame3;
+            this.frame4 = frame4;
+            this.frame5 = frame5;
+        }
+
+        public int AngleDegrees => angleDegrees;
+
+        public Sprite GetFrame(int frameIndex)
+        {
+            switch (frameIndex)
+            {
+                case 0: return frame0;
+                case 1: return frame1;
+                case 2: return frame2;
+                case 3: return frame3;
+                case 4: return frame4;
+                case 5: return frame5;
+                default: throw new ArgumentOutOfRangeException(nameof(frameIndex));
+            }
+        }
+    }
+
     /// <summary>
     /// Incremental Latch-9 armed presenter. It owns the shared overlay renderer only
     /// for authored Latch-9 states; every unsupported locomotion state deliberately
@@ -138,6 +184,8 @@ namespace Rustline.Presentation
         [SerializeField] private Latch9RunAimPose[] runAimPoses = Array.Empty<Latch9RunAimPose>();
         [SerializeField] private Sprite[] bodyBackpedalFrames = Array.Empty<Sprite>();
         [SerializeField] private Latch9BackpedalAimPose[] backpedalAimPoses = Array.Empty<Latch9BackpedalAimPose>();
+        [SerializeField] private Sprite[] bodyCrouchFrames = Array.Empty<Sprite>();
+        [SerializeField] private Latch9CrouchAimPose[] crouchAimPoses = Array.Empty<Latch9CrouchAimPose>();
 
         private LongwatchAimSelection _selection = LongwatchAimSelection.Default;
         private bool _hasValidAim;
@@ -153,6 +201,7 @@ namespace Rustline.Presentation
         public int IdleAimPoseCount => idleAimPoses?.Length ?? 0;
         public int RunAimPoseCount => runAimPoses?.Length ?? 0;
         public int BackpedalAimPoseCount => backpedalAimPoses?.Length ?? 0;
+        public int CrouchAimPoseCount => crouchAimPoses?.Length ?? 0;
         public LongwatchAimSelection Selection => _selection;
 
         public void Configure(
@@ -166,7 +215,9 @@ namespace Rustline.Presentation
             IReadOnlyList<Sprite> runBodyFrames,
             IReadOnlyList<Latch9RunAimPose> runPoses,
             IReadOnlyList<Sprite> backpedalBodyFrames,
-            IReadOnlyList<Latch9BackpedalAimPose> backpedalPoses)
+            IReadOnlyList<Latch9BackpedalAimPose> backpedalPoses,
+            IReadOnlyList<Sprite> crouchBodyFrames,
+            IReadOnlyList<Latch9CrouchAimPose> crouchPoses)
         {
             ReleaseRenderer();
 
@@ -181,13 +232,15 @@ namespace Rustline.Presentation
             runAimPoses = Copy(runPoses);
             bodyBackpedalFrames = Copy(backpedalBodyFrames);
             backpedalAimPoses = Copy(backpedalPoses);
+            bodyCrouchFrames = Copy(crouchBodyFrames);
+            crouchAimPoses = Copy(crouchPoses);
 
             _configurationValid = ValidateConfiguration();
             ResetCachedState();
             if (!_configurationValid)
             {
                 Debug.LogError(
-                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal preview configuration.",
+                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch preview configuration.",
                     this);
             }
         }
@@ -258,6 +311,18 @@ namespace Rustline.Presentation
                     nextSprite = backpedalAimPoses[directionIndex].GetFrame(backpedalFrameIndex);
                     break;
 
+                case PlayerAnimationState.CrouchIdle:
+                case PlayerAnimationState.CrouchMove:
+                    if (directionIndex < 0 || directionIndex >= crouchAimPoses.Length ||
+                        !TryResolveFrame(bodyCrouchFrames, bodySprite, out int crouchFrameIndex))
+                    {
+                        ReleaseRenderer();
+                        return;
+                    }
+
+                    nextSprite = crouchAimPoses[directionIndex].GetFrame(crouchFrameIndex);
+                    break;
+
                 default:
                     ReleaseRenderer();
                     return;
@@ -288,7 +353,9 @@ namespace Rustline.Presentation
             return state.HasValue &&
                 (state.Value == PlayerAnimationState.Idle ||
                  state.Value == PlayerAnimationState.Run ||
-                 state.Value == PlayerAnimationState.Backpedal);
+                 state.Value == PlayerAnimationState.Backpedal ||
+                 state.Value == PlayerAnimationState.CrouchIdle ||
+                 state.Value == PlayerAnimationState.CrouchMove);
         }
 
         private static bool TryResolveFrame(Sprite[] bodyFrames, Sprite displayedBody, out int frameIndex)
@@ -337,7 +404,9 @@ namespace Rustline.Presentation
                 bodyRunFrames == null || bodyRunFrames.Length != 6 ||
                 runAimPoses == null || runAimPoses.Length != 19 ||
                 bodyBackpedalFrames == null || bodyBackpedalFrames.Length != 4 ||
-                backpedalAimPoses == null || backpedalAimPoses.Length != 19)
+                backpedalAimPoses == null || backpedalAimPoses.Length != 19 ||
+                bodyCrouchFrames == null || bodyCrouchFrames.Length != 6 ||
+                crouchAimPoses == null || crouchAimPoses.Length != 19)
             {
                 return false;
             }
@@ -366,6 +435,17 @@ namespace Rustline.Presentation
                 for (int frameIndex = 0; frameIndex < 4; frameIndex++)
                 {
                     if (backpedalAimPoses[directionIndex].GetFrame(frameIndex) == null)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            for (int directionIndex = 0; directionIndex < crouchAimPoses.Length; directionIndex++)
+            {
+                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
+                {
+                    if (crouchAimPoses[directionIndex].GetFrame(frameIndex) == null)
                     {
                         return false;
                     }
@@ -468,6 +548,22 @@ namespace Rustline.Presentation
             }
 
             Latch9BackpedalAimPose[] copy = new Latch9BackpedalAimPose[source.Count];
+            for (int index = 0; index < source.Count; index++)
+            {
+                copy[index] = source[index];
+            }
+
+            return copy;
+        }
+
+        private static Latch9CrouchAimPose[] Copy(IReadOnlyList<Latch9CrouchAimPose> source)
+        {
+            if (source == null)
+            {
+                return Array.Empty<Latch9CrouchAimPose>();
+            }
+
+            Latch9CrouchAimPose[] copy = new Latch9CrouchAimPose[source.Count];
             for (int index = 0; index < source.Count; index++)
             {
                 copy[index] = source[index];
