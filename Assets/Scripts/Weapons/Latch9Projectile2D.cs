@@ -10,7 +10,9 @@ namespace Rustline.Gameplay.Weapons
         public const float VisualWidth = 1f / 16f;
         public const int ConventionalPaletteIndex = 20;
         public const int BouncingPaletteIndex = 22;
-        private const float SurfaceEpsilon = 1f / 1024f;
+        public const float PostBounceSeparation = 0.25f / 16f;
+        public const float ImmediateRehitGuardDistance = 0.5f / 16f;
+        private const float RangeEpsilon = 1f / 1024f;
         private const int MaxInteractionsPerFrame = 8;
 
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[16];
@@ -27,6 +29,7 @@ namespace Rustline.Gameplay.Weapons
         private int _bounceCount;
         private LayerMask _hitLayers;
         private Collider2D _ownerCollider;
+        private Collider2D _lastBounceCollider;
         private Transform _ownerRoot;
         private ContactFilter2D _hitFilter;
         private LineRenderer _renderer;
@@ -45,6 +48,19 @@ namespace Rustline.Gameplay.Weapons
                 mode == WeaponShotMode2D.Bouncing
                     ? BouncingPaletteIndex
                     : ConventionalPaletteIndex);
+        }
+
+        public static bool ShouldIgnoreImmediateRehit(
+            Collider2D candidateCollider,
+            Collider2D lastBounceCollider,
+            float hitDistance,
+            float distanceSinceBounce)
+        {
+            return candidateCollider != null &&
+                   lastBounceCollider != null &&
+                   candidateCollider == lastBounceCollider &&
+                   hitDistance <= ImmediateRehitGuardDistance &&
+                   distanceSinceBounce <= ImmediateRehitGuardDistance;
         }
 
         public void Initialize(
@@ -74,6 +90,7 @@ namespace Rustline.Gameplay.Weapons
             _bounceCount = 0;
             _hitLayers = hitLayers;
             _ownerCollider = ownerCollider;
+            _lastBounceCollider = null;
             _ownerRoot = ownerRoot;
             _renderer = lineRenderer != null ? lineRenderer : gameObject.AddComponent<LineRenderer>();
             _completed = false;
@@ -126,7 +143,7 @@ namespace Rustline.Gameplay.Weapons
                 {
                     Move(segmentBudget);
                     distanceBudget -= segmentBudget;
-                    if (_remainingRange <= SurfaceEpsilon)
+                    if (_remainingRange <= RangeEpsilon)
                     {
                         CompleteAtRangeLimit();
                     }
@@ -177,7 +194,7 @@ namespace Rustline.Gameplay.Weapons
                         _shotMode,
                         _bounceCount,
                         _definition.MaxBounces) ||
-                    _remainingRange <= SurfaceEpsilon)
+                    _remainingRange <= RangeEpsilon)
                 {
                     Complete(
                         true,
@@ -193,7 +210,10 @@ namespace Rustline.Gameplay.Weapons
                     ? hit.normal.normalized
                     : -_direction;
                 _direction = WeaponBounceMath2D.Reflect(_direction, bounceNormal);
-                _position = hit.point + bounceNormal * SurfaceEpsilon + _direction * SurfaceEpsilon;
+                _lastBounceCollider = hitCollider;
+                _position = hit.point +
+                            bounceNormal * PostBounceSeparation +
+                            _direction * PostBounceSeparation;
                 transform.position = _position;
                 _distanceSinceBounce = 0f;
                 _bounceCount++;
@@ -281,7 +301,12 @@ namespace Rustline.Gameplay.Weapons
                 Collider2D candidateCollider = candidate.collider;
                 if (candidateCollider == null || candidateCollider == _ownerCollider ||
                     (_ownerRoot != null && candidateCollider.transform.IsChildOf(_ownerRoot)) ||
-                    candidateCollider.GetComponent<WeaponRaycastPassthrough2D>() != null)
+                    candidateCollider.GetComponent<WeaponRaycastPassthrough2D>() != null ||
+                    ShouldIgnoreImmediateRehit(
+                        candidateCollider,
+                        _lastBounceCollider,
+                        candidate.distance,
+                        _distanceSinceBounce))
                 {
                     continue;
                 }
