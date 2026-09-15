@@ -53,10 +53,43 @@ namespace Rustline.Gameplay.Weapons
             float hitDistance,
             int damage,
             bool hitReceiverNotified)
+            : this(
+                weapon,
+                WeaponShotMode2D.Conventional,
+                origin,
+                direction,
+                direction,
+                endPoint,
+                hit,
+                hitCollider,
+                hitNormal,
+                hitDistance,
+                damage,
+                hitReceiverNotified,
+                0)
+        {
+        }
+
+        public WeaponShotResult2D(
+            WeaponDefinition2D weapon,
+            WeaponShotMode2D shotMode,
+            Vector2 origin,
+            Vector2 direction,
+            Vector2 finalDirection,
+            Vector2 endPoint,
+            bool hit,
+            Collider2D hitCollider,
+            Vector2 hitNormal,
+            float hitDistance,
+            int damage,
+            bool hitReceiverNotified,
+            int bounceCount)
         {
             Weapon = weapon;
+            ShotMode = shotMode;
             Origin = origin;
             Direction = direction;
+            FinalDirection = finalDirection;
             EndPoint = endPoint;
             Hit = hit;
             HitCollider = hitCollider;
@@ -64,12 +97,15 @@ namespace Rustline.Gameplay.Weapons
             HitDistance = hitDistance;
             Damage = damage;
             HitReceiverNotified = hitReceiverNotified;
+            BounceCount = bounceCount;
         }
 
         public WeaponDefinition2D Weapon { get; }
         public string WeaponId => Weapon != null ? Weapon.WeaponId : string.Empty;
+        public WeaponShotMode2D ShotMode { get; }
         public Vector2 Origin { get; }
         public Vector2 Direction { get; }
+        public Vector2 FinalDirection { get; }
         public Vector2 EndPoint { get; }
         public bool Hit { get; }
         public Collider2D HitCollider { get; }
@@ -77,6 +113,7 @@ namespace Rustline.Gameplay.Weapons
         public float HitDistance { get; }
         public int Damage { get; }
         public bool HitReceiverNotified { get; }
+        public int BounceCount { get; }
     }
 
     public static class WeaponFirePolicy2D
@@ -97,6 +134,21 @@ namespace Rustline.Gameplay.Weapons
                    state == PlayerAnimationState.CrouchIdle ||
                    state == PlayerAnimationState.CrouchMove ||
                    state == PlayerAnimationState.Fall;
+        }
+    }
+
+    public static class WeaponBounceMath2D
+    {
+        public static Vector2 Reflect(Vector2 direction, Vector2 normal)
+        {
+            Vector2 normalizedDirection = direction.sqrMagnitude > 0f
+                ? direction.normalized
+                : Vector2.right;
+            Vector2 normalizedNormal = normal.sqrMagnitude > 0f
+                ? normal.normalized
+                : -normalizedDirection;
+            Vector2 reflected = Vector2.Reflect(normalizedDirection, normalizedNormal);
+            return reflected.sqrMagnitude > 0f ? reflected.normalized : -normalizedDirection;
         }
     }
 
