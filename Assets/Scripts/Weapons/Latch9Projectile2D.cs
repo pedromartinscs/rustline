@@ -173,19 +173,11 @@ namespace Rustline.Gameplay.Weapons
                     return;
                 }
 
-                if (_shotMode != WeaponShotMode2D.Bouncing)
-                {
-                    Complete(
-                        true,
-                        hitCollider,
-                        hit.normal,
-                        damage,
-                        false,
-                        hit.point);
-                    return;
-                }
-
-                if (_bounceCount >= _definition.MaxBounces || _remainingRange <= SurfaceEpsilon)
+                if (!WeaponBounceMath2D.CanReflect(
+                        _shotMode,
+                        _bounceCount,
+                        _definition.MaxBounces) ||
+                    _remainingRange <= SurfaceEpsilon)
                 {
                     Complete(
                         true,
