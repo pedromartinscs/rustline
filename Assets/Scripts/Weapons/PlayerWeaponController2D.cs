@@ -16,6 +16,7 @@ namespace Rustline.Gameplay.Weapons
     [RequireComponent(typeof(PlayerAnimator2D), typeof(Collider2D))]
     public sealed class PlayerWeaponController2D : MonoBehaviour
     {
+        private const float BounceSurfaceEpsilon = 1f / 1024f;
         private static readonly ProfilerMarker FireMarker = new ProfilerMarker("Rustline.Weapon.Fire");
 
         [SerializeField] private PlayerInputReader input;
@@ -31,12 +32,15 @@ namespace Rustline.Gameplay.Weapons
         private Collider2D _playerCollider;
         private ContactFilter2D _hitFilter;
         private WeaponFireMode2D _currentFireMode = WeaponFireMode2D.SemiAutomatic;
+        private WeaponShotMode2D _currentShotMode = WeaponShotMode2D.Conventional;
 
         public event Action<WeaponShotResult2D> ShotResolved;
         public event Action<WeaponFireMode2D> FireModeChanged;
+        public event Action<WeaponShotMode2D> ShotModeChanged;
 
         public WeaponDefinition2D WeaponDefinition => weaponDefinition;
         public WeaponFireMode2D CurrentFireMode => _currentFireMode;
+        public WeaponShotMode2D CurrentShotMode => _currentShotMode;
         public LayerMask HitLayers => hitLayers;
         public PrototypeWeaponShotFeedback2D ShotFeedback => shotFeedback;
         public int ShotCount { get; private set; }
@@ -45,9 +49,7 @@ namespace Rustline.Gameplay.Weapons
         private void Awake()
         {
             _playerCollider = GetComponent<Collider2D>();
-            _currentFireMode = weaponDefinition != null
-                ? weaponDefinition.FireMode
-                : WeaponFireMode2D.SemiAutomatic;
+            ApplyDefinitionDefaults(false);
             RebuildHitFilter();
         }
 
@@ -65,7 +67,16 @@ namespace Rustline.Gameplay.Weapons
 
             if (input.ConsumeToggleFireModePressed())
             {
-                CycleFireMode();
+                // Latch-9 uses the existing right-click action for Conventional/Bouncing.
+                // Weapons without multiple shot modes retain the established fire-mode toggle.
+                if (weaponDefinition != null && weaponDefinition.SupportsMultipleShotModes)
+                {
+                    CycleShotMode();
+                }
+                else
+                {
+                    CycleFireMode();
+                }
             }
 
             // Always consume the press edge even in automatic mode so switching back to semi-auto
@@ -81,12 +92,22 @@ namespace Rustline.Gameplay.Weapons
             }
         }
 
+        public void EquipWeapon(WeaponDefinition2D definition)
+        {
+            weaponDefinition = definition;
+            ApplyDefinitionDefaults(true);
+            _cooldown.Reset();
+            input?.ClearTransientState();
+            shotFeedback?.Hide();
+        }
+
         public bool TryFire(float currentTime)
         {
             using (FireMarker.Auto())
             {
                 if (weaponDefinition == null || !weaponDefinition.IsSane(out _) ||
                     !weaponDefinition.SupportsFireMode(_currentFireMode) ||
+                    !weaponDefinition.SupportsShotMode(_currentShotMode) ||
                     playerAim == null || !playerAim.HasValidAim ||
                     playerAnimator == null || playerMotor == null ||
                     !WeaponFirePolicy2D.CanFire(
@@ -100,7 +121,7 @@ namespace Rustline.Gameplay.Weapons
 
                 Vector2 origin = playerAim.AimOriginWorld;
                 Vector2 direction = playerAim.ContinuousAimDirection;
-                ResolveHitscan(origin, direction, out WeaponShotResult2D result);
+                ResolveShot(origin, direction, out WeaponShotResult2D result);
                 LastShotResult = result;
                 ShotCount++;
                 shotFeedback?.Show(result);
@@ -114,6 +135,31 @@ namespace Rustline.Gameplay.Weapons
             _cooldown.Reset();
             input?.ClearTransientState();
             shotFeedback?.Hide();
+        }
+
+        private void ApplyDefinitionDefaults(bool notify)
+        {
+            WeaponFireMode2D nextFireMode = weaponDefinition != null
+                ? weaponDefinition.FireMode
+                : WeaponFireMode2D.SemiAutomatic;
+            WeaponShotMode2D nextShotMode = weaponDefinition != null
+                ? weaponDefinition.ShotMode
+                : WeaponShotMode2D.Conventional;
+
+            bool fireModeChanged = _currentFireMode != nextFireMode;
+            bool shotModeChanged = _currentShotMode != nextShotMode;
+            _currentFireMode = nextFireMode;
+            _currentShotMode = nextShotMode;
+
+            if (notify && fireModeChanged)
+            {
+                FireModeChanged?.Invoke(_currentFireMode);
+            }
+
+            if (notify && shotModeChanged)
+            {
+                ShotModeChanged?.Invoke(_currentShotMode);
+            }
         }
 
         private void CycleFireMode()
@@ -133,17 +179,220 @@ namespace Rustline.Gameplay.Weapons
             FireModeChanged?.Invoke(_currentFireMode);
         }
 
-        private void ResolveHitscan(Vector2 origin, Vector2 direction, out WeaponShotResult2D result)
+        private void CycleShotMode()
         {
-            int hitCount = Physics2D.Raycast(
+            if (weaponDefinition == null || !weaponDefinition.SupportsMultipleShotModes)
+            {
+                return;
+            }
+
+            WeaponShotMode2D nextMode = weaponDefinition.GetNextSupportedShotMode(_currentShotMode);
+            if (nextMode == _currentShotMode)
+            {
+                return;
+            }
+
+            _currentShotMode = nextMode;
+            ShotModeChanged?.Invoke(_currentShotMode);
+        }
+
+        private void ResolveShot(Vector2 origin, Vector2 direction, out WeaponShotResult2D result)
+        {
+            if (_currentShotMode == WeaponShotMode2D.Bouncing)
+            {
+                ResolveBouncingHitscan(origin, direction, out result);
+                return;
+            }
+
+            ResolveConventionalHitscan(origin, direction, out result);
+        }
+
+        private void ResolveConventionalHitscan(
+            Vector2 origin,
+            Vector2 direction,
+            out WeaponShotResult2D result)
+        {
+            int damage = weaponDefinition.ResolveDamage(WeaponShotMode2D.Conventional, 0);
+            if (!TryFindNearestHit(origin, direction, weaponDefinition.Range, out RaycastHit2D nearestHit))
+            {
+                result = new WeaponShotResult2D(
+                    weaponDefinition,
+                    WeaponShotMode2D.Conventional,
+                    origin,
+                    direction,
+                    direction,
+                    origin + direction * weaponDefinition.Range,
+                    false,
+                    null,
+                    Vector2.zero,
+                    weaponDefinition.Range,
+                    damage,
+                    false,
+                    0);
+                return;
+            }
+
+            Collider2D nearestCollider = nearestHit.collider;
+            var hitInfo = new WeaponHitInfo2D(
+                weaponDefinition,
                 origin,
                 direction,
-                _hitFilter,
-                _hits,
-                weaponDefinition.Range);
-            RaycastHit2D nearestHit = default;
-            Collider2D nearestCollider = null;
+                nearestHit.point,
+                nearestHit.normal,
+                nearestHit.distance,
+                damage,
+                nearestCollider);
+            IWeaponHitReceiver2D receiver = nearestCollider.GetComponent<IWeaponHitReceiver2D>();
+            bool receiverNotified = receiver != null;
+            receiver?.ReceiveHit(in hitInfo);
+            result = new WeaponShotResult2D(
+                weaponDefinition,
+                WeaponShotMode2D.Conventional,
+                origin,
+                direction,
+                direction,
+                nearestHit.point,
+                true,
+                nearestCollider,
+                nearestHit.normal,
+                nearestHit.distance,
+                damage,
+                receiverNotified,
+                0);
+        }
+
+        private void ResolveBouncingHitscan(
+            Vector2 origin,
+            Vector2 direction,
+            out WeaponShotResult2D result)
+        {
+            Vector2 initialDirection = direction;
+            Vector2 segmentDirection = direction.sqrMagnitude > 0f
+                ? direction.normalized
+                : Vector2.right;
+            Vector2 segmentOrigin = origin;
+            float remainingRange = weaponDefinition.Range;
+            float travelledDistance = 0f;
+            int bounceCount = 0;
+
+            while (remainingRange > 0f)
+            {
+                int damage = weaponDefinition.ResolveDamage(WeaponShotMode2D.Bouncing, bounceCount);
+                if (!TryFindNearestHit(
+                        segmentOrigin,
+                        segmentDirection,
+                        remainingRange,
+                        out RaycastHit2D nearestHit))
+                {
+                    result = new WeaponShotResult2D(
+                        weaponDefinition,
+                        WeaponShotMode2D.Bouncing,
+                        origin,
+                        initialDirection,
+                        segmentDirection,
+                        segmentOrigin + segmentDirection * remainingRange,
+                        false,
+                        null,
+                        Vector2.zero,
+                        travelledDistance + remainingRange,
+                        damage,
+                        false,
+                        bounceCount);
+                    return;
+                }
+
+                Collider2D nearestCollider = nearestHit.collider;
+                travelledDistance += nearestHit.distance;
+                remainingRange = Mathf.Max(0f, remainingRange - nearestHit.distance);
+
+                IWeaponHitReceiver2D receiver = nearestCollider.GetComponent<IWeaponHitReceiver2D>();
+                if (receiver != null)
+                {
+                    var hitInfo = new WeaponHitInfo2D(
+                        weaponDefinition,
+                        origin,
+                        segmentDirection,
+                        nearestHit.point,
+                        nearestHit.normal,
+                        travelledDistance,
+                        damage,
+                        nearestCollider);
+                    receiver.ReceiveHit(in hitInfo);
+                    result = new WeaponShotResult2D(
+                        weaponDefinition,
+                        WeaponShotMode2D.Bouncing,
+                        origin,
+                        initialDirection,
+                        segmentDirection,
+                        nearestHit.point,
+                        true,
+                        nearestCollider,
+                        nearestHit.normal,
+                        travelledDistance,
+                        damage,
+                        true,
+                        bounceCount);
+                    return;
+                }
+
+                // Receiverless geometry (including current Ground) is collision-only:
+                // it can reflect the Latch-9 shot but is never mutated or damaged here.
+                if (bounceCount >= weaponDefinition.MaxBounces || remainingRange <= BounceSurfaceEpsilon)
+                {
+                    result = new WeaponShotResult2D(
+                        weaponDefinition,
+                        WeaponShotMode2D.Bouncing,
+                        origin,
+                        initialDirection,
+                        segmentDirection,
+                        nearestHit.point,
+                        true,
+                        nearestCollider,
+                        nearestHit.normal,
+                        travelledDistance,
+                        damage,
+                        false,
+                        bounceCount);
+                    return;
+                }
+
+                Vector2 bounceNormal = nearestHit.normal.sqrMagnitude > 0f
+                    ? nearestHit.normal.normalized
+                    : -segmentDirection;
+                segmentDirection = WeaponBounceMath2D.Reflect(segmentDirection, bounceNormal);
+                segmentOrigin = nearestHit.point +
+                                bounceNormal * BounceSurfaceEpsilon +
+                                segmentDirection * BounceSurfaceEpsilon;
+                bounceCount++;
+            }
+
+            int finalDamage = weaponDefinition.ResolveDamage(WeaponShotMode2D.Bouncing, bounceCount);
+            result = new WeaponShotResult2D(
+                weaponDefinition,
+                WeaponShotMode2D.Bouncing,
+                origin,
+                initialDirection,
+                segmentDirection,
+                segmentOrigin,
+                false,
+                null,
+                Vector2.zero,
+                travelledDistance,
+                finalDamage,
+                false,
+                bounceCount);
+        }
+
+        private bool TryFindNearestHit(
+            Vector2 origin,
+            Vector2 direction,
+            float range,
+            out RaycastHit2D nearestHit)
+        {
+            int hitCount = Physics2D.Raycast(origin, direction, _hitFilter, _hits, range);
+            nearestHit = default;
             float nearestDistance = float.PositiveInfinity;
+            bool found = false;
             for (int index = 0; index < hitCount; index++)
             {
                 RaycastHit2D candidate = _hits[index];
@@ -161,49 +410,11 @@ namespace Rustline.Gameplay.Weapons
                 }
 
                 nearestHit = candidate;
-                nearestCollider = candidateCollider;
                 nearestDistance = candidate.distance;
+                found = true;
             }
 
-            if (nearestCollider == null)
-            {
-                result = new WeaponShotResult2D(
-                    weaponDefinition,
-                    origin,
-                    direction,
-                    origin + direction * weaponDefinition.Range,
-                    false,
-                    null,
-                    Vector2.zero,
-                    weaponDefinition.Range,
-                    weaponDefinition.Damage,
-                    false);
-                return;
-            }
-
-            var hitInfo = new WeaponHitInfo2D(
-                weaponDefinition,
-                origin,
-                direction,
-                nearestHit.point,
-                nearestHit.normal,
-                nearestHit.distance,
-                weaponDefinition.Damage,
-                nearestCollider);
-            IWeaponHitReceiver2D receiver = nearestCollider.GetComponent<IWeaponHitReceiver2D>();
-            bool receiverNotified = receiver != null;
-            receiver?.ReceiveHit(in hitInfo);
-            result = new WeaponShotResult2D(
-                weaponDefinition,
-                origin,
-                direction,
-                nearestHit.point,
-                true,
-                nearestCollider,
-                nearestHit.normal,
-                nearestHit.distance,
-                weaponDefinition.Damage,
-                receiverNotified);
+            return found;
         }
 
         private void RebuildHitFilter()
