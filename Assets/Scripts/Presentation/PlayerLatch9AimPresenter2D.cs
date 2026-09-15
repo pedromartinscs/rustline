@@ -46,13 +46,8 @@ namespace Rustline.Presentation
         [SerializeField] private Sprite frame5;
 
         public Latch9RunAimPose(
-            int angleDegrees,
-            Sprite frame0,
-            Sprite frame1,
-            Sprite frame2,
-            Sprite frame3,
-            Sprite frame4,
-            Sprite frame5)
+            int angleDegrees, Sprite frame0, Sprite frame1, Sprite frame2,
+            Sprite frame3, Sprite frame4, Sprite frame5)
         {
             this.angleDegrees = angleDegrees;
             this.frame0 = frame0;
@@ -90,11 +85,7 @@ namespace Rustline.Presentation
         [SerializeField] private Sprite frame3;
 
         public Latch9BackpedalAimPose(
-            int angleDegrees,
-            Sprite frame0,
-            Sprite frame1,
-            Sprite frame2,
-            Sprite frame3)
+            int angleDegrees, Sprite frame0, Sprite frame1, Sprite frame2, Sprite frame3)
         {
             this.angleDegrees = angleDegrees;
             this.frame0 = frame0;
@@ -130,13 +121,8 @@ namespace Rustline.Presentation
         [SerializeField] private Sprite frame5;
 
         public Latch9CrouchAimPose(
-            int angleDegrees,
-            Sprite frame0,
-            Sprite frame1,
-            Sprite frame2,
-            Sprite frame3,
-            Sprite frame4,
-            Sprite frame5)
+            int angleDegrees, Sprite frame0, Sprite frame1, Sprite frame2,
+            Sprite frame3, Sprite frame4, Sprite frame5)
         {
             this.angleDegrees = angleDegrees;
             this.frame0 = frame0;
@@ -191,9 +177,9 @@ namespace Rustline.Presentation
     }
 
     /// <summary>
-    /// Incremental Latch-9 armed presenter. It owns the shared overlay renderer only
-    /// for authored Latch-9 states; every unsupported locomotion state deliberately
-    /// releases the renderer back to the unarmed presenter.
+    /// Owns the shared overlay renderer for authored Latch-9 aim/carry states.
+    /// Aim-capable states also expose the exact rendered state/direction/frame tuple
+    /// used by muzzle presentation. Jump/Land carry never expose a muzzle pose.
     /// </summary>
     [DefaultExecutionOrder(105)]
     [DisallowMultipleComponent]
@@ -228,7 +214,14 @@ namespace Rustline.Presentation
         private Sprite _lastBodySprite;
         private int _lastDirectionIndex = -1;
         private bool _lastFacingLeft;
+        private bool _hasRenderedPose;
+        private Latch9RenderedPose2D _renderedPose;
 
+        public PlayerAim2D PlayerAim => playerAim;
+        public PlayerAnimator2D PlayerAnimator => playerAnimator;
+        public PlayerUnarmedArmsPresenter2D UnarmedPresenter => unarmedPresenter;
+        public SpriteRenderer BodySpriteRenderer => bodySpriteRenderer;
+        public SpriteRenderer ArmsWeaponSpriteRenderer => armsWeaponSpriteRenderer;
         public bool OwnsRenderer => _ownsRenderer;
         public int IdleAimPoseCount => idleAimPoses?.Length ?? 0;
         public int RunAimPoseCount => runAimPoses?.Length ?? 0;
@@ -287,10 +280,28 @@ namespace Rustline.Presentation
             if (!_configurationValid)
             {
                 Debug.LogError(
-                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch/Jump/Fall/Land preview configuration.",
+                    "Latch-9 presenter received an incomplete Idle/Run/Backpedal/Crouch/Jump/Fall/Land configuration.",
                     this);
             }
         }
+
+        public bool TryGetCurrentRenderedPose(out Latch9RenderedPose2D pose)
+        {
+            if (_ownsRenderer && _hasRenderedPose)
+            {
+                pose = _renderedPose;
+                return true;
+            }
+
+            pose = default;
+            return false;
+        }
+
+        public Sprite GetBodyIdleFrame(int index) => bodyIdleFrames[index];
+        public Sprite GetBodyRunFrame(int index) => bodyRunFrames[index];
+        public Sprite GetBodyBackpedalFrame(int index) => bodyBackpedalFrames[index];
+        public Sprite GetBodyCrouchFrame(int index) => bodyCrouchFrames[index];
+        public Sprite GetBodyFallFrame(int index) => bodyFallFrames[index];
 
         private void OnEnable()
         {
@@ -322,83 +333,92 @@ namespace Rustline.Presentation
 
             Sprite bodySprite = bodySpriteRenderer.sprite;
             Sprite nextSprite;
+            int frameIndex;
+            int authoredAngleDegrees = 0;
+            Latch9MuzzleState2D muzzleState = Latch9MuzzleState2D.Idle;
+            bool exposesMuzzlePose = true;
 
             switch (state.Value)
             {
                 case PlayerAnimationState.Idle:
                     if (directionIndex < 0 || directionIndex >= idleAimPoses.Length ||
-                        !TryResolveFrame(bodyIdleFrames, bodySprite, out int idleFrameIndex))
+                        !TryResolveFrame(bodyIdleFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = idleAimPoses[directionIndex].GetFrame(idleFrameIndex);
+                    nextSprite = idleAimPoses[directionIndex].GetFrame(frameIndex);
+                    authoredAngleDegrees = idleAimPoses[directionIndex].AngleDegrees;
+                    muzzleState = Latch9MuzzleState2D.Idle;
                     break;
 
                 case PlayerAnimationState.Run:
                     if (directionIndex < 0 || directionIndex >= runAimPoses.Length ||
-                        !TryResolveFrame(bodyRunFrames, bodySprite, out int runFrameIndex))
+                        !TryResolveFrame(bodyRunFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = runAimPoses[directionIndex].GetFrame(runFrameIndex);
+                    nextSprite = runAimPoses[directionIndex].GetFrame(frameIndex);
+                    authoredAngleDegrees = runAimPoses[directionIndex].AngleDegrees;
+                    muzzleState = Latch9MuzzleState2D.Run;
                     break;
 
                 case PlayerAnimationState.Backpedal:
                     if (directionIndex < 0 || directionIndex >= backpedalAimPoses.Length ||
-                        !TryResolveFrame(bodyBackpedalFrames, bodySprite, out int backpedalFrameIndex))
+                        !TryResolveFrame(bodyBackpedalFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = backpedalAimPoses[directionIndex].GetFrame(backpedalFrameIndex);
+                    nextSprite = backpedalAimPoses[directionIndex].GetFrame(frameIndex);
+                    authoredAngleDegrees = backpedalAimPoses[directionIndex].AngleDegrees;
+                    muzzleState = Latch9MuzzleState2D.Backpedal;
                     break;
 
                 case PlayerAnimationState.CrouchIdle:
                 case PlayerAnimationState.CrouchMove:
                     if (directionIndex < 0 || directionIndex >= crouchAimPoses.Length ||
-                        !TryResolveFrame(bodyCrouchFrames, bodySprite, out int crouchFrameIndex))
+                        !TryResolveFrame(bodyCrouchFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = crouchAimPoses[directionIndex].GetFrame(crouchFrameIndex);
+                    nextSprite = crouchAimPoses[directionIndex].GetFrame(frameIndex);
+                    authoredAngleDegrees = crouchAimPoses[directionIndex].AngleDegrees;
+                    muzzleState = Latch9MuzzleState2D.Crouch;
                     break;
 
                 case PlayerAnimationState.Jump:
-                    if (!TryResolveFrame(bodyJumpFrames, bodySprite, out int jumpFrameIndex))
+                    if (!TryResolveFrame(bodyJumpFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = jumpCarryFrames[jumpFrameIndex];
+                    nextSprite = jumpCarryFrames[frameIndex];
+                    exposesMuzzlePose = false;
                     break;
 
                 case PlayerAnimationState.Fall:
                     if (directionIndex < 0 || directionIndex >= fallAimPoses.Length ||
-                        !TryResolveFrame(bodyFallFrames, bodySprite, out int fallFrameIndex))
+                        !TryResolveFrame(bodyFallFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = fallAimPoses[directionIndex].GetFrame(fallFrameIndex);
+                    nextSprite = fallAimPoses[directionIndex].GetFrame(frameIndex);
+                    authoredAngleDegrees = fallAimPoses[directionIndex].AngleDegrees;
+                    muzzleState = Latch9MuzzleState2D.Fall;
                     break;
 
                 case PlayerAnimationState.Land:
-                    if (!TryResolveFrame(bodyLandFrames, bodySprite, out int landFrameIndex))
+                    if (!TryResolveFrame(bodyLandFrames, bodySprite, out frameIndex))
                     {
                         ReleaseRenderer();
                         return;
                     }
-
-                    nextSprite = landCarryFrames[landFrameIndex];
+                    nextSprite = landCarryFrames[frameIndex];
+                    exposesMuzzlePose = false;
                     break;
 
                 default:
@@ -408,6 +428,21 @@ namespace Rustline.Presentation
 
             AcquireRenderer();
             bool facingLeft = armsWeaponSpriteRenderer.flipX;
+            if (exposesMuzzlePose)
+            {
+                _renderedPose = new Latch9RenderedPose2D(
+                    muzzleState,
+                    directionIndex,
+                    authoredAngleDegrees,
+                    frameIndex,
+                    facingLeft);
+                _hasRenderedPose = true;
+            }
+            else
+            {
+                _hasRenderedPose = false;
+            }
+
             if (bodySprite == _lastBodySprite && directionIndex == _lastDirectionIndex &&
                 facingLeft == _lastFacingLeft)
             {
@@ -498,52 +533,30 @@ namespace Rustline.Presentation
                 return false;
             }
 
-            for (int directionIndex = 0; directionIndex < idleAimPoses.Length; directionIndex++)
+            for (int directionIndex = 0; directionIndex < 19; directionIndex++)
             {
-                if (idleAimPoses[directionIndex].Frame0 == null || idleAimPoses[directionIndex].Frame1 == null)
+                if (idleAimPoses[directionIndex].Frame0 == null ||
+                    idleAimPoses[directionIndex].Frame1 == null ||
+                    fallAimPoses[directionIndex].Frame0 == null)
                 {
                     return false;
                 }
-            }
 
-            for (int directionIndex = 0; directionIndex < runAimPoses.Length; directionIndex++)
-            {
                 for (int frameIndex = 0; frameIndex < 6; frameIndex++)
                 {
-                    if (runAimPoses[directionIndex].GetFrame(frameIndex) == null)
+                    if (runAimPoses[directionIndex].GetFrame(frameIndex) == null ||
+                        crouchAimPoses[directionIndex].GetFrame(frameIndex) == null)
                     {
                         return false;
                     }
                 }
-            }
 
-            for (int directionIndex = 0; directionIndex < backpedalAimPoses.Length; directionIndex++)
-            {
                 for (int frameIndex = 0; frameIndex < 4; frameIndex++)
                 {
                     if (backpedalAimPoses[directionIndex].GetFrame(frameIndex) == null)
                     {
                         return false;
                     }
-                }
-            }
-
-            for (int directionIndex = 0; directionIndex < crouchAimPoses.Length; directionIndex++)
-            {
-                for (int frameIndex = 0; frameIndex < 6; frameIndex++)
-                {
-                    if (crouchAimPoses[directionIndex].GetFrame(frameIndex) == null)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            for (int directionIndex = 0; directionIndex < fallAimPoses.Length; directionIndex++)
-            {
-                if (fallAimPoses[directionIndex].Frame0 == null)
-                {
-                    return false;
                 }
             }
 
@@ -581,6 +594,7 @@ namespace Rustline.Presentation
 
         private void ReleaseRenderer()
         {
+            _hasRenderedPose = false;
             if (!_ownsRenderer)
             {
                 return;
@@ -601,96 +615,17 @@ namespace Rustline.Presentation
             _lastBodySprite = null;
             _lastDirectionIndex = -1;
             _lastFacingLeft = false;
+            _hasRenderedPose = false;
         }
 
-        private static Sprite[] Copy(IReadOnlyList<Sprite> source)
+        private static T[] Copy<T>(IReadOnlyList<T> source)
         {
             if (source == null)
             {
-                return Array.Empty<Sprite>();
+                return Array.Empty<T>();
             }
 
-            Sprite[] copy = new Sprite[source.Count];
-            for (int index = 0; index < source.Count; index++)
-            {
-                copy[index] = source[index];
-            }
-
-            return copy;
-        }
-
-        private static Latch9IdleAimPose[] Copy(IReadOnlyList<Latch9IdleAimPose> source)
-        {
-            if (source == null)
-            {
-                return Array.Empty<Latch9IdleAimPose>();
-            }
-
-            Latch9IdleAimPose[] copy = new Latch9IdleAimPose[source.Count];
-            for (int index = 0; index < source.Count; index++)
-            {
-                copy[index] = source[index];
-            }
-
-            return copy;
-        }
-
-        private static Latch9RunAimPose[] Copy(IReadOnlyList<Latch9RunAimPose> source)
-        {
-            if (source == null)
-            {
-                return Array.Empty<Latch9RunAimPose>();
-            }
-
-            Latch9RunAimPose[] copy = new Latch9RunAimPose[source.Count];
-            for (int index = 0; index < source.Count; index++)
-            {
-                copy[index] = source[index];
-            }
-
-            return copy;
-        }
-
-        private static Latch9BackpedalAimPose[] Copy(IReadOnlyList<Latch9BackpedalAimPose> source)
-        {
-            if (source == null)
-            {
-                return Array.Empty<Latch9BackpedalAimPose>();
-            }
-
-            Latch9BackpedalAimPose[] copy = new Latch9BackpedalAimPose[source.Count];
-            for (int index = 0; index < source.Count; index++)
-            {
-                copy[index] = source[index];
-            }
-
-            return copy;
-        }
-
-        private static Latch9CrouchAimPose[] Copy(IReadOnlyList<Latch9CrouchAimPose> source)
-        {
-            if (source == null)
-            {
-                return Array.Empty<Latch9CrouchAimPose>();
-            }
-
-            Latch9CrouchAimPose[] copy = new Latch9CrouchAimPose[source.Count];
-            for (int index = 0; index < source.Count; index++)
-            {
-                copy[index] = source[index];
-            }
-
-            return copy;
-        }
-
-        private static Latch9FallAimPose[] Copy(IReadOnlyList<Latch9FallAimPose> source)
-        {
-            if (source == null)
-            {
-                return Array.Empty<Latch9FallAimPose>();
-            }
-
-            Latch9FallAimPose[] copy = new Latch9FallAimPose[source.Count];
+            T[] copy = new T[source.Count];
             for (int index = 0; index < source.Count; index++)
             {
                 copy[index] = source[index];
