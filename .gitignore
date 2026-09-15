@@ -56,8 +56,7 @@ Desktop.ini
 .vsconfig
 
 # Deterministic runtime caches rebuilt from versioned ArtSource metadata
-/Assets/Resources/Generated/Latch9MuzzleMetadata.asset
-/Assets/Resources/Generated/Latch9MuzzleMetadata.asset.meta
+/Assets/Resources/Generated/
 
 # Local Unity test-run artifacts
 /TestResults-*.xml
