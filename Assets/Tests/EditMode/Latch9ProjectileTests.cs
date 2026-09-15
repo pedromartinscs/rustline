@@ -107,6 +107,28 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void BouncingMode_AllowsExactlyThreeReflections()
+        {
+            const int maxBounces = 3;
+
+            Assert.That(
+                WeaponBounceMath2D.CanReflect(WeaponShotMode2D.Bouncing, 0, maxBounces),
+                Is.True);
+            Assert.That(
+                WeaponBounceMath2D.CanReflect(WeaponShotMode2D.Bouncing, 1, maxBounces),
+                Is.True);
+            Assert.That(
+                WeaponBounceMath2D.CanReflect(WeaponShotMode2D.Bouncing, 2, maxBounces),
+                Is.True);
+            Assert.That(
+                WeaponBounceMath2D.CanReflect(WeaponShotMode2D.Bouncing, 3, maxBounces),
+                Is.False);
+            Assert.That(
+                WeaponBounceMath2D.CanReflect(WeaponShotMode2D.Conventional, 0, maxBounces),
+                Is.False);
+        }
+
+        [Test]
         public void BounceDamage_RemainsFourThreeTwoOne()
         {
             WeaponDefinition2D definition =
