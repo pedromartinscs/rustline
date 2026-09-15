@@ -75,6 +75,7 @@ namespace Rustline.Presentation
         public const int FramesPerVariant = 2;
         public const int RequiredSpriteCount =
             Latch9MuzzleFlashMath.VariantCount * FramesPerVariant;
+        private const string DefaultMetadataResourcePath = "Generated/Latch9MuzzleMetadata";
 
         [SerializeField] private PlayerWeaponController2D weaponController;
         [SerializeField] private PlayerLatch9AimPresenter2D latchPresenter;
@@ -94,6 +95,12 @@ namespace Rustline.Presentation
         private int _activeFrame = -1;
         private Latch9MuzzleFlashProfile2D _activeProfile;
 
+        public PlayerWeaponController2D WeaponController => weaponController;
+        public PlayerLatch9AimPresenter2D LatchPresenter => latchPresenter;
+        public Latch9MuzzleMetadata2D Metadata => ResolveMetadata();
+        public SpriteRenderer FlashRenderer => flashRenderer;
+        public int ConventionalSpriteCount => conventionalFrames?.Length ?? 0;
+        public int BouncingSpriteCount => bouncingFrames?.Length ?? 0;
         public Latch9MuzzleFlashProfile2D Profile => profile;
         public bool IsVisible => flashRenderer != null && flashRenderer.enabled;
         public int ActiveVariant => _activeVariant;
@@ -125,6 +132,7 @@ namespace Rustline.Presentation
             ShotEventCount = 0;
             ShownFlashCount = 0;
             Hide();
+            ResolveMetadata();
             if (weaponController != null)
             {
                 weaponController.ShotResolved += OnShotResolved;
@@ -189,11 +197,12 @@ namespace Rustline.Presentation
         private void ShowPendingShot()
         {
             Sprite[] frames = GetFrames(_pendingProfile);
+            Latch9MuzzleMetadata2D resolvedMetadata = ResolveMetadata();
             if (flashRenderer == null || frames == null || frames.Length != RequiredSpriteCount ||
                 latchPresenter == null ||
                 !latchPresenter.TryGetCurrentRenderedPose(out Latch9RenderedPose2D pose) ||
                 !Latch9MuzzleFlashMath.TryResolve(
-                    metadata, in pose, out Vector2 localPosition, out float localAngleDegrees))
+                    resolvedMetadata, in pose, out Vector2 localPosition, out float localAngleDegrees))
             {
                 Hide();
                 return;
@@ -208,6 +217,16 @@ namespace Rustline.Presentation
             SetFrame(0);
             flashRenderer.enabled = true;
             ShownFlashCount++;
+        }
+
+        private Latch9MuzzleMetadata2D ResolveMetadata()
+        {
+            if (metadata == null)
+            {
+                metadata = Resources.Load<Latch9MuzzleMetadata2D>(DefaultMetadataResourcePath);
+            }
+
+            return metadata;
         }
 
         private void SetFrame(int frameIndex)
