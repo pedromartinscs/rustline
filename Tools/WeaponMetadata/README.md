@@ -31,11 +31,11 @@ ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.p
 ArtSource/Metadata/Weapons/latch_9/Muzzle/latch_9_muzzle_reference.png
 ```
 
-Each reference is an `80x96` composite with exactly 19 opaque blue muzzle markers and one opaque red radial-ordering anchor.
+Each reference is an `80x96` composite built in the same source-pixel coordinate space as production Idle frame 0, with exactly 19 opaque blue muzzle markers and one opaque red radial-ordering anchor.
 
 The red pixel is an **authoring anchor**, not the Unity sprite pivot. Runtime offsets remain relative to the canonical armed pivot `(24,8)`.
 
-A blue marker may be placed in transparent space immediately beyond the muzzle or may overwrite the exact production muzzle pixel. The marker supplies only a coordinate seed. The signature used for propagation is always extracted from the matching isolated production Idle frame 0, so either authoring convention is valid.
+A blue marker may be placed in transparent space immediately beyond the muzzle or may overwrite the exact production muzzle pixel. The marker supplies the coordinate seed. Because that seed is applied directly to the matching isolated production Idle frame 0, the composite reference must use the exact Idle raster rather than a different animation state's layer placement.
 
 ## Generated outputs
 
@@ -94,7 +94,7 @@ For each configured weapon the implementation:
 Current validated corpora:
 
 - **Longwatch DMR:** 343 supported points — Idle 38, Run 114, Backpedal 76, Crouch 96, Fall 19. Crouch `m70`, `m80`, and `m90` remain explicitly unsupported. Every direction resolves with a `5x5` signature.
-- **Latch-9:** 361 supported points — Idle 38, Run 114, Backpedal 76, Crouch 114, Fall 19. No direction is currently unsupported. `p90/p80/p70` require `9x9`, `p60/p50/p40/p30` require `7x7`, and all remaining directions resolve with `5x5`.
+- **Latch-9:** 361 supported points — Idle 38, Run 114, Backpedal 76, Crouch 114, Fall 19. No direction is currently unsupported. After correcting the authoring reference to the exact Idle-frame raster, every direction resolves uniquely with a `5x5` signature.
 
 Jump and Land carry, Wall Brace, Wall Kick, and LedgeClimb are not muzzle-metadata states because they are not currently firing poses.
 
@@ -122,6 +122,6 @@ For exact comparison, out-of-cell samples are equivalent only to normalized full
 
 This tool is offline authoring infrastructure. Runtime gameplay must not scan PNGs, perform signature matching, invoke Python/Pillow, or repeatedly parse generated JSON.
 
-Longwatch currently imports its generated JSON into compact Unity runtime presentation metadata for muzzle-flash placement. Ballistics/tracer origin still uses `AimOriginWorld` until a separate runtime task explicitly migrates it.
+Longwatch imports its generated JSON into compact Unity runtime presentation metadata for muzzle-flash placement. Its hitscan/tracer origin remains `AimOriginWorld`.
 
-Latch-9 runtime metadata consumption and projectile-origin integration are separate follow-up work; this generator only establishes and validates the exact authored muzzle coordinates.
+Latch-9 also imports its generated metadata into compact runtime data. Its visible runtime projectile now launches from the exact rendered muzzle point while preserving `ContinuousAimDirection`; metadata still never quantizes ballistics to the 10-degree presentation bucket.
