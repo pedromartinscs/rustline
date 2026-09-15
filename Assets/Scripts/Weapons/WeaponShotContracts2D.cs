@@ -179,6 +179,20 @@ namespace Rustline.Gameplay.Weapons
                                 2f * normalProjection * normalizedNormal;
             return reflected.sqrMagnitude > 0f ? reflected.normalized : -normalizedDirection;
         }
+
+        /// <summary>
+        /// bounceCount is the number of reflections already completed. With maxBounces = 3,
+        /// collisions at counts 0, 1 and 2 may reflect; once count reaches 3 the next surface ends it.
+        /// </summary>
+        public static bool CanReflect(
+            WeaponShotMode2D shotMode,
+            int bounceCount,
+            int maxBounces)
+        {
+            return shotMode == WeaponShotMode2D.Bouncing &&
+                   bounceCount >= 0 &&
+                   bounceCount < Mathf.Max(0, maxBounces);
+        }
     }
 
     public sealed class SemiAutomaticWeaponCooldown2D
