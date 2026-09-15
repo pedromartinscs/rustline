@@ -10,6 +10,7 @@ namespace Rustline.Tests
     {
         private const string LatchDefinitionPath = "Assets/Config/Weapons/Latch9.asset";
         private const string LongwatchDefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
+        private const float ReflectionTolerance = 0.00001f;
 
         [Test]
         public void LatchDefinition_UsesVisibleProjectileDelivery()
@@ -48,6 +49,61 @@ namespace Rustline.Tests
             Assert.That(RustlinePalette.IsCanonical(bouncing), Is.True);
             Assert.That(Latch9Projectile2D.VisualLength, Is.EqualTo(4f / 16f));
             Assert.That(Latch9Projectile2D.VisualWidth, Is.EqualTo(1f / 16f));
+        }
+
+        [Test]
+        public void BounceReflection_FloorPreservesTangentAndInvertsNormalComponent()
+        {
+            Vector2 incoming = new Vector2(3f, -4f).normalized;
+            Vector2 reflected = WeaponBounceMath2D.Reflect(incoming, Vector2.up);
+
+            Assert.That(reflected.x, Is.EqualTo(incoming.x).Within(ReflectionTolerance));
+            Assert.That(reflected.y, Is.EqualTo(-incoming.y).Within(ReflectionTolerance));
+            Assert.That(reflected.magnitude, Is.EqualTo(1f).Within(ReflectionTolerance));
+        }
+
+        [Test]
+        public void BounceReflection_WallPreservesVerticalComponentAndReversesHorizontalComponent()
+        {
+            Vector2 incoming = new Vector2(4f, 3f).normalized;
+            Vector2 reflected = WeaponBounceMath2D.Reflect(incoming, Vector2.left);
+
+            Assert.That(reflected.x, Is.EqualTo(-incoming.x).Within(ReflectionTolerance));
+            Assert.That(reflected.y, Is.EqualTo(incoming.y).Within(ReflectionTolerance));
+            Assert.That(reflected.magnitude, Is.EqualTo(1f).Within(ReflectionTolerance));
+        }
+
+        [Test]
+        public void BounceReflection_ObliqueSurfaceUsesSurfaceNormal()
+        {
+            Vector2 normal = new Vector2(-1f, 1f).normalized;
+            Vector2 reflected = WeaponBounceMath2D.Reflect(Vector2.right, normal);
+
+            Assert.That(reflected.x, Is.EqualTo(0f).Within(ReflectionTolerance));
+            Assert.That(reflected.y, Is.EqualTo(1f).Within(ReflectionTolerance));
+        }
+
+        [Test]
+        public void BounceReflection_IncidenceAndReflectionAnglesMatch()
+        {
+            Vector2 incoming = new Vector2(0.8f, -0.6f).normalized;
+            Vector2 normal = new Vector2(0.2f, 1f).normalized;
+            Vector2 reflected = WeaponBounceMath2D.Reflect(incoming, normal);
+
+            float incomingNormalComponent = Vector2.Dot(incoming, normal);
+            float reflectedNormalComponent = Vector2.Dot(reflected, normal);
+            Vector2 incomingTangent = incoming - incomingNormalComponent * normal;
+            Vector2 reflectedTangent = reflected - reflectedNormalComponent * normal;
+
+            Assert.That(
+                reflectedNormalComponent,
+                Is.EqualTo(-incomingNormalComponent).Within(ReflectionTolerance));
+            Assert.That(
+                reflectedTangent.x,
+                Is.EqualTo(incomingTangent.x).Within(ReflectionTolerance));
+            Assert.That(
+                reflectedTangent.y,
+                Is.EqualTo(incomingTangent.y).Within(ReflectionTolerance));
         }
 
         [Test]
