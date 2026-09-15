@@ -100,6 +100,9 @@ namespace Rustline.Gameplay.Weapons
                 ? weaponController.GetComponent<Collider2D>()
                 : null;
             Transform ownerRoot = weaponController != null ? weaponController.transform : transform;
+            LayerMask projectileHitLayers = weaponController != null
+                ? weaponController.HitLayers
+                : default;
 
             projectile.Initialize(
                 weaponController,
@@ -107,7 +110,7 @@ namespace Rustline.Gameplay.Weapons
                 shot.ShotMode,
                 origin,
                 shot.Direction,
-                weaponController != null ? weaponController.HitLayers : 0,
+                projectileHitLayers,
                 ownerCollider,
                 ownerRoot,
                 lineRenderer,
