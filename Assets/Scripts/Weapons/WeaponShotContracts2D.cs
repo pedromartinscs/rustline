@@ -160,6 +160,11 @@ namespace Rustline.Gameplay.Weapons
 
     public static class WeaponBounceMath2D
     {
+        /// <summary>
+        /// Returns the specular reflection of a travel direction around a surface normal.
+        /// For normalized vectors the reflection is r = d - 2 * dot(d, n) * n:
+        /// the tangential component is preserved and the normal component is inverted.
+        /// </summary>
         public static Vector2 Reflect(Vector2 direction, Vector2 normal)
         {
             Vector2 normalizedDirection = direction.sqrMagnitude > 0f
@@ -168,7 +173,10 @@ namespace Rustline.Gameplay.Weapons
             Vector2 normalizedNormal = normal.sqrMagnitude > 0f
                 ? normal.normalized
                 : -normalizedDirection;
-            Vector2 reflected = Vector2.Reflect(normalizedDirection, normalizedNormal);
+
+            float normalProjection = Vector2.Dot(normalizedDirection, normalizedNormal);
+            Vector2 reflected = normalizedDirection -
+                                2f * normalProjection * normalizedNormal;
             return reflected.sqrMagnitude > 0f ? reflected.normalized : -normalizedDirection;
         }
     }
