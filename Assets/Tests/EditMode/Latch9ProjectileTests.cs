@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Rustline.Gameplay.Environment;
 using Rustline.Gameplay.Weapons;
 using Rustline.Presentation;
 using UnityEditor;
@@ -49,6 +50,23 @@ namespace Rustline.Tests
             Assert.That(RustlinePalette.IsCanonical(bouncing), Is.True);
             Assert.That(Latch9Projectile2D.VisualLength, Is.EqualTo(4f / 16f));
             Assert.That(Latch9Projectile2D.VisualWidth, Is.EqualTo(1f / 16f));
+        }
+
+        [Test]
+        public void LatchCombatTargetContract_SeparatesCombatTargetsFromEnvironmentalReceivers()
+        {
+            Assert.That(
+                typeof(IWeaponCombatTarget2D).IsAssignableFrom(typeof(WeaponHitbox2D)),
+                Is.True);
+            Assert.That(
+                typeof(IWeaponCombatTarget2D).IsAssignableFrom(typeof(DiagnosticCombatTarget2D)),
+                Is.True);
+            Assert.That(
+                typeof(IWeaponHitReceiver2D).IsAssignableFrom(typeof(BreachableTilemap2D)),
+                Is.True);
+            Assert.That(
+                typeof(IWeaponCombatTarget2D).IsAssignableFrom(typeof(BreachableTilemap2D)),
+                Is.False);
         }
 
         [Test]

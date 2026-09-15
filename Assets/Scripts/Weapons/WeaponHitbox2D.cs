@@ -5,7 +5,7 @@ namespace Rustline.Gameplay.Weapons
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider2D))]
-    public sealed class WeaponHitbox2D : MonoBehaviour, IWeaponHitReceiver2D
+    public sealed class WeaponHitbox2D : MonoBehaviour, IWeaponCombatTarget2D
     {
         [SerializeField] private CombatHealth2D health;
 

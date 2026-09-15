@@ -7,7 +7,7 @@ namespace Rustline.Gameplay.Weapons
     /// Repeatable MovementLab-only receiver; this is not the production health/death model.
     /// </summary>
     [RequireComponent(typeof(Collider2D), typeof(LineRenderer))]
-    public sealed class DiagnosticCombatTarget2D : MonoBehaviour, IWeaponHitReceiver2D
+    public sealed class DiagnosticCombatTarget2D : MonoBehaviour, IWeaponCombatTarget2D
     {
         public const float HitFlashDuration = 0.12f;
 

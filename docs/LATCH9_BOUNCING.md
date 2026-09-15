@@ -4,7 +4,7 @@ This document defines the runtime behavior of the Latch-9 `Bouncing` shot mode.
 
 ## Reflection rule
 
-A bouncing projectile reflects from receiverless collision geometry using the actual 2D surface normal returned by the collision query.
+A bouncing projectile reflects from collision geometry that is not an `IWeaponCombatTarget2D`, using the actual 2D surface normal returned by the collision query.
 
 Let:
 
@@ -39,7 +39,7 @@ Incoming:      ( +x, +y)
 Reflected:     ( -x, +y)
 ```
 
-The runtime implementation lives in `WeaponBounceMath2D.Reflect` and is consumed by `Latch9Projectile2D` after a receiverless geometry hit.
+The runtime implementation lives in `WeaponBounceMath2D.Reflect` and is consumed by `Latch9Projectile2D` after a non-combat geometry hit.
 
 ## Bounce count
 
@@ -58,9 +58,9 @@ After the third reflection, the projectile continues normally along that reflect
 
 ## Valid targets versus geometry
 
-An `IWeaponHitReceiver2D` is a valid target. Reaching one ends the projectile immediately and applies the current bouncing damage stage.
+Only an `IWeaponCombatTarget2D` is a valid Latch-9 damage target. Reaching one ends the projectile immediately and applies the current bouncing damage stage. Production `WeaponHitbox2D` and the MovementLab diagnostic targets implement this combat-target contract.
 
-Receiverless level geometry is a bounce surface. It changes projectile direction but receives no damage and is never mutated by this weapon path.
+`IWeaponHitReceiver2D` is intentionally broader: environmental systems such as `BreachableTilemap2D` may receive hits from weapons that are allowed to modify scenery without becoming combat targets. The Latch-9 does not notify those environmental receivers. Conventional shots stop on that geometry without damaging it; Bouncing shots treat it as a reflection surface. This keeps Latch-9 geometry non-destructive even when the same collider supports breaching for another weapon.
 
 Current bouncing damage by completed-reflection count:
 

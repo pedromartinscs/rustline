@@ -8,6 +8,14 @@ namespace Rustline.Gameplay.Weapons
         void ReceiveHit(in WeaponHitInfo2D hit);
     }
 
+    /// <summary>
+    /// Marks a hit receiver as a combat target that projectile weapons may damage and stop on.
+    /// Environmental receivers can still implement IWeaponHitReceiver2D without becoming combat targets.
+    /// </summary>
+    public interface IWeaponCombatTarget2D : IWeaponHitReceiver2D
+    {
+    }
+
     public readonly struct WeaponShotFired2D
     {
         public WeaponShotFired2D(

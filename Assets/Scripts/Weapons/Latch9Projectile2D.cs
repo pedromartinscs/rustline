@@ -164,11 +164,11 @@ namespace Rustline.Gameplay.Weapons
 
                 Collider2D hitCollider = hit.collider;
                 int damage = _definition.ResolveDamage(_shotMode, _bounceCount);
-                IWeaponHitReceiver2D receiver = hitCollider != null
-                    ? hitCollider.GetComponent<IWeaponHitReceiver2D>()
+                IWeaponCombatTarget2D combatTarget = hitCollider != null
+                    ? hitCollider.GetComponent<IWeaponCombatTarget2D>()
                     : null;
 
-                if (receiver != null)
+                if (combatTarget != null)
                 {
                     var hitInfo = new WeaponHitInfo2D(
                         _definition,
@@ -179,7 +179,7 @@ namespace Rustline.Gameplay.Weapons
                         _travelledDistance,
                         damage,
                         hitCollider);
-                    receiver.ReceiveHit(in hitInfo);
+                    combatTarget.ReceiveHit(in hitInfo);
                     Complete(
                         true,
                         hitCollider,
