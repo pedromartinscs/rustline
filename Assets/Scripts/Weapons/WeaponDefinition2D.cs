@@ -14,6 +14,12 @@ namespace Rustline.Gameplay.Weapons
         Bouncing,
     }
 
+    public enum WeaponDeliveryMode2D
+    {
+        Hitscan,
+        Projectile,
+    }
+
     [CreateAssetMenu(fileName = "WeaponDefinition", menuName = "Rustline/Weapon Definition 2D")]
     public sealed class WeaponDefinition2D : ScriptableObject
     {
@@ -29,6 +35,8 @@ namespace Rustline.Gameplay.Weapons
         {
             WeaponShotMode2D.Conventional,
         };
+        [SerializeField] private WeaponDeliveryMode2D deliveryMode = WeaponDeliveryMode2D.Hitscan;
+        [SerializeField, Min(0f)] private float projectileSpeed;
         [SerializeField, Min(0.01f)] private float shotInterval = 1f / 12f;
         [SerializeField, Min(0.01f)] private float range = 80f;
         [SerializeField, Min(0)] private int damage = 40;
@@ -44,6 +52,8 @@ namespace Rustline.Gameplay.Weapons
         public WeaponShotMode2D ShotMode => shotMode;
         public int SupportedShotModeCount => supportedShotModes?.Length ?? 0;
         public bool SupportsMultipleShotModes => SupportedShotModeCount > 1;
+        public WeaponDeliveryMode2D DeliveryMode => deliveryMode;
+        public float ProjectileSpeed => projectileSpeed;
         public float ShotInterval => shotInterval;
         public float Range => range;
         public int Damage => damage;
@@ -195,6 +205,12 @@ namespace Rustline.Gameplay.Weapons
             if (shotInterval <= 0f || range <= 0f || damage <= 0)
             {
                 reason = "Weapon fire interval, range, and damage must be positive.";
+                return false;
+            }
+
+            if (deliveryMode == WeaponDeliveryMode2D.Projectile && projectileSpeed <= 0f)
+            {
+                reason = "A projectile weapon must have a positive projectile speed.";
                 return false;
             }
 

@@ -63,10 +63,8 @@ namespace Rustline.Presentation
     }
 
     /// <summary>
-    /// Displays the Latch-9 two-rendered-frame muzzle flash after a successful shot.
-    /// Conventional is the default profile. Bouncing is an explicit presentation profile
-    /// reserved for the future ricochet-ammunition gameplay contract; it is never inferred
-    /// from semi/automatic fire mode.
+    /// Displays the Latch-9 two-rendered-frame muzzle flash immediately when a shot is launched.
+    /// Conventional and Bouncing use independent authored flash banks.
     /// </summary>
     [DefaultExecutionOrder(125)]
     [DisallowMultipleComponent]
@@ -135,7 +133,7 @@ namespace Rustline.Presentation
             ResolveMetadata();
             if (weaponController != null)
             {
-                weaponController.ShotResolved += OnShotResolved;
+                weaponController.ShotFired += OnShotFired;
             }
         }
 
@@ -143,7 +141,7 @@ namespace Rustline.Presentation
         {
             if (weaponController != null)
             {
-                weaponController.ShotResolved -= OnShotResolved;
+                weaponController.ShotFired -= OnShotFired;
             }
 
             _pendingShot = false;
@@ -181,10 +179,12 @@ namespace Rustline.Presentation
             }
         }
 
-        private void OnShotResolved(WeaponShotResult2D _result)
+        private void OnShotFired(WeaponShotFired2D result)
         {
             _pendingVariant = Latch9MuzzleFlashMath.SelectVariant(_shotSequence);
-            _pendingProfile = profile;
+            _pendingProfile = result.ShotMode == WeaponShotMode2D.Bouncing
+                ? Latch9MuzzleFlashProfile2D.Bouncing
+                : Latch9MuzzleFlashProfile2D.Conventional;
             unchecked
             {
                 _shotSequence++;

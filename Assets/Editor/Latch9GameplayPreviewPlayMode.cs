@@ -128,7 +128,7 @@ namespace Rustline.Editor
                 }
 
                 // AddComponent invokes OnEnable immediately. Disable while injecting all
-                // dependencies so the final enable subscribes ShotResolved to the real controller.
+                // dependencies so the final enable subscribes ShotFired to the real controller.
                 muzzleFlash.enabled = false;
                 SerializedObject serialized = new SerializedObject(muzzleFlash);
                 serialized.FindProperty("weaponController").objectReferenceValue = controller;
@@ -149,6 +149,14 @@ namespace Rustline.Editor
                 }
                 binder.Configure(controller, muzzleFlash);
 
+                Latch9ProjectileEmitter2D projectileEmitter =
+                    latchPresenter.GetComponent<Latch9ProjectileEmitter2D>();
+                if (projectileEmitter == null)
+                {
+                    projectileEmitter = latchPresenter.gameObject.AddComponent<Latch9ProjectileEmitter2D>();
+                }
+                projectileEmitter.Configure(controller, latchPresenter, metadata);
+
                 controller.EquipWeapon(definition);
                 controller.enabled = true;
                 installed++;
@@ -157,7 +165,7 @@ namespace Rustline.Editor
             if (installed > 0)
             {
                 Debug.Log(
-                    $"Latch-9 gameplay active on {installed} player instance(s): left click fires; " +
+                    $"Latch-9 gameplay active on {installed} player instance(s): left click launches a visible projectile; " +
                     "right click toggles Conventional/Bouncing; bouncing damage is 4/3/2/1 across up to three ricochets.");
             }
         }

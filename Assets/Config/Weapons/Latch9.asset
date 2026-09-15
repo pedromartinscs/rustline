@@ -21,6 +21,8 @@ MonoBehaviour:
   supportedShotModes:
   - 0
   - 1
+  deliveryMode: 1
+  projectileSpeed: 30
   shotInterval: 0.083333336
   range: 80
   damage: 5

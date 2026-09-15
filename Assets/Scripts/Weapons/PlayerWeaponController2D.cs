@@ -8,7 +8,7 @@ namespace Rustline.Gameplay.Weapons
 {
     /// <summary>
     /// Consumes current-frame aim and locomotion state after PlayerAim2D and
-    /// PlayerAnimator2D have updated. Authored ten-degree poses never affect hitscan direction.
+    /// PlayerAnimator2D have updated. Authored ten-degree poses never affect shot direction.
     /// </summary>
     [DefaultExecutionOrder(50)]
     [DisallowMultipleComponent]
@@ -26,6 +26,7 @@ namespace Rustline.Gameplay.Weapons
         [SerializeField] private WeaponDefinition2D weaponDefinition;
         [SerializeField] private LayerMask hitLayers;
         [SerializeField] private PrototypeWeaponShotFeedback2D shotFeedback;
+        [SerializeField] private Latch9ProjectileEmitter2D latchProjectileEmitter;
 
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[16];
         private readonly SemiAutomaticWeaponCooldown2D _cooldown = new SemiAutomaticWeaponCooldown2D();
@@ -34,6 +35,7 @@ namespace Rustline.Gameplay.Weapons
         private WeaponFireMode2D _currentFireMode = WeaponFireMode2D.SemiAutomatic;
         private WeaponShotMode2D _currentShotMode = WeaponShotMode2D.Conventional;
 
+        public event Action<WeaponShotFired2D> ShotFired;
         public event Action<WeaponShotResult2D> ShotResolved;
         public event Action<WeaponFireMode2D> FireModeChanged;
         public event Action<WeaponShotMode2D> ShotModeChanged;
@@ -43,12 +45,17 @@ namespace Rustline.Gameplay.Weapons
         public WeaponShotMode2D CurrentShotMode => _currentShotMode;
         public LayerMask HitLayers => hitLayers;
         public PrototypeWeaponShotFeedback2D ShotFeedback => shotFeedback;
+        public Latch9ProjectileEmitter2D LatchProjectileEmitter => latchProjectileEmitter;
         public int ShotCount { get; private set; }
         public WeaponShotResult2D LastShotResult { get; private set; }
 
         private void Awake()
         {
             _playerCollider = GetComponent<Collider2D>();
+            if (latchProjectileEmitter == null)
+            {
+                latchProjectileEmitter = GetComponent<Latch9ProjectileEmitter2D>();
+            }
             ApplyDefinitionDefaults(false);
             RebuildHitFilter();
         }
@@ -95,10 +102,15 @@ namespace Rustline.Gameplay.Weapons
         public void EquipWeapon(WeaponDefinition2D definition)
         {
             weaponDefinition = definition;
+            if (latchProjectileEmitter == null)
+            {
+                latchProjectileEmitter = GetComponent<Latch9ProjectileEmitter2D>();
+            }
             ApplyDefinitionDefaults(true);
             _cooldown.Reset();
             input?.ClearTransientState();
             shotFeedback?.Hide();
+            latchProjectileEmitter?.CancelPending();
         }
 
         public bool TryFire(float currentTime)
@@ -113,21 +125,62 @@ namespace Rustline.Gameplay.Weapons
                     !WeaponFirePolicy2D.CanFire(
                         playerAnimator.CurrentState,
                         playerMotor.IsWallBraced,
-                        playerMotor.IsWallKicking) ||
-                    !_cooldown.TryConsume(currentTime, weaponDefinition.ShotInterval))
+                        playerMotor.IsWallKicking))
+                {
+                    return false;
+                }
+
+                if (weaponDefinition.DeliveryMode == WeaponDeliveryMode2D.Projectile)
+                {
+                    if (latchProjectileEmitter == null)
+                    {
+                        latchProjectileEmitter = GetComponent<Latch9ProjectileEmitter2D>();
+                    }
+                    if (latchProjectileEmitter == null || !latchProjectileEmitter.IsReady)
+                    {
+                        return false;
+                    }
+                }
+
+                if (!_cooldown.TryConsume(currentTime, weaponDefinition.ShotInterval))
                 {
                     return false;
                 }
 
                 Vector2 origin = playerAim.AimOriginWorld;
                 Vector2 direction = playerAim.ContinuousAimDirection;
+                var fired = new WeaponShotFired2D(
+                    weaponDefinition,
+                    _currentShotMode,
+                    origin,
+                    direction);
+
+                if (weaponDefinition.DeliveryMode == WeaponDeliveryMode2D.Projectile)
+                {
+                    if (!latchProjectileEmitter.QueueLaunch(in fired))
+                    {
+                        return false;
+                    }
+
+                    ShotCount++;
+                    ShotFired?.Invoke(fired);
+                    return true;
+                }
+
+                ShotCount++;
+                ShotFired?.Invoke(fired);
                 ResolveShot(origin, direction, out WeaponShotResult2D result);
                 LastShotResult = result;
-                ShotCount++;
                 shotFeedback?.Show(result);
                 ShotResolved?.Invoke(result);
                 return true;
             }
+        }
+
+        public void ReportProjectileResolved(WeaponShotResult2D result)
+        {
+            LastShotResult = result;
+            ShotResolved?.Invoke(result);
         }
 
         public void ResetTransientState()
@@ -135,6 +188,7 @@ namespace Rustline.Gameplay.Weapons
             _cooldown.Reset();
             input?.ClearTransientState();
             shotFeedback?.Hide();
+            latchProjectileEmitter?.CancelPending();
         }
 
         private void ApplyDefinitionDefaults(bool notify)
@@ -336,7 +390,7 @@ namespace Rustline.Gameplay.Weapons
                 }
 
                 // Receiverless geometry (including current Ground) is collision-only:
-                // it can reflect the Latch-9 shot but is never mutated or damaged here.
+                // it can reflect a bouncing hitscan but is never mutated or damaged here.
                 if (bounceCount >= weaponDefinition.MaxBounces || remainingRange <= BounceSurfaceEpsilon)
                 {
                     result = new WeaponShotResult2D(

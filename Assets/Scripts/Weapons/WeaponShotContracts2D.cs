@@ -8,6 +8,27 @@ namespace Rustline.Gameplay.Weapons
         void ReceiveHit(in WeaponHitInfo2D hit);
     }
 
+    public readonly struct WeaponShotFired2D
+    {
+        public WeaponShotFired2D(
+            WeaponDefinition2D weapon,
+            WeaponShotMode2D shotMode,
+            Vector2 origin,
+            Vector2 direction)
+        {
+            Weapon = weapon;
+            ShotMode = shotMode;
+            Origin = origin;
+            Direction = direction.sqrMagnitude > 0f ? direction.normalized : Vector2.right;
+        }
+
+        public WeaponDefinition2D Weapon { get; }
+        public string WeaponId => Weapon != null ? Weapon.WeaponId : string.Empty;
+        public WeaponShotMode2D ShotMode { get; }
+        public Vector2 Origin { get; }
+        public Vector2 Direction { get; }
+    }
+
     public readonly struct WeaponHitInfo2D
     {
         public WeaponHitInfo2D(
