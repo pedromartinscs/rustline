@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using Rustline.Presentation;
 using UnityEditor;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEditor.U2D.Sprites;
 using UnityEngine;
 
@@ -18,8 +20,9 @@ namespace Rustline.Editor
     {
         private const string MetadataJsonPath =
             "ArtSource/Metadata/Weapons/latch_9/Generated/latch_9_muzzle_metadata.json";
+        private const string MetadataAssetDirectory = "Assets/Resources/Generated";
         private const string MetadataAssetPath =
-            "Assets/Config/Weapons/Generated/Latch9MuzzleMetadata.asset";
+            MetadataAssetDirectory + "/Latch9MuzzleMetadata.asset";
         private const string ConventionalFlashPath =
             "Assets/Art/Effects/Weapons/latch_9/latch_9_muzzle_flash.png";
         private const string BouncingFlashPath =
@@ -245,6 +248,7 @@ namespace Rustline.Editor
 
             MuzzleJson source = JsonUtility.FromJson<MuzzleJson>(File.ReadAllText(absoluteJsonPath));
             ValidateSourceJson(source);
+            EnsureMetadataAssetDirectory();
 
             Latch9MuzzleMetadata2D metadata =
                 AssetDatabase.LoadAssetAtPath<Latch9MuzzleMetadata2D>(MetadataAssetPath);
@@ -271,6 +275,19 @@ namespace Rustline.Editor
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(metadata);
             return metadata;
+        }
+
+        private static void EnsureMetadataAssetDirectory()
+        {
+            if (!AssetDatabase.IsValidFolder("Assets/Resources"))
+            {
+                AssetDatabase.CreateFolder("Assets", "Resources");
+            }
+
+            if (!AssetDatabase.IsValidFolder(MetadataAssetDirectory))
+            {
+                AssetDatabase.CreateFolder("Assets/Resources", "Generated");
+            }
         }
 
         private static void ValidateSourceJson(MuzzleJson source)
@@ -322,8 +339,8 @@ namespace Rustline.Editor
                         Require(frame != null && frame.frame == frameIndex &&
                             frame.muzzleOffsetPixels != null &&
                             frame.muzzleOffsetPixels.Length == 2 &&
-                            float.IsFinite(frame.muzzleOffsetPixels[0]) &&
-                            float.IsFinite(frame.muzzleOffsetPixels[1]) &&
+                            IsFinite(frame.muzzleOffsetPixels[0]) &&
+                            IsFinite(frame.muzzleOffsetPixels[1]) &&
                             IsHalfInteger(frame.muzzleOffsetPixels[0]) &&
                             IsHalfInteger(frame.muzzleOffsetPixels[1]),
                             $"Generated Latch-9 muzzle coordinate mismatch at " +
@@ -410,12 +427,27 @@ namespace Rustline.Editor
                    !Mathf.Approximately(value, Mathf.Round(value));
         }
 
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
         private static void Require(bool condition, string message)
         {
             if (!condition)
             {
                 throw new InvalidOperationException(message);
             }
+        }
+    }
+
+    internal sealed class RustlineLatch9MuzzleBuildPreprocessor : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => -1000;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            RustlineLatch9MuzzleSetup.BuildAndValidate();
         }
     }
 }
