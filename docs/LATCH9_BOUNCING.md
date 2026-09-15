@@ -54,7 +54,7 @@ bounceCount 2 -> third surface may reflect
 bounceCount 3 -> no further reflection
 ```
 
-After the third reflection, the projectile continues normally along that reflected direction. It ends when it reaches the next blocking surface, a valid hit receiver, or its remaining range reaches zero.
+After the third reflection, the projectile continues normally along that reflected direction. It ends when it reaches the next blocking surface, a valid `IWeaponCombatTarget2D`, or its remaining range reaches zero.
 
 ## Valid targets versus geometry
 
@@ -74,6 +74,8 @@ Current bouncing damage by completed-reflection count:
 ## Range and speed
 
 Bounces do not reset range. The projectile has one total range budget across the complete path, including every reflected segment.
+
+The current prototype budget is **80 world units**. That same budget is the projectile lifetime bound: once the accumulated travelled path reaches 80 units, the projectile resolves and is destroyed even if it never collides with anything. Bouncing therefore cannot leave indefinitely active projectiles travelling through empty parts of the level.
 
 Bounces also do not alter speed. Conventional and Bouncing Latch-9 projectiles currently use the same prototype speed configured in `Assets/Config/Weapons/Latch9.asset`.
 
