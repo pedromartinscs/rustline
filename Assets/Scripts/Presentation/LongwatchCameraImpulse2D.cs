@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Rustline.Presentation
 {
     /// <summary>
-    /// Supplies a deterministic shot offset to PixelCameraFollow2D. The follow component
+    /// Supplies a deterministic Longwatch shot offset to PixelCameraFollow2D. The follow component
     /// combines it with its independent base position before final pixel snapping.
     /// </summary>
     [DefaultExecutionOrder(150)]
@@ -15,6 +15,7 @@ namespace Rustline.Presentation
         public const float ImpulseDistanceSourcePixels = 1f;
         public const float ImpulseDistanceWorldUnits = ImpulseDistanceSourcePixels / 16f;
         public const float RecoveryDuration = 0.1f;
+        private const string LongwatchWeaponId = "longwatch_dmr";
 
         [SerializeField] private PlayerWeaponController2D weaponController;
         [SerializeField] private PixelCameraFollow2D cameraFollow;
@@ -79,6 +80,11 @@ namespace Rustline.Presentation
 
         private void OnShotResolved(WeaponShotResult2D result)
         {
+            if (result.WeaponId != LongwatchWeaponId)
+            {
+                return;
+            }
+
             _shotDirection = result.Direction;
             _shotTime = Time.time;
             _isActive = true;
