@@ -56,7 +56,7 @@ The current vertical-slice target is deliberately much smaller than the full ros
 - **Longwatch DMR** — stronger precision weapon with a finite ammunition reserve during the demo level;
 - **Latch-9** — weaker compact fallback sidearm with effectively unlimited ammunition for the demo.
 
-The Latch-9 now has both presentation and playable prototype ballistics in the Editor harness. The ammo-economy/switching layer is still deferred, so the current harness directly equips the Latch-9 while its presentation preview is active. The approved damage/ricochet behavior is implemented; `80` units of range and the `1/12 s` cooldown currently reuse the generic prototype tuning and are **not balance-locked Latch values**.
+The Latch-9 now has both presentation and playable projectile ballistics in the Editor harness. The ammo-economy/switching layer is still deferred, so the current harness directly equips the Latch-9 while its presentation preview is active. The approved damage/ricochet behavior is implemented. Its current `80`-unit range, `1/12 s` cooldown, and `30 units/s` projectile speed are prototype tuning values and are **not balance-locked Latch values**.
 
 ## Approximate visual scale
 
@@ -105,7 +105,7 @@ Current production status:
 - firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall; Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked;
 - exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash beneath the recoil-driven weapon overlay;
 - an active muzzle flash is canceled immediately if presentation transitions to a state with no muzzle-capable Longwatch pose, preventing carry/traversal bleed;
-- MovementLab contains reusable diagnostic targets, Ground occlusion coverage, short distal tracer feedback, compact Ground/target impact feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse;
+- MovementLab contains reusable diagnostic targets, Ground occlusion coverage, short distal tracer feedback, restrained Longwatch overlay recoil, and a deterministic one-pixel camera impulse; the old Ground/target impact line is intentionally disabled while authored collision particles remain deferred;
 - the shared aim origin is 38 source pixels / 2.375 Unity units above the renderer pivot;
 - the first-weapon fixed-cell import, Body-clock, renderer-ownership, carry, aim, metadata, and muzzle-flash conventions are implemented and are now considered frozen for the current movement set.
 
@@ -113,7 +113,7 @@ Do not add new Longwatch locomotion states merely to create more art. Future cha
 
 ## Latch-9 — second weapon implementation
 
-The Latch-9 reuses the proven armed-presentation and continuous-aim contracts while adding its own shot-mode behavior.
+The Latch-9 reuses the proven armed-presentation and continuous-aim contracts while adding its own shot-mode and projectile-delivery behavior.
 
 Current production status:
 
@@ -121,19 +121,23 @@ Current production status:
 - right-facing Idle, Run, Backpedal, Crouch, and Fall are authored at all 19 canonical aim angles in `80×96` armed cells;
 - Jump uses three fixed `48×64` carry frames and Land uses two fixed `48×64` carry frames;
 - Wall Brace and LedgeClimb intentionally render no Latch-9; Jump/Land and traversal states expose no muzzle-capable pose and remain non-firing;
-- the deterministic muzzle generator validates all **361** aim-capable frame points with no unsupported Latch direction;
-- `PlayerLatch9AimPresenter2D` exposes the exact state/direction/frame/facing tuple actually rendered for muzzle presentation;
+- the deterministic muzzle generator validates all **361** aim-capable frame points with no unsupported Latch direction; after correcting the reference to the exact Idle-frame raster, every direction resolves uniquely with a `5×5` signature;
+- `PlayerLatch9AimPresenter2D` exposes the exact state/direction/frame/facing tuple actually rendered for muzzle presentation and projectile origin;
 - mouse-left fires the semi-automatic Latch-9; right mouse toggles `Conventional` / `Bouncing` instead of changing Semi/Automatic fire mode;
-- `Conventional` damage is **5**;
+- Latch-9 uses a **visible projectile** instead of Longwatch-style hitscan. Both shot modes currently travel at `30 units/s` and share one `80`-unit range budget;
+- the current projectile programmer-art visual is a small `4 px × 1 px` line: canonical Neon Cyan (`palette 20`) for `Conventional` and canonical Violet (`palette 22`) for `Bouncing`;
+- the projectile launches from the exact muzzle point resolved from the currently rendered Latch pose while its travel direction remains the exact `ContinuousAimDirection`; the discrete 10-degree art bucket never quantizes ballistics;
+- `Conventional` damage is **5** and the projectile stops on its first valid collision;
 - `Bouncing` starts at **4** damage (80% of base) and may reflect from receiverless solid geometry up to **3** times; cumulative damage after bounce 1/2/3 is **3 / 2 / 1**;
 - the ricochet keeps one total range budget across the whole reflected path rather than receiving a fresh full range after each bounce;
-- a bouncing shot stops when it reaches an `IWeaponHitReceiver2D`, applies the current stage damage, and does not continue through that receiver;
-- receiverless Ground/level geometry is collision-only for this path: it can reflect/stop the shot but is never mutated or sent damage, so the Latch-9 does **not** destroy ground tiles;
+- a bouncing projectile stops when it reaches an `IWeaponHitReceiver2D`, applies the current stage damage, and does not continue through that receiver;
+- receiverless Ground/level geometry is collision-only for this path: it can reflect/stop the projectile but is never mutated or sent damage, so the Latch-9 does **not** destroy ground tiles;
+- after the third reflection, the bouncing projectile continues on that final segment until the next collision or range exhaustion and then disappears; production breakup/impact particles are intentionally deferred;
 - the approved conventional flash is a compact cyan Security-family effect; the approved bouncing flash is predominantly violet/electric;
-- both sheets use ten variants with two frames each; `Latch9MuzzleFlashShotModeBinder2D` keeps the flash bank synchronized with the gameplay shot mode;
-- the Editor gameplay harness replaces Longwatch presentation, equips `Assets/Config/Weapons/Latch9.asset`, re-enables `PlayerWeaponController2D`, disables Longwatch-specific recoil/muzzle presentation, and installs the Latch flash package;
-- the current prototype Latch definition uses the existing `80`-unit range and `1/12 s` cooldown solely as unapproved tuning placeholders until dedicated balance values are chosen;
-- no ballistics origin has moved to muzzle metadata: hitscan still begins at `AimOriginWorld` and uses exact `ContinuousAimDirection`; the discrete 10-degree art bucket remains presentation-only.
+- both sheets use ten variants with two frames each; launch-time `ShotFired` drives the muzzle flash immediately, while `ShotResolved` occurs only when the projectile actually ends;
+- `Latch9MuzzleFlashShotModeBinder2D` keeps the flash bank synchronized with the gameplay shot mode;
+- the Editor gameplay harness replaces Longwatch presentation, equips `Assets/Config/Weapons/Latch9.asset`, re-enables `PlayerWeaponController2D`, disables Longwatch-specific recoil/muzzle presentation, and installs the Latch flash plus projectile emitter;
+- the current prototype Latch definition uses `80` units of range, `1/12 s` cooldown, and `30 units/s` projectile speed as unapproved tuning placeholders until dedicated balance values are chosen.
 
 ## Production rules
 
@@ -143,8 +147,9 @@ Current production status:
 - Strong silhouettes matter more than micro-detail.
 - Weapons within a family should share visual language without becoming silhouette clones.
 - A weapon is not considered production-ready merely because a standalone gun sprite exists; its player presentation package must follow the discrete aim/carry system in `PLAYER_WEAPON_ART.md`.
-- Exact per-frame/per-direction Longwatch muzzle metadata and the production two-frame muzzle flash are implemented for presentation. Crouch `m70`/`m80`/`m90` remain explicitly unsupported and omit the flash without changing the shot. Clearance, the planned Crouch `m60` clamp/red crosshair, casing ejection, reload, audio, and production recoil/impact art remain deferred. Gun Feel v1 hitscan and its distal tracer still originate at `AimOriginWorld`; muzzle metadata has not migrated ballistics.
-- Latch-9 has the same exact-rendered-pose muzzle placement contract for all 361 supported aim frames plus an independent shot-mode contract. Do not conflate `WeaponShotMode2D` (`Conventional` / `Bouncing`) with `WeaponFireMode2D` (`SemiAutomatic` / `Automatic`).
+- Exact per-frame/per-direction Longwatch muzzle metadata and the production two-frame muzzle flash are implemented for presentation. Crouch `m70`/`m80`/`m90` remain explicitly unsupported and omit the flash without changing the shot. Clearance, the planned Crouch `m60` clamp/red crosshair, casing ejection, reload, audio, and production recoil/impact art remain deferred. Longwatch Gun Feel v1 hitscan and its distal tracer continue to originate at `AimOriginWorld`.
+- Latch-9 has the same exact-rendered-pose muzzle placement contract for all 361 supported aim frames plus an independent shot-mode contract. Its projectile origin now uses that exact muzzle metadata, but its direction remains continuous. Do not conflate `WeaponShotMode2D` (`Conventional` / `Bouncing`) with `WeaponFireMode2D` (`SemiAutomatic` / `Automatic`) or `WeaponDeliveryMode2D` (`Hitscan` / `Projectile`).
+- Collision/impact line feedback is disabled. Final collision feedback will be authored as shot-appropriate particles rather than programmer-art line markers.
 
 ## First-weapon production sequence
 
@@ -158,6 +163,6 @@ Current production status:
 8. Crouch directional package. **Done.**
 9. Fall aim plus Jump/Land carry. **Done.**
 10. Freeze the reusable first-weapon art/import/runtime convention. **Done for the current movement set.**
-11. Build the next weapon only when the demo needs it. **Latch-9 presentation and prototype ballistics are implemented; ammo economy/weapon switching remains a separate demo-system task.**
+11. Build the next weapon only when the demo needs it. **Latch-9 presentation and visible projectile ballistics are implemented; ammo economy/weapon switching remains a separate demo-system task.**
 
 A long weapon was the correct first stress test because angular, clipping, hand-placement, and pivot errors were easier to see than with a compact pistol. The Latch-9 reuses proven concepts where appropriate without mechanically inheriting Longwatch-sized art requirements.
