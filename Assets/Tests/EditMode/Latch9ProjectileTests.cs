@@ -52,6 +52,62 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void PostBounceGuard_UsesSubPixelSeparationButMeaningfulClearance()
+        {
+            Assert.That(Latch9Projectile2D.PostBounceSeparation, Is.EqualTo(0.25f / 16f));
+            Assert.That(Latch9Projectile2D.ImmediateRehitGuardDistance, Is.EqualTo(0.5f / 16f));
+            Assert.That(
+                Latch9Projectile2D.ImmediateRehitGuardDistance,
+                Is.GreaterThan(Latch9Projectile2D.PostBounceSeparation));
+        }
+
+        [Test]
+        public void PostBounceGuard_IgnoresOnlyImmediateSameColliderRehits()
+        {
+            var firstObject = new GameObject("Bounce Surface A");
+            var secondObject = new GameObject("Bounce Surface B");
+            BoxCollider2D first = firstObject.AddComponent<BoxCollider2D>();
+            BoxCollider2D second = secondObject.AddComponent<BoxCollider2D>();
+
+            try
+            {
+                Assert.That(
+                    Latch9Projectile2D.ShouldIgnoreImmediateRehit(
+                        first,
+                        first,
+                        0f,
+                        0f),
+                    Is.True);
+                Assert.That(
+                    Latch9Projectile2D.ShouldIgnoreImmediateRehit(
+                        second,
+                        first,
+                        0f,
+                        0f),
+                    Is.False);
+                Assert.That(
+                    Latch9Projectile2D.ShouldIgnoreImmediateRehit(
+                        first,
+                        first,
+                        Latch9Projectile2D.ImmediateRehitGuardDistance * 2f,
+                        0f),
+                    Is.False);
+                Assert.That(
+                    Latch9Projectile2D.ShouldIgnoreImmediateRehit(
+                        first,
+                        first,
+                        0f,
+                        Latch9Projectile2D.ImmediateRehitGuardDistance * 2f),
+                    Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(firstObject);
+                Object.DestroyImmediate(secondObject);
+            }
+        }
+
+        [Test]
         public void BounceReflection_FloorPreservesTangentAndInvertsNormalComponent()
         {
             Vector2 incoming = new Vector2(3f, -4f).normalized;
