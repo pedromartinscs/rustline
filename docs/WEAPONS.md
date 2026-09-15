@@ -56,7 +56,7 @@ The current vertical-slice target is deliberately much smaller than the full ros
 - **Longwatch DMR** — stronger precision weapon with a finite ammunition reserve during the demo level;
 - **Latch-9** — weaker compact fallback sidearm with effectively unlimited ammunition for the demo.
 
-The Latch-9 now has both presentation and playable projectile ballistics in the Editor harness. The ammo-economy/switching layer is still deferred, so the current harness directly equips the Latch-9 while its presentation preview is active. The approved damage/ricochet behavior is implemented. Its current `80`-unit range, `1/12 s` cooldown, and `30 units/s` projectile speed are prototype tuning values and are **not balance-locked Latch values**.
+The Latch-9 now has both presentation and playable projectile ballistics in the Editor harness. The ammo-economy/switching layer is still deferred, so the current harness directly equips the Latch-9 while its presentation preview is active. The approved damage/ricochet behavior is implemented. Its current `80`-unit range, `1/12 s` cooldown, and `30 units/s` projectile speed are prototype tuning values and are **not balance-locked Latch values**. The `80`-unit range already acts as the projectile lifetime budget: every travelled segment consumes it, including reflected segments, so an unblocked projectile cannot remain active indefinitely.
 
 ## Approximate visual scale
 
@@ -101,6 +101,7 @@ Current production status:
 - Wall Kick keeps the accepted Jump/Fall presentation fallback and remains non-firing;
 - generic `PlayerAim2D` owns continuous world aim, the explicit AimOrigin, native-pixel mapping, and 5° vertical facing hysteresis; Longwatch only selects authored visuals;
 - mouse-left primary fire drives the Longwatch hitscan from exact continuous aim at a `1/12 s` interval (**12 shots/s**), `80` unit range, and `40` prototype damage;
+- the Longwatch `80`-unit range bounds its hitscan query directly, so no shot interaction exists beyond that distance;
 - right mouse continues to toggle Longwatch Semi/Automatic fire because Longwatch supports one shot mode but multiple fire modes;
 - firing is allowed during Idle, Run, Backpedal, Crouch Idle, Crouch Move, and Fall; Jump, Land, Wall Brace, Wall Kick, and LedgeClimb remain blocked;
 - exact generated muzzle metadata is imported Editor-side into compact runtime presentation data, and successful shots drive a persistent two-rendered-frame Longwatch muzzle flash beneath the recoil-driven weapon overlay;
@@ -124,15 +125,16 @@ Current production status:
 - the deterministic muzzle generator validates all **361** aim-capable frame points with no unsupported Latch direction; after correcting the reference to the exact Idle-frame raster, every direction resolves uniquely with a `5×5` signature;
 - `PlayerLatch9AimPresenter2D` exposes the exact state/direction/frame/facing tuple actually rendered for muzzle presentation and projectile origin;
 - mouse-left fires the semi-automatic Latch-9; right mouse toggles `Conventional` / `Bouncing` instead of changing Semi/Automatic fire mode;
-- Latch-9 uses a **visible projectile** instead of Longwatch-style hitscan. Both shot modes currently travel at `30 units/s` and share one `80`-unit range budget;
+- Latch-9 uses a **visible projectile** instead of Longwatch-style hitscan. Both shot modes currently travel at `30 units/s` and share one `80`-unit range/lifetime budget;
 - the current projectile programmer-art visual is a small `4 px × 1 px` line: canonical Neon Cyan (`palette 20`) for `Conventional` and canonical Violet (`palette 22`) for `Bouncing`;
 - the projectile launches from the exact muzzle point resolved from the currently rendered Latch pose while its travel direction remains the exact `ContinuousAimDirection`; the discrete 10-degree art bucket never quantizes ballistics;
-- `Conventional` damage is **5** and the projectile stops on its first valid collision;
-- `Bouncing` starts at **4** damage (80% of base) and may reflect from receiverless solid geometry up to **3** times; cumulative damage after bounce 1/2/3 is **3 / 2 / 1**;
+- `Conventional` damage is **5** and the projectile stops on its first blocking collision; environment receivers are not damaged;
+- `Bouncing` starts at **4** damage (80% of base) and may reflect from non-combat blocking geometry up to **3** times; cumulative damage after bounce 1/2/3 is **3 / 2 / 1**;
 - the ricochet keeps one total range budget across the whole reflected path rather than receiving a fresh full range after each bounce;
-- a bouncing projectile stops when it reaches an `IWeaponHitReceiver2D`, applies the current stage damage, and does not continue through that receiver;
-- receiverless Ground/level geometry is collision-only for this path: it can reflect/stop the projectile but is never mutated or sent damage, so the Latch-9 does **not** destroy ground tiles;
-- after the third reflection, the bouncing projectile continues on that final segment until the next collision or range exhaustion and then disappears; production breakup/impact particles are intentionally deferred;
+- only an `IWeaponCombatTarget2D` is a valid Latch-9 damage target. Reaching one ends the projectile and applies the current stage damage;
+- `IWeaponHitReceiver2D` is broader than the Latch damage contract. Environmental receivers such as `BreachableTilemap2D` remain geometry for the Latch: Conventional stops without notifying them, while Bouncing reflects without damaging them;
+- after the third reflection, the bouncing projectile continues on that final segment until the next blocking collision, combat target, or range exhaustion and then disappears; production breakup/impact particles are intentionally deferred;
+- after every reflection, a narrow post-bounce separation and same-collider immediate re-hit guard prevent `CompositeCollider2D` boundary precision from consuming multiple ricochets in the same frame;
 - the approved conventional flash is a compact cyan Security-family effect; the approved bouncing flash is predominantly violet/electric;
 - both sheets use ten variants with two frames each; launch-time `ShotFired` drives the muzzle flash immediately, while `ShotResolved` occurs only when the projectile actually ends;
 - `Latch9MuzzleFlashShotModeBinder2D` keeps the flash bank synchronized with the gameplay shot mode;
