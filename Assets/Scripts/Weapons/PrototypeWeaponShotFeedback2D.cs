@@ -79,11 +79,16 @@ namespace Rustline.Gameplay.Weapons
                 ? RustlinePalette.GetColor(24)
                 : result.Hit
                     ? RustlinePalette.GetColor(12)
-                    : RustlinePalette.GetColor(20);
+                    : result.ShotMode == WeaponShotMode2D.Bouncing
+                        ? RustlinePalette.GetColor(22)
+                        : RustlinePalette.GetColor(20);
             traceRenderer.startColor = color;
             traceRenderer.endColor = color;
+            Vector2 finalDirection = result.FinalDirection.sqrMagnitude > 0f
+                ? result.FinalDirection.normalized
+                : result.Direction.normalized;
             float visibleLength = Mathf.Min(TraceLength, result.HitDistance);
-            traceRenderer.SetPosition(0, result.EndPoint - result.Direction * visibleLength);
+            traceRenderer.SetPosition(0, result.EndPoint - finalDirection * visibleLength);
             traceRenderer.SetPosition(1, result.EndPoint);
             traceRenderer.enabled = true;
             _traceActive = true;
@@ -102,7 +107,7 @@ namespace Rustline.Gameplay.Weapons
 
             Vector2 normal = result.HitNormal.sqrMagnitude > 0f
                 ? result.HitNormal.normalized
-                : -result.Direction;
+                : -finalDirection;
             Vector2 tangent = new Vector2(-normal.y, normal.x);
             Vector2 tip = result.EndPoint + normal * ImpactLength;
             Vector2 wing = tangent * (ImpactLength * 0.5f);
