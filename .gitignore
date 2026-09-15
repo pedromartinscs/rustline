@@ -55,7 +55,12 @@ Desktop.ini
 
 .vsconfig
 
-# Deterministic runtime caches rebuilt from versioned ArtSource metadata
+# Deterministic Latch-9 caches rebuilt by RustlineLatch9MuzzleSetup.
+# The flash sprites are loaded by path in the current Editor harness, so no versioned asset
+# stores their generated sprite GUIDs yet. Remove these ignores when persistent prefab refs land.
+/Assets/Art/Effects/Weapons/latch_9/latch_9_muzzle_flash.png.meta
+/Assets/Art/Effects/Weapons/latch_9/latch_9_muzzle_flash_bouncing.png.meta
+/Assets/Resources.meta
 /Assets/Resources/Generated/
 
 # Local Unity test-run artifacts
