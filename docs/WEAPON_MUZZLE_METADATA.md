@@ -2,7 +2,7 @@
 
 This document defines the authoring, generation, and serialized-data contract for exact weapon muzzle points.
 
-The offline generator currently supports the **Longwatch DMR** and **Latch-9**. Both weapons now consume their generated muzzle corpus for runtime muzzle-flash placement. Latch-9 keeps its generated JSON as the authoring/source-of-truth artifact and converts it Editor-side into compact runtime metadata. Clearance casts, reticle feedback, casing ejection, projectile/tracer-origin migration, and Latch-9 gameplay/ammunition behavior remain separate concerns.
+The offline generator currently supports the **Longwatch DMR** and **Latch-9**. Both weapons consume their generated muzzle corpus for runtime muzzle-flash placement. Latch-9 keeps its generated JSON as the authoring/source-of-truth artifact and converts it Editor-side into compact runtime metadata. Clearance casts, reticle feedback, casing ejection, projectile/tracer-origin migration, and the broader ammo-economy/weapon-switching layer remain separate concerns.
 
 ## Current aim-capable source contract
 
@@ -222,30 +222,42 @@ Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
 
 `PlayerLongwatchAimPresenter2D` exposes the rendered state, direction, authored angle, displayed Body frame, and facing; the muzzle-flash presenter performs a direct indexed lookup against the compact runtime metadata. Jump/Land carry expose no muzzle-capable rendered pose.
 
-Longwatch ballistics are deliberately unchanged by this metadata phase. Hitscan and the current tracer still originate from `AimOriginWorld`.
+Longwatch ballistics remain independent of this metadata. Hitscan and the current tracer originate from `AimOriginWorld` and use continuous aim.
 
 ### Latch-9
 
-`RustlineLatch9MuzzleSetup` validates the generated Latch JSON and converts it Editor-side into:
+`RustlineLatch9MuzzleSetup` validates the generated Latch JSON and converts it Editor-side into a deterministic runtime cache at:
 
 ```text
-Assets/Config/Weapons/Generated/Latch9MuzzleMetadata.asset
+Assets/Resources/Generated/Latch9MuzzleMetadata.asset
 ```
 
-The same setup deterministically imports both approved `180x9` muzzle-flash sheets as twenty `9x9` sprites each (`10 variants x 2 frames`) with the canonical `0.5 px` left-edge / vertically centered pivot, `16 PPU`, Point filtering, no mipmaps, uncompressed production import, binary source transparency, and sRGB sampling.
+That cache and the two flash-sheet `.meta` files are intentionally ignored while the current Latch integration remains an Editor-installed harness. The setup rebuilds/validates them automatically in Edit Mode and before builds; no runtime JSON parsing or PNG inspection is performed. When persistent prefab/scene references to these generated subassets are introduced, their import metadata should become versioned rather than locally generated.
 
-`PlayerLatch9AimPresenter2D` now exposes the exact rendered state, direction bucket, authored angle, displayed Body frame, and facing for `Idle`, `Run`, `Backpedal`, `Crouch`, and `Fall`. Jump/Land carry deliberately expose no muzzle-capable pose, and traversal states continue to release Latch presentation.
+The same setup imports both approved `180x9` muzzle-flash sheets as twenty `9x9` sprites each (`10 variants x 2 frames`) with the canonical `0.5 px` left-edge / vertically centered pivot, `16 PPU`, Point filtering, no mipmaps, uncompressed production import, binary source transparency, and sRGB sampling.
 
-`Latch9MuzzleFlashPresenter2D` consumes that rendered pose plus the compact metadata and follows the established Longwatch two-rendered-frame flash contract. It owns two explicit presentation banks:
+`PlayerLatch9AimPresenter2D` exposes the exact rendered state, direction bucket, authored angle, displayed Body frame, and facing for `Idle`, `Run`, `Backpedal`, `Crouch`, and `Fall`. Jump/Land carry deliberately expose no muzzle-capable pose, and traversal states continue to release Latch presentation.
 
-- `Conventional` — the approved cyan Latch-9 flash and the default profile;
-- `Bouncing` — the approved violet/electric flash, reserved for a future ricochet-ammunition gameplay contract.
+`Latch9MuzzleFlashPresenter2D` consumes that rendered pose plus the compact metadata and follows the established Longwatch two-rendered-frame flash contract. It owns two presentation banks:
 
-The presenter never infers `Bouncing` from semi/automatic fire mode. Until ricochet ammunition exists in gameplay, the purple bank remains an explicitly selectable presentation profile rather than an invented weapon rule.
+- `Conventional` — the approved cyan Latch-9 flash;
+- `Bouncing` — the approved violet/electric ricochet flash.
 
-Latch-9 ballistics are likewise **not** migrated by this presentation integration. `PlayerWeaponController2D` continues to resolve shots from `AimOriginWorld` using the continuous `ContinuousAimDirection`; the discrete 10-degree art bucket is presentation-only.
+`Latch9MuzzleFlashShotModeBinder2D` synchronizes those banks with `WeaponShotMode2D`. Right mouse switches the Latch between `Conventional` and `Bouncing`; this is intentionally independent of `WeaponFireMode2D`, so the same input continues to cycle Semi/Automatic on Longwatch instead.
 
-The current Editor Latch harness is still presentation-only and disables weapon gameplay. This muzzle integration therefore establishes the production import/metadata/pose/flash contract without inventing Latch damage, fire rate, range, ammunition economy, or ricochet behavior.
+The Latch gameplay contract currently implemented is:
+
+- conventional damage: **5**;
+- bouncing initial damage: **4**;
+- after bounce 1 / 2 / 3: **3 / 2 / 1**;
+- maximum: **3 ricochets**;
+- one total range budget across the full reflected path;
+- receiver hits stop the shot and receive the current stage damage;
+- receiverless level/Ground geometry can reflect or stop the shot but is never mutated/damaged, so the Latch does not destroy ground tiles.
+
+Ballistics still start at `AimOriginWorld` and use exact `ContinuousAimDirection`. The discrete 10-degree authored bucket and muzzle metadata remain presentation-only and therefore never quantize the actual shot direction.
+
+The current Editor gameplay harness equips `Assets/Config/Weapons/Latch9.asset`, replaces Longwatch-specific muzzle/recoil presentation, and re-enables the generic weapon controller after the Latch visual presenter has been installed. Ammo economy and weapon switching remain separate future systems.
 
 ## Tooling location
 
