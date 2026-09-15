@@ -18,6 +18,12 @@ MonoBehaviour:
   supportedFireModes:
   - 0
   - 1
+  shotMode: 0
+  supportedShotModes:
+  - 0
   shotInterval: 0.083333336
   range: 80
   damage: 40
+  maxBounces: 0
+  bouncingInitialDamagePercent: 80
+  bouncingDamageStepPercent: 20
