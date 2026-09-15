@@ -2,7 +2,7 @@
 
 This document defines the authoring, generation, and serialized-data contract for exact weapon muzzle points.
 
-The offline generator currently supports the **Longwatch DMR** and **Latch-9**. Both weapons consume their generated muzzle corpus for runtime muzzle-flash placement. Latch-9 keeps its generated JSON as the authoring/source-of-truth artifact and converts it Editor-side into compact runtime metadata. Clearance casts, reticle feedback, casing ejection, projectile/tracer-origin migration, and the broader ammo-economy/weapon-switching layer remain separate concerns.
+The offline generator currently supports the **Longwatch DMR** and **Latch-9**. Both weapons consume their generated muzzle corpus for runtime muzzle-flash placement. Latch-9 also uses the same compact runtime metadata as the spawn origin for its visible projectile. Clearance casts, reticle feedback, casing ejection, authored collision particles, and the broader ammo-economy/weapon-switching layer remain separate concerns.
 
 ## Current aim-capable source contract
 
@@ -34,7 +34,7 @@ ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.p
 ArtSource/Metadata/Weapons/latch_9/Muzzle/latch_9_muzzle_reference.png
 ```
 
-Each reference is an **80x96** composite built from Idle frame 0 for all 19 authored right-facing directions.
+Each reference is an **80x96** composite built from Idle frame 0 for all 19 authored right-facing directions. The composite must preserve the exact source-pixel raster of those Idle layers; a reference assembled from another animation state is not coordinate-compatible with the generator seed contract.
 
 Marker contract:
 
@@ -43,13 +43,13 @@ Marker contract:
 - each blue pixel identifies the muzzle coordinate for one authored direction;
 - the red pixel is a shared offline radial-ordering/orientation anchor;
 - the red authoring anchor is **not** the Unity sprite pivot and must never replace the canonical armed pivot `(24,8)`;
-- a blue marker may sit in transparent space immediately beyond the barrel **or overwrite the exact production muzzle pixel**. It is only a coordinate seed; the clean matching signature always comes from isolated production art.
+- a blue marker may sit in transparent space immediately beyond the barrel **or overwrite the exact production muzzle pixel**. It supplies the coordinate seed used on the corresponding isolated production Idle frame 0.
 
-This last rule is intentional. Longwatch references happen to use transparent-space seeds. Latch-9 includes at least one valid opaque muzzle seed, so seed transparency is not part of the generic metadata contract.
+Longwatch references happen to use transparent-space seeds. Latch-9 includes at least one valid opaque muzzle seed, so seed transparency is not part of the generic metadata contract.
 
 ## Direction assignment
 
-The generator never relies on hand-entered blue-pixel coordinates.
+The generator never relies on hand-entered direction labels for the blue pixels.
 
 For each weapon it:
 
@@ -73,6 +73,8 @@ A reference contains all 19 weapon layers at once, so neighboring angles can con
 ```
 
 The generator then searches every supported production frame for an exact copy of that signature.
+
+Because the seed coordinate is applied directly to that Idle frame, the reference and production Idle art must share the same source-pixel coordinate space. The corrected Latch-9 reference is authored this way; its regenerated 361 points shifted uniformly by `(+1,-3)` source pixels from the earlier Fall-based reference and now resolve from the intended muzzle anchors.
 
 ## Pixel normalization
 
@@ -108,7 +110,7 @@ The generator must never silently choose a closest or best candidate.
 Current validated signature sizes are:
 
 - **Longwatch DMR:** `5x5` for all 19 directions;
-- **Latch-9:** `9x9` for `p90`, `p80`, `p70`; `7x7` for `p60`, `p50`, `p40`, `p30`; `5x5` for `p20` through `m90`.
+- **Latch-9:** `5x5` for all 19 directions after the Idle-reference correction.
 
 ## Cell-edge behavior
 
@@ -222,7 +224,7 @@ Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
 
 `PlayerLongwatchAimPresenter2D` exposes the rendered state, direction, authored angle, displayed Body frame, and facing; the muzzle-flash presenter performs a direct indexed lookup against the compact runtime metadata. Jump/Land carry expose no muzzle-capable rendered pose.
 
-Longwatch ballistics remain independent of this metadata. Hitscan and the current tracer originate from `AimOriginWorld` and use continuous aim.
+Longwatch ballistics remain independent of this metadata. Hitscan and the current distal tracer originate from `AimOriginWorld` and use continuous aim. The old collision/impact line is disabled; authored collision particles are deferred.
 
 ### Latch-9
 
@@ -247,17 +249,25 @@ The same setup imports both approved `180x9` muzzle-flash sheets as twenty `9x9`
 
 The Latch gameplay contract currently implemented is:
 
+- delivery mode: **visible projectile**, currently `30 units/s` in both shot modes;
+- projectile visual: `4 px` long by `1 px` wide;
+- Conventional projectile color: canonical Neon Cyan (`palette 20`);
+- Bouncing projectile color: canonical Violet (`palette 22`);
 - conventional damage: **5**;
 - bouncing initial damage: **4**;
 - after bounce 1 / 2 / 3: **3 / 2 / 1**;
 - maximum: **3 ricochets**;
 - one total range budget across the full reflected path;
-- receiver hits stop the shot and receive the current stage damage;
-- receiverless level/Ground geometry can reflect or stop the shot but is never mutated/damaged, so the Latch does not destroy ground tiles.
+- receiver hits stop the projectile and receive the current stage damage;
+- receiverless level/Ground geometry can reflect or stop the bouncing projectile but is never mutated/damaged, so the Latch does not destroy ground tiles;
+- Conventional stops on its first valid collision;
+- after the third Bouncing reflection, the projectile continues on the final segment until its next collision or range exhaustion, then disappears; production breakup/collision particles are deferred.
 
-Ballistics still start at `AimOriginWorld` and use exact `ContinuousAimDirection`. The discrete 10-degree authored bucket and muzzle metadata remain presentation-only and therefore never quantize the actual shot direction.
+The projectile spawns from the exact muzzle point resolved from the currently rendered Latch pose. Its direction remains the exact `ContinuousAimDirection`; the discrete 10-degree authored bucket is used only to locate the visual muzzle and therefore never quantizes ballistics.
 
-The current Editor gameplay harness equips `Assets/Config/Weapons/Latch9.asset`, replaces Longwatch-specific muzzle/recoil presentation, and re-enables the generic weapon controller after the Latch visual presenter has been installed. Ammo economy and weapon switching remain separate future systems.
+`PlayerWeaponController2D.ShotFired` represents launch-time presentation (including the muzzle flash). `ShotResolved` represents the actual end of the shot. For Longwatch those moments are effectively simultaneous because it remains hitscan; for Latch they are separated by projectile travel time, and damage is applied only when the projectile reaches a valid receiver.
+
+The current Editor gameplay harness equips `Assets/Config/Weapons/Latch9.asset`, replaces Longwatch-specific muzzle/recoil presentation, installs the Latch projectile emitter, and re-enables the generic weapon controller after the Latch visual presenter has been installed. Ammo economy and weapon switching remain separate future systems.
 
 ## Tooling location
 
