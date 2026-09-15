@@ -10,21 +10,53 @@ namespace Rustline.Tests
 {
     public sealed class WeaponGameplayTests
     {
-        private const string DefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
+        private const string LongwatchDefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
+        private const string LatchDefinitionPath = "Assets/Config/Weapons/Latch9.asset";
 
         [Test]
         public void LongwatchDefinition_HasExpectedPrototypeValues()
         {
-            WeaponDefinition2D definition = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(DefinitionPath);
+            WeaponDefinition2D definition = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
 
             Assert.That(definition, Is.Not.Null);
             Assert.That(definition.IsSane(out string reason), Is.True, reason);
             Assert.That(definition.WeaponId, Is.EqualTo("longwatch_dmr"));
             Assert.That(definition.DisplayName, Is.EqualTo("Longwatch DMR"));
             Assert.That(definition.FireMode, Is.EqualTo(WeaponFireMode2D.SemiAutomatic));
+            Assert.That(definition.SupportsMultipleFireModes, Is.True);
+            Assert.That(definition.ShotMode, Is.EqualTo(WeaponShotMode2D.Conventional));
+            Assert.That(definition.SupportsMultipleShotModes, Is.False);
             Assert.That(definition.ShotInterval, Is.EqualTo(1f / 12f));
             Assert.That(definition.Range, Is.EqualTo(80f));
             Assert.That(definition.Damage, Is.EqualTo(40));
+        }
+
+        [Test]
+        public void LatchDefinition_HasApprovedDamageAndRicochetContract()
+        {
+            WeaponDefinition2D definition = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LatchDefinitionPath);
+
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(definition.IsSane(out string reason), Is.True, reason);
+            Assert.That(definition.WeaponId, Is.EqualTo("latch_9"));
+            Assert.That(definition.DisplayName, Is.EqualTo("Latch-9"));
+            Assert.That(definition.FireMode, Is.EqualTo(WeaponFireMode2D.SemiAutomatic));
+            Assert.That(definition.SupportsMultipleFireModes, Is.False);
+            Assert.That(definition.ShotMode, Is.EqualTo(WeaponShotMode2D.Conventional));
+            Assert.That(definition.SupportsMultipleShotModes, Is.True);
+            Assert.That(definition.MaxBounces, Is.EqualTo(3));
+            Assert.That(definition.Damage, Is.EqualTo(5));
+            Assert.That(definition.ResolveDamage(WeaponShotMode2D.Conventional, 0), Is.EqualTo(5));
+            Assert.That(definition.ResolveDamage(WeaponShotMode2D.Bouncing, 0), Is.EqualTo(4));
+            Assert.That(definition.ResolveDamage(WeaponShotMode2D.Bouncing, 1), Is.EqualTo(3));
+            Assert.That(definition.ResolveDamage(WeaponShotMode2D.Bouncing, 2), Is.EqualTo(2));
+            Assert.That(definition.ResolveDamage(WeaponShotMode2D.Bouncing, 3), Is.EqualTo(1));
+            Assert.That(
+                definition.GetNextSupportedShotMode(WeaponShotMode2D.Conventional),
+                Is.EqualTo(WeaponShotMode2D.Bouncing));
+            Assert.That(
+                definition.GetNextSupportedShotMode(WeaponShotMode2D.Bouncing),
+                Is.EqualTo(WeaponShotMode2D.Conventional));
         }
 
         [Test]
@@ -40,6 +72,19 @@ namespace Rustline.Tests
             Assert.That(fire.bindings.Count, Is.EqualTo(1));
             Assert.That(fire.bindings[0].path, Is.EqualTo("<Mouse>/leftButton"));
             Assert.That(fire.bindings[0].interactions, Is.EqualTo("Press"));
+        }
+
+        [Test]
+        public void ToggleModeInput_IsMouseRightPress()
+        {
+            InputActionAsset input = AssetDatabase.LoadAssetAtPath<InputActionAsset>(
+                "Assets/InputSystem_Actions.inputactions");
+            InputAction toggle = input?.FindActionMap("Player", false)?.FindAction("ToggleFireMode", false);
+
+            Assert.That(toggle, Is.Not.Null);
+            Assert.That(toggle.bindings.Count, Is.EqualTo(1));
+            Assert.That(toggle.bindings[0].path, Is.EqualTo("<Mouse>/rightButton"));
+            Assert.That(toggle.bindings[0].interactions, Is.EqualTo("Press"));
         }
 
         [TestCase(PlayerAnimationState.Idle)]
@@ -71,6 +116,17 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void BounceMath_ReflectsAgainstSurfaceNormal()
+        {
+            Assert.That(WeaponBounceMath2D.Reflect(Vector2.right, Vector2.left), Is.EqualTo(Vector2.left));
+            Vector2 diagonal = WeaponBounceMath2D.Reflect(
+                new Vector2(1f, -1f),
+                Vector2.up);
+            Assert.That(diagonal.x, Is.EqualTo(Mathf.Sqrt(0.5f)).Within(0.00001f));
+            Assert.That(diagonal.y, Is.EqualTo(Mathf.Sqrt(0.5f)).Within(0.00001f));
+        }
+
+        [Test]
         public void Cooldown_FiresImmediatelyBlocksThenBecomesReadyWithoutBuffering()
         {
             var cooldown = new SemiAutomaticWeaponCooldown2D();
@@ -85,7 +141,7 @@ namespace Rustline.Tests
         [Test]
         public void ShotResult_PreservesContinuousDirectionAndConfiguredHitData()
         {
-            WeaponDefinition2D definition = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(DefinitionPath);
+            WeaponDefinition2D definition = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
             Vector2 continuousDirection = new Vector2(0.99254614f, 0.12186934f);
             var result = new WeaponShotResult2D(
                 definition,
@@ -100,10 +156,13 @@ namespace Rustline.Tests
                 false);
 
             Assert.That(result.WeaponId, Is.EqualTo("longwatch_dmr"));
+            Assert.That(result.ShotMode, Is.EqualTo(WeaponShotMode2D.Conventional));
             Assert.That(result.Direction, Is.EqualTo(continuousDirection));
+            Assert.That(result.FinalDirection, Is.EqualTo(continuousDirection));
             Assert.That(result.EndPoint, Is.EqualTo(new Vector2(9f, 3f)));
             Assert.That(result.HitDistance, Is.EqualTo(8f));
             Assert.That(result.Damage, Is.EqualTo(40));
+            Assert.That(result.BounceCount, Is.Zero);
         }
 
         [Test]
@@ -149,8 +208,7 @@ namespace Rustline.Tests
                 GameObject flashObject = new GameObject("Longwatch Muzzle Flash");
                 flashObject.transform.SetParent(root.transform, false);
                 SpriteRenderer renderer = flashObject.AddComponent<SpriteRenderer>();
-                LongwatchMuzzleFlashPresenter2D flash =
-                    flashObject.AddComponent<LongwatchMuzzleFlashPresenter2D>();
+                LongwatchMuzzleFlashPresenter2D flash = flashObject.AddComponent<LongwatchMuzzleFlashPresenter2D>();
 
                 SerializedObject serialized = new SerializedObject(flash);
                 serialized.FindProperty("longwatchPresenter").objectReferenceValue = longwatch;
