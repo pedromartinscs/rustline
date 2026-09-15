@@ -108,6 +108,12 @@ namespace Rustline.Editor
                     }
                 }
 
+                if (flashRenderer == null)
+                {
+                    flashRenderer = flashObject.GetComponent<SpriteRenderer>() ??
+                                    flashObject.AddComponent<SpriteRenderer>();
+                }
+
                 foreach (LongwatchRecoilPresenter2D recoil in
                          latchPresenter.GetComponentsInChildren<LongwatchRecoilPresenter2D>(true))
                 {
@@ -121,6 +127,9 @@ namespace Rustline.Editor
                     muzzleFlash = flashObject.AddComponent<Latch9MuzzleFlashPresenter2D>();
                 }
 
+                // AddComponent invokes OnEnable immediately. Disable while injecting all
+                // dependencies so the final enable subscribes ShotResolved to the real controller.
+                muzzleFlash.enabled = false;
                 SerializedObject serialized = new SerializedObject(muzzleFlash);
                 serialized.FindProperty("weaponController").objectReferenceValue = controller;
                 serialized.FindProperty("latchPresenter").objectReferenceValue = latchPresenter;
