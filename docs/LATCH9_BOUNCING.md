@@ -77,6 +77,16 @@ Bounces do not reset range. The projectile has one total range budget across the
 
 Bounces also do not alter speed. Conventional and Bouncing Latch-9 projectiles currently use the same prototype speed configured in `Assets/Config/Weapons/Latch9.asset`.
 
-## Numerical separation from the surface
+## Post-bounce surface separation and immediate re-hit guard
 
-After a reflection, the runtime advances the projectile by a very small epsilon along both the collision normal and the new reflected direction. This prevents the following raycast from immediately rediscovering the same surface because of floating-point/contact-boundary ambiguity. The epsilon is not part of gameplay distance or an artificial change to the reflection angle.
+A reflected projectile must leave the collision boundary before its next raycast. This matters especially with `CompositeCollider2D`, where a cast starting numerically on the contact boundary can immediately rediscover the same collider at distance zero and consume multiple ricochets in one frame.
+
+After each completed reflection the runtime therefore:
+
+1. moves the projectile **0.25 source pixel** along the collision normal and **0.25 source pixel** along the newly reflected direction;
+2. remembers the collider that caused that reflection;
+3. temporarily ignores only an immediate re-hit against that same collider when both the new hit distance and the actual distance travelled since the bounce are within **0.5 source pixel**.
+
+The guard is intentionally narrow. It does **not** ignore the surface globally: once the projectile has travelled beyond the guard distance, that same collider may be hit again normally at another point and can consume another legitimate bounce.
+
+The numerical separation is not counted as gameplay travel distance and does not alter the reflection angle, projectile speed, damage stage, or total range budget.
