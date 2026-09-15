@@ -140,14 +140,50 @@ class MuzzleMetadataUnitTests(unittest.TestCase):
         self.assertTrue(first.endswith("\n"))
         self.assertEqual(metadata, json.loads(first))
 
+    def test_weapon_configuration_preserves_longwatch_and_adds_latch9(self) -> None:
+        self.assertEqual(
+            ["longwatch_dmr", "latch_9"],
+            [spec.weapon_id for spec in muzzle.WEAPON_SPECS],
+        )
+        self.assertEqual(
+            muzzle.LONGWATCH_SPEC.reference_relative_path,
+            muzzle.REFERENCE_RELATIVE_PATH,
+        )
+        self.assertEqual(
+            muzzle.LONGWATCH_SPEC.output_relative_path,
+            muzzle.OUTPUT_RELATIVE_PATH,
+        )
+        self.assertFalse(muzzle.LONGWATCH_SPEC.is_supported("Crouch", "m70"))
+        self.assertFalse(muzzle.LONGWATCH_SPEC.is_supported("Crouch", "m80"))
+        self.assertFalse(muzzle.LONGWATCH_SPEC.is_supported("Crouch", "m90"))
+        self.assertTrue(muzzle.LATCH9_SPEC.is_supported("Crouch", "m90"))
+        self.assertEqual(
+            "player_salvager_latch_9_run_aim_p30.png",
+            muzzle.canonical_filename(
+                muzzle.STATE_SPECS[1], "p30", muzzle.LATCH9_SPEC
+            ),
+        )
+        self.assertEqual(
+            (muzzle.LONGWATCH_SPEC, muzzle.LATCH9_SPEC),
+            muzzle.selected_weapon_specs("all"),
+        )
+        self.assertEqual(
+            (muzzle.LATCH9_SPEC,),
+            muzzle.selected_weapon_specs("latch_9"),
+        )
 
-class LongwatchRealArtIntegrationTests(unittest.TestCase):
+
+class RealArtIntegrationMixin:
+    weapon_spec: muzzle.WeaponSpec
+    expected_supported_points: dict[str, int]
+    expected_unsupported: dict[str, list[str]]
+
     @classmethod
     def setUpClass(cls) -> None:
-        cls.result = muzzle.generate(REPO_ROOT)
+        cls.result = muzzle.generate(REPO_ROOT, cls.weapon_spec)
 
     def test_real_reference_and_sheet_contract(self) -> None:
-        reference_path = REPO_ROOT / muzzle.REFERENCE_RELATIVE_PATH
+        reference_path = REPO_ROOT / self.weapon_spec.reference_relative_path
         with Image.open(reference_path) as reference:
             rgba = reference.convert("RGBA")
             pixels = muzzle.rgba_pixels(rgba)
@@ -155,8 +191,8 @@ class LongwatchRealArtIntegrationTests(unittest.TestCase):
             self.assertEqual(19, pixels.count(muzzle.BLUE_MARKER))
             self.assertEqual(1, pixels.count(muzzle.RED_MARKER))
 
-        sheets = muzzle.load_production_sheets(REPO_ROOT)
-        self.assertEqual(19 * 5, len(sheets))
+        sheets = muzzle.load_production_sheets(REPO_ROOT, self.weapon_spec)
+        self.assertEqual(19 * len(muzzle.STATE_SPECS), len(sheets))
         for spec in muzzle.STATE_SPECS:
             state_sheets = [
                 sheets[(spec.name, suffix)] for suffix in muzzle.DIRECTION_SUFFIXES
@@ -170,15 +206,10 @@ class LongwatchRealArtIntegrationTests(unittest.TestCase):
             )
 
     def test_real_corpus_resolves_all_required_frames(self) -> None:
-        expected_supported_points = {
-            "Idle": 38,
-            "Run": 114,
-            "Backpedal": 76,
-            "Crouch": 96,
-            "Fall": 19,
-        }
         states = self.result.metadata["states"]
-        self.assertEqual(list(expected_supported_points), [state["name"] for state in states])
+        self.assertEqual(
+            list(self.expected_supported_points), [state["name"] for state in states]
+        )
         for state in states:
             self.assertEqual(
                 list(muzzle.DIRECTION_SUFFIXES),
@@ -189,39 +220,86 @@ class LongwatchRealArtIntegrationTests(unittest.TestCase):
                 for direction in state["directions"]
                 if direction["supported"]
             )
-            self.assertEqual(expected_supported_points[state["name"]], supported_points)
+            self.assertEqual(
+                self.expected_supported_points[state["name"]], supported_points
+            )
             unsupported = [
                 direction["suffix"]
                 for direction in state["directions"]
                 if not direction["supported"]
             ]
-            expected_unsupported = (
-                ["m70", "m80", "m90"] if state["name"] == "Crouch" else []
+            self.assertEqual(
+                self.expected_unsupported.get(state["name"], []), unsupported
             )
-            self.assertEqual(expected_unsupported, unsupported)
             for direction in state["directions"]:
                 expected_frames = (
-                    [] if not direction["supported"] else list(range(state["frameCount"]))
+                    []
+                    if not direction["supported"]
+                    else list(range(state["frameCount"]))
                 )
                 self.assertEqual(
                     expected_frames,
                     [frame["frame"] for frame in direction["frames"]],
                 )
-        self.assertEqual(343, sum(expected_supported_points.values()))
         self.assertEqual(
-            {suffix: 5 for suffix in muzzle.DIRECTION_SUFFIXES},
-            self.result.signature_sizes,
+            sum(self.expected_supported_points.values()),
+            sum(
+                len(direction["frames"])
+                for state in states
+                for direction in state["directions"]
+                if direction["supported"]
+            ),
         )
 
     def test_checked_in_json_is_byte_deterministic(self) -> None:
-        generated_path = REPO_ROOT / muzzle.OUTPUT_RELATIVE_PATH
+        generated_path = REPO_ROOT / self.weapon_spec.output_relative_path
         self.assertTrue(generated_path.is_file())
         self.assertEqual(
             self.result.serialized.encode("utf-8"),
             generated_path.read_bytes(),
         )
-        second = muzzle.generate(REPO_ROOT)
+        second = muzzle.generate(REPO_ROOT, self.weapon_spec)
         self.assertEqual(self.result.serialized.encode(), second.serialized.encode())
+
+
+class LongwatchRealArtIntegrationTests(RealArtIntegrationMixin, unittest.TestCase):
+    weapon_spec = muzzle.LONGWATCH_SPEC
+    expected_supported_points = {
+        "Idle": 38,
+        "Run": 114,
+        "Backpedal": 76,
+        "Crouch": 96,
+        "Fall": 19,
+    }
+    expected_unsupported = {"Crouch": ["m70", "m80", "m90"]}
+
+    def test_longwatch_signature_size_regression(self) -> None:
+        self.assertEqual(343, sum(self.expected_supported_points.values()))
+        self.assertEqual(
+            {suffix: 5 for suffix in muzzle.DIRECTION_SUFFIXES},
+            self.result.signature_sizes,
+        )
+
+
+class Latch9RealArtIntegrationTests(RealArtIntegrationMixin, unittest.TestCase):
+    weapon_spec = muzzle.LATCH9_SPEC
+    expected_supported_points = {
+        "Idle": 38,
+        "Run": 114,
+        "Backpedal": 76,
+        "Crouch": 114,
+        "Fall": 19,
+    }
+    expected_unsupported = {}
+
+    def test_latch9_corpus_has_all_361_muzzle_points(self) -> None:
+        self.assertEqual(361, sum(self.expected_supported_points.values()))
+        self.assertTrue(
+            all(
+                size in muzzle.SIGNATURE_SIZES
+                for size in self.result.signature_sizes.values()
+            )
+        )
 
 
 if __name__ == "__main__":

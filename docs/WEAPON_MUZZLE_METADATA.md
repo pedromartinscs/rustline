@@ -1,23 +1,21 @@
 # Weapon muzzle metadata
 
-This document defines the authoring, generation, and serialized presentation-data contract for exact weapon muzzle points. The Longwatch muzzle-flash presenter consumes that data for visual placement only. Clearance casts, reticle feedback, casing ejection, and gameplay/tracer-origin migration remain separate follow-up work.
+This document defines the authoring, generation, and serialized-data contract for exact weapon muzzle points.
 
-## Current scope
+The offline generator currently supports the **Longwatch DMR** and **Latch-9**. Longwatch already consumes generated muzzle metadata at runtime for muzzle-flash placement. Latch-9 metadata is now generated and validated offline; its runtime consumption remains a separate integration task. Clearance casts, reticle feedback, casing ejection, and projectile/tracer-origin migration are separate concerns.
 
-The first supported weapon is the **Longwatch DMR**.
+## Current aim-capable source contract
 
-Phase 1 is implemented as an offline Python/Pillow generator. The checked-in schema-versioned JSON is derived from production PNGs and the authoring reference. `RustlineM1ASetup` validates that JSON Editor-side and deterministically serializes its exact values into a compact runtime `LongwatchMuzzleMetadata2D` asset for presentation use.
-
-Production aim-capable art remains authored only for the canonical right-facing hemisphere:
+Both supported weapons use the canonical right-facing aim hemisphere:
 
 ```text
 p90 p80 p70 p60 p50 p40 p30 p20 p10 0
 m10 m20 m30 m40 m50 m60 m70 m80 m90
 ```
 
-Left-facing runtime presentation continues to use the accepted horizontal mirroring path. Do not author a second set of muzzle markers for the mirrored hemisphere.
+Left-facing presentation continues to use horizontal mirroring. Do not author a second muzzle-reference set for the mirrored hemisphere.
 
-Current Longwatch aim-capable source packages:
+Current aim-capable packages for both weapons are:
 
 | State | Frames per direction |
 |---|---:|
@@ -27,84 +25,77 @@ Current Longwatch aim-capable source packages:
 | Crouch | 6 |
 | Fall | 1 |
 
-Jump and Land are deliberately **carry-only, non-firing states**. Their 48×64 carry sprites do not expose a `LongwatchRenderedPose2D`, require no muzzle metadata, and cannot produce a muzzle flash. Wall Brace and LedgeClimb also expose no Longwatch muzzle pose.
+Jump and Land are fixed carry states and remain non-firing. Wall Brace and LedgeClimb render no weapon; Wall Kick also remains non-firing. These states therefore require no muzzle metadata.
 
-Future aim-capable weapon/state packages may join this pipeline only when their production art and gameplay semantics actually require muzzle attachment data.
-
-## Canonical Longwatch reference
-
-Authoring reference:
+## Authoring references
 
 ```text
 ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png
+ArtSource/Metadata/Weapons/latch_9/Muzzle/latch_9_muzzle_reference.png
 ```
 
-The reference is an **80×96** composite built by overlaying **Idle frame 0** for all 19 right-facing authored directions.
+Each reference is an **80x96** composite built from Idle frame 0 for all 19 authored right-facing directions.
 
 Marker contract:
 
 - exactly **19 opaque blue pixels**: `RGBA(0, 0, 255, 255)`;
 - exactly **1 opaque red pixel**: `RGBA(255, 0, 0, 255)`;
-- blue pixels mark the muzzle for the 19 authored directions;
-- the red pixel is an offline authoring anchor near the shoulder, shared by all directions;
-- marker pixels are intentionally placed in otherwise transparent space;
-- the red authoring anchor is **not** the Unity sprite pivot and must never replace the canonical armed pivot `(24,8)`.
+- each blue pixel identifies the muzzle coordinate for one authored direction;
+- the red pixel is a shared offline radial-ordering/orientation anchor;
+- the red authoring anchor is **not** the Unity sprite pivot and must never replace the canonical armed pivot `(24,8)`;
+- a blue marker may sit in transparent space immediately beyond the barrel **or overwrite the exact production muzzle pixel**. It is only a coordinate seed; the clean matching signature always comes from isolated production art.
 
-The checked-in reference currently validates as 19 blue markers and one red marker.
+This last rule is intentional. Longwatch references happen to use transparent-space seeds. Latch-9 includes at least one valid opaque muzzle seed, so seed transparency is not part of the generic metadata contract.
 
 ## Direction assignment
 
-The generator must not rely on hand-entered blue-pixel coordinates.
+The generator never relies on hand-entered blue-pixel coordinates.
 
-Instead:
+For each weapon it:
 
-1. locate the unique red anchor;
-2. locate all 19 blue markers;
-3. compute each `red -> blue` vector using image X to the right and image Y inverted so positive Y is up;
-4. sort markers by polar angle from highest to lowest;
-5. assign them in canonical order `p90 ... p10, 0, m10 ... m90`;
-6. sanity-check that the radial ordering is monotonic and broadly agrees with the expected 10-degree progression.
+1. locates the unique red anchor;
+2. locates all 19 blue markers;
+3. computes each `red -> blue` vector using image X to the right and inverted image Y so positive Y is up;
+4. sorts markers by polar angle from highest to lowest;
+5. assigns them in canonical order `p90 ... p10, 0, m10 ... m90`;
+6. sanity-checks that radial ordering is unique and broadly agrees with the expected 10-degree progression.
 
-Pixel-art geometry means measured radial angles need not equal the authored angle numerically. The ordering is authoritative; angle checks should use a tolerant sanity range rather than exact equality.
+Pixel-art geometry means measured radial angles need not numerically equal the authored bucket angle. Ordering is authoritative; the angular check is intentionally tolerant.
 
 ## Composite-reference contamination rule
 
-**Never use the flattened composite reference itself as the neighborhood signature.**
+**Never use the flattened composite reference itself as the matching signature.**
 
-The reference contains all 19 weapon layers at once, so pixels from neighboring angles can contaminate the local neighborhood around a blue marker.
-
-For each direction, the reference marker only supplies the seed location. The clean signature must be extracted from the matching isolated production sprite:
+A reference contains all 19 weapon layers at once, so neighboring angles can contaminate pixels around a marker. For each direction, the blue marker supplies only a seed coordinate. The clean signature is extracted from:
 
 ```text
-Longwatch Idle / same direction / frame 0
+<weapon> Idle / same direction / frame 0
 ```
 
-This is the canonical signature source because the reference itself was authored from those Idle frame-0 poses.
+The generator then searches every supported production frame for an exact copy of that signature.
 
 ## Pixel normalization
 
 When comparing signatures:
 
-- exact opaque production colors may be compared directly;
-- transparent pixels must be normalized by alpha;
-- if `alpha == 0`, hidden RGB data must be ignored and treated as canonical transparent;
-- reference marker colors are authoring-only and are not production palette colors.
-
-Production sprites should contain zero opaque blue marker pixels and zero opaque red marker pixels.
+- exact opaque production colors are compared directly;
+- fully transparent pixels are normalized by alpha;
+- when `alpha == 0`, hidden RGB data is ignored and treated as canonical transparent;
+- reference marker colors are authoring-only and must not appear as opaque marker pixels in production sprites.
 
 ## Adaptive exact matching
 
-Use deterministic exact pixel matching, not image-recognition heuristics.
+Matching is deterministic and exact, not heuristic image recognition.
 
 For each direction:
 
-1. derive a clean signature around the seeded muzzle in isolated Idle frame 0;
-2. start with a small odd neighborhood, for example `5×5`;
-3. search every applicable production frame of that direction;
-4. if any frame has more than one candidate, enlarge the signature (`7×7`, `9×9`, `11×11`, `13×13`, within a documented maximum);
-5. select the smallest signature size that produces exactly one candidate in every required frame.
+1. derive a clean signature around the seeded muzzle from isolated Idle frame 0;
+2. begin at `5x5`;
+3. search every supported production frame for that direction;
+4. if any frame has more than one candidate, retry the whole direction at `7x7`, then `9x9`, `11x11`, and `13x13` as necessary;
+5. accept the smallest size that yields exactly one match in every required frame.
 
-Allowed outcomes for a required frame are deliberately strict:
+Allowed outcomes for every required frame are strict:
 
 ```text
 1 match   -> success
@@ -112,21 +103,28 @@ Allowed outcomes for a required frame are deliberately strict:
 >1 match  -> ambiguous error
 ```
 
-The generator must never silently choose a "best" candidate.
+The generator must never silently choose a closest or best candidate.
 
-If no supported signature radius is unique across the corpus, fail with weapon/state/direction/frame diagnostics.
+Current validated signature sizes are:
 
-### Cell-edge behavior
+- **Longwatch DMR:** `5x5` for all 19 directions;
+- **Latch-9:** `9x9` for `p90`, `p80`, `p70`; `7x7` for `p60`, `p50`, `p40`, `p30`; `5x5` for `p20` through `m90`.
 
-The implementation extracts neighborhoods with a distinct out-of-bounds sentinel and confines every search to one 80×96 cell. During exact comparison, an out-of-cell sample is equivalent only to a normalized fully transparent pixel. This models the empty rendered space beyond an isolated Full Rect sprite; it never permits an out-of-cell sample to match an alpha-greater-than-zero pixel.
+## Cell-edge behavior
 
-This explicit transparent-padding rule is exercised by Longwatch p90 Run frames 2 and 3: the unchanged muzzle signature reaches the top cell boundary. It avoids Python slice wraparound while preserving exact normalized RGBA matching.
+Neighborhood extraction uses a distinct out-of-bounds sentinel and confines every search to one `80x96` cell. Python slicing therefore cannot wrap across cell edges.
 
-The current production corpus resolves uniquely at `5×5` for every direction; adaptive sizes through `13×13` remain available for future art revisions.
+During exact comparison, an out-of-cell sample is equivalent only to normalized fully transparent space. This models the empty rendered region beyond an isolated Full Rect sprite; it never allows padding to match an alpha-greater-than-zero pixel.
 
-## Intentional Crouch exception
+Longwatch `p90` Run frames 2 and 3 exercise this policy because their muzzle signature reaches the top cell boundary.
 
-Longwatch Crouch angles:
+## Weapon-specific unsupported poses
+
+Unsupported muzzle poses are declared by weapon/state/direction configuration. They are not inferred by choosing a nearby coordinate and are never filled with invented data.
+
+### Longwatch DMR
+
+Crouch directions:
 
 ```text
 m70
@@ -134,40 +132,35 @@ m80
 m90
 ```
 
-are intentionally **unsupported muzzle poses**. In those downward crouch poses the muzzle falls outside the authored 80×96 cell, matching the visual floor-intersection problem observed in-engine.
+remain intentionally unsupported because the muzzle leaves the authored `80x96` cell in those downward poses. Generated metadata contains explicit unsupported direction records with empty frame arrays.
 
-The generator treats these as a declared exception, not as extraction failures. Generated metadata represents them explicitly as unsupported rather than inventing coordinates.
+The previously approved future presentation behavior remains: requests in this invalid crouch sector may visually clamp to `m60`, while continuous pointer aim stays available to gameplay. Reticle/fire blocking for that sector is separate runtime work.
 
-Approved future presentation behavior:
+### Latch-9
 
-- Crouch requests that would select `m70`, `m80`, or `m90` render the `m60` pose instead;
-- exact continuous pointer aim remains available to gameplay code;
-- firing/reticle behavior for this invalid crouch sector is follow-up runtime work;
-- the intended UI direction is a normal yellow crosshair for valid aim and a red crosshair for an impossible/blocked weapon angle.
+The current production corpus validates **all 19 directions in all five aim-capable states**. No Latch-9 muzzle pose is currently declared unsupported.
 
-Do not implement that runtime behavior as part of metadata regeneration unless explicitly requested.
+If future art changes make a Latch pose impossible, it must be explicitly reviewed and declared unsupported rather than hidden by a generator fallback.
 
 ## Coordinate contract
 
-Generated muzzle points are stored in **source-pixel space relative to the canonical armed sprite pivot**, not as absolute sheet coordinates.
+Generated muzzle points are stored in **source-pixel space relative to the canonical armed sprite pivot**, not relative to the red authoring anchor and not as absolute sheet coordinates.
 
-Longwatch canonical aim-capable geometry:
+Current shared aim-capable geometry:
 
 ```text
-cell        = 80×96 px
+cell        = 80x96 px
 pivot       = (24,8) px
 PPU         = 16
 ```
 
-Use pixel-center coordinates consistently and document the conversion.
-
-Conceptually:
+Pixel-center coordinates are used consistently:
 
 ```text
 muzzleOffsetPixels = muzzlePixelCenter - armedPivot
 ```
 
-The generated coordinate system is:
+Generated coordinates use:
 
 ```text
 +x = forward/right in authored right-facing art
@@ -176,19 +169,25 @@ The generated coordinate system is:
 
 Runtime left-facing mirroring can therefore negate X while preserving Y.
 
-## Generated artifact
+The red reference pixel serves only to assign/orient authored directions. It is not serialized as the sprite pivot.
 
-The versioned generated output is:
+## Generated artifacts
 
 ```text
 ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata.json
+ArtSource/Metadata/Weapons/latch_9/Generated/latch_9_muzzle_metadata.json
 ```
 
-The JSON is derived data and must not be edited by hand. Re-running the generator after an art change is expected to update the file, producing a useful Git diff of changed muzzle points.
+Generated JSON is versioned derived data and must not be edited by hand. Re-running the generator after art changes should produce a meaningful Git diff.
 
-The current schema is version 1 with generator version 2. The validated Longwatch corpus contains **343 supported frame points**: 38 Idle, 114 Run, 76 Backpedal, 96 Crouch, and 19 Fall. Crouch `m70`, `m80`, and `m90` are present as explicit unsupported direction entries with empty frame arrays.
+The current schema remains **version 1** and generator version remains **2**. Generalizing the tool to multiple configured weapons did not change the serialized schema or exact matching semantics, and the approved Longwatch output remains byte-identical.
 
-The schema is versioned and includes enough information to validate:
+Validated corpora:
+
+- **Longwatch DMR — 343 supported frame points:** 38 Idle, 114 Run, 76 Backpedal, 96 Crouch, 19 Fall; Crouch `m70/m80/m90` are explicit unsupported entries.
+- **Latch-9 — 361 supported frame points:** 38 Idle, 114 Run, 76 Backpedal, 114 Crouch, 19 Fall; no unsupported entries.
+
+Each JSON includes enough information to validate:
 
 - weapon id;
 - cell size;
@@ -197,37 +196,46 @@ The schema is versioned and includes enough information to validate:
 - authored direction/suffix;
 - frame index;
 - supported/unsupported status;
-- muzzle offset for supported frames;
-- generator/schema version.
+- muzzle offset for each supported frame;
+- generator/schema version;
+- reference path.
+
+When multiple weapons are selected, the generator resolves every corpus completely in memory before writing any output. Failure in one weapon therefore cannot leave another weapon half-regenerated.
 
 ## Unity/runtime boundary
 
-Python is responsible for image inspection and metadata generation.
-
-Unity Editor C# consumes the generated JSON through `RustlineM1ASetup` and serializes compact, strongly typed runtime data into:
-
-```text
-Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
-```
-
-The asset contains all 343 supported points, including all 19 one-frame Fall directions, and preserves Crouch `m70`, `m80`, and `m90` as unsupported direction records with no frame coordinates. `PlayerLongwatchAimPresenter2D` exposes the state, direction, authored angle, displayed Body frame, and facing of the weapon sprite actually rendered. Jump/Land carry deliberately return no rendered muzzle pose. The muzzle-flash presenter performs a direct indexed lookup after an aim-capable visual pose has been selected, and an already-active flash is hidden immediately if the presenter transitions to a state without a muzzle-capable pose.
-
-Runtime gameplay must not:
+Python owns image inspection and metadata generation. Runtime gameplay must not:
 
 - scan PNG files;
 - perform signature matching;
 - depend on Pillow/Python;
 - repeatedly parse JSON;
-- discover assets from disk.
+- discover art assets from disk.
 
-Runtime muzzle-flash placement is implemented without changing ballistics. The hitscan result origin and the existing distal tracer still use `AimOriginWorld`. Runtime clearance, the Crouch invalid-angle visual clamp and red reticle, hitscan/tracer-origin migration, and casing ejection remain separate work.
+### Longwatch DMR
+
+`RustlineM1ASetup` imports the generated Longwatch JSON Editor-side into:
+
+```text
+Assets/Config/Weapons/Generated/LongwatchDMRMuzzleMetadata.asset
+```
+
+`PlayerLongwatchAimPresenter2D` exposes the rendered state, direction, authored angle, displayed Body frame, and facing; the muzzle-flash presenter performs a direct indexed lookup against the compact runtime metadata. Jump/Land carry expose no muzzle-capable rendered pose.
+
+Longwatch ballistics are deliberately unchanged by this metadata phase. Hitscan and the current tracer still originate from `AimOriginWorld`.
+
+### Latch-9
+
+The exact authored Latch-9 muzzle corpus is now generated and validated, but Unity/runtime consumption is not part of this task. A later integration may expose the Latch rendered muzzle pose and import/use this metadata for muzzle effects and/or projectile origin.
+
+Projectile direction must remain based on continuous aim rather than the discrete 10-degree visual bucket when that runtime migration is implemented.
 
 ## Tooling location
 
-The generator belongs under:
+Generator and tests live under:
 
 ```text
 Tools/WeaponMetadata/
 ```
 
-See `Tools/WeaponMetadata/README.md` for implementation boundaries.
+See `Tools/WeaponMetadata/README.md` for commands and validation workflow.

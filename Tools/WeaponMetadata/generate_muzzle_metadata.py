@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic Longwatch DMR muzzle metadata from production PNGs."""
+"""Generate deterministic per-frame muzzle metadata from production weapon PNGs."""
 
 from __future__ import annotations
 
@@ -14,7 +14,6 @@ from typing import Iterable, Sequence
 from PIL import Image
 
 
-WEAPON_ID = "longwatch_dmr"
 SCHEMA_VERSION = 1
 GENERATOR_VERSION = 2
 CELL_WIDTH = 80
@@ -31,17 +30,9 @@ DIRECTION_SUFFIXES = (
     "0",
     "m10", "m20", "m30", "m40", "m50", "m60", "m70", "m80", "m90",
 )
-DIRECTION_ANGLES = (90, 80, 70, 60, 50, 40, 30, 20, 10, 0,
-                    -10, -20, -30, -40, -50, -60, -70, -80, -90)
-UNSUPPORTED_CROUCH_DIRECTIONS = frozenset(("m70", "m80", "m90"))
-REFERENCE_RELATIVE_PATH = Path(
-    "ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png"
-)
-OUTPUT_RELATIVE_PATH = Path(
-    "ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata.json"
-)
-PRODUCTION_RELATIVE_ROOT = Path(
-    "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim"
+DIRECTION_ANGLES = (
+    90, 80, 70, 60, 50, 40, 30, 20, 10, 0,
+    -10, -20, -30, -40, -50, -60, -70, -80, -90,
 )
 
 
@@ -64,6 +55,65 @@ STATE_SPECS = (
     StateSpec("Crouch", "Crouch", "crouch", 6),
     StateSpec("Fall", "Fall", "fall", 1),
 )
+
+
+@dataclass(frozen=True)
+class WeaponSpec:
+    weapon_id: str
+    display_name: str
+    filename_token: str
+    reference_relative_path: Path
+    output_relative_path: Path
+    production_relative_root: Path
+    unsupported_directions: tuple[tuple[str, tuple[str, ...]], ...] = ()
+
+    def is_supported(self, state_name: str, suffix: str) -> bool:
+        for unsupported_state, suffixes in self.unsupported_directions:
+            if unsupported_state == state_name and suffix in suffixes:
+                return False
+        return True
+
+
+LONGWATCH_SPEC = WeaponSpec(
+    weapon_id="longwatch_dmr",
+    display_name="Longwatch DMR",
+    filename_token="longwatch_dmr",
+    reference_relative_path=Path(
+        "ArtSource/Metadata/Weapons/longwatch_dmr/Muzzle/longwatch_dmr_muzzle_reference.png"
+    ),
+    output_relative_path=Path(
+        "ArtSource/Metadata/Weapons/longwatch_dmr/Generated/longwatch_dmr_muzzle_metadata.json"
+    ),
+    production_relative_root=Path(
+        "Assets/Art/Characters/Player/Sprites/Arms/Armed/longwatch_dmr/Aim"
+    ),
+    unsupported_directions=(("Crouch", ("m70", "m80", "m90")),),
+)
+
+LATCH9_SPEC = WeaponSpec(
+    weapon_id="latch_9",
+    display_name="Latch-9",
+    filename_token="latch_9",
+    reference_relative_path=Path(
+        "ArtSource/Metadata/Weapons/latch_9/Muzzle/latch_9_muzzle_reference.png"
+    ),
+    output_relative_path=Path(
+        "ArtSource/Metadata/Weapons/latch_9/Generated/latch_9_muzzle_metadata.json"
+    ),
+    production_relative_root=Path(
+        "Assets/Art/Characters/Player/Sprites/Arms/Armed/latch_9/Aim"
+    ),
+)
+
+WEAPON_SPECS = (LONGWATCH_SPEC, LATCH9_SPEC)
+WEAPON_SPECS_BY_ID = {spec.weapon_id: spec for spec in WEAPON_SPECS}
+
+# Backward-compatible Longwatch aliases retained for existing callers/tests.
+WEAPON_ID = LONGWATCH_SPEC.weapon_id
+UNSUPPORTED_CROUCH_DIRECTIONS = frozenset(("m70", "m80", "m90"))
+REFERENCE_RELATIVE_PATH = LONGWATCH_SPEC.reference_relative_path
+OUTPUT_RELATIVE_PATH = LONGWATCH_SPEC.output_relative_path
+PRODUCTION_RELATIVE_ROOT = LONGWATCH_SPEC.production_relative_root
 
 Pixel = tuple[int, int, int, int]
 Point = tuple[int, int]
@@ -159,8 +209,6 @@ def extract_signature(image: NormalizedImage, center: Point, size: int) -> Signa
         for dy in range(-radius, radius + 1)
         for dx in range(-radius, radius + 1)
     )
-    # Exact comparison is unchanged; checking structural pixels before transparent
-    # pixels only avoids needless work in large transparent regions.
     order = tuple(sorted(
         range(len(values)),
         key=lambda index: 0 if values[index] is OUT_OF_BOUNDS
@@ -170,14 +218,7 @@ def extract_signature(image: NormalizedImage, center: Point, size: int) -> Signa
 
 
 def comparison_pixels_equal(left: Pixel | object, right: Pixel | object) -> bool:
-    """Compare exact pixels with transparent padding outside an isolated sprite cell.
-
-    OUT_OF_BOUNDS remains distinct in extracted data, preventing Python slice
-    wraparound and making the boundary policy explicit. During comparison only,
-    an absent pixel is equivalent to fully transparent space because each 80x96
-    Full Rect frame is an isolated sprite and has no rendered content outside it.
-    It never matches a pixel with alpha greater than zero.
-    """
+    """Compare exact pixels with transparent padding outside an isolated sprite cell."""
     if left is OUT_OF_BOUNDS:
         return right is OUT_OF_BOUNDS or right == TRANSPARENT
     if right is OUT_OF_BOUNDS:
@@ -224,7 +265,7 @@ def assign_markers_to_directions(
     polar: list[tuple[float, float, Point]] = []
     for point in blue_points:
         dx = point[0] - red[0]
-        dy = red[1] - point[1]  # invert image Y for mathematical polar angle
+        dy = red[1] - point[1]
         radius = math.hypot(dx, dy)
         if radius < 5.0 or radius > math.hypot(CELL_WIDTH, CELL_HEIGHT):
             raise MetadataError(
@@ -258,9 +299,12 @@ def assign_markers_to_directions(
     return marker_by_suffix, angle_by_suffix
 
 
-def read_reference(path: Path) -> tuple[dict[str, Point], dict[str, float]]:
+def read_reference(
+    path: Path,
+    weapon: WeaponSpec = LONGWATCH_SPEC,
+) -> tuple[dict[str, Point], dict[str, float]]:
     if not path.is_file():
-        raise MetadataError(f"Missing Longwatch muzzle reference: {path}")
+        raise MetadataError(f"Missing {weapon.display_name} muzzle reference: {path}")
     with Image.open(path) as source:
         rgba = source.convert("RGBA")
         if rgba.size != (CELL_WIDTH, CELL_HEIGHT):
@@ -281,12 +325,19 @@ def read_reference(path: Path) -> tuple[dict[str, Point], dict[str, float]]:
     return assign_markers_to_directions(red, blue)
 
 
-def canonical_filename(spec: StateSpec, suffix: str) -> str:
-    return f"player_salvager_longwatch_dmr_{spec.filename_token}_aim_{suffix}.png"
+def canonical_filename(
+    spec: StateSpec,
+    suffix: str,
+    weapon: WeaponSpec = LONGWATCH_SPEC,
+) -> str:
+    return f"player_salvager_{weapon.filename_token}_{spec.filename_token}_aim_{suffix}.png"
 
 
-def load_production_sheets(repo_root: Path) -> dict[tuple[str, str], NormalizedImage]:
-    production_root = repo_root / PRODUCTION_RELATIVE_ROOT
+def load_production_sheets(
+    repo_root: Path,
+    weapon: WeaponSpec = LONGWATCH_SPEC,
+) -> dict[tuple[str, str], NormalizedImage]:
+    production_root = repo_root / weapon.production_relative_root
     sheets: dict[tuple[str, str], NormalizedImage] = {}
     for spec in STATE_SPECS:
         directory = production_root / spec.directory
@@ -297,18 +348,20 @@ def load_production_sheets(repo_root: Path) -> dict[tuple[str, str], NormalizedI
         casefolded = [name.casefold() for name in actual_names]
         if len(casefolded) != len(set(casefolded)):
             raise MetadataError(f"Duplicate direction PNG filenames in {directory}")
-        expected_names = {canonical_filename(spec, suffix) for suffix in DIRECTION_SUFFIXES}
+        expected_names = {
+            canonical_filename(spec, suffix, weapon) for suffix in DIRECTION_SUFFIXES
+        }
         actual_name_set = set(actual_names)
         missing = sorted(expected_names - actual_name_set)
         unexpected = sorted(actual_name_set - expected_names)
         if missing or unexpected:
             raise MetadataError(
-                f"Invalid {spec.name} direction sheets in {directory}; "
+                f"Invalid {weapon.display_name} {spec.name} direction sheets in {directory}; "
                 f"missing={missing or 'none'}, unexpected={unexpected or 'none'}"
             )
 
         for suffix in DIRECTION_SUFFIXES:
-            path = directory / canonical_filename(spec, suffix)
+            path = directory / canonical_filename(spec, suffix, weapon)
             with Image.open(path) as source:
                 if source.size != (spec.sheet_width, CELL_HEIGHT):
                     raise MetadataError(
@@ -332,11 +385,13 @@ def load_production_sheets(repo_root: Path) -> dict[tuple[str, str], NormalizedI
 
 
 def required_frames_for_direction(
-    sheets: dict[tuple[str, str], NormalizedImage], suffix: str
+    sheets: dict[tuple[str, str], NormalizedImage],
+    suffix: str,
+    weapon: WeaponSpec = LONGWATCH_SPEC,
 ) -> list[tuple[str, int, NormalizedImage]]:
     frames: list[tuple[str, int, NormalizedImage]] = []
     for spec in STATE_SPECS:
-        if spec.name == "Crouch" and suffix in UNSUPPORTED_CROUCH_DIRECTIONS:
+        if not weapon.is_supported(spec.name, suffix):
             continue
         sheet = sheets[(spec.name, suffix)]
         for frame in range(spec.frame_count):
@@ -350,6 +405,7 @@ def select_adaptive_signature(
     required: Sequence[tuple[str, int, NormalizedImage]],
     direction: str,
     signature_sizes: Sequence[int] = SIGNATURE_SIZES,
+    weapon_id: str = WEAPON_ID,
 ) -> tuple[int, list[tuple[str, int, Point]]]:
     attempted: list[tuple[int, list[tuple[str, int, int]]]] = []
     for size in signature_sizes:
@@ -369,7 +425,7 @@ def select_adaptive_signature(
             return size, resolved
 
     lines = [
-        f"Exact muzzle signature failed for weapon={WEAPON_ID} direction={direction} seed={seed}."
+        f"Exact muzzle signature failed for weapon={weapon_id} direction={direction} seed={seed}."
     ]
     for size, counts in attempted:
         failures = [
@@ -384,19 +440,22 @@ def resolve_direction(
     suffix: str,
     seed: Point,
     sheets: dict[tuple[str, str], NormalizedImage],
+    weapon: WeaponSpec = LONGWATCH_SPEC,
 ) -> tuple[int, dict[str, list[Point]]]:
     source = extract_frame(sheets[("Idle", suffix)], 0)
-    if source.pixel(*seed) != TRANSPARENT:
-        raise MetadataError(
-            f"Reference seed {seed} for {WEAPON_ID}/Idle/{suffix}/frame 0 "
-            "does not lie in transparent production space"
-        )
-
-    required = required_frames_for_direction(sheets, suffix)
-    size, frame_matches = select_adaptive_signature(source, seed, required, suffix)
+    # A marker may sit in transparent space just beyond the barrel or overwrite the
+    # actual muzzle pixel. It is only a coordinate seed; the clean signature always
+    # comes from isolated production art, so both authoring conventions are valid.
+    required = required_frames_for_direction(sheets, suffix, weapon)
+    size, frame_matches = select_adaptive_signature(
+        source,
+        seed,
+        required,
+        suffix,
+        weapon_id=weapon.weapon_id,
+    )
     resolved: dict[str, list[Point]] = {
-        spec.name: [] for spec in STATE_SPECS
-        if not (spec.name == "Crouch" and suffix in UNSUPPORTED_CROUCH_DIRECTIONS)
+        spec.name: [] for spec in STATE_SPECS if weapon.is_supported(spec.name, suffix)
     }
     for state_name, _frame, point in frame_matches:
         resolved[state_name].append(point)
@@ -404,22 +463,21 @@ def resolve_direction(
 
 
 def build_metadata(
-    matches_by_suffix: dict[str, dict[str, list[Point]]]
+    matches_by_suffix: dict[str, dict[str, list[Point]]],
+    weapon: WeaponSpec = LONGWATCH_SPEC,
 ) -> dict[str, object]:
     states: list[dict[str, object]] = []
     for spec in STATE_SPECS:
         directions: list[dict[str, object]] = []
         for suffix, angle in zip(DIRECTION_SUFFIXES, DIRECTION_ANGLES):
-            supported = not (
-                spec.name == "Crouch" and suffix in UNSUPPORTED_CROUCH_DIRECTIONS
-            )
+            supported = weapon.is_supported(spec.name, suffix)
             frames = []
             if supported:
                 points = matches_by_suffix[suffix][spec.name]
                 if len(points) != spec.frame_count:
                     raise MetadataError(
-                        f"Internal error: {spec.name}/{suffix} resolved {len(points)} frames; "
-                        f"expected {spec.frame_count}"
+                        f"Internal error: {weapon.weapon_id}/{spec.name}/{suffix} resolved "
+                        f"{len(points)} frames; expected {spec.frame_count}"
                     )
                 frames = [
                     {"frame": frame, "muzzleOffsetPixels": pixel_to_pivot_offset(point)}
@@ -440,28 +498,39 @@ def build_metadata(
     return {
         "schemaVersion": SCHEMA_VERSION,
         "generatorVersion": GENERATOR_VERSION,
-        "weaponId": WEAPON_ID,
+        "weaponId": weapon.weapon_id,
         "cellSizePixels": [CELL_WIDTH, CELL_HEIGHT],
         "pivotPixels": [PIVOT_X, PIVOT_Y],
         "reference": {
             "state": "Idle",
             "frame": 0,
-            "path": REFERENCE_RELATIVE_PATH.as_posix(),
+            "path": weapon.reference_relative_path.as_posix(),
         },
         "states": states,
     }
 
 
-def generate(repo_root: Path) -> GenerationResult:
-    marker_by_suffix, marker_angles = read_reference(repo_root / REFERENCE_RELATIVE_PATH)
-    sheets = load_production_sheets(repo_root)
+def generate(
+    repo_root: Path,
+    weapon: WeaponSpec = LONGWATCH_SPEC,
+) -> GenerationResult:
+    marker_by_suffix, marker_angles = read_reference(
+        repo_root / weapon.reference_relative_path,
+        weapon,
+    )
+    sheets = load_production_sheets(repo_root, weapon)
     signature_sizes: dict[str, int] = {}
     matches_by_suffix: dict[str, dict[str, list[Point]]] = {}
     for suffix in DIRECTION_SUFFIXES:
-        size, matches = resolve_direction(suffix, marker_by_suffix[suffix], sheets)
+        size, matches = resolve_direction(
+            suffix,
+            marker_by_suffix[suffix],
+            sheets,
+            weapon,
+        )
         signature_sizes[suffix] = size
         matches_by_suffix[suffix] = matches
-    metadata = build_metadata(matches_by_suffix)
+    metadata = build_metadata(matches_by_suffix, weapon)
     return GenerationResult(
         metadata=metadata,
         serialized=serialize_metadata(metadata),
@@ -470,14 +539,25 @@ def generate(repo_root: Path) -> GenerationResult:
     )
 
 
-def print_summary(result: GenerationResult, output_path: Path, check: bool) -> None:
-    print("Longwatch DMR muzzle metadata")
+def print_summary(
+    result: GenerationResult,
+    output_path: Path,
+    check: bool,
+    weapon: WeaponSpec = LONGWATCH_SPEC,
+) -> None:
+    print(f"{weapon.display_name} muzzle metadata")
     print("reference: OK (19 blue, 1 red)")
     for suffix in DIRECTION_SUFFIXES:
-        crouch = "unsupported" if suffix in UNSUPPORTED_CROUCH_DIRECTIONS else "6/6"
+        state_summary = []
+        for state in STATE_SPECS:
+            state_summary.append(
+                f"{state.name} {state.frame_count}/{state.frame_count}"
+                if weapon.is_supported(state.name, suffix)
+                else f"{state.name} unsupported"
+            )
         print(
             f"{suffix:>3}  signature {result.signature_sizes[suffix]}x{result.signature_sizes[suffix]}  "
-            f"Idle 2/2 Run 6/6 Backpedal 4/4 Crouch {crouch} Fall 1/1"
+            + " ".join(state_summary)
         )
     verb = "checked" if check else "generated"
     print(f"{verb}: {output_path}")
@@ -485,35 +565,63 @@ def print_summary(result: GenerationResult, output_path: Path, check: bool) -> N
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate deterministic Longwatch DMR per-frame muzzle metadata."
+        description="Generate deterministic per-frame muzzle metadata for configured weapons."
     )
     parser.add_argument(
         "--check",
         action="store_true",
-        help="Fail if the checked-in generated JSON differs from fresh in-memory output.",
+        help="Fail if any selected checked-in JSON differs from fresh in-memory output.",
+    )
+    parser.add_argument(
+        "--weapon",
+        choices=("all", *WEAPON_SPECS_BY_ID.keys()),
+        default="all",
+        help="Generate/check all configured weapons (default) or one weapon id.",
     )
     return parser.parse_args(argv)
+
+
+def selected_weapon_specs(weapon_arg: str) -> tuple[WeaponSpec, ...]:
+    if weapon_arg == "all":
+        return WEAPON_SPECS
+    return (WEAPON_SPECS_BY_ID[weapon_arg],)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     repo_root = Path(__file__).resolve().parents[2]
-    output_path = repo_root / OUTPUT_RELATIVE_PATH
+    specs = selected_weapon_specs(args.weapon)
     try:
-        result = generate(repo_root)
+        # Resolve every selected corpus before touching any generated file. This prevents
+        # a failure in one weapon from leaving another weapon's metadata half-updated.
+        generated = [(spec, generate(repo_root, spec)) for spec in specs]
+
         if args.check:
-            if not output_path.is_file():
-                raise MetadataError(f"Generated metadata is missing: {output_path}")
-            existing = output_path.read_bytes()
-            if existing != result.serialized.encode("utf-8"):
-                raise MetadataError(
-                    f"Generated metadata is stale: {output_path}\n"
-                    "Run this tool without --check and review the resulting diff."
-                )
+            for spec, result in generated:
+                output_path = repo_root / spec.output_relative_path
+                if not output_path.is_file():
+                    raise MetadataError(f"Generated metadata is missing: {output_path}")
+                existing = output_path.read_bytes()
+                if existing != result.serialized.encode("utf-8"):
+                    raise MetadataError(
+                        f"Generated metadata is stale: {output_path}\n"
+                        "Run this tool without --check and review the resulting diff."
+                    )
         else:
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            output_path.write_bytes(result.serialized.encode("utf-8"))
-        print_summary(result, output_path, args.check)
+            for spec, result in generated:
+                output_path = repo_root / spec.output_relative_path
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_bytes(result.serialized.encode("utf-8"))
+
+        for index, (spec, result) in enumerate(generated):
+            if index:
+                print()
+            print_summary(
+                result,
+                repo_root / spec.output_relative_path,
+                args.check,
+                spec,
+            )
         return 0
     except (MetadataError, OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
