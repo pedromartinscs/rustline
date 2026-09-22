@@ -44,7 +44,7 @@ With the initial three-slot arsenal:
         predecessor / lower
 ```
 
-The exact screen offset, icon dimensions, neighbor scale, spacing, easing, and transition duration are intentionally not frozen until the production weapon images are present in the repository and can be judged at native scale.
+The initial production cards are versioned at `Assets/Art/UI/WeaponCarousel/` as `weapon_carousel_unarmed.png`, `weapon_carousel_latch_9.png`, and `weapon_carousel_longwatch_dmr.png`. All three are exactly **360×175 px**, use only Rustline Canonical 28 colors plus one fully transparent palette entry, and contain no partial-alpha pixels. Their common card geometry is the unit that moves/scales in the carousel; do not independently rescale the weapon artwork inside the card.
 
 If fewer than three distinct arsenal entries are available, the UI must not duplicate one weapon merely to fill all three positions.
 
@@ -100,10 +100,10 @@ lower:   3
 
 Selecting the successor produces one coherent cylinder step:
 
-1. lower entry `3` exits downward and palette-fades out;
-2. center entry `4` travels downward and shrinks into the lower-neighbor presentation;
+1. lower entry `3` remains at the lower-neighbor slot while palette-fading out;
+2. center entry `4` travels downward and shrinks into that same lower-neighbor slot as `3` disappears;
 3. upper entry `5` travels toward center and grows into the selected presentation;
-4. the next cyclic successor, `0`, enters above `5` using the palette-safe fade-in;
+4. the next cyclic successor, `0`, palette-fades in at the upper-neighbor slot being vacated by `5`;
 5. the stable result becomes:
 
 ```text
@@ -112,16 +112,16 @@ center:  5
 lower:   4
 ```
 
-The movement should read as one shared rotating cylinder, not three unrelated UI tweens.
+During this handoff up to **four cards can be simultaneously visible**: the outgoing lower card, the old center, the old upper card, and the incoming upper card. The movement/fades should still read as one shared rotating cylinder, not unrelated UI tweens.
 
 ## One-step predecessor rotation
 
 Predecessor rotation is the exact visual mirror:
 
-1. upper entry exits upward and palette-fades out;
-2. center travels upward and shrinks into the upper-neighbor presentation;
+1. upper entry remains at the upper-neighbor slot while palette-fading out;
+2. center travels upward and shrinks into that same upper-neighbor slot as the old upper entry disappears;
 3. lower entry travels toward center and grows into the selected presentation;
-4. the next cyclic predecessor enters below using the palette-safe fade-in.
+4. the next cyclic predecessor palette-fades in at the lower-neighbor slot being vacated by the old lower entry.
 
 No direction is privileged. Both rotations are first-class behavior.
 
@@ -144,10 +144,11 @@ The enter/exit effect must visually reuse the existing penumbra language instead
 - opaque production pixels remain Canonical 28 colors throughout the transition;
 - darkening/remapping should reuse Rustline's canonical darkness mapping / lookup behavior where practical;
 - deterministic palette-safe dithering may progressively replace visible pixels as the entry disappears;
-- the final darkness color is Deep Space `#01020B`;
+- visible pixels darken through the existing five-level Canonical darkness mapping until Deep Space `#01020B`;
+- disappearance then completes through deterministic **binary-alpha dithering to fully transparent** so an opaque Deep Space rectangle is not left behind;
 - fade-in performs the corresponding transition in reverse;
 - source transparent pixels remain transparent;
-- do not generate interpolated RGB shades, alpha gradients, bilinear filtering, blur, or anti-aliased transition colors.
+- every intermediate alpha is still binary (`0` or `255`); do not generate alpha gradients, interpolated RGB shades, bilinear filtering, blur, or anti-aliased transition colors.
 
 The UI implementation does not have to reuse the exact world-space penumbra shader if that creates an inappropriate coupling. It should reuse the same palette data, darkness semantics, and deterministic pixel-dither language through a UI-appropriate implementation.
 
@@ -228,9 +229,8 @@ Exact animation interruption/blending mechanics may be chosen during implementat
 
 ## Deferred visual tuning
 
-The following values are deliberately left open until the three production weapon images are committed:
+The three 360×175 production cards are now committed. The following presentation values remain tuning parameters rather than hard gameplay contracts and should be centralized/serialized so native-scale playtesting can refine them:
 
-- icon source dimensions;
 - exact lower-left anchor and safe margin;
 - selected icon scale;
 - neighbor scale;
