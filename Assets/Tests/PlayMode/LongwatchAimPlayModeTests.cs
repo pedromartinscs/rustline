@@ -386,6 +386,10 @@ namespace Rustline.Tests
                 InputSystem.QueueStateEvent(keyboard, new KeyboardState());
                 InputSystem.Update();
                 yield return WaitForArmedState(armed, PlayerAnimationState.Fall, 240);
+                // WaitForArmedState can observe the animator state before the armed
+                // presenter's LateUpdate has published the Fall muzzle-capable pose.
+                // Let presentation process the newly displayed Fall body sprite first.
+                yield return null;
                 Assert.That(unarmed.OwnsRenderer, Is.False);
                 Assert.That(armed.TryGetCurrentRenderedPose(out LongwatchRenderedPose2D fallPose), Is.True);
                 Assert.That(fallPose.State, Is.EqualTo(LongwatchMuzzleState2D.Fall));
