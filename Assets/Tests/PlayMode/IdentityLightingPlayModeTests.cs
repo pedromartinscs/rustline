@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using NUnit.Framework;
+using Rustline.Presentation;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
@@ -41,11 +42,36 @@ namespace Rustline.Tests
             List<Renderer> renderers = new List<Renderer>();
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                renderers.AddRange(root.GetComponentsInChildren<SpriteRenderer>(true));
-                renderers.AddRange(root.GetComponentsInChildren<TilemapRenderer>(true));
+                AddOrdinaryRenderers(
+                    renderers,
+                    root.GetComponentsInChildren<SpriteRenderer>(true));
+                AddOrdinaryRenderers(
+                    renderers,
+                    root.GetComponentsInChildren<TilemapRenderer>(true));
             }
 
             return renderers;
+        }
+
+        private static void AddOrdinaryRenderers<T>(
+            List<Renderer> destination,
+            T[] candidates)
+            where T : Renderer
+        {
+            for (int index = 0; index < candidates.Length; index++)
+            {
+                Renderer renderer = candidates[index];
+
+                // RustlineHUD is a deliberately separate native-pixel presentation path.
+                // Its card uses the palette-fade shader rather than the ordinary world
+                // Sprite-Unlit-Default material, and is validated by selector-specific tests.
+                if (renderer.gameObject.layer == WeaponCarouselHud2D.RustlineHudLayerIndex)
+                {
+                    continue;
+                }
+
+                destination.Add(renderer);
+            }
         }
 
         private static GameObject FindSceneGameObject(Scene scene, string name)
