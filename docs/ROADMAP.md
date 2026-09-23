@@ -4,19 +4,19 @@ Rustline is developed as a sequence of proof points. Each milestone should be pl
 
 Rustline is currently a **single-player project**. Multiplayer, networking, server authority, prediction/reconciliation, matchmaking, network persistence, and multiplayer backend architecture are outside the project scope unless the project direction is explicitly changed in the future.
 
-## Current vertical-slice direction — 2026-09-10
+## Current vertical-slice direction — 2026-09-23
 
 The player movement/presentation foundation and the first Longwatch DMR pipeline are now sufficiently complete to stop adding movement features and start building a real environment around them.
 
 The current production order is:
 
-1. build a first polished production **environment slice** using the accepted movement/collision metrics;
-2. expand that visual language into the demo's single playable level;
-3. add the second demo weapon / sidearm and its deliberately smaller presentation package;
-4. replace programmer-art combat presentation with production enemy/impact/audio work;
+1. keep the accepted player/weapon foundation regression-clean;
+2. implement the first production enemy and its encounter behavior on top of the proven combat-health/hitbox foundation;
+3. build out the first polished production **environment slice** using the accepted movement/collision metrics;
+4. replace remaining programmer-art combat presentation with production enemy/impact/audio work;
 5. complete the small Deploy → Traverse → Fight → Loot → Extract loop.
 
-Current demo weapon direction is **two weapons**: the Longwatch DMR as the stronger, limited-ammunition weapon and the compact **Latch-9** pistol as the weaker fallback with effectively unlimited ammunition for the demo. This is a gameplay/content target, not an implemented ammo system yet.
+Current demo weapon direction is **two implemented weapons** plus Unarmed: the Longwatch DMR as the stronger finite-magazine weapon and the compact **Latch-9** as the weaker projectile fallback with effectively unlimited ammunition. Persistent weapon selection, Longwatch magazines/reload, Latch shot-mode switching, and the shared native-pixel weapon HUD are implemented.
 
 Environment collision authoring must follow [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md), including the current **24 source pixel / 1.5 unit Minimum Traversable Gap** rule. Visual cracks may be narrower when hidden gameplay collision bridges them.
 
@@ -117,15 +117,15 @@ The first-weapon locomotion presentation package is considered **closed for the 
 - [x] Production two-frame muzzle flash
 - [x] Prototype target/obstruction impact feedback
 - [x] Restrained deterministic camera impulse
-- [ ] Demo ammunition model
-- [ ] Reload, only if retained by the demo weapon design
-- [ ] Latch-9 second-weapon implementation
+- [x] Demo ammunition model
+- [x] Longwatch manual reload / magazine discard contract
+- [x] Latch-9 second-weapon implementation
 - [ ] Production impact FX
 - [ ] Combat audio
 
 The current Longwatch uses mouse-left fire, `1/12 s` shot interval (**12 shots/s**), `80` unit range, and `40` prototype damage. Hitscan direction remains exact continuous aim rather than the quantized visual angle. Muzzle metadata drives presentation only; ballistics and the distal tracer still originate at `AimOriginWorld`. An active muzzle flash is canceled immediately when presentation enters a state that no longer exposes a muzzle-capable Longwatch pose, preventing a flash from bleeding into Jump/Land carry or unarmed traversal.
 
-**Exit criterion:** shooting targets while moving feels deliberate and responsive, and authored weapon presentation remains coherent across locomotion/facing changes. **Satisfied for the Longwatch proof weapon; second-weapon/ammo work belongs to the demo-content pass.**
+**Exit criterion:** shooting targets while moving feels deliberate and responsive, authored weapon presentation remains coherent across locomotion/facing changes, and the current Longwatch/Latch/Unarmed equipment loop is usable without debug intervention. **Satisfied for the current demo weapon foundation; remaining work is regression hardening plus production combat content/polish.**
 
 ## M3 — Combat slice
 
