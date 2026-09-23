@@ -424,7 +424,10 @@ namespace Rustline.Tests
                     if (state.IsName("Jump"))
                     {
                         sawJump = true;
-                        AssertLayers(presenter, bodyRenderer, armsRenderer);
+                        AssertOwnedLayers(
+                            presenter, longwatchPresenter, bodyRenderer, armsRenderer);
+                        Assert.That(longwatchPresenter.TryGetCurrentRenderedPose(out _), Is.False,
+                            "Longwatch Jump carry must not expose a muzzle-capable rendered pose.");
                         if (bodyRenderer.sprite.name == "player_salvager_body_jump_2")
                         {
                             Assert.That(visual.localPosition, Is.EqualTo(jumpPresentation.BaselineLocalPosition),
@@ -1299,8 +1302,13 @@ namespace Rustline.Tests
                 yield return null;
                 Assert.That(playerAnimator.CurrentState, Is.EqualTo(PlayerAnimationState.Jump));
                 Assert.That(animator.GetCurrentAnimatorStateInfo(0).IsName("Jump"), Is.True);
-                Assert.That(longwatchPresenter.OwnsRenderer, Is.False);
-                Assert.That(unarmedPresenter.OwnsRenderer, Is.True);
+                Assert.That(longwatchPresenter.OwnsRenderer, Is.True,
+                    "Wall Kick uses the accepted Longwatch Jump carry presentation.");
+                Assert.That(unarmedPresenter.OwnsRenderer, Is.False);
+                AssertOwnedLayers(
+                    unarmedPresenter, longwatchPresenter, bodyRenderer, armsRenderer);
+                Assert.That(longwatchPresenter.TryGetCurrentRenderedPose(out _), Is.False,
+                    "Wall-kick Jump carry must remain non-firing and expose no muzzle pose.");
 
                 for (int index = 0; index < 3; index++)
                 {
@@ -1498,6 +1506,19 @@ namespace Rustline.Tests
                 }
             }
 
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyJumpFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyJumpFrame(frameIndex))
+                {
+                    Assert.That(armsRenderer.sprite,
+                        Is.SameAs(longwatchPresenter.GetJumpCarryFrame(frameIndex)),
+                        "Longwatch Jump carry lagged or diverged from the displayed Body Jump frame.");
+                    Assert.That(longwatchPresenter.TryGetCurrentRenderedPose(out _), Is.False,
+                        "Longwatch Jump carry must not expose a muzzle-capable rendered pose.");
+                    return;
+                }
+            }
+
             for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyFallFrameCount; frameIndex++)
             {
                 if (bodyRenderer.sprite == longwatchPresenter.GetBodyFallFrame(frameIndex))
@@ -1506,6 +1527,19 @@ namespace Rustline.Tests
                         longwatchPresenter.Selection.DirectionIndex);
                     Assert.That(armsRenderer.sprite, Is.SameAs(fallPose.GetFrame(frameIndex)),
                         "Longwatch overlay lagged or diverged from the displayed Body Fall frame.");
+                    return;
+                }
+            }
+
+            for (int frameIndex = 0; frameIndex < longwatchPresenter.BodyLandFrameCount; frameIndex++)
+            {
+                if (bodyRenderer.sprite == longwatchPresenter.GetBodyLandFrame(frameIndex))
+                {
+                    Assert.That(armsRenderer.sprite,
+                        Is.SameAs(longwatchPresenter.GetLandCarryFrame(frameIndex)),
+                        "Longwatch Land carry lagged or diverged from the displayed Body Land frame.");
+                    Assert.That(longwatchPresenter.TryGetCurrentRenderedPose(out _), Is.False,
+                        "Longwatch Land carry must not expose a muzzle-capable rendered pose.");
                     return;
                 }
             }
