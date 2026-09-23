@@ -220,8 +220,9 @@ The selector includes a text/status block immediately to the **right of the weap
 Initial layout contract:
 
 - keep a clear horizontal gap between the card and information block; initial tuning target: **16 logical px**;
-- the lower part of the information block shows the weapon name and current mode;
-- the upper part shows ammunition/resource state when applicable;
+- the lower part of the information block shows the weapon name and current mode at **2 logical pixels per bitmap-font pixel**;
+- the upper part shows ammunition/resource state when applicable at **4 logical pixels per bitmap-font pixel**, making resource state intentionally twice the identity-line scale;
+- vertical composition should read approximately as **upper resource line / one line of breathing room / lower identity line**, without requiring literal text rows or a grid;
 - the information block uses the same logical-HUD coordinate system as the card and may occupy the Deep Space surround;
 - exact glyph spacing and vertical insets remain centralized tuning values.
 
@@ -271,7 +272,7 @@ Text is part of the same native-pixel HUD and must obey Rustline's presentation 
 - spatial darkness uses the same canonical darkness lookup and HUD-space penumbra semantics as the weapon card;
 - stable glyph raster with no crawling/shimmer while the HUD is stationary.
 
-A small internal bitmap font is acceptable. The implementation should not add a large UI/font dependency merely for these few HUD strings. The required glyph set includes uppercase A-Z, digits 0-9, space, `-`, `/`, `(`, `)`, multiplication sign `×`, and infinity `∞`.
+A small internal bitmap font is acceptable. The implementation should not add a large UI/font dependency merely for these few HUD strings. The required glyph set includes uppercase A-Z, digits 0-9, space, `-`, `/`, `(`, `)`, multiplication sign `×`, and infinity `∞`. Ordinary glyphs use the compact 5×7 family; `∞` is intentionally a wider **9-pixel** special glyph so it reads as infinity rather than a theta-like oval at native scale.
 
 ## Gameplay selection model
 

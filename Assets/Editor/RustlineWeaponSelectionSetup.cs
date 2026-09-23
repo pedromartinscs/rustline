@@ -121,6 +121,7 @@ namespace Rustline.Editor
             hudSerialized.FindProperty("screenLeftPaddingPixels").intValue = 20;
             hudSerialized.FindProperty("cardToInfoGapPixels").intValue = 16;
             hudSerialized.FindProperty("glyphPixelScale").intValue = 2;
+            hudSerialized.FindProperty("resourceGlyphPixelScale").intValue = 4;
             hudSerialized.FindProperty("upperTextInsetPixels").intValue = 8;
             hudSerialized.FindProperty("lowerTextInsetPixels").intValue = 8;
             hudSerialized.ApplyModifiedPropertiesWithoutUndo();

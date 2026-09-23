@@ -2042,6 +2042,7 @@ MonoBehaviour:
   neighborVerticalSeparationPixels: 86
   cardToInfoGapPixels: 16
   glyphPixelScale: 2
+  resourceGlyphPixelScale: 4
   upperTextInsetPixels: 8
   lowerTextInsetPixels: 8
 --- !u!114 &6814176262561081001

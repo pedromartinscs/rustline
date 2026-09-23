@@ -29,6 +29,7 @@ namespace Rustline.Presentation
         [SerializeField, Min(1)] private int penumbraThicknessPixels = 20;
         [SerializeField, Min(0)] private int cardToInfoGapPixels = 16;
         [SerializeField, Min(1)] private int glyphPixelScale = 2;
+        [SerializeField, Min(1)] private int resourceGlyphPixelScale = 4;
         [SerializeField, Min(0)] private int upperTextInsetPixels = 8;
         [SerializeField, Min(0)] private int lowerTextInsetPixels = 8;
 
@@ -61,6 +62,7 @@ namespace Rustline.Presentation
             internal MeshRenderer Renderer;
             internal Transform Transform;
             internal string Value;
+            internal int PixelScale;
         }
 
         private void Awake()
@@ -466,15 +468,23 @@ namespace Rustline.Presentation
                 definition != null ? definition.FireMode : WeaponFireMode2D.SemiAutomatic;
             WeaponShotMode2D shotMode = equipped ? weaponController.CurrentShotMode :
                 definition != null ? definition.ShotMode : WeaponShotMode2D.Conventional;
-            SetLine(view.Upper, WeaponHudInfoFormatter.Resource(definition, snapshot));
-            SetLine(view.Lower, WeaponHudInfoFormatter.Identity(definition, fireMode, shotMode));
+            SetLine(
+                view.Upper,
+                WeaponHudInfoFormatter.Resource(definition, snapshot),
+                resourceGlyphPixelScale);
+            SetLine(
+                view.Lower,
+                WeaponHudInfoFormatter.Identity(definition, fireMode, shotMode),
+                glyphPixelScale);
         }
 
-        private void SetLine(TextLine line, string value)
+        private void SetLine(TextLine line, string value, int pixelScale)
         {
-            if (line.Value == value) return;
+            int scale = Mathf.Max(1, pixelScale);
+            if (line.Value == value && line.PixelScale == scale) return;
             line.Value = value;
-            WeaponHudBitmapFont.BuildMesh(line.Mesh, value, glyphPixelScale);
+            line.PixelScale = scale;
+            WeaponHudBitmapFont.BuildMesh(line.Mesh, value, scale);
             line.Renderer.enabled = !string.IsNullOrEmpty(value);
             _hudDirty = true;
         }

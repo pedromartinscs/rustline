@@ -82,6 +82,11 @@ namespace Rustline.Tests
             const string required = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -/()×∞";
             foreach (char glyph in required)
                 Assert.That(WeaponHudBitmapFont.Supports(glyph), Is.True, glyph.ToString());
+            Assert.That(WeaponHudBitmapFont.GetGlyphPixelWidth('∞'),
+                Is.EqualTo(WeaponHudBitmapFont.InfinityGlyphWidth));
+            Assert.That(WeaponHudBitmapFont.InfinityGlyphWidth,
+                Is.GreaterThan(WeaponHudBitmapFont.GlyphWidth));
+
             Texture2D atlas = WeaponHudBitmapFont.CreateAtlas();
             try
             {
@@ -102,6 +107,24 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void BitmapFont_InfinityUsesWideGlyphAndResourceScale()
+        {
+            Mesh mesh = new Mesh();
+            try
+            {
+                WeaponHudBitmapFont.BuildMesh(mesh, "∞", 4);
+                float expectedWidth =
+                    WeaponHudBitmapFont.InfinityGlyphWidth * 4f /
+                    NativePixelPresentation.PixelsPerUnit;
+                Assert.That(mesh.bounds.size.x, Is.EqualTo(expectedWidth).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(mesh);
+            }
+        }
+
+        [Test]
         public void PlayerPrefab_PersistsAmmoAuthorityAndTwoViewSelector()
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/Player.prefab");
@@ -110,8 +133,10 @@ namespace Rustline.Tests
                 Is.SameAs(prefab.GetComponent<PlayerWeaponAmmo2D>()));
             FieldInfo views = typeof(WeaponCarouselHud2D).GetField("_views", BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(views, Is.Not.Null);
-            Assert.That(((System.Array)views.GetValue(prefab.GetComponent<WeaponCarouselHud2D>())).Length,
-                Is.EqualTo(2));
+            WeaponCarouselHud2D hud = prefab.GetComponent<WeaponCarouselHud2D>();
+            Assert.That(((System.Array)views.GetValue(hud)).Length, Is.EqualTo(2));
+            Assert.That((int)GetField(hud, "glyphPixelScale"), Is.EqualTo(2));
+            Assert.That((int)GetField(hud, "resourceGlyphPixelScale"), Is.EqualTo(4));
         }
 
         [Test]
