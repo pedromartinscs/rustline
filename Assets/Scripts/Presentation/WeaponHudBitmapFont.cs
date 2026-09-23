@@ -15,6 +15,11 @@ namespace Rustline.Presentation
         private const int AtlasCellWidth = 10;
         private const int Columns = 8;
         private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -/()×∞";
+        // HUD text is rebuilt on the main thread. Mesh.SetVertices/SetUVs/SetTriangles
+        // copy these buffers, so the next line can reuse them without allocating lists.
+        private static readonly List<Vector3> Vertices = new List<Vector3>(128);
+        private static readonly List<Vector2> Uvs = new List<Vector2>(128);
+        private static readonly List<int> Triangles = new List<int>(192);
         // Seven five-bit rows per glyph, top to bottom. Space has no authored pixels.
         private static readonly string[] Patterns =
         {
@@ -96,9 +101,12 @@ namespace Rustline.Presentation
 
             int scale = Mathf.Max(1, pixelScale);
             int atlasHeight = Mathf.CeilToInt(Characters.Length / (float)Columns) * CellHeight;
-            var vertices = new List<Vector3>(value.Length * 4);
-            var uv = new List<Vector2>(value.Length * 4);
-            var triangles = new List<int>(value.Length * 6);
+            List<Vector3> vertices = Vertices;
+            List<Vector2> uv = Uvs;
+            List<int> triangles = Triangles;
+            vertices.Clear();
+            uv.Clear();
+            triangles.Clear();
             float ppu = NativePixelPresentation.PixelsPerUnit;
             int cursorPixels = 0;
             for (int i = 0; i < value.Length; i++)

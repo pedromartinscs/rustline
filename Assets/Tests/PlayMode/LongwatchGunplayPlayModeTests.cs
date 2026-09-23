@@ -54,11 +54,11 @@ namespace Rustline.Tests
                 Assert.That(target.AccumulatedDamage, Is.EqualTo(40));
                 Assert.That(target.LastHitDirection, Is.EqualTo(Vector2.right));
                 Assert.That(weapon.ShotFeedback.IsVisible, Is.True);
-                Assert.That(feedback.IsImpactVisible, Is.True);
+                Assert.That(feedback.IsImpactVisible, Is.False);
+                Assert.That(impactObject.enabled, Is.False);
                 Assert.That(feedback.TraceEnd, Is.EqualTo(weapon.LastShotResult.EndPoint));
                 Assert.That(Vector2.Distance(feedback.TraceStart, feedback.TraceEnd),
                     Is.EqualTo(PrototypeWeaponShotFeedback2D.TraceLength).Within(0.0001f));
-                Assert.That(feedback.ImpactPoint, Is.EqualTo(weapon.LastShotResult.EndPoint));
                 Assert.That(recoil.ImpulseCount, Is.EqualTo(1));
                 Assert.That(cameraImpulse.ImpulseCount, Is.EqualTo(1));
                 Assert.That(Vector2.Dot(recoil.CurrentOffset, weapon.LastShotResult.Direction), Is.LessThan(0f));
@@ -151,8 +151,10 @@ namespace Rustline.Tests
             Assert.That(weapon.LastShotResult.HitReceiverNotified, Is.False);
             Assert.That(weapon.LastShotResult.EndPoint.x, Is.LessThan(151f));
             Assert.That(target.HitsTaken, Is.Zero);
-            Assert.That(weapon.ShotFeedback.IsImpactVisible, Is.True);
-            Assert.That(weapon.ShotFeedback.ImpactPoint, Is.EqualTo(weapon.LastShotResult.EndPoint));
+            Assert.That(weapon.ShotFeedback.IsVisible, Is.True);
+            Assert.That(weapon.ShotFeedback.TraceEnd, Is.EqualTo(weapon.LastShotResult.EndPoint));
+            Assert.That(weapon.ShotFeedback.IsImpactVisible, Is.False);
+            Assert.That(weapon.ShotFeedback.ImpactRenderer.enabled, Is.False);
         }
 
         [UnityTest]

@@ -723,6 +723,7 @@ MonoBehaviour:
   jumpActionName: Jump
   crouchActionName: Crouch
   fireActionName: Fire
+  reloadActionName: Reload
   toggleFireModeActionName: ToggleFireMode
   pointerPositionActionName: PointerPosition
   weaponCycleActionName: WeaponCycle
@@ -2036,10 +2037,11 @@ MonoBehaviour:
   weaponController: {fileID: 1780972319499233150}
   ammo: {fileID: 6814176262561081001}
   paletteFadeShader: {fileID: 4800000, guid: 644b55d3fb313b4428e435899a99d3ed, type: 3}
-  selectedScale: 0.6
-  neighborScale: 0.48
+  cardScale: 0.6
+  screenLeftPaddingPixels: 20
   lowerLeftMarginPixels: 16
-  neighborVerticalSeparationPixels: 86
+  visualGapPixels: 20
+  penumbraThicknessPixels: 20
   cardToInfoGapPixels: 16
   glyphPixelScale: 2
   resourceGlyphPixelScale: 4
