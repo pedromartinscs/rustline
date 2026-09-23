@@ -415,6 +415,10 @@ namespace Rustline.Tests
                 Assert.That(armsRenderer.flipX, Is.True);
                 animator.speed = 1f;
                 yield return WaitForArmedState(armed, PlayerAnimationState.Idle, 120);
+                // WaitForArmedState resumes from the coroutine phase before this frame's
+                // LateUpdate. Let the armed presenter process the newly displayed Idle
+                // body sprite before asserting that its muzzle-capable pose has returned.
+                yield return null;
                 Assert.That(armed.Selection.AuthoredAngleDegrees, Is.EqualTo(-30));
                 Assert.That(armed.Selection.FlipX, Is.True);
                 Assert.That(armed.TryGetCurrentRenderedPose(out LongwatchRenderedPose2D idlePose), Is.True);

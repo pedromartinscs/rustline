@@ -35,7 +35,10 @@ namespace Rustline.Tests
             Assert.That(weapon.LastShotResult.Origin, Is.EqualTo(expectedOrigin));
             Assert.That(weapon.LastShotResult.Direction, Is.EqualTo(exactDirection));
             Assert.That(weapon.LastShotResult.Damage, Is.EqualTo(40));
-            Assert.That(weapon.TryFire(100.1f), Is.False);
+            float rejectedShotTime =
+                100f + weapon.WeaponDefinition.ShotInterval * 0.5f;
+            Assert.That(weapon.TryFire(rejectedShotTime), Is.False,
+                "The rejection probe must remain inside the configured Longwatch cooldown.");
             Assert.That(flash.ShotEventCount, Is.EqualTo(eventCountBefore + 1));
 
             yield return null;
