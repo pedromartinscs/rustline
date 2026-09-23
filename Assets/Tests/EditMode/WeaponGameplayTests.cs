@@ -1,6 +1,7 @@
 using System.Reflection;
 using NUnit.Framework;
 using Rustline.Gameplay.Weapons;
+using Rustline.Gameplay.Player;
 using Rustline.Presentation;
 using UnityEditor;
 using UnityEngine;
@@ -12,6 +13,137 @@ namespace Rustline.Tests
     {
         private const string LongwatchDefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
         private const string LatchDefinitionPath = "Assets/Config/Weapons/Latch9.asset";
+
+        [Test]
+        public void ProductionAmmoDefinitions_AreMagazineAndInfinite()
+        {
+            WeaponDefinition2D longwatch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
+            WeaponDefinition2D latch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LatchDefinitionPath);
+            Assert.That(longwatch.AmmoPolicy, Is.EqualTo(WeaponAmmoPolicy2D.Magazine));
+            Assert.That(longwatch.MagazineCapacity, Is.EqualTo(50));
+            Assert.That(longwatch.InitialReserveMagazines, Is.EqualTo(3));
+            Assert.That(latch.AmmoPolicy, Is.EqualTo(WeaponAmmoPolicy2D.Infinite));
+            WeaponDefinition2D future = ScriptableObject.CreateInstance<WeaponDefinition2D>();
+            try { Assert.That(future.AmmoPolicy, Is.EqualTo(WeaponAmmoPolicy2D.Untracked)); }
+            finally { Object.DestroyImmediate(future); }
+        }
+
+        [Test]
+        public void LongwatchMagazine_AcceptedShotsReloadAndSwitchRetainFiniteState()
+        {
+            GameObject root = new GameObject("Ammo authority test");
+            try
+            {
+                PlayerWeaponAmmo2D ammo = root.AddComponent<PlayerWeaponAmmo2D>();
+                WeaponDefinition2D longwatch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
+                WeaponDefinition2D latch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LatchDefinitionPath);
+                int notifications = 0;
+                ammo.AmmoChanged += _ => notifications++;
+                AssertSnapshot(ammo, longwatch, 50, 3);
+                Assert.That(ammo.TryReload(longwatch), Is.False);
+                Assert.That(notifications, Is.Zero);
+                for (int i = 0; i < 20; i++) ammo.ConsumeAcceptedShot(longwatch);
+                AssertSnapshot(ammo, longwatch, 30, 3);
+                Assert.That(ammo.TryReload(longwatch), Is.True);
+                AssertSnapshot(ammo, longwatch, 50, 2);
+                for (int i = 0; i < 49; i++) ammo.ConsumeAcceptedShot(longwatch);
+                AssertSnapshot(ammo, longwatch, 1, 2);
+                Assert.That(ammo.TryReload(longwatch), Is.True);
+                AssertSnapshot(ammo, longwatch, 50, 1);
+                for (int i = 0; i < 50; i++) ammo.ConsumeAcceptedShot(longwatch);
+                AssertSnapshot(ammo, longwatch, 0, 1);
+                Assert.That(ammo.CanFire(longwatch), Is.False);
+                Assert.That(ammo.CanFire(latch), Is.True);
+                for (int i = 0; i < 10; i++) ammo.ConsumeAcceptedShot(latch);
+                Assert.That(ammo.TryReload(latch), Is.False);
+                Assert.That(ammo.GetSnapshot(latch).Policy, Is.EqualTo(WeaponAmmoPolicy2D.Infinite));
+                AssertSnapshot(ammo, longwatch, 0, 1);
+                Assert.That(ammo.TryReload(longwatch), Is.True);
+                for (int i = 0; i < 50; i++) ammo.ConsumeAcceptedShot(longwatch);
+                Assert.That(ammo.TryReload(longwatch), Is.False);
+                AssertSnapshot(ammo, longwatch, 0, 0);
+                Assert.That(notifications, Is.EqualTo(172));
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
+        public void Controller_ConsumesOnlyAcceptedLongwatchShotsAndNeverAutoReloads()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/Player.prefab");
+            GameObject player = Object.Instantiate(prefab);
+            try
+            {
+                PlayerWeaponController2D controller = player.GetComponent<PlayerWeaponController2D>();
+                PlayerWeaponAmmo2D ammo = player.GetComponent<PlayerWeaponAmmo2D>();
+                PlayerAim2D aim = player.GetComponent<PlayerAim2D>();
+                PlayerAnimator2D animator = player.GetComponent<PlayerAnimator2D>();
+                WeaponDefinition2D longwatch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LongwatchDefinitionPath);
+                WeaponDefinition2D latch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(LatchDefinitionPath);
+                controller.EquipWeapon(longwatch);
+                SetPrivate(animator, "_currentState", (PlayerAnimationState?)PlayerAnimationState.Idle);
+                SetPrivate(aim, "_hasValidAim", true);
+                SetPrivate(aim, "_continuousAimDirection", Vector2.right);
+                Assert.That(controller.TryFire(1f), Is.True);
+                AssertSnapshot(ammo, longwatch, 49, 3);
+                Assert.That(controller.TryFire(1f), Is.False);
+                AssertSnapshot(ammo, longwatch, 49, 3);
+                SetPrivate(aim, "_hasValidAim", false);
+                Assert.That(controller.TryFire(2f), Is.False);
+                AssertSnapshot(ammo, longwatch, 49, 3);
+                SetPrivate(aim, "_hasValidAim", true);
+                controller.EquipWeapon(latch);
+                controller.EquipWeapon(longwatch);
+                AssertSnapshot(ammo, longwatch, 49, 3);
+                for (int i = 1; i < 50; i++)
+                    Assert.That(controller.TryFire(2f + i * longwatch.ShotInterval + 0.001f * i), Is.True);
+                AssertSnapshot(ammo, longwatch, 0, 3);
+                int fired = controller.ShotCount;
+                Assert.That(controller.TryFire(100f), Is.False);
+                Assert.That(controller.ShotCount, Is.EqualTo(fired));
+                AssertSnapshot(ammo, longwatch, 0, 3);
+            }
+            finally { Object.DestroyImmediate(player); }
+        }
+
+        [Test]
+        public void ReloadInput_IsBoundToRAndTransientIsConsumedAndCleared()
+        {
+            InputActionAsset actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>("Assets/InputSystem_Actions.inputactions");
+            InputAction reload = actions.FindActionMap("Player").FindAction("Reload");
+            Assert.That(reload, Is.Not.Null);
+            Assert.That(reload.bindings.Count, Is.EqualTo(1));
+            Assert.That(reload.bindings[0].path, Is.EqualTo("<Keyboard>/r"));
+            GameObject root = new GameObject("Reload input test");
+            try
+            {
+                root.SetActive(false);
+                PlayerInputReader reader = root.AddComponent<PlayerInputReader>();
+                SetPrivate(reader, "_reloadPressed", true);
+                Assert.That(reader.ConsumeReloadPressed(), Is.True);
+                Assert.That(reader.ConsumeReloadPressed(), Is.False);
+                SetPrivate(reader, "_reloadPressed", true);
+                reader.ClearTransientState();
+                Assert.That(reader.ConsumeReloadPressed(), Is.False);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        private static void AssertSnapshot(PlayerWeaponAmmo2D ammo, WeaponDefinition2D definition,
+            int rounds, int reserve)
+        {
+            PlayerWeaponAmmo2D.Snapshot snapshot = ammo.GetSnapshot(definition);
+            Assert.That(snapshot.Rounds, Is.EqualTo(rounds));
+            Assert.That(snapshot.Capacity, Is.EqualTo(50));
+            Assert.That(snapshot.ReserveMagazines, Is.EqualTo(reserve));
+        }
+
+        private static void SetPrivate(object instance, string field, object value)
+        {
+            FieldInfo info = instance.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(info, Is.Not.Null, field);
+            info.SetValue(instance, value);
+        }
 
         [Test]
         public void LongwatchDefinition_HasExpectedPrototypeValues()

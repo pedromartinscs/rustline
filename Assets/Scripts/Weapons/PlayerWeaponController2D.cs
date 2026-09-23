@@ -27,6 +27,7 @@ namespace Rustline.Gameplay.Weapons
         [SerializeField] private LayerMask hitLayers;
         [SerializeField] private PrototypeWeaponShotFeedback2D shotFeedback;
         [SerializeField] private Latch9ProjectileEmitter2D latchProjectileEmitter;
+        [SerializeField] private PlayerWeaponAmmo2D ammo;
 
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[16];
         private readonly SemiAutomaticWeaponCooldown2D _cooldown = new SemiAutomaticWeaponCooldown2D();
@@ -46,12 +47,14 @@ namespace Rustline.Gameplay.Weapons
         public LayerMask HitLayers => hitLayers;
         public PrototypeWeaponShotFeedback2D ShotFeedback => shotFeedback;
         public Latch9ProjectileEmitter2D LatchProjectileEmitter => latchProjectileEmitter;
+        public PlayerWeaponAmmo2D Ammo => ammo;
         public int ShotCount { get; private set; }
         public WeaponShotResult2D LastShotResult { get; private set; }
 
         private void Awake()
         {
             _playerCollider = GetComponent<Collider2D>();
+            if (ammo == null) ammo = GetComponent<PlayerWeaponAmmo2D>();
             if (latchProjectileEmitter == null)
             {
                 latchProjectileEmitter = GetComponent<Latch9ProjectileEmitter2D>();
@@ -86,6 +89,11 @@ namespace Rustline.Gameplay.Weapons
                 }
             }
 
+            if (input.ConsumeReloadPressed())
+            {
+                TryReload();
+            }
+
             // Always consume the press edge even in automatic mode so switching back to semi-auto
             // while the button is still held cannot replay an old click.
             bool firePressed = input.ConsumeFirePressed();
@@ -102,6 +110,7 @@ namespace Rustline.Gameplay.Weapons
         public void EquipWeapon(WeaponDefinition2D definition)
         {
             weaponDefinition = definition;
+            if (ammo == null) ammo = GetComponent<PlayerWeaponAmmo2D>();
             if (latchProjectileEmitter == null)
             {
                 latchProjectileEmitter = GetComponent<Latch9ProjectileEmitter2D>();
@@ -142,6 +151,12 @@ namespace Rustline.Gameplay.Weapons
                     }
                 }
 
+                if (weaponDefinition.AmmoPolicy == WeaponAmmoPolicy2D.Magazine &&
+                    (ammo == null || !ammo.CanFire(weaponDefinition)))
+                {
+                    return false;
+                }
+
                 if (!_cooldown.TryConsume(currentTime, weaponDefinition.ShotInterval))
                 {
                     return false;
@@ -162,11 +177,13 @@ namespace Rustline.Gameplay.Weapons
                         return false;
                     }
 
+                    ammo?.ConsumeAcceptedShot(weaponDefinition);
                     ShotCount++;
                     ShotFired?.Invoke(fired);
                     return true;
                 }
 
+                ammo?.ConsumeAcceptedShot(weaponDefinition);
                 ShotCount++;
                 ShotFired?.Invoke(fired);
                 ResolveShot(origin, direction, out WeaponShotResult2D result);
@@ -175,6 +192,12 @@ namespace Rustline.Gameplay.Weapons
                 ShotResolved?.Invoke(result);
                 return true;
             }
+        }
+
+        public bool TryReload()
+        {
+            if (ammo == null) ammo = GetComponent<PlayerWeaponAmmo2D>();
+            return ammo != null && ammo.TryReload(weaponDefinition);
         }
 
         public void ReportProjectileResolved(WeaponShotResult2D result)

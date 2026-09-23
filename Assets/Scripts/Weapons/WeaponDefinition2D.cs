@@ -20,6 +20,13 @@ namespace Rustline.Gameplay.Weapons
         Projectile,
     }
 
+    public enum WeaponAmmoPolicy2D
+    {
+        Untracked,
+        Infinite,
+        Magazine,
+    }
+
     [CreateAssetMenu(fileName = "WeaponDefinition", menuName = "Rustline/Weapon Definition 2D")]
     public sealed class WeaponDefinition2D : ScriptableObject
     {
@@ -43,6 +50,9 @@ namespace Rustline.Gameplay.Weapons
         [SerializeField, Min(0)] private int maxBounces;
         [SerializeField, Range(1, 100)] private int bouncingInitialDamagePercent = 80;
         [SerializeField, Range(1, 100)] private int bouncingDamageStepPercent = 20;
+        [SerializeField] private WeaponAmmoPolicy2D ammoPolicy = WeaponAmmoPolicy2D.Untracked;
+        [SerializeField, Min(1)] private int magazineCapacity = 1;
+        [SerializeField, Min(0)] private int initialReserveMagazines;
 
         public string WeaponId => weaponId;
         public string DisplayName => displayName;
@@ -60,6 +70,9 @@ namespace Rustline.Gameplay.Weapons
         public int MaxBounces => maxBounces;
         public int BouncingInitialDamagePercent => bouncingInitialDamagePercent;
         public int BouncingDamageStepPercent => bouncingDamageStepPercent;
+        public WeaponAmmoPolicy2D AmmoPolicy => ammoPolicy;
+        public int MagazineCapacity => magazineCapacity;
+        public int InitialReserveMagazines => initialReserveMagazines;
 
         public bool SupportsFireMode(WeaponFireMode2D mode)
         {
@@ -205,6 +218,13 @@ namespace Rustline.Gameplay.Weapons
             if (shotInterval <= 0f || range <= 0f || damage <= 0)
             {
                 reason = "Weapon fire interval, range, and damage must be positive.";
+                return false;
+            }
+
+            if (ammoPolicy == WeaponAmmoPolicy2D.Magazine &&
+                (magazineCapacity <= 0 || initialReserveMagazines < 0))
+            {
+                reason = "Magazine capacity must be positive and reserve count cannot be negative.";
                 return false;
             }
 

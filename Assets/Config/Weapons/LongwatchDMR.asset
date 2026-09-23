@@ -29,3 +29,6 @@ MonoBehaviour:
   maxBounces: 0
   bouncingInitialDamagePercent: 80
   bouncingDamageStepPercent: 20
+  ammoPolicy: 2
+  magazineCapacity: 50
+  initialReserveMagazines: 3

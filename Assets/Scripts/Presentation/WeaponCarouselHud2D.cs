@@ -18,6 +18,8 @@ namespace Rustline.Presentation
         private const int CardHeightPixels = 175;
 
         [SerializeField] private PlayerWeaponEquipment2D equipment;
+        [SerializeField] private PlayerWeaponController2D weaponController;
+        [SerializeField] private PlayerWeaponAmmo2D ammo;
         [SerializeField] private Shader paletteFadeShader;
         [FormerlySerializedAs("selectedScale")]
         [SerializeField, Range(0.1f, 1f)] private float cardScale = 0.60f;
@@ -25,11 +27,16 @@ namespace Rustline.Presentation
         [SerializeField, Min(0)] private int lowerLeftMarginPixels = 16;
         [SerializeField, Min(0)] private int visualGapPixels = 20;
         [SerializeField, Min(1)] private int penumbraThicknessPixels = 20;
+        [SerializeField, Min(0)] private int cardToInfoGapPixels = 16;
+        [SerializeField, Min(1)] private int glyphPixelScale = 2;
+        [SerializeField, Min(0)] private int upperTextInsetPixels = 8;
+        [SerializeField, Min(0)] private int lowerTextInsetPixels = 8;
 
         private NativePixelPresentation _presentation;
         private Camera _camera;
         private Transform _root;
         private RenderTexture _target;
+        private Texture2D _fontAtlas;
         private readonly CardView[] _views = new CardView[ReusableViewCount];
         private bool _wasStepping;
         private bool _hudDirty;
@@ -39,9 +46,21 @@ namespace Rustline.Presentation
 
         private sealed class CardView
         {
+            internal Transform Unit;
             internal SpriteRenderer Renderer;
             internal Material Material;
+            internal Material TextMaterial;
+            internal TextLine Upper;
+            internal TextLine Lower;
             internal int Slot;
+        }
+
+        private sealed class TextLine
+        {
+            internal Mesh Mesh;
+            internal MeshRenderer Renderer;
+            internal Transform Transform;
+            internal string Value;
         }
 
         private void Awake()
@@ -50,6 +69,8 @@ namespace Rustline.Presentation
             {
                 equipment = GetComponent<PlayerWeaponEquipment2D>();
             }
+            if (weaponController == null) weaponController = GetComponent<PlayerWeaponController2D>();
+            if (ammo == null) ammo = GetComponent<PlayerWeaponAmmo2D>();
         }
 
         private void OnEnable()
@@ -59,6 +80,12 @@ namespace Rustline.Presentation
                 equipment.StepStarted += OnStepStarted;
                 equipment.EquipmentChanged += OnEquipmentChanged;
             }
+            if (weaponController != null)
+            {
+                weaponController.FireModeChanged += OnModeChanged;
+                weaponController.ShotModeChanged += OnModeChanged;
+            }
+            if (ammo != null) ammo.AmmoChanged += OnAmmoChanged;
         }
 
         private void OnDisable()
@@ -68,6 +95,12 @@ namespace Rustline.Presentation
                 equipment.StepStarted -= OnStepStarted;
                 equipment.EquipmentChanged -= OnEquipmentChanged;
             }
+            if (weaponController != null)
+            {
+                weaponController.FireModeChanged -= OnModeChanged;
+                weaponController.ShotModeChanged -= OnModeChanged;
+            }
+            if (ammo != null) ammo.AmmoChanged -= OnAmmoChanged;
 
             _presentation?.SetWeaponCarouselHudSource(null);
             Release();
@@ -133,6 +166,32 @@ namespace Rustline.Presentation
             }
         }
 
+        private void OnModeChanged(WeaponFireMode2D _) => RefreshEquippedInfo();
+        private void OnModeChanged(WeaponShotMode2D _) => RefreshEquippedInfo();
+        private void OnAmmoChanged(WeaponDefinition2D definition)
+        {
+            for (int i = 0; i < _views.Length; i++)
+            {
+                CardView view = _views[i];
+                if (view != null && equipment.TryGetEntry(view.Slot, out WeaponLoadoutEntry2D entry) &&
+                    entry.WeaponDefinition == definition)
+                {
+                    UpdateInfo(view, entry);
+                }
+            }
+        }
+
+        private void RefreshEquippedInfo()
+        {
+            for (int i = 0; i < _views.Length; i++)
+            {
+                CardView view = _views[i];
+                if (view != null && view.Slot == equipment.SelectedSlot &&
+                    equipment.TryGetEntry(view.Slot, out WeaponLoadoutEntry2D entry))
+                    UpdateInfo(view, entry);
+            }
+        }
+
         private void EnsurePresentation()
         {
             if (_presentation == null)
@@ -166,7 +225,7 @@ namespace Rustline.Presentation
             _target = new RenderTexture(
                 hudLogicalSize.x,
                 hudLogicalSize.y,
-                0,
+                16,
                 RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.sRGB)
             {
@@ -220,16 +279,23 @@ namespace Rustline.Presentation
 
         private void CreateViews()
         {
+            _fontAtlas = WeaponHudBitmapFont.CreateAtlas();
             for (int index = 0; index < _views.Length; index++)
             {
-                GameObject viewObject = new GameObject("Weapon Carousel Card " + index)
+                GameObject viewObject = new GameObject("Weapon Carousel Unit " + index)
                 {
                     layer = RustlineHudLayerIndex,
                     hideFlags = HideFlags.HideAndDontSave
                 };
                 viewObject.transform.SetParent(_root, false);
 
-                SpriteRenderer renderer = viewObject.AddComponent<SpriteRenderer>();
+                GameObject cardObject = new GameObject("Card")
+                {
+                    layer = RustlineHudLayerIndex,
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+                cardObject.transform.SetParent(viewObject.transform, false);
+                SpriteRenderer renderer = cardObject.AddComponent<SpriteRenderer>();
                 renderer.sortingOrder = index;
 
                 Material material = new Material(paletteFadeShader)
@@ -241,13 +307,42 @@ namespace Rustline.Presentation
                 renderer.sharedMaterial = material;
                 renderer.enabled = false;
 
+                Material textMaterial = new Material(paletteFadeShader)
+                {
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+                textMaterial.SetTexture("_MainTex", _fontAtlas);
+                textMaterial.SetTexture("_DarknessLookup", _presentation.DarknessLookupTexture);
+                textMaterial.SetFloat("_PixelsPerUnit", NativePixelPresentation.PixelsPerUnit);
+
                 _views[index] = new CardView
                 {
+                    Unit = viewObject.transform,
                     Renderer = renderer,
                     Material = material,
+                    TextMaterial = textMaterial,
+                    Upper = CreateTextLine(viewObject.transform, "Resource", textMaterial, index),
+                    Lower = CreateTextLine(viewObject.transform, "Identity", textMaterial, index),
                     Slot = -1
                 };
             }
+        }
+
+        private static TextLine CreateTextLine(Transform parent, string name, Material material, int sortingOrder)
+        {
+            GameObject lineObject = new GameObject(name)
+            {
+                layer = RustlineHudLayerIndex,
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            lineObject.transform.SetParent(parent, false);
+            Mesh mesh = new Mesh { name = "Weapon HUD " + name, hideFlags = HideFlags.HideAndDontSave };
+            lineObject.AddComponent<MeshFilter>().sharedMesh = mesh;
+            MeshRenderer renderer = lineObject.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.sortingOrder = sortingOrder;
+            renderer.enabled = false;
+            return new TextLine { Mesh = mesh, Renderer = renderer, Transform = lineObject.transform };
         }
 
         private void DrawRest(int centerSlot)
@@ -307,6 +402,9 @@ namespace Rustline.Presentation
                 material.SetFloat("_ApertureBottom", restingBounds.yMin);
                 material.SetFloat("_ApertureTop", restingBounds.yMax);
                 material.SetFloat("_PenumbraThickness", thickness);
+                _views[index].TextMaterial.SetFloat("_ApertureBottom", restingBounds.yMin);
+                _views[index].TextMaterial.SetFloat("_ApertureTop", restingBounds.yMax);
+                _views[index].TextMaterial.SetFloat("_PenumbraThickness", thickness);
             }
         }
 
@@ -326,15 +424,59 @@ namespace Rustline.Presentation
                 logicalPosition,
                 restingBounds.center);
 
+            bool changedSlot = view.Slot != slot;
             view.Slot = slot;
             view.Renderer.sprite = entry.CarouselSprite;
             view.Renderer.sortingOrder = index;
-            view.Renderer.transform.localPosition = new Vector3(
+            view.Unit.localPosition = new Vector3(
                 quantizedPosition.x / NativePixelPresentation.PixelsPerUnit,
                 quantizedPosition.y / NativePixelPresentation.PixelsPerUnit,
                 0f);
             view.Renderer.transform.localScale = Vector3.one * cardScale;
             view.Renderer.enabled = true;
+            PositionInfo(view, restingBounds);
+            if (changedSlot) UpdateInfo(view, entry);
+        }
+
+        private void PositionInfo(CardView view, Rect restingBounds)
+        {
+            float x = (restingBounds.width * 0.5f + cardToInfoGapPixels) /
+                NativePixelPresentation.PixelsPerUnit;
+            float upperY = (restingBounds.height * 0.5f - upperTextInsetPixels) /
+                NativePixelPresentation.PixelsPerUnit;
+            float lowerY = (-restingBounds.height * 0.5f + lowerTextInsetPixels +
+                WeaponHudBitmapFont.GlyphHeight * glyphPixelScale) /
+                NativePixelPresentation.PixelsPerUnit;
+            view.Upper.Transform.localPosition = new Vector3(x, upperY, 0f);
+            view.Lower.Transform.localPosition = new Vector3(x, lowerY, 0f);
+        }
+
+        private void UpdateInfo(CardView view, WeaponLoadoutEntry2D entry)
+        {
+            WeaponDefinition2D definition = entry.WeaponDefinition;
+            PlayerWeaponAmmo2D.Snapshot snapshot = ammo != null
+                ? ammo.GetSnapshot(definition)
+                : new PlayerWeaponAmmo2D.Snapshot(
+                    definition != null ? definition.AmmoPolicy : WeaponAmmoPolicy2D.Untracked,
+                    definition != null ? definition.MagazineCapacity : 0,
+                    definition != null ? definition.MagazineCapacity : 0,
+                    definition != null ? definition.InitialReserveMagazines : 0);
+            bool equipped = view.Slot == equipment.SelectedSlot && weaponController != null;
+            WeaponFireMode2D fireMode = equipped ? weaponController.CurrentFireMode :
+                definition != null ? definition.FireMode : WeaponFireMode2D.SemiAutomatic;
+            WeaponShotMode2D shotMode = equipped ? weaponController.CurrentShotMode :
+                definition != null ? definition.ShotMode : WeaponShotMode2D.Conventional;
+            SetLine(view.Upper, WeaponHudInfoFormatter.Resource(definition, snapshot));
+            SetLine(view.Lower, WeaponHudInfoFormatter.Identity(definition, fireMode, shotMode));
+        }
+
+        private void SetLine(TextLine line, string value)
+        {
+            if (line.Value == value) return;
+            line.Value = value;
+            WeaponHudBitmapFont.BuildMesh(line.Mesh, value, glyphPixelScale);
+            line.Renderer.enabled = !string.IsNullOrEmpty(value);
+            _hudDirty = true;
         }
 
         public static int DedicatedHudCullingMask => 1 << RustlineHudLayerIndex;
@@ -464,6 +606,9 @@ namespace Rustline.Presentation
             if (_views[index] != null)
             {
                 _views[index].Renderer.enabled = false;
+                _views[index].Upper.Renderer.enabled = false;
+                _views[index].Lower.Renderer.enabled = false;
+                _views[index].Slot = -1;
             }
         }
 
@@ -487,9 +632,15 @@ namespace Rustline.Presentation
                 if (_views[index]?.Material != null)
                 {
                     Destroy(_views[index].Material);
+                    Destroy(_views[index].TextMaterial);
+                    Destroy(_views[index].Upper.Mesh);
+                    Destroy(_views[index].Lower.Mesh);
                 }
                 _views[index] = null;
             }
+
+            if (_fontAtlas != null) Destroy(_fontAtlas);
+            _fontAtlas = null;
 
             if (_camera != null)
             {

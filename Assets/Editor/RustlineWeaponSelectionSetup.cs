@@ -97,6 +97,8 @@ namespace Rustline.Editor
             Require(metadata != null && latchDefinition != null && longwatchDefinition != null, "Persistent weapon assets are missing.");
             Latch9ProjectileEmitter2D emitter = GetOrAdd<Latch9ProjectileEmitter2D>(root);
             emitter.Configure(controller, latch, metadata);
+            PlayerWeaponAmmo2D ammo = GetOrAdd<PlayerWeaponAmmo2D>(root);
+            Set(controller, "ammo", ammo);
 
             Transform flashTransform = arms.transform.Find("LongwatchMuzzleFlash");
             Require(flashTransform != null, "Player prefab Longwatch flash child is missing.");
@@ -112,9 +114,15 @@ namespace Rustline.Editor
             ConfigureEquipment(equipment, input, controller, latchDefinition, longwatchDefinition, longwatch, recoil, longwatchFlash, latch, emitter, latchFlash, binder);
             WeaponCarouselHud2D hud = GetOrAdd<WeaponCarouselHud2D>(root);
             Set(hud, "equipment", equipment);
+            Set(hud, "weaponController", controller);
+            Set(hud, "ammo", ammo);
             Set(hud, "paletteFadeShader", AssetDatabase.LoadAssetAtPath<Shader>(CarouselShaderPath));
             SerializedObject hudSerialized = new SerializedObject(hud);
             hudSerialized.FindProperty("screenLeftPaddingPixels").intValue = 20;
+            hudSerialized.FindProperty("cardToInfoGapPixels").intValue = 16;
+            hudSerialized.FindProperty("glyphPixelScale").intValue = 2;
+            hudSerialized.FindProperty("upperTextInsetPixels").intValue = 8;
+            hudSerialized.FindProperty("lowerTextInsetPixels").intValue = 8;
             hudSerialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

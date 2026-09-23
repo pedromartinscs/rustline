@@ -51,6 +51,146 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void WeaponInfo_UsesExactResourceAndModeLabels()
+        {
+            WeaponDefinition2D longwatch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(
+                "Assets/Config/Weapons/LongwatchDMR.asset");
+            WeaponDefinition2D latch = AssetDatabase.LoadAssetAtPath<WeaponDefinition2D>(
+                "Assets/Config/Weapons/Latch9.asset");
+            Assert.That(WeaponHudInfoFormatter.Identity(longwatch, WeaponFireMode2D.SemiAutomatic,
+                WeaponShotMode2D.Conventional), Is.EqualTo("LONGWATCH DMR (SEMI)"));
+            Assert.That(WeaponHudInfoFormatter.Identity(longwatch, WeaponFireMode2D.Automatic,
+                WeaponShotMode2D.Conventional), Is.EqualTo("LONGWATCH DMR (AUTO)"));
+            Assert.That(WeaponHudInfoFormatter.Identity(latch, WeaponFireMode2D.SemiAutomatic,
+                WeaponShotMode2D.Conventional), Is.EqualTo("LATCH-9 (PLASMA)"));
+            Assert.That(WeaponHudInfoFormatter.Identity(latch, WeaponFireMode2D.SemiAutomatic,
+                WeaponShotMode2D.Bouncing), Is.EqualTo("LATCH-9 (PHOTON FIELD)"));
+            Assert.That(WeaponHudInfoFormatter.Identity(null, WeaponFireMode2D.SemiAutomatic,
+                WeaponShotMode2D.Conventional), Is.EqualTo("HANDS"));
+            Assert.That(WeaponHudInfoFormatter.Resource(latch,
+                new PlayerWeaponAmmo2D.Snapshot(WeaponAmmoPolicy2D.Infinite, 0, 0, 0)), Is.EqualTo("∞"));
+            Assert.That(WeaponHudInfoFormatter.Resource(longwatch,
+                new PlayerWeaponAmmo2D.Snapshot(WeaponAmmoPolicy2D.Magazine, 37, 50, 3)),
+                Is.EqualTo("37 / 50 ×3"));
+            Assert.That(WeaponHudInfoFormatter.Resource(null,
+                new PlayerWeaponAmmo2D.Snapshot(WeaponAmmoPolicy2D.Untracked, 0, 0, 0)), Is.Empty);
+        }
+
+        [Test]
+        public void BitmapFont_RequiredGlyphsArePointFilteredBinaryCanonicalWhite()
+        {
+            const string required = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -/()×∞";
+            foreach (char glyph in required)
+                Assert.That(WeaponHudBitmapFont.Supports(glyph), Is.True, glyph.ToString());
+            Texture2D atlas = WeaponHudBitmapFont.CreateAtlas();
+            try
+            {
+                Assert.That(atlas.filterMode, Is.EqualTo(FilterMode.Point));
+                int opaque = 0;
+                foreach (Color32 pixel in atlas.GetPixels32())
+                {
+                    Assert.That(pixel.a == 0 || pixel.a == 255, Is.True);
+                    if (pixel.a == 0) continue;
+                    opaque++;
+                    Assert.That(pixel.r, Is.EqualTo(254));
+                    Assert.That(pixel.g, Is.EqualTo(254));
+                    Assert.That(pixel.b, Is.EqualTo(254));
+                }
+                Assert.That(opaque, Is.GreaterThan(0));
+            }
+            finally { Object.DestroyImmediate(atlas); }
+        }
+
+        [Test]
+        public void PlayerPrefab_PersistsAmmoAuthorityAndTwoViewSelector()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/Player.prefab");
+            Assert.That(prefab.GetComponent<PlayerWeaponAmmo2D>(), Is.Not.Null);
+            Assert.That(prefab.GetComponent<PlayerWeaponController2D>().Ammo,
+                Is.SameAs(prefab.GetComponent<PlayerWeaponAmmo2D>()));
+            FieldInfo views = typeof(WeaponCarouselHud2D).GetField("_views", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(views, Is.Not.Null);
+            Assert.That(((System.Array)views.GetValue(prefab.GetComponent<WeaponCarouselHud2D>())).Length,
+                Is.EqualTo(2));
+        }
+
+        [Test]
+        public void SelectorCardAndBothTextLines_ShareEachViewsVerticalTransform()
+        {
+            GameObject host = new GameObject("Selector unit hierarchy test");
+            host.SetActive(false);
+            WeaponCarouselHud2D hud = host.AddComponent<WeaponCarouselHud2D>();
+            NativePixelPresentation presentation = host.AddComponent<NativePixelPresentation>();
+            Transform root = new GameObject("Views").transform;
+            root.SetParent(host.transform, false);
+            SetField(hud, "_presentation", presentation);
+            SetField(hud, "_root", root);
+            SetField(hud, "paletteFadeShader", AssetDatabase.LoadAssetAtPath<Shader>(
+                "Assets/Shaders/RustlineWeaponCarouselFade.shader"));
+            System.Array views = null;
+            try
+            {
+                typeof(WeaponCarouselHud2D).GetMethod("CreateViews",
+                    BindingFlags.Instance | BindingFlags.NonPublic).Invoke(hud, null);
+                views = (System.Array)GetField(hud, "_views");
+                Assert.That(views.Length, Is.EqualTo(2));
+                foreach (object view in views)
+                {
+                    Transform unit = (Transform)GetField(view, "Unit");
+                    Transform card = ((SpriteRenderer)GetField(view, "Renderer")).transform;
+                    Transform upper = (Transform)GetField(GetField(view, "Upper"), "Transform");
+                    Transform lower = (Transform)GetField(GetField(view, "Lower"), "Transform");
+                    Assert.That(card.parent, Is.SameAs(unit));
+                    Assert.That(upper.parent, Is.SameAs(unit));
+                    Assert.That(lower.parent, Is.SameAs(unit));
+                    float cardY = card.position.y;
+                    float upperY = upper.position.y;
+                    float lowerY = lower.position.y;
+                    unit.position += Vector3.up * 3f;
+                    Assert.That(card.position.y - cardY, Is.EqualTo(3f));
+                    Assert.That(upper.position.y - upperY, Is.EqualTo(3f));
+                    Assert.That(lower.position.y - lowerY, Is.EqualTo(3f));
+                }
+            }
+            finally
+            {
+                if (views != null)
+                {
+                    for (int i = 0; i < views.Length; i++)
+                    {
+                        object view = views.GetValue(i);
+                        if (view == null) continue;
+                        Object.DestroyImmediate((Material)GetField(view, "Material"));
+                        Object.DestroyImmediate((Material)GetField(view, "TextMaterial"));
+                        Object.DestroyImmediate((Mesh)GetField(GetField(view, "Upper"), "Mesh"));
+                        Object.DestroyImmediate((Mesh)GetField(GetField(view, "Lower"), "Mesh"));
+                        views.SetValue(null, i);
+                    }
+                }
+                Object.DestroyImmediate((Texture2D)GetField(hud, "_fontAtlas"));
+                SetField(hud, "_fontAtlas", null);
+                SetField(hud, "_root", null);
+                Object.DestroyImmediate(host);
+            }
+        }
+
+        private static object GetField(object target, string name)
+        {
+            FieldInfo field = target.GetType().GetField(name,
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.That(field, Is.Not.Null, name);
+            return field.GetValue(target);
+        }
+
+        private static void SetField(object target, string name, object value)
+        {
+            FieldInfo field = target.GetType().GetField(name,
+                BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.That(field, Is.Not.Null, name);
+            field.SetValue(target, value);
+        }
+
+        [Test]
         public void RestingCard_UsesOneFixedScaleInsideRepresentativeLogicalViewport()
         {
             const int logicalWidth = 800;

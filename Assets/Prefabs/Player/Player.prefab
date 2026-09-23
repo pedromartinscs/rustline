@@ -616,6 +616,7 @@ GameObject:
   - component: {fileID: 995597311423879702}
   - component: {fileID: 3031789671882538729}
   - component: {fileID: 4577391262399305045}
+  - component: {fileID: 6814176262561081001}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -1433,6 +1434,7 @@ MonoBehaviour:
     m_Bits: 192
   shotFeedback: {fileID: 2180152648036154860}
   latchProjectileEmitter: {fileID: 0}
+  ammo: {fileID: 6814176262561081001}
 --- !u!114 &2122896767436576066
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2031,11 +2033,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.WeaponCarouselHud2D
   equipment: {fileID: 3031789671882538729}
+  weaponController: {fileID: 1780972319499233150}
+  ammo: {fileID: 6814176262561081001}
   paletteFadeShader: {fileID: 4800000, guid: 644b55d3fb313b4428e435899a99d3ed, type: 3}
   selectedScale: 0.6
   neighborScale: 0.48
   lowerLeftMarginPixels: 16
   neighborVerticalSeparationPixels: 86
+  cardToInfoGapPixels: 16
+  glyphPixelScale: 2
+  upperTextInsetPixels: 8
+  lowerTextInsetPixels: 8
+--- !u!114 &6814176262561081001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ed783845e20467cbd1765cd4e270b8d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Weapons.PlayerWeaponAmmo2D
 --- !u!1 &9200091782764310170
 GameObject:
   m_ObjectHideFlags: 0

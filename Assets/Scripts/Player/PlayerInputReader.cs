@@ -11,6 +11,7 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string jumpActionName = "Jump";
         [SerializeField] private string crouchActionName = "Crouch";
         [SerializeField] private string fireActionName = "Fire";
+        [SerializeField] private string reloadActionName = "Reload";
         [SerializeField] private string toggleFireModeActionName = "ToggleFireMode";
         [SerializeField] private string pointerPositionActionName = "PointerPosition";
         [SerializeField] private string weaponCycleActionName = "WeaponCycle";
@@ -21,6 +22,7 @@ namespace Rustline.Gameplay.Player
         private InputAction _jumpAction;
         private InputAction _crouchAction;
         private InputAction _fireAction;
+        private InputAction _reloadAction;
         private InputAction _toggleFireModeAction;
         private InputAction _pointerPositionAction;
         private InputAction _weaponCycleAction;
@@ -28,6 +30,7 @@ namespace Rustline.Gameplay.Player
         private bool _jumpPressed;
         private bool _jumpReleased;
         private bool _firePressed;
+        private bool _reloadPressed;
         private bool _fireHeld;
         private bool _toggleFireModePressed;
         private int _weaponCycleDirection;
@@ -55,6 +58,7 @@ namespace Rustline.Gameplay.Player
             _crouchAction.canceled += OnCrouch;
             _fireAction.performed += OnFirePerformed;
             _fireAction.canceled += OnFireCanceled;
+            _reloadAction.performed += OnReloadPerformed;
             _toggleFireModeAction.performed += OnToggleFireModePerformed;
             _pointerPositionAction.performed += OnPointerPosition;
             _pointerPositionAction.canceled += OnPointerPosition;
@@ -79,14 +83,15 @@ namespace Rustline.Gameplay.Player
                 _crouchAction.canceled -= OnCrouch;
                 _fireAction.performed -= OnFirePerformed;
                 _fireAction.canceled -= OnFireCanceled;
+                _reloadAction.performed -= OnReloadPerformed;
                 _toggleFireModeAction.performed -= OnToggleFireModePerformed;
                 _pointerPositionAction.performed -= OnPointerPosition;
-            _pointerPositionAction.canceled -= OnPointerPosition;
-            _weaponCycleAction.performed -= OnWeaponCycle;
-            for (int slot = 0; slot < _weaponSlotActions.Length; slot++)
-            {
-                _weaponSlotActions[slot].performed -= OnWeaponSlot;
-            }
+                _pointerPositionAction.canceled -= OnPointerPosition;
+                _weaponCycleAction.performed -= OnWeaponCycle;
+                for (int slot = 0; slot < _weaponSlotActions.Length; slot++)
+                {
+                    _weaponSlotActions[slot].performed -= OnWeaponSlot;
+                }
                 _actionMap.Disable();
             }
 
@@ -125,6 +130,13 @@ namespace Rustline.Gameplay.Player
             return value;
         }
 
+        public bool ConsumeReloadPressed()
+        {
+            bool value = _reloadPressed;
+            _reloadPressed = false;
+            return value;
+        }
+
         public int ConsumeWeaponCycleDirection()
         {
             int value = _weaponCycleDirection;
@@ -144,6 +156,7 @@ namespace Rustline.Gameplay.Player
             _jumpPressed = false;
             _jumpReleased = false;
             _firePressed = false;
+            _reloadPressed = false;
             _toggleFireModePressed = false;
             _weaponCycleDirection = 0;
             _weaponSlotPressed = -1;
@@ -156,6 +169,7 @@ namespace Rustline.Gameplay.Player
             _jumpAction = _actionMap?.FindAction(jumpActionName, false);
             _crouchAction = _actionMap?.FindAction(crouchActionName, false);
             _fireAction = _actionMap?.FindAction(fireActionName, false);
+            _reloadAction = _actionMap?.FindAction(reloadActionName, false);
             _toggleFireModeAction = _actionMap?.FindAction(toggleFireModeActionName, false);
             _pointerPositionAction = _actionMap?.FindAction(pointerPositionActionName, false);
             _weaponCycleAction = _actionMap?.FindAction(weaponCycleActionName, false);
@@ -165,7 +179,7 @@ namespace Rustline.Gameplay.Player
             }
 
             if (_actionMap == null || _moveAction == null || _jumpAction == null || _crouchAction == null ||
-                _fireAction == null || _toggleFireModeAction == null || _pointerPositionAction == null ||
+                _fireAction == null || _reloadAction == null || _toggleFireModeAction == null || _pointerPositionAction == null ||
                 _weaponCycleAction == null)
             {
                 Debug.LogError(
@@ -235,6 +249,11 @@ namespace Rustline.Gameplay.Player
         private void OnPointerPosition(InputAction.CallbackContext context)
         {
             PointerScreenPosition = context.ReadValue<Vector2>();
+        }
+
+        private void OnReloadPerformed(InputAction.CallbackContext context)
+        {
+            _reloadPressed = true;
         }
 
         private void OnWeaponCycle(InputAction.CallbackContext context)
