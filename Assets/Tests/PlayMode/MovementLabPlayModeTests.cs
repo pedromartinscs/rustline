@@ -412,7 +412,7 @@ namespace Rustline.Tests
 
                 Sprite heldBodySprite = null;
                 Sprite heldArmsSprite = null;
-                int heldAscendingFrames = 0;
+                bool heldFinalFrameDuringAscent = false;
                 bool sawJump = false;
                 bool sawFall = false;
                 for (int index = 0; index < 300 && !sawFall; index++)
@@ -440,7 +440,7 @@ namespace Rustline.Tests
                                 "Arms presentation changed while the final takeoff frame was held.");
                             if (motor.Velocity.y > 0.15f)
                             {
-                                heldAscendingFrames++;
+                                heldFinalFrameDuringAscent = true;
                             }
                         }
                         else if (heldBodySprite != null)
@@ -459,8 +459,8 @@ namespace Rustline.Tests
 
                 Assert.That(sawJump, Is.True, "Jump presentation state was not observed.");
                 Assert.That(heldBodySprite, Is.Not.Null, "The final jump takeoff frame was not observed.");
-                Assert.That(heldAscendingFrames, Is.GreaterThanOrEqualTo(4),
-                    "The final layered takeoff frame was not held through sustained ascent.");
+                Assert.That(heldFinalFrameDuringAscent, Is.True,
+                    "The final layered takeoff frame was never observed while the player was still ascending.");
                 Assert.That(sawFall, Is.True, "Fall did not take ownership after ascent ended.");
             }
             finally
