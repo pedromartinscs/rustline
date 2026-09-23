@@ -225,11 +225,13 @@ The preferred initial policy is:
 - never replay stale input;
 - never allow visual center, logical selection, and arsenal ordering to diverge after the transition settles.
 
-The implemented authority retains only the latest requested available slot while a step is active. It completes that one discrete step, commits the incoming center weapon, then recalculates the shortest remaining route. Equipment is committed when the incoming card reaches center.
+The implemented authority retains only the latest requested available slot while a step is active. It completes that one discrete step, commits the incoming center weapon, then recalculates the shortest remaining route. Equipment is committed when the incoming card reaches center. Direct-slot requests use shortest-path routing with a successor tie-break; explicit wheel requests retain their requested direction, including a two-entry ring where both directions reach the same other slot.
 
 The production HUD renders four reusable sprite views into a logical-resolution transparent target and composites that target in the native-pixel final pass above the resolved world/penumbra. Its card material uses the shared five-level palette darkness lookup plus source-pixel-anchored Bayer binary-alpha dithering; it never uses CanvasGroup opacity.
 
 The lower neighbor is positioned from its own scaled half-height above the serialized lower-left margin, so the resting three-card stack remains inside the logical HUD target. The HUD camera renders its persistent logical target only when dirty or while a step is active; the final compositor continues to sample that retained target while the camera is disabled.
+
+The temporary carousel SpriteRenderers use the dedicated `RustlineHUD` layer at index 8, never Unity's generic `UI` layer. Deterministic setup claims that empty reserved layer or fails if another name occupies it; the carousel camera culls only that layer and both production World Cameras exclude it.
 
 ## Deferred visual tuning
 

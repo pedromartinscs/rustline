@@ -270,6 +270,7 @@ namespace Rustline.Editor
 
         private static void BuildAndValidate()
         {
+            RustlineWeaponSelectionSetup.EnsureRustlineHudLayer();
             EnsureFolder("Assets/Config/Player");
             EnsureFolder("Assets/Config/Weapons");
             EnsureFolder("Assets/Config/Weapons/Generated");
@@ -1176,6 +1177,7 @@ namespace Rustline.Editor
 
             PixelCameraFollow2D cameraFollow = nativePresentation.WorldCamera.GetComponent<PixelCameraFollow2D>();
             Require(cameraFollow != null, "MovementLab world camera is missing pixel follow.");
+            RustlineWeaponSelectionSetup.ExcludeRustlineHudFromWorldCamera(nativePresentation.WorldCamera);
             LongwatchCameraImpulse2D cameraImpulse =
                 GetOrAddComponent<LongwatchCameraImpulse2D>(nativePresentation.WorldCamera.gameObject);
             SetObjectReference(cameraImpulse, "weaponController", weaponController);
@@ -1963,6 +1965,7 @@ namespace Rustline.Editor
             worldCamera.allowHDR = false;
             worldCamera.allowMSAA = false;
             worldCamera.cullingMask = ~0;
+            RustlineWeaponSelectionSetup.ExcludeRustlineHudFromWorldCamera(worldCamera);
             worldCamera.depth = 0f;
             worldCameraObject.AddComponent<UniversalAdditionalCameraData>();
 
@@ -2685,7 +2688,10 @@ namespace Rustline.Editor
                 Require(GetComponentsInScene<Camera>(scene).Count == 2,
                     "MovementLab must contain only the world camera and the native-pixel RenderGraph driver camera.");
                 Require(worldCamera != null && worldCamera.orthographic && !worldCamera.allowHDR &&
-                    !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera"),
+                    !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera") &&
+                    LayerMask.NameToLayer(RustlineWeaponSelectionSetup.RustlineHudLayerName) ==
+                    RustlineWeaponSelectionSetup.RustlineHudLayerIndex &&
+                    (worldCamera.cullingMask & (1 << RustlineWeaponSelectionSetup.RustlineHudLayerIndex)) == 0,
                     "MovementLab logical world camera configuration is invalid.");
                 PixelCameraFollow2D cameraFollow = worldCamera.GetComponent<PixelCameraFollow2D>();
                 LongwatchCameraImpulse2D cameraImpulse = worldCamera.GetComponent<LongwatchCameraImpulse2D>();

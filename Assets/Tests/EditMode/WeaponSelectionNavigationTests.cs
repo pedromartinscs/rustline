@@ -4,7 +4,9 @@ using NUnit.Framework;
 using Rustline.Gameplay.Weapons;
 using Rustline.Presentation;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Rustline.Tests
 {
@@ -86,6 +88,33 @@ namespace Rustline.Tests
                 "Assets/Shaders/RustlineWeaponCarouselFade.shader");
             Assert.That(shader, Is.Not.Null);
             Assert.That(ShaderUtil.ShaderHasError(shader), Is.False);
+        }
+
+        [Test]
+        public void RustlineHudLayer_UsesReservedIndexAndDedicatedCameraMask()
+        {
+            Assert.That(LayerMask.NameToLayer(WeaponCarouselHud2D.RustlineHudLayerName),
+                Is.EqualTo(WeaponCarouselHud2D.RustlineHudLayerIndex));
+            Assert.That(WeaponCarouselHud2D.DedicatedHudCullingMask,
+                Is.EqualTo(1 << WeaponCarouselHud2D.RustlineHudLayerIndex));
+        }
+
+        [TestCase("Assets/Scenes/MovementLab.unity")]
+        [TestCase("Assets/Scenes/Demo/SalvageIntake.unity")]
+        public void ProductionWorldCameras_ExcludeRustlineHud(string scenePath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
+            try
+            {
+                NativePixelPresentation presentation = FindInScene<NativePixelPresentation>(scene);
+                Assert.That(presentation, Is.Not.Null, scenePath + " is missing native-pixel presentation.");
+                Assert.That(presentation.WorldCamera.cullingMask & WeaponCarouselHud2D.DedicatedHudCullingMask,
+                    Is.EqualTo(0), scenePath + " world camera renders RustlineHUD.");
+            }
+            finally
+            {
+                EditorSceneManager.CloseScene(scene, true);
+            }
         }
 
         [TestCase(0, 0)]
@@ -172,6 +201,45 @@ namespace Rustline.Tests
         }
 
         [Test]
+        public void TwoWeaponWheelSuccessor_PreservesSuccessorStepDirection()
+        {
+            GameObject instance = InstantiateTwoWeaponEquipment();
+            try
+            {
+                PlayerWeaponEquipment2D equipment = InitializeEquipment(instance);
+                Assert.That(equipment.RequestAdjacent(WeaponCarouselDirection2D.Successor), Is.True);
+                Assert.That(equipment.StepDirection, Is.EqualTo(WeaponCarouselDirection2D.Successor));
+            }
+            finally { Object.DestroyImmediate(instance); }
+        }
+
+        [Test]
+        public void TwoWeaponWheelPredecessor_PreservesPredecessorStepDirection()
+        {
+            GameObject instance = InstantiateTwoWeaponEquipment();
+            try
+            {
+                PlayerWeaponEquipment2D equipment = InitializeEquipment(instance);
+                Assert.That(equipment.RequestAdjacent(WeaponCarouselDirection2D.Predecessor), Is.True);
+                Assert.That(equipment.StepDirection, Is.EqualTo(WeaponCarouselDirection2D.Predecessor));
+            }
+            finally { Object.DestroyImmediate(instance); }
+        }
+
+        [Test]
+        public void TwoWeaponDirectSelection_EqualDistanceUsesSuccessorTieBreak()
+        {
+            GameObject instance = InstantiateTwoWeaponEquipment();
+            try
+            {
+                PlayerWeaponEquipment2D equipment = InitializeEquipment(instance);
+                Assert.That(equipment.RequestSlot(1), Is.True);
+                Assert.That(equipment.StepDirection, Is.EqualTo(WeaponCarouselDirection2D.Successor));
+            }
+            finally { Object.DestroyImmediate(instance); }
+        }
+
+        [Test]
         public void Unarmed_IsARealNoFireEquipmentState()
         {
             GameObject root = new GameObject("Unarmed Selection Test");
@@ -184,6 +252,40 @@ namespace Rustline.Tests
                 Assert.That(controller.TryFire(0f), Is.False);
             }
             finally { Object.DestroyImmediate(root); }
+        }
+
+        private static GameObject InstantiateTwoWeaponEquipment()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/Player.prefab");
+            GameObject instance = Object.Instantiate(prefab);
+            SerializedObject serialized = new SerializedObject(instance.GetComponent<PlayerWeaponEquipment2D>());
+            serialized.FindProperty("loadout").GetArrayElementAtIndex(2)
+                .FindPropertyRelative("available").boolValue = false;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return instance;
+        }
+
+        private static PlayerWeaponEquipment2D InitializeEquipment(GameObject instance)
+        {
+            PlayerWeaponEquipment2D equipment = instance.GetComponent<PlayerWeaponEquipment2D>();
+            MethodInfo awake = typeof(PlayerWeaponEquipment2D).GetMethod(
+                "Awake", BindingFlags.Instance | BindingFlags.NonPublic);
+            awake.Invoke(equipment, null);
+            return equipment;
+        }
+
+        private static T FindInScene<T>(Scene scene) where T : Component
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                T result = root.GetComponentInChildren<T>(true);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            return null;
         }
     }
 }

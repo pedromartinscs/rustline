@@ -179,6 +179,7 @@ namespace Rustline.Editor
 
         private static void BuildAndValidate()
         {
+            RustlineWeaponSelectionSetup.EnsureRustlineHudLayer();
             // Validate the frozen movement/player foundation before building content on top of it.
             RustlineM1ASetup.ValidateAllOrThrow(reopenMovementLabFromDisk: true);
 
@@ -334,6 +335,7 @@ namespace Rustline.Editor
             worldCamera.allowHDR = false;
             worldCamera.allowMSAA = false;
             worldCamera.cullingMask = ~0;
+            RustlineWeaponSelectionSetup.ExcludeRustlineHudFromWorldCamera(worldCamera);
             worldCamera.depth = 0f;
             worldCameraObject.AddComponent<UniversalAdditionalCameraData>();
 
@@ -482,6 +484,9 @@ namespace Rustline.Editor
             LongwatchCameraImpulse2D cameraImpulse = worldCamera?.GetComponent<LongwatchCameraImpulse2D>();
             Require(GetComponentsInScene<Camera>(scene).Count == 2 &&
                 worldCamera != null && worldCamera.CompareTag("MainCamera") && worldCamera.orthographic &&
+                LayerMask.NameToLayer(RustlineWeaponSelectionSetup.RustlineHudLayerName) ==
+                RustlineWeaponSelectionSetup.RustlineHudLayerIndex &&
+                (worldCamera.cullingMask & (1 << RustlineWeaponSelectionSetup.RustlineHudLayerIndex)) == 0 &&
                 driverCamera != null && driverCamera.cullingMask == 0 && !driverCamera.enabled &&
                 cameraFollow != null && cameraImpulse != null &&
                 cameraImpulse.CameraFollow == cameraFollow && cameraImpulse.WeaponController == weaponController,

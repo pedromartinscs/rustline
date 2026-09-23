@@ -43,6 +43,8 @@ namespace Rustline.Gameplay.Weapons
         private float _stepStartedAt;
         private WeaponCarouselDirection2D _stepDirection;
         private int _stepIncomingSlot = -1;
+        private bool _requestedDirectionIsExplicit;
+        private WeaponCarouselDirection2D _requestedDirection;
 
         public event Action<int, int, WeaponCarouselDirection2D> StepStarted;
         public event Action<WeaponLoadoutEntry2D> EquipmentChanged;
@@ -90,12 +92,22 @@ namespace Rustline.Gameplay.Weapons
 
         public bool RequestSlot(int slot)
         {
+            return RequestSlot(slot, false, WeaponCarouselDirection2D.Successor);
+        }
+
+        private bool RequestSlot(
+            int slot,
+            bool explicitDirection,
+            WeaponCarouselDirection2D direction)
+        {
             if (!IsAvailable(slot) || slot == _requestedSlot)
             {
                 return false;
             }
 
             _requestedSlot = slot;
+            _requestedDirectionIsExplicit = explicitDirection;
+            _requestedDirection = direction;
             if (!_stepActive && _requestedSlot != _selectedSlot)
             {
                 BeginNextStep();
@@ -116,8 +128,10 @@ namespace Rustline.Gameplay.Weapons
             int navigationBase = _stepActive && IsAvailable(_requestedSlot)
                 ? _requestedSlot
                 : _selectedSlot;
-            return RequestSlot(WeaponSelectionNavigation2D.GetAdjacentSlot(
-                _availableSlots, navigationBase, direction));
+            return RequestSlot(
+                WeaponSelectionNavigation2D.GetAdjacentSlot(_availableSlots, navigationBase, direction),
+                true,
+                direction);
         }
 
         public bool TryGetEntry(int slot, out WeaponLoadoutEntry2D entry)
@@ -166,8 +180,10 @@ namespace Rustline.Gameplay.Weapons
                 return;
             }
 
-            _stepDirection = WeaponSelectionNavigation2D.GetShortestDirection(
-                _availableSlots, _selectedSlot, _requestedSlot);
+            _stepDirection = _requestedDirectionIsExplicit
+                ? _requestedDirection
+                : WeaponSelectionNavigation2D.GetShortestDirection(
+                    _availableSlots, _selectedSlot, _requestedSlot);
             _stepIncomingSlot = WeaponSelectionNavigation2D.GetAdjacentSlot(
                 _availableSlots, _selectedSlot, _stepDirection);
             if (_stepIncomingSlot == _selectedSlot)

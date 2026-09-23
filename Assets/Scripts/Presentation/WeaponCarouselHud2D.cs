@@ -9,7 +9,8 @@ namespace Rustline.Presentation
     [DisallowMultipleComponent]
     public sealed class WeaponCarouselHud2D : MonoBehaviour
     {
-        private const int HudLayer = 5; // Project's named UI layer.
+        public const string RustlineHudLayerName = "RustlineHUD";
+        public const int RustlineHudLayerIndex = 8;
         private const int CardWidthPixels = 360;
         private const int CardHeightPixels = 175;
         [SerializeField] private PlayerWeaponEquipment2D equipment;
@@ -131,6 +132,11 @@ namespace Rustline.Presentation
             {
                 return;
             }
+            int hudLayer = ResolveHudLayer();
+            if (hudLayer < 0)
+            {
+                return;
+            }
             Release();
             _lastLogicalWidth = viewport.LogicalWidth;
             _lastLogicalHeight = viewport.LogicalHeight;
@@ -148,12 +154,15 @@ namespace Rustline.Presentation
             _camera.orthographic = true;
             _camera.clearFlags = CameraClearFlags.SolidColor;
             _camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
-            _camera.cullingMask = 1 << HudLayer;
+            _camera.cullingMask = 1 << hudLayer;
             _camera.allowHDR = false;
             _camera.allowMSAA = false;
             _camera.targetTexture = _target;
             _camera.enabled = false;
             _camera.depth = _presentation.WorldCamera.depth + 0.25f;
+            // The deterministic scene builders own this serialized contract. Keep this
+            // runtime exclusion as a defensive guard for scenes authored outside them.
+            _presentation.WorldCamera.cullingMask &= ~(1 << hudLayer);
             cameraObject.AddComponent<UniversalAdditionalCameraData>();
             _camera.orthographicSize = viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit);
             _camera.transform.position = new Vector3(
@@ -169,7 +178,7 @@ namespace Rustline.Presentation
         {
             for (int index = 0; index < _views.Length; index++)
             {
-                GameObject viewObject = new GameObject("Weapon Carousel Card " + index) { layer = HudLayer, hideFlags = HideFlags.HideAndDontSave };
+                GameObject viewObject = new GameObject("Weapon Carousel Card " + index) { layer = RustlineHudLayerIndex, hideFlags = HideFlags.HideAndDontSave };
                 viewObject.transform.SetParent(_root, false);
                 SpriteRenderer renderer = viewObject.AddComponent<SpriteRenderer>();
                 renderer.sortingOrder = index;
@@ -284,6 +293,20 @@ namespace Rustline.Presentation
                 neighborScale,
                 lowerLeftMarginPixels,
                 neighborVerticalSeparationPixels).center;
+        }
+
+        public static int DedicatedHudCullingMask => 1 << RustlineHudLayerIndex;
+
+        private static int ResolveHudLayer()
+        {
+            int layer = LayerMask.NameToLayer(RustlineHudLayerName);
+            if (layer == RustlineHudLayerIndex)
+            {
+                return layer;
+            }
+
+            Debug.LogError($"{RustlineHudLayerName} must exist at layer {RustlineHudLayerIndex}; carousel HUD was not created.");
+            return -1;
         }
 
         /// <summary>Pure logical-pixel layout used by runtime and focused EditMode tests.</summary>

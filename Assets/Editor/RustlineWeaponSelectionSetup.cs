@@ -11,6 +11,9 @@ namespace Rustline.Editor
     /// <summary>Deterministic production wiring for the Player loadout and Latch-9 package.</summary>
     public static class RustlineWeaponSelectionSetup
     {
+        internal const string RustlineHudLayerName = "RustlineHUD";
+        internal const int RustlineHudLayerIndex = 8;
+        private const string TagManagerPath = "ProjectSettings/TagManager.asset";
         private const string PlayerPrefabPath = "Assets/Prefabs/Player/Player.prefab";
         private const string LatchDefinitionPath = "Assets/Config/Weapons/Latch9.asset";
         private const string LongwatchDefinitionPath = "Assets/Config/Weapons/LongwatchDMR.asset";
@@ -26,6 +29,7 @@ namespace Rustline.Editor
 
         public static void BuildAndConfigure()
         {
+            EnsureRustlineHudLayer();
             RustlineM0ArtSetup.ConfigureLatch9Sheets();
             RustlineLatch9MuzzleSetup.BuildAndValidate();
             GameObject root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
@@ -38,6 +42,39 @@ namespace Rustline.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         }
+
+        /// <summary>Claims only the reserved internal HUD layer; never overwrites another contract.</summary>
+        internal static int EnsureRustlineHudLayer()
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(TagManagerPath);
+            Require(assets.Length > 0, "TagManager asset is missing.");
+            SerializedObject tagManager = new SerializedObject(assets[0]);
+            SerializedProperty layers = tagManager.FindProperty("layers");
+            Require(layers != null && layers.arraySize > RustlineHudLayerIndex,
+                "TagManager does not expose the reserved RustlineHUD layer index.");
+            SerializedProperty layer = layers.GetArrayElementAtIndex(RustlineHudLayerIndex);
+            string currentName = layer.stringValue;
+            Require(string.IsNullOrEmpty(currentName) || currentName == RustlineHudLayerName,
+                $"Layer {RustlineHudLayerIndex} is already reserved as '{currentName}', not {RustlineHudLayerName}.");
+            if (currentName != RustlineHudLayerName)
+            {
+                layer.stringValue = RustlineHudLayerName;
+                tagManager.ApplyModifiedPropertiesWithoutUndo();
+                AssetDatabase.SaveAssets();
+            }
+            Require(LayerMask.NameToLayer(RustlineHudLayerName) == RustlineHudLayerIndex,
+                "RustlineHUD layer did not resolve to its required index.");
+            return RustlineHudLayerIndex;
+        }
+
+        internal static void ExcludeRustlineHudFromWorldCamera(Camera worldCamera)
+        {
+            Require(worldCamera != null, "World camera is missing.");
+            int layer = EnsureRustlineHudLayer();
+            worldCamera.cullingMask &= ~(1 << layer);
+            EditorUtility.SetDirty(worldCamera);
+        }
+
 
         private static void Configure(GameObject root)
         {
