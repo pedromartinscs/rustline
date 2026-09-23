@@ -6,6 +6,8 @@ Shader "Hidden/Rustline/NativePixelPresent"
         _HudTex ("Logical HUD", 2D) = "black" {}
         _HudEnabled ("HUD Enabled", Float) = 0
         _SourceScaleBias ("Source Scale Bias", Vector) = (1, 1, 0, 0)
+        _OutputRect ("Normalized World Output Rect", Vector) = (0, 0, 1, 1)
+        _DeepSpaceColor ("Deep Space Color", Color) = (0, 0, 0, 1)
     }
 
     SubShader
@@ -33,6 +35,8 @@ Shader "Hidden/Rustline/NativePixelPresent"
             sampler2D _MainTex;
             sampler2D _HudTex;
             float4 _SourceScaleBias;
+            float4 _OutputRect;
+            float4 _DeepSpaceColor;
             float _HudEnabled;
 
             struct FullscreenVaryings
@@ -55,8 +59,22 @@ Shader "Hidden/Rustline/NativePixelPresent"
 
             float4 Fragment(FullscreenVaryings input) : SV_Target
             {
-                float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
-                float4 world = tex2D(_MainTex, sampleUv);
+                // The pass covers the entire physical backbuffer. The world remains in
+                // its centered native-pixel output rectangle while HUD may occupy the
+                // surrounding Deep Space area.
+                float2 worldUv = (input.uv - _OutputRect.xy) / _OutputRect.zw;
+                bool insideWorld =
+                    worldUv.x >= 0.0 && worldUv.x < 1.0 &&
+                    worldUv.y >= 0.0 && worldUv.y < 1.0;
+
+                float4 world = _DeepSpaceColor;
+                if (insideWorld)
+                {
+                    float2 sampleUv =
+                        worldUv * _SourceScaleBias.xy + _SourceScaleBias.zw;
+                    world = tex2D(_MainTex, sampleUv);
+                }
+
                 float4 hud = tex2D(_HudTex, input.uv);
                 return _HudEnabled > 0.5 ? lerp(world, hud, hud.a) : world;
             }

@@ -21,6 +21,7 @@ namespace Rustline.Presentation
         [SerializeField] private Shader paletteFadeShader;
         [FormerlySerializedAs("selectedScale")]
         [SerializeField, Range(0.1f, 1f)] private float cardScale = 0.60f;
+        [SerializeField, Min(0)] private int screenLeftPaddingPixels = 20;
         [SerializeField, Min(0)] private int lowerLeftMarginPixels = 16;
         [SerializeField, Min(0)] private int visualGapPixels = 20;
         [SerializeField, Min(1)] private int penumbraThicknessPixels = 20;
@@ -32,8 +33,9 @@ namespace Rustline.Presentation
         private readonly CardView[] _views = new CardView[ReusableViewCount];
         private bool _wasStepping;
         private bool _hudDirty;
-        private int _lastLogicalWidth;
-        private int _lastLogicalHeight;
+        private int _lastPhysicalWidth;
+        private int _lastPhysicalHeight;
+        private int _lastIntegerScale;
 
         private sealed class CardView
         {
@@ -142,8 +144,9 @@ namespace Rustline.Presentation
         private void EnsureTarget(NativePixelViewport viewport)
         {
             if (_target != null &&
-                _lastLogicalWidth == viewport.LogicalWidth &&
-                _lastLogicalHeight == viewport.LogicalHeight)
+                _lastPhysicalWidth == viewport.PhysicalWidth &&
+                _lastPhysicalHeight == viewport.PhysicalHeight &&
+                _lastIntegerScale == viewport.IntegerScale)
             {
                 return;
             }
@@ -155,17 +158,19 @@ namespace Rustline.Presentation
             }
 
             Release();
-            _lastLogicalWidth = viewport.LogicalWidth;
-            _lastLogicalHeight = viewport.LogicalHeight;
+            _lastPhysicalWidth = viewport.PhysicalWidth;
+            _lastPhysicalHeight = viewport.PhysicalHeight;
+            _lastIntegerScale = viewport.IntegerScale;
 
+            Vector2Int hudLogicalSize = CalculateFullScreenHudLogicalSize(viewport);
             _target = new RenderTexture(
-                viewport.LogicalWidth,
-                viewport.LogicalHeight,
+                hudLogicalSize.x,
+                hudLogicalSize.y,
                 0,
                 RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.sRGB)
             {
-                name = "Rustline Weapon Carousel - Logical HUD",
+                name = "Rustline Weapon Carousel - Full Screen Logical HUD",
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
                 antiAliasing = 1,
@@ -197,10 +202,10 @@ namespace Rustline.Presentation
 
             cameraObject.AddComponent<UniversalAdditionalCameraData>();
             _camera.orthographicSize =
-                viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit);
+                hudLogicalSize.y / (2f * NativePixelPresentation.PixelsPerUnit);
             _camera.transform.position = new Vector3(
-                viewport.LogicalWidth / (2f * NativePixelPresentation.PixelsPerUnit),
-                viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit),
+                hudLogicalSize.x / (2f * NativePixelPresentation.PixelsPerUnit),
+                hudLogicalSize.y / (2f * NativePixelPresentation.PixelsPerUnit),
                 -10f);
 
             _root = new GameObject("Weapon Carousel HUD Views")
@@ -248,7 +253,7 @@ namespace Rustline.Presentation
         private void DrawRest(int centerSlot)
         {
             _hudDirty = true;
-            Rect restingBounds = CalculateRestingCardBounds(cardScale, lowerLeftMarginPixels);
+            Rect restingBounds = GetRestingCardBounds();
             ConfigureSpatialPenumbra(restingBounds);
 
             SetCard(0, centerSlot, restingBounds.center);
@@ -268,7 +273,7 @@ namespace Rustline.Presentation
                 return;
             }
 
-            Rect restingBounds = CalculateRestingCardBounds(cardScale, lowerLeftMarginPixels);
+            Rect restingBounds = GetRestingCardBounds();
             ConfigureSpatialPenumbra(restingBounds);
 
             float stepDistance = CalculateStepDistance(cardScale, visualGapPixels);
@@ -316,7 +321,7 @@ namespace Rustline.Presentation
                 return;
             }
 
-            Rect restingBounds = CalculateRestingCardBounds(cardScale, lowerLeftMarginPixels);
+            Rect restingBounds = GetRestingCardBounds();
             Vector2 quantizedPosition = QuantizeAroundRestingCenter(
                 logicalPosition,
                 restingBounds.center);
@@ -334,15 +339,41 @@ namespace Rustline.Presentation
 
         public static int DedicatedHudCullingMask => 1 << RustlineHudLayerIndex;
 
-        /// <summary>Resting full-card bounds in logical HUD pixels.</summary>
+        private Rect GetRestingCardBounds()
+        {
+            NativePixelViewport viewport = _presentation.Viewport;
+            float preservedBottom =
+                viewport.OutputOffsetY / (float)Mathf.Max(1, viewport.IntegerScale) +
+                lowerLeftMarginPixels;
+            return CalculateRestingCardBounds(
+                cardScale,
+                screenLeftPaddingPixels,
+                preservedBottom);
+        }
+
+        /// <summary>
+        /// Full-screen logical HUD size. It covers the physical window rather than only
+        /// the centered native-pixel world output, so UI may occupy Deep Space surround.
+        /// </summary>
+        public static Vector2Int CalculateFullScreenHudLogicalSize(
+            NativePixelViewport viewport)
+        {
+            int scale = Mathf.Max(1, viewport.IntegerScale);
+            return new Vector2Int(
+                Mathf.CeilToInt(viewport.PhysicalWidth / (float)scale),
+                Mathf.CeilToInt(viewport.PhysicalHeight / (float)scale));
+        }
+
+        /// <summary>Resting full-card bounds in full-screen logical HUD pixels.</summary>
         public static Rect CalculateRestingCardBounds(
             float presentationScale,
-            int bottomLeftMarginPixels)
+            float screenLeftPaddingPixels,
+            float bottomPixels)
         {
             float scale = Mathf.Max(0f, presentationScale);
             return new Rect(
-                bottomLeftMarginPixels,
-                bottomLeftMarginPixels,
+                screenLeftPaddingPixels,
+                bottomPixels,
                 CardWidthPixels * scale,
                 CardHeightPixels * scale);
         }

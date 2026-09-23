@@ -34,7 +34,7 @@ No upper/lower neighbor previews are visible at rest.
 
 All weapon cards use the **same presentation scale**. There is no selected-vs-neighbor scaling and no apparent-depth resize during transitions.
 
-The card remains anchored in the lower-left HUD area. Because only one card is visible at rest, the final anchor may move farther left than the previous three-card stack. Exact lower-left margin remains a native-scale tuning value.
+The card remains anchored in the lower-left HUD area. Its horizontal anchor is screen-relative rather than world-viewport-relative: the production default places the card's left edge **20 logical pixels from the physical window's left edge**, even when that position lies in the Deep Space surround outside the centered world output. Vertical placement remains tied to the accepted lower world-output position so this change does not move the card up or down.
 
 The earlier visible three-card cylinder stack is no longer the target presentation. Cyclic order still exists in navigation and transition direction, but neighboring weapons are revealed only while entering during a switch.
 
@@ -259,7 +259,7 @@ The selector presentation should require only **two reusable card views** for th
 
 Do not encode navigation as a special case for exactly three weapons. The production set starts with three entries, but the equipment model supports direct slots `0..9`.
 
-The HUD continues to render through the dedicated logical HUD target and final native-pixel compositor above world penumbra.
+The HUD continues to render through a dedicated logical HUD target and final native-pixel compositor above world penumbra. The HUD target covers the full physical window in native logical pixels, while the world image remains centered inside its existing output rectangle. This allows screen-edge UI to occupy Deep Space surround without moving or resizing the world.
 
 Temporary selector SpriteRenderers use the dedicated `RustlineHUD` layer at index 8. The selector camera culls only that layer and production World Cameras exclude it.
 
@@ -302,7 +302,8 @@ At rest only the equipped card is rendered. During a step one outgoing and one i
 
 These remain centralized/serialized tuning values for native-scale playtesting:
 
-- exact lower-left resting anchor / margin;
+- screen-left padding — production default: **20 logical px**;
+- exact vertical bottom margin;
 - single constant card scale;
 - transition duration;
 - motion easing;

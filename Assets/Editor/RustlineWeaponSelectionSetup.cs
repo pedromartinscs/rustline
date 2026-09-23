@@ -113,6 +113,9 @@ namespace Rustline.Editor
             WeaponCarouselHud2D hud = GetOrAdd<WeaponCarouselHud2D>(root);
             Set(hud, "equipment", equipment);
             Set(hud, "paletteFadeShader", AssetDatabase.LoadAssetAtPath<Shader>(CarouselShaderPath));
+            SerializedObject hudSerialized = new SerializedObject(hud);
+            hudSerialized.FindProperty("screenLeftPaddingPixels").intValue = 20;
+            hudSerialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void ConfigureLatchPresenter(PlayerLatch9AimPresenter2D presenter, PlayerAim2D aim, PlayerAnimator2D animator, PlayerUnarmedArmsPresenter2D unarmed, SpriteRenderer body, SpriteRenderer arms, PlayerLongwatchAimPresenter2D longwatch)

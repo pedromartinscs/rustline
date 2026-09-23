@@ -15,6 +15,8 @@ namespace Rustline.Presentation
         private const string PenumbraPassName = "Rustline Logical Penumbra";
         private const string PresentPassName = "Rustline Native Pixel Present";
         private static readonly Color PresentationClearColor = ((Color)RustlinePalette.DeepSpace).linear;
+        private static readonly int OutputRectId = Shader.PropertyToID("_OutputRect");
+        private static readonly int DeepSpaceColorId = Shader.PropertyToID("_DeepSpaceColor");
 
         private static Camera s_DriverCamera;
         private static RenderTexture s_WorldTarget;
@@ -55,6 +57,18 @@ namespace Rustline.Presentation
             s_Viewport = viewport;
             s_PenumbraEnabled = penumbraEnabled;
             s_HudTarget = hudTarget;
+
+            float inversePhysicalWidth = 1f / Mathf.Max(1, viewport.PhysicalWidth);
+            float inversePhysicalHeight = 1f / Mathf.Max(1, viewport.PhysicalHeight);
+            s_PresentationMaterial.SetVector(
+                OutputRectId,
+                new Vector4(
+                    viewport.OutputOffsetX * inversePhysicalWidth,
+                    viewport.OutputOffsetY * inversePhysicalHeight,
+                    viewport.OutputWidth * inversePhysicalWidth,
+                    viewport.OutputHeight * inversePhysicalHeight));
+            s_PresentationMaterial.SetColor(DeepSpaceColorId, PresentationClearColor);
+
             // NativePixelPresentation replaces, rather than resizes, its persistent
             // targets. Refresh import metadata on configuration, not every frame.
             s_WorldTargetInfo = CreateRenderTargetInfo(worldTarget);
@@ -224,10 +238,10 @@ namespace Rustline.Presentation
                     // authored display-space #01020B directly would be encoded again.
                     passData.clearColor = PresentationClearColor;
                     passData.viewport = new Rect(
-                        s_Viewport.OutputOffsetX,
-                        s_Viewport.OutputOffsetY,
-                        s_Viewport.OutputWidth,
-                        s_Viewport.OutputHeight);
+                        0f,
+                        0f,
+                        s_Viewport.PhysicalWidth,
+                        s_Viewport.PhysicalHeight);
 
                     // Material state changes only with target/toggle state, while this handle
                     // remains the authoritative RenderGraph read dependency.

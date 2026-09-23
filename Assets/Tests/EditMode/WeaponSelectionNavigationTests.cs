@@ -55,9 +55,9 @@ namespace Rustline.Tests
         {
             const int logicalWidth = 800;
             const int logicalHeight = 600;
-            Rect bounds = WeaponCarouselHud2D.CalculateRestingCardBounds(0.60f, 16);
+            Rect bounds = WeaponCarouselHud2D.CalculateRestingCardBounds(0.60f, 20f, 16f);
 
-            Assert.That(bounds.xMin, Is.EqualTo(16f));
+            Assert.That(bounds.xMin, Is.EqualTo(20f));
             Assert.That(bounds.yMin, Is.EqualTo(16f));
             Assert.That(bounds.width, Is.EqualTo(216f).Within(0.001f));
             Assert.That(bounds.height, Is.EqualTo(105f).Within(0.001f));
@@ -72,7 +72,7 @@ namespace Rustline.Tests
         {
             const float scale = 0.60f;
             const int gap = 20;
-            Rect resting = WeaponCarouselHud2D.CalculateRestingCardBounds(scale, 16);
+            Rect resting = WeaponCarouselHud2D.CalculateRestingCardBounds(scale, 20f, 16f);
             float distance = WeaponCarouselHud2D.CalculateStepDistance(scale, gap);
             float[] samples = { 0f, 0.25f, 0.5f, 0.75f, 1f };
 
@@ -94,7 +94,7 @@ namespace Rustline.Tests
         [Test]
         public void SpatialPenumbra_UsesFixedMirroredHudSpaceBands()
         {
-            Rect resting = WeaponCarouselHud2D.CalculateRestingCardBounds(0.60f, 16);
+            Rect resting = WeaponCarouselHud2D.CalculateRestingCardBounds(0.60f, 20f, 16f);
             const float thickness = 20f;
 
             Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
@@ -114,6 +114,27 @@ namespace Rustline.Tests
                 resting.yMin - 20f, resting.yMin, resting.yMax, thickness), Is.EqualTo(1f).Within(0.001f));
             Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
                 resting.yMin - 21f, resting.yMin, resting.yMax, thickness), Is.GreaterThan(1f));
+        }
+
+        [Test]
+        public void FullScreenHudLogicalSize_CoversPhysicalWindowAtNativeScale()
+        {
+            NativePixelViewport viewport = NativePixelViewportMath.Calculate(3840, 2160);
+            Vector2Int hudSize = WeaponCarouselHud2D.CalculateFullScreenHudLogicalSize(viewport);
+
+            Assert.That(viewport.IntegerScale, Is.EqualTo(2));
+            Assert.That(hudSize.x, Is.EqualTo(1920));
+            Assert.That(hudSize.y, Is.EqualTo(1080));
+            Assert.That(viewport.OutputOffsetX, Is.GreaterThan(0));
+        }
+
+        [Test]
+        public void NativePixelPresentShader_CompilesWithoutErrors()
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                "Assets/Shaders/RustlineNativePixelPresent.shader");
+            Assert.That(shader, Is.Not.Null);
+            Assert.That(ShaderUtil.ShaderHasError(shader), Is.False);
         }
 
         [Test]
