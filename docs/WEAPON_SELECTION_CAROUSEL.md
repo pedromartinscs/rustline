@@ -213,6 +213,66 @@ Rendering must preserve Rustline's pixel-art identity:
 
 Because incoming and outgoing rectangles never overlap, sorting order must not be used as a visual solution for crossing cards.
 
+## Weapon information panel
+
+The selector includes a text/status block immediately to the **right of the weapon card**. The card remains the visual identity; the right-side block communicates the equipped weapon's current functional state.
+
+Initial layout contract:
+
+- keep a clear horizontal gap between the card and information block; initial tuning target: **16 logical px**;
+- the lower part of the information block shows the weapon name and current mode;
+- the upper part shows ammunition/resource state when applicable;
+- the information block uses the same logical-HUD coordinate system as the card and may occupy the Deep Space surround;
+- exact glyph spacing and vertical insets remain centralized tuning values.
+
+Display strings are uppercase programmer-facing HUD labels:
+
+| Equipment state | Upper resource line | Lower identity/mode line |
+|---|---|---|
+| Longwatch DMR, Semi | `50 / 50 ×3` style | `LONGWATCH DMR (SEMI)` |
+| Longwatch DMR, Automatic | `50 / 50 ×3` style | `LONGWATCH DMR (AUTO)` |
+| Latch-9, Conventional | `∞` | `LATCH-9 (PLASMA)` |
+| Latch-9, Bouncing | `∞` | `LATCH-9 (PHOTON FIELD)` |
+| Unarmed | no resource line | `HANDS` |
+
+The HUD labels do **not** rename the gameplay enums. Runtime/code may continue to use `WeaponFireMode2D.SemiAutomatic` / `Automatic` and `WeaponShotMode2D.Conventional` / `Bouncing`; the strings above are presentation terminology.
+
+### Information-panel transitions
+
+The card and its information block form one visual equipment unit.
+
+During a selector step:
+
+- outgoing card + outgoing information move together;
+- incoming card + incoming information move together;
+- both use the same Y offset as their corresponding card;
+- the existing fixed upper/lower spatial penumbra applies to **both card pixels and text glyphs**;
+- text must not globally alpha-fade independently from the card;
+- outgoing/incoming visual units retain the existing no-overlap vertical separation.
+
+At rest, mode/ammunition changes update the information block in place without moving the card.
+
+Right-click mode changes must be visible immediately:
+
+- Longwatch: `(SEMI)` ↔ `(AUTO)`;
+- Latch-9: `(PLASMA)` ↔ `(PHOTON FIELD)`.
+
+Longwatch firing/reloading must update its upper line immediately.
+
+### Pixel-text rules
+
+Text is part of the same native-pixel HUD and must obey Rustline's presentation constraints:
+
+- deterministic bitmap/pixel glyphs;
+- Point/nearest sampling only;
+- Canonical-28 opaque RGB plus binary transparency only;
+- no OS/dynamic-font antialiasing;
+- no ordinary alpha fade;
+- spatial darkness uses the same canonical darkness lookup and HUD-space penumbra semantics as the weapon card;
+- stable glyph raster with no crawling/shimmer while the HUD is stationary.
+
+A small internal bitmap font is acceptable. The implementation should not add a large UI/font dependency merely for these few HUD strings. The required glyph set includes uppercase A-Z, digits 0-9, space, `-`, `/`, `(`, `)`, multiplication sign `×`, and infinity `∞`.
+
 ## Gameplay selection model
 
 There is one explicit current weapon slot / current weapon definition owned by the equipment system.
@@ -377,6 +437,8 @@ At minimum, automated coverage should verify:
 Human validation should verify:
 
 - the single-card lower-left composition reads clearly at native scale;
+- the right-side identity/mode text is legible without competing with the card;
+- Longwatch ammo, Latch infinity, and Hands/no-resource states read immediately;
 - the card can sit farther left without feeling cramped;
 - successor/predecessor motion is immediately understandable;
 - cards appear to enter/leave through fixed darkness bands rather than globally fading;

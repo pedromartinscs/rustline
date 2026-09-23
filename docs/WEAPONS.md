@@ -56,7 +56,83 @@ The current vertical-slice target is deliberately much smaller than the full ros
 - **Longwatch DMR** — stronger precision weapon with a finite ammunition reserve during the demo level;
 - **Latch-9** — weaker compact fallback sidearm with effectively unlimited ammunition for the demo.
 
-The Latch-9 now has both presentation and playable projectile ballistics in the Editor harness. The ammo-economy/switching layer is still deferred, so the current harness directly equips the Latch-9 while its presentation preview is active. The approved damage/ricochet behavior is implemented. Its current `80`-unit range, `1/12 s` cooldown, and `30 units/s` projectile speed are prototype tuning values and are **not balance-locked Latch values**. The `80`-unit range already acts as the projectile lifetime budget: every travelled segment consumes it, including reflected segments, so an unblocked projectile cannot remain active indefinitely.
+The Latch-9 now has persistent production presentation and playable projectile ballistics alongside the Longwatch weapon-selection system. The approved damage/ricochet behavior is implemented; the finite Longwatch magazine economy described below is the next gameplay layer. Its current `80`-unit range, `1/12 s` cooldown, and `30 units/s` projectile speed are prototype tuning values and are **not balance-locked Latch values**. The `80`-unit range already acts as the projectile lifetime budget: every travelled segment consumes it, including reflected segments, so an unblocked projectile cannot remain active indefinitely.
+
+## Demo ammunition and reload contract
+
+The itch.io demo uses deliberately asymmetric ammunition rules.
+
+### Longwatch DMR
+
+Longwatch uses finite detachable magazines.
+
+Initial demo loadout:
+
+- magazine capacity: **50 rounds**;
+- current loaded magazine starts full at **50 / 50**;
+- reserve magazines start at **3**;
+- therefore the player begins with **4 magazines total**: one loaded + three reserve.
+
+The HUD represents this as:
+
+```text
+50 / 50 ×3
+```
+
+After firing 13 accepted shots:
+
+```text
+37 / 50 ×3
+```
+
+Only a successfully accepted Longwatch shot consumes one round. A blocked fire attempt, cooldown rejection, invalid aim/state, or any other attempt that does not actually fire must not consume ammunition.
+
+Reload is bound to **R** for the current keyboard contract.
+
+Reload rules:
+
+- if the current Longwatch magazine is already full, reload is a no-op and consumes no reserve magazine;
+- if there are no reserve magazines, reload is a no-op;
+- otherwise the current magazine is discarded **with all remaining rounds still inside it**;
+- one reserve magazine is consumed;
+- the loaded magazine becomes a fresh full 50-round magazine;
+- discarded rounds are permanently lost;
+- an empty magazine does **not** auto-reload; the player must press R;
+- when current rounds are zero, Longwatch cannot fire until a valid reload occurs.
+
+Examples:
+
+```text
+50 / 50 ×3
+fire 20
+30 / 50 ×3
+reload
+50 / 50 ×2
+
+fire 49
+1 / 50 ×2
+reload
+50 / 50 ×1
+```
+
+Longwatch ammunition state is runtime player state and must survive switching away from and back to the weapon. Mutable round counts must not be stored in the shared `WeaponDefinition2D` asset.
+
+### Latch-9
+
+Latch-9 retains its already approved **effectively infinite energy/ammunition** contract.
+
+- firing never decrements a finite ammo counter;
+- there is no Latch reload action for the demo;
+- both Conventional and Bouncing use the same infinite resource;
+- HUD resource display is simply `∞`.
+
+### Unarmed
+
+Unarmed / Hands has no ammunition resource and shows no resource line.
+
+### Out of scope for this pass
+
+This contract does not yet define ammo pickups, partial-magazine recovery, reload animation/audio, inventory weight, or weapon-specific magazine objects in the world. The first implementation may make a valid reload state transition immediately on R; later presentation can build on that gameplay authority without changing the ammunition rules above.
 
 ## Approximate visual scale
 
@@ -165,6 +241,6 @@ Current production status:
 8. Crouch directional package. **Done.**
 9. Fall aim plus Jump/Land carry. **Done.**
 10. Freeze the reusable first-weapon art/import/runtime convention. **Done for the current movement set.**
-11. Build the next weapon only when the demo needs it. **Latch-9 presentation and visible projectile ballistics are implemented; ammo economy/weapon switching remains a separate demo-system task.**
+11. Build the next weapon only when the demo needs it. **Latch-9 presentation, visible projectile ballistics, and persistent weapon switching are implemented; the Longwatch magazine economy is the next demo-system task.**
 
 A long weapon was the correct first stress test because angular, clipping, hand-placement, and pivot errors were easier to see than with a compact pistol. The Latch-9 reuses proven concepts where appropriate without mechanically inheriting Longwatch-sized art requirements.
