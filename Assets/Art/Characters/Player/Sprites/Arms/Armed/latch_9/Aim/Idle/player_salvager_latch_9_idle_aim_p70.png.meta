@@ -171,12 +171,12 @@ TextureImporter:
       name: player_salvager_latch_9_idle_aim_p70_0
       rect:
         serializedVersion: 2
-        x: 16
-        y: 45
-        width: 18
-        height: 29
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -193,12 +193,12 @@ TextureImporter:
       name: player_salvager_latch_9_idle_aim_p70_1
       rect:
         serializedVersion: 2
-        x: 97
-        y: 46
-        width: 18
-        height: 29
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 80
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -215,7 +215,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: cc43f9af1a0a57349954ebaedd19fc08
     internalID: 0
     vertices: []
     indices: 

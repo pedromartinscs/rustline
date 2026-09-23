@@ -174,12 +174,12 @@ TextureImporter:
       name: player_salvager_latch_9_land_carry_0
       rect:
         serializedVersion: 2
-        x: 25
+        x: 0
         y: 0
-        width: 24
-        height: 29
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -196,12 +196,12 @@ TextureImporter:
       name: player_salvager_latch_9_land_carry_1
       rect:
         serializedVersion: 2
-        x: 61
-        y: 15
-        width: 20
-        height: 27
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 48
+        y: 0
+        width: 48
+        height: 64
+      alignment: 9
+      pivot: {x: 0.5, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -214,33 +214,11 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
-    - serializedVersion: 2
-      name: player_salvager_latch_9_land_carry_2
-      rect:
-        serializedVersion: 2
-        x: 82
-        y: 23
-        width: 12
-        height: 10
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b247365a6c2c53c70800000000000000
-      internalID: 8950273992902800427
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
     outline: []
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: da20f52776dfa144fbae3c526f3dd441
     internalID: 0
     vertices: []
     indices: 
@@ -252,7 +230,6 @@ TextureImporter:
     nameFileIdTable:
       player_salvager_latch_9_land_carry_0: -7901908018591404355
       player_salvager_latch_9_land_carry_1: -4320181255945334155
-      player_salvager_latch_9_land_carry_2: 8950273992902800427
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

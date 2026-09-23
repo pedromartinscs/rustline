@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Rustline.Editor
 {
-    [InitializeOnLoad]
+    // Retained as explicit preview/setup reference; production wiring is serialized on Player.
     public static class Latch9GameplayPreviewPlayMode
     {
         private const string DefinitionPath = "Assets/Config/Weapons/Latch9.asset";
@@ -17,14 +17,8 @@ namespace Rustline.Editor
             "Assets/Art/Effects/Weapons/latch_9/latch_9_muzzle_flash_bouncing.png";
         private static int _remainingInstallAttempts;
 
-        static Latch9GameplayPreviewPlayMode()
-        {
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-            if (EditorApplication.isPlaying)
-            {
-                QueueInstall();
-            }
-        }
+        // No automatic Play Mode installation. RustlineWeaponSelectionSetup invokes
+        // RustlineLatch9MuzzleSetup explicitly before serializing the prefab.
 
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {

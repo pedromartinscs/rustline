@@ -183,12 +183,12 @@ TextureImporter:
       name: player_salvager_latch_9_crouch_aim_m80_0
       rect:
         serializedVersion: 2
-        x: 21
-        y: 14
-        width: 16
-        height: 30
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -205,12 +205,12 @@ TextureImporter:
       name: player_salvager_latch_9_crouch_aim_m80_1
       rect:
         serializedVersion: 2
-        x: 99
-        y: 14
-        width: 16
-        height: 30
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 80
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -227,12 +227,12 @@ TextureImporter:
       name: player_salvager_latch_9_crouch_aim_m80_2
       rect:
         serializedVersion: 2
-        x: 179
-        y: 14
-        width: 16
-        height: 30
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 160
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -249,12 +249,12 @@ TextureImporter:
       name: player_salvager_latch_9_crouch_aim_m80_3
       rect:
         serializedVersion: 2
-        x: 261
-        y: 14
-        width: 16
-        height: 30
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 240
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -271,12 +271,12 @@ TextureImporter:
       name: player_salvager_latch_9_crouch_aim_m80_4
       rect:
         serializedVersion: 2
-        x: 339
-        y: 14
-        width: 16
-        height: 30
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 320
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -293,12 +293,12 @@ TextureImporter:
       name: player_salvager_latch_9_crouch_aim_m80_5
       rect:
         serializedVersion: 2
-        x: 419
-        y: 14
-        width: 16
-        height: 30
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 400
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -315,7 +315,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 7f9f2a49cc450c845ab466211e008f16
     internalID: 0
     vertices: []
     indices: 

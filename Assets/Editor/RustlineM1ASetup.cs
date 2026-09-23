@@ -298,6 +298,10 @@ namespace Rustline.Editor
                 jumpDustPrefab,
                 groundLayer,
                 combatTargetLayer);
+            // Persistent selection owns both Longwatch and Latch-9; preview installers
+            // are deliberately not part of normal gameplay setup.
+            RustlineWeaponSelectionSetup.BuildAndConfigure();
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) == null)
             {
                 CreateMovementLab(config, prefab, collisionTile, groundLayer, combatTargetLayer);

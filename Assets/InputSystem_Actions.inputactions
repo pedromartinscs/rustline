@@ -10,7 +10,18 @@
                 { "name": "Crouch", "type": "Button", "id": "bb410d41-3e5a-45b7-ae6d-30fb4796b597", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": true },
                 { "name": "Fire", "type": "Button", "id": "c738691d-4c6a-465a-a344-a54207086a47", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
                 { "name": "ToggleFireMode", "type": "Button", "id": "722b07f0-35df-49c0-91be-35160d9a2c47", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
-                { "name": "PointerPosition", "type": "PassThrough", "id": "54e54971-e5db-4a6c-9f66-1d09680d6582", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true }
+                { "name": "PointerPosition", "type": "PassThrough", "id": "54e54971-e5db-4a6c-9f66-1d09680d6582", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": true },
+                { "name": "WeaponCycle", "type": "PassThrough", "id": "fb6c834b-08b3-48ba-9abc-21bdb3985a11", "expectedControlType": "Vector2", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot0", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b801", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot1", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b802", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot2", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b803", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot3", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b804", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot4", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b805", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot5", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b806", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot6", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b807", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot7", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b808", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot8", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b809", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false },
+                { "name": "WeaponSlot9", "type": "Button", "id": "d22a8c3f-300c-4c74-b2ec-dcdc64b3b810", "expectedControlType": "Button", "processors": "", "interactions": "", "initialStateCheck": false }
             ],
             "bindings": [
                 { "name": "", "id": "bd9ce29b-5eac-4a75-a2f4-b99e47172b73", "path": "<Gamepad>/leftStick", "interactions": "", "processors": "", "groups": "Gamepad", "action": "Move", "isComposite": false, "isPartOfComposite": false },
@@ -33,7 +44,18 @@
                 { "name": "", "id": "18061ffb-5473-4f3a-9588-58a16084eea0", "path": "<Gamepad>/leftStick/down", "interactions": "Press", "processors": "", "groups": "Gamepad", "action": "Crouch", "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "0cbc0354-3e82-4600-93e4-1fdf3a0b0aa2", "path": "<Mouse>/leftButton", "interactions": "Press", "processors": "", "groups": "", "action": "Fire", "isComposite": false, "isPartOfComposite": false },
                 { "name": "", "id": "a981d1ca-dc29-4f89-9f99-b5c7bcb983f4", "path": "<Mouse>/rightButton", "interactions": "Press", "processors": "", "groups": "", "action": "ToggleFireMode", "isComposite": false, "isPartOfComposite": false },
-                { "name": "", "id": "f1507d13-e230-40f1-9c59-8ed7421af1c3", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "", "action": "PointerPosition", "isComposite": false, "isPartOfComposite": false }
+                { "name": "", "id": "f1507d13-e230-40f1-9c59-8ed7421af1c3", "path": "<Pointer>/position", "interactions": "", "processors": "", "groups": "", "action": "PointerPosition", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d01", "path": "<Mouse>/scroll", "interactions": "", "processors": "", "groups": "", "action": "WeaponCycle", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d02", "path": "<Keyboard>/digit0", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot0", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d03", "path": "<Keyboard>/digit1", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot1", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d04", "path": "<Keyboard>/digit2", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot2", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d05", "path": "<Keyboard>/digit3", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot3", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d06", "path": "<Keyboard>/digit4", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot4", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d07", "path": "<Keyboard>/digit5", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot5", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d08", "path": "<Keyboard>/digit6", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot6", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d09", "path": "<Keyboard>/digit7", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot7", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d10", "path": "<Keyboard>/digit8", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot8", "isComposite": false, "isPartOfComposite": false },
+                { "name": "", "id": "38da0934-072d-438a-acf4-b10b2a5a2d11", "path": "<Keyboard>/digit9", "interactions": "Press", "processors": "", "groups": "Keyboard", "action": "WeaponSlot9", "isComposite": false, "isPartOfComposite": false }
             ]
         }
     ],

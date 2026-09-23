@@ -177,12 +177,12 @@ TextureImporter:
       name: player_salvager_latch_9_backpedal_aim_p80_0
       rect:
         serializedVersion: 2
-        x: 12
-        y: 46
-        width: 16
-        height: 31
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -199,12 +199,12 @@ TextureImporter:
       name: player_salvager_latch_9_backpedal_aim_p80_1
       rect:
         serializedVersion: 2
-        x: 92
-        y: 46
-        width: 16
-        height: 31
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 80
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -221,12 +221,12 @@ TextureImporter:
       name: player_salvager_latch_9_backpedal_aim_p80_2
       rect:
         serializedVersion: 2
-        x: 174
-        y: 46
-        width: 16
-        height: 31
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 160
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -243,12 +243,12 @@ TextureImporter:
       name: player_salvager_latch_9_backpedal_aim_p80_3
       rect:
         serializedVersion: 2
-        x: 254
-        y: 45
-        width: 16
-        height: 31
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 240
+        y: 0
+        width: 80
+        height: 96
+      alignment: 9
+      pivot: {x: 0.3, y: 0.083333336}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -265,7 +265,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 19254521e3b2bc6499e44bd7d2c00b89
     internalID: 0
     vertices: []
     indices: 

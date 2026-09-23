@@ -39,6 +39,7 @@ namespace Rustline.Editor
         private const string LongwatchLandCarryPath =
             PlayerRoot + "/Sprites/Arms/Armed/longwatch_dmr/Carry/Land/" +
             "player_salvager_longwatch_dmr_land_carry.png";
+        private const string Latch9Root = PlayerRoot + "/Sprites/Arms/Armed/latch_9";
         private const string MovementEffectsRoot = "Assets/Art/Effects/Movement";
         private const string JumpDustPath = MovementEffectsRoot + "/player_jump_dust.png";
         private const string LongwatchMuzzleFlashPath =
@@ -376,6 +377,27 @@ namespace Rustline.Editor
             importer.SaveAndReimport();
         }
 
+        internal static void ConfigureLatch9Sheets()
+        {
+            string[] states = { "idle", "run", "backpedal", "crouch", "fall" };
+            int[] frameCounts = { 2, 6, 4, 6, 1 };
+            foreach (LongwatchDirectionSpec direction in LongwatchDirections)
+            {
+                for (int state = 0; state < states.Length; state++)
+                {
+                    string fileName = "player_salvager_latch_9_" + states[state] + "_aim_" + direction.Suffix;
+                    string path = Latch9Root + "/Aim/" + char.ToUpper(states[state][0]) + states[state].Substring(1) + "/" + fileName + ".png";
+                    ConfigureFixedGrid(path, 80, 96, frameCounts[state],
+                        index => fileName + "_" + index,
+                        new Vector2(24f / 80f, 8f / 96f), false);
+                }
+            }
+            ConfigureFixedGrid(Latch9Root + "/Carry/Jump/player_salvager_latch_9_jump_carry.png", 48, 64, 3,
+                index => "player_salvager_latch_9_jump_carry_" + index, new Vector2(0.5f, 0f), false);
+            ConfigureFixedGrid(Latch9Root + "/Carry/Land/player_salvager_latch_9_land_carry.png", 48, 64, 2,
+                index => "player_salvager_latch_9_land_carry_" + index, new Vector2(0.5f, 0f), false);
+        }
+
         private static void ConfigureJumpDust()
         {
             ConfigureFixedGrid(
@@ -411,7 +433,7 @@ namespace Rustline.Editor
             }
         }
 
-        private static void ConfigureFixedGrid(
+        internal static void ConfigureFixedGrid(
             string path,
             int cellWidth,
             int cellHeight,

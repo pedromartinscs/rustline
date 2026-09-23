@@ -3,6 +3,8 @@ Shader "Hidden/Rustline/NativePixelPresent"
     Properties
     {
         _MainTex ("Logical Image", 2D) = "black" {}
+        _HudTex ("Logical HUD", 2D) = "black" {}
+        _HudEnabled ("HUD Enabled", Float) = 0
         _SourceScaleBias ("Source Scale Bias", Vector) = (1, 1, 0, 0)
     }
 
@@ -29,7 +31,9 @@ Shader "Hidden/Rustline/NativePixelPresent"
             #pragma fragment Fragment
 
             sampler2D _MainTex;
+            sampler2D _HudTex;
             float4 _SourceScaleBias;
+            float _HudEnabled;
 
             struct FullscreenVaryings
             {
@@ -52,7 +56,9 @@ Shader "Hidden/Rustline/NativePixelPresent"
             float4 Fragment(FullscreenVaryings input) : SV_Target
             {
                 float2 sampleUv = input.uv * _SourceScaleBias.xy + _SourceScaleBias.zw;
-                return tex2D(_MainTex, sampleUv);
+                float4 world = tex2D(_MainTex, sampleUv);
+                float4 hud = tex2D(_HudTex, input.uv);
+                return _HudEnabled > 0.5 ? lerp(world, hud, hud.a) : world;
             }
             ENDHLSL
         }

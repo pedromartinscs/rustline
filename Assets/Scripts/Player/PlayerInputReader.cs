@@ -13,6 +13,8 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string fireActionName = "Fire";
         [SerializeField] private string toggleFireModeActionName = "ToggleFireMode";
         [SerializeField] private string pointerPositionActionName = "PointerPosition";
+        [SerializeField] private string weaponCycleActionName = "WeaponCycle";
+        [SerializeField] private string weaponSlotActionPrefix = "WeaponSlot";
 
         private InputActionMap _actionMap;
         private InputAction _moveAction;
@@ -21,11 +23,15 @@ namespace Rustline.Gameplay.Player
         private InputAction _fireAction;
         private InputAction _toggleFireModeAction;
         private InputAction _pointerPositionAction;
+        private InputAction _weaponCycleAction;
+        private readonly InputAction[] _weaponSlotActions = new InputAction[10];
         private bool _jumpPressed;
         private bool _jumpReleased;
         private bool _firePressed;
         private bool _fireHeld;
         private bool _toggleFireModePressed;
+        private int _weaponCycleDirection;
+        private int _weaponSlotPressed = -1;
 
         public float MoveX { get; private set; }
         public bool JumpHeld { get; private set; }
@@ -52,6 +58,11 @@ namespace Rustline.Gameplay.Player
             _toggleFireModeAction.performed += OnToggleFireModePerformed;
             _pointerPositionAction.performed += OnPointerPosition;
             _pointerPositionAction.canceled += OnPointerPosition;
+            _weaponCycleAction.performed += OnWeaponCycle;
+            for (int slot = 0; slot < _weaponSlotActions.Length; slot++)
+            {
+                _weaponSlotActions[slot].performed += OnWeaponSlot;
+            }
             _actionMap.Enable();
             PointerScreenPosition = _pointerPositionAction.ReadValue<Vector2>();
         }
@@ -70,7 +81,12 @@ namespace Rustline.Gameplay.Player
                 _fireAction.canceled -= OnFireCanceled;
                 _toggleFireModeAction.performed -= OnToggleFireModePerformed;
                 _pointerPositionAction.performed -= OnPointerPosition;
-                _pointerPositionAction.canceled -= OnPointerPosition;
+            _pointerPositionAction.canceled -= OnPointerPosition;
+            _weaponCycleAction.performed -= OnWeaponCycle;
+            for (int slot = 0; slot < _weaponSlotActions.Length; slot++)
+            {
+                _weaponSlotActions[slot].performed -= OnWeaponSlot;
+            }
                 _actionMap.Disable();
             }
 
@@ -109,12 +125,28 @@ namespace Rustline.Gameplay.Player
             return value;
         }
 
+        public int ConsumeWeaponCycleDirection()
+        {
+            int value = _weaponCycleDirection;
+            _weaponCycleDirection = 0;
+            return value;
+        }
+
+        public int ConsumeWeaponSlotPressed()
+        {
+            int value = _weaponSlotPressed;
+            _weaponSlotPressed = -1;
+            return value;
+        }
+
         public void ClearTransientState()
         {
             _jumpPressed = false;
             _jumpReleased = false;
             _firePressed = false;
             _toggleFireModePressed = false;
+            _weaponCycleDirection = 0;
+            _weaponSlotPressed = -1;
         }
 
         private void ResolveActions()
@@ -126,14 +158,31 @@ namespace Rustline.Gameplay.Player
             _fireAction = _actionMap?.FindAction(fireActionName, false);
             _toggleFireModeAction = _actionMap?.FindAction(toggleFireModeActionName, false);
             _pointerPositionAction = _actionMap?.FindAction(pointerPositionActionName, false);
+            _weaponCycleAction = _actionMap?.FindAction(weaponCycleActionName, false);
+            for (int slot = 0; slot < _weaponSlotActions.Length; slot++)
+            {
+                _weaponSlotActions[slot] = _actionMap?.FindAction(weaponSlotActionPrefix + slot, false);
+            }
 
             if (_actionMap == null || _moveAction == null || _jumpAction == null || _crouchAction == null ||
-                _fireAction == null || _toggleFireModeAction == null || _pointerPositionAction == null)
+                _fireAction == null || _toggleFireModeAction == null || _pointerPositionAction == null ||
+                _weaponCycleAction == null)
             {
                 Debug.LogError(
-                    "Rustline player input requires Player/Move, Player/Jump, Player/Crouch, Player/Fire, Player/ToggleFireMode, and Player/PointerPosition actions.",
+                    "Rustline player input requires its movement, fire, pointer, and weapon-selection actions.",
                     this);
                 _actionMap = null;
+                return;
+            }
+
+            for (int slot = 0; slot < _weaponSlotActions.Length; slot++)
+            {
+                if (_weaponSlotActions[slot] == null)
+                {
+                    Debug.LogError("Rustline player input requires Player/WeaponSlot0 through Player/WeaponSlot9.", this);
+                    _actionMap = null;
+                    return;
+                }
             }
         }
 
@@ -186,6 +235,29 @@ namespace Rustline.Gameplay.Player
         private void OnPointerPosition(InputAction.CallbackContext context)
         {
             PointerScreenPosition = context.ReadValue<Vector2>();
+        }
+
+        private void OnWeaponCycle(InputAction.CallbackContext context)
+        {
+            float value = context.ReadValue<Vector2>().y;
+            if (value > 0f)
+            {
+                _weaponCycleDirection = 1;
+            }
+            else if (value < 0f)
+            {
+                _weaponCycleDirection = -1;
+            }
+        }
+
+        private void OnWeaponSlot(InputAction.CallbackContext context)
+        {
+            string actionName = context.action.name;
+            if (actionName.Length > weaponSlotActionPrefix.Length &&
+                int.TryParse(actionName.Substring(weaponSlotActionPrefix.Length), out int slot))
+            {
+                _weaponSlotPressed = slot;
+            }
         }
     }
 }

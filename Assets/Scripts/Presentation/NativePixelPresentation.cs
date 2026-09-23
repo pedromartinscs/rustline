@@ -34,6 +34,8 @@ namespace Rustline.Presentation
         private static readonly int DarknessLookupId = Shader.PropertyToID("_DarknessLookup");
         private static readonly int DeepSpaceColorId = Shader.PropertyToID("_DeepSpaceColor");
         private static readonly int SourceScaleBiasId = Shader.PropertyToID("_SourceScaleBias");
+        private static readonly int HudTexId = Shader.PropertyToID("_HudTex");
+        private static readonly int HudEnabledId = Shader.PropertyToID("_HudEnabled");
 
         [SerializeField] private Camera worldCamera;
         [SerializeField] private Camera processingCamera;
@@ -48,6 +50,7 @@ namespace Rustline.Presentation
         private Texture2D _darknessLookupTexture;
         private Material _penumbraMaterial;
         private Material _presentationMaterial;
+        private RenderTexture _weaponCarouselHudTarget;
         private bool _hasLogicalSize;
         private bool _hasPlayerPixelCenter;
         private bool _hasWorldPixelOrigin;
@@ -79,6 +82,18 @@ namespace Rustline.Presentation
             ? _presentationMaterial.GetTexture(MainTexId)
             : null;
 
+        /// <summary>Registers the one logical HUD surface composited above penumbra.</summary>
+        public void SetWeaponCarouselHudSource(RenderTexture source)
+        {
+            _weaponCarouselHudTarget = source;
+            if (_presentationMaterial != null)
+            {
+                _presentationMaterial.SetTexture(HudTexId, source);
+                _presentationMaterial.SetFloat(HudEnabledId, source != null ? 1f : 0f);
+            }
+            ApplyPenumbraState();
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)
@@ -109,6 +124,7 @@ namespace Rustline.Presentation
             _presentationMaterial.SetVector(
                 SourceScaleBiasId,
                 new Vector4(1f, 1f, 0f, 0f));
+            _presentationMaterial.SetFloat(HudEnabledId, 0f);
             _penumbraMaterial.SetFloat(FullVisibleRadiusId, FullyVisibleRadiusPixels);
             _penumbraMaterial.SetFloat(FullDarknessRadiusId, FullDarknessRadiusPixels);
             _penumbraMaterial.SetFloat(PenumbraEnabledId, 1f);
@@ -121,6 +137,7 @@ namespace Rustline.Presentation
         private void OnDisable()
         {
             RustlineNativePixelPresentFeature.Clear(processingCamera);
+            _weaponCarouselHudTarget = null;
 
             if (worldCamera != null && worldCamera.targetTexture == _worldTarget)
             {
@@ -330,6 +347,8 @@ namespace Rustline.Presentation
             }
 
             bool usePenumbra = penumbraEnabled && _penumbraTarget != null;
+            _presentationMaterial.SetTexture(HudTexId, _weaponCarouselHudTarget);
+            _presentationMaterial.SetFloat(HudEnabledId, _weaponCarouselHudTarget != null ? 1f : 0f);
 
             // The driver camera remains active in both modes. Penumbra OFF skips only the
             // logical effect pass and presents the raw world target directly.
@@ -345,7 +364,8 @@ namespace Rustline.Presentation
                 _penumbraMaterial,
                 _presentationMaterial,
                 _viewport,
-                usePenumbra);
+                usePenumbra,
+                _weaponCarouselHudTarget);
         }
 
         private static Material CreateRuntimeMaterial(Shader shader, string materialName)

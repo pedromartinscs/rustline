@@ -12,7 +12,7 @@ namespace Rustline.Editor
     /// States without Latch-9 art remain unarmed. Nothing is persisted to the scene
     /// or player prefab, and Longwatch gameplay is disabled for this visual preview.
     /// </summary>
-    [InitializeOnLoad]
+    // Retained only as historical preview source. Production uses serialized Player prefab wiring.
     public static class Latch9IdlePreviewPlayMode
     {
         private const string IdleRoot =
@@ -66,14 +66,7 @@ namespace Rustline.Editor
             -10, -20, -30, -40, -50, -60, -70, -80, -90,
         };
 
-        static Latch9IdlePreviewPlayMode()
-        {
-            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-            if (EditorApplication.isPlaying)
-            {
-                EditorApplication.delayCall += InstallPreview;
-            }
-        }
+        // No automatic Play Mode installation: this harness must never replace production equipment.
 
         private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {

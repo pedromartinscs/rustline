@@ -22,9 +22,11 @@ namespace Rustline.Presentation
         private static Material s_PenumbraMaterial;
         private static Material s_PresentationMaterial;
         private static NativePixelViewport s_Viewport;
+        private static RenderTexture s_HudTarget;
         private static bool s_PenumbraEnabled;
         private static RenderTargetInfo s_WorldTargetInfo;
         private static RenderTargetInfo s_ResolvedTargetInfo;
+        private static RenderTargetInfo s_HudTargetInfo;
 
         private NativePixelPresentPass _pass;
 
@@ -42,7 +44,8 @@ namespace Rustline.Presentation
             Material penumbraMaterial,
             Material presentationMaterial,
             NativePixelViewport viewport,
-            bool penumbraEnabled)
+            bool penumbraEnabled,
+            RenderTexture hudTarget)
         {
             s_DriverCamera = driverCamera;
             s_WorldTarget = worldTarget;
@@ -51,10 +54,12 @@ namespace Rustline.Presentation
             s_PresentationMaterial = presentationMaterial;
             s_Viewport = viewport;
             s_PenumbraEnabled = penumbraEnabled;
+            s_HudTarget = hudTarget;
             // NativePixelPresentation replaces, rather than resizes, its persistent
             // targets. Refresh import metadata on configuration, not every frame.
             s_WorldTargetInfo = CreateRenderTargetInfo(worldTarget);
             s_ResolvedTargetInfo = CreateRenderTargetInfo(resolvedTarget);
+            s_HudTargetInfo = CreateRenderTargetInfo(hudTarget);
         }
 
         private static RenderTargetInfo CreateRenderTargetInfo(RenderTexture target)
@@ -84,8 +89,10 @@ namespace Rustline.Presentation
             s_PresentationMaterial = null;
             s_Viewport = default;
             s_PenumbraEnabled = false;
+            s_HudTarget = null;
             s_WorldTargetInfo = default;
             s_ResolvedTargetInfo = default;
+            s_HudTargetInfo = default;
         }
 
         public override void Create()
@@ -118,6 +125,7 @@ namespace Rustline.Presentation
         {
             private RTHandle _worldHandle;
             private RTHandle _resolvedHandle;
+            private RTHandle _hudHandle;
 
             public void Dispose()
             {
@@ -125,6 +133,8 @@ namespace Rustline.Presentation
                 _worldHandle = null;
                 _resolvedHandle?.Release();
                 _resolvedHandle = null;
+                _hudHandle?.Release();
+                _hudHandle = null;
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -140,6 +150,7 @@ namespace Rustline.Presentation
                     _worldHandle,
                     s_WorldTargetInfo);
                 TextureHandle selectedSource = worldSource;
+                TextureHandle hudSource = default;
 
                 if (s_PenumbraEnabled)
                 {
@@ -151,6 +162,12 @@ namespace Rustline.Presentation
                     selectedSource = resolvedTarget;
                 }
 
+                if (s_HudTarget != null)
+                {
+                    EnsureHandle(ref _hudHandle, s_HudTarget, "Rustline Weapon Carousel HUD - Imported");
+                    hudSource = renderGraph.ImportTexture(_hudHandle, s_HudTargetInfo);
+                }
+
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 TextureHandle backBuffer = resourceData.backBufferColor;
                 if (!backBuffer.IsValid())
@@ -158,7 +175,7 @@ namespace Rustline.Presentation
                     return;
                 }
 
-                RecordPresentationPass(renderGraph, selectedSource, backBuffer);
+                RecordPresentationPass(renderGraph, selectedSource, hudSource, backBuffer);
                 resourceData.SwitchActiveTexturesToBackbuffer();
             }
 
@@ -195,6 +212,7 @@ namespace Rustline.Presentation
             private static void RecordPresentationPass(
                 RenderGraph renderGraph,
                 TextureHandle source,
+                TextureHandle hud,
                 TextureHandle destination)
             {
                 using (var builder = renderGraph.AddRasterRenderPass<PassData>(
@@ -214,6 +232,10 @@ namespace Rustline.Presentation
                     // Material state changes only with target/toggle state, while this handle
                     // remains the authoritative RenderGraph read dependency.
                     builder.UseTexture(source, AccessFlags.Read);
+                    if (hud.IsValid())
+                    {
+                        builder.UseTexture(hud, AccessFlags.Read);
+                    }
                     builder.SetRenderAttachment(destination, 0, AccessFlags.WriteAll);
                     builder.SetRenderFunc(static (PassData data, RasterGraphContext context) =>
                     {

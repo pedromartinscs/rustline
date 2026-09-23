@@ -225,7 +225,9 @@ The preferred initial policy is:
 - never replay stale input;
 - never allow visual center, logical selection, and arsenal ordering to diverge after the transition settles.
 
-Exact animation interruption/blending mechanics may be chosen during implementation provided the final state obeys those invariants.
+The implemented authority retains only the latest requested available slot while a step is active. It completes that one discrete step, commits the incoming center weapon, then recalculates the shortest remaining route. Equipment is committed when the incoming card reaches center.
+
+The production HUD renders four reusable sprite views into a logical-resolution transparent target and composites that target in the native-pixel final pass above the resolved world/penumbra. Its card material uses the shared five-level palette darkness lookup plus source-pixel-anchored Bayer binary-alpha dithering; it never uses CanvasGroup opacity.
 
 ## Deferred visual tuning
 
@@ -239,7 +241,7 @@ The three 360×175 production cards are now committed. The following presentatio
 - easing curve;
 - precise pixel-dither progression;
 - whether UI movement uses discrete pixel steps or another nearest-neighbor-safe quantization;
-- exact gameplay equip-commit moment during a visual transition.
+- exact gameplay equip-commit moment during a visual transition (currently: incoming center completes its step).
 
 These should be tuned from the actual art instead of invented before it exists.
 
