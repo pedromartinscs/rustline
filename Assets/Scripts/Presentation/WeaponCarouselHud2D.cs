@@ -25,6 +25,7 @@ namespace Rustline.Presentation
         private RenderTexture _target;
         private readonly CardView[] _views = new CardView[4];
         private bool _wasStepping;
+        private bool _hudDirty;
         private int _lastLogicalWidth;
         private int _lastLogicalHeight;
 
@@ -92,11 +93,16 @@ namespace Rustline.Presentation
                 DrawRest(equipment.SelectedSlot);
                 _wasStepping = false;
             }
+
+            // The target remains composited while its camera is disabled. Enable only
+            // for a dirty frame or a live transition; URP renders it later this frame.
+            _camera.enabled = _hudDirty || equipment.IsStepActive;
+            _hudDirty = false;
         }
 
         private void OnStepStarted(int fromSlot, int _, WeaponCarouselDirection2D direction)
         {
-            if (_presentation != null)
+            if (_presentation != null && _views[0] != null)
             {
                 DrawStep(0f, direction, fromSlot);
             }
@@ -104,7 +110,7 @@ namespace Rustline.Presentation
 
         private void OnEquipmentChanged(WeaponLoadoutEntry2D _)
         {
-            if (!equipment.IsStepActive)
+            if (!equipment.IsStepActive && _views[0] != null)
             {
                 DrawRest(equipment.SelectedSlot);
             }
@@ -146,6 +152,7 @@ namespace Rustline.Presentation
             _camera.allowHDR = false;
             _camera.allowMSAA = false;
             _camera.targetTexture = _target;
+            _camera.enabled = false;
             _camera.depth = _presentation.WorldCamera.depth + 0.25f;
             cameraObject.AddComponent<UniversalAdditionalCameraData>();
             _camera.orthographicSize = viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit);
@@ -176,6 +183,7 @@ namespace Rustline.Presentation
 
         private void DrawRest(int centerSlot)
         {
+            _hudDirty = true;
             if (!TryGetNeighbors(centerSlot, out int upper, out int lower))
             {
                 HideAll();
@@ -202,6 +210,7 @@ namespace Rustline.Presentation
 
         private void DrawStep(float progress, WeaponCarouselDirection2D direction, int centerSlot)
         {
+            _hudDirty = true;
             if (!TryGetNeighbors(centerSlot, out int upper, out int lower))
             {
                 HideAll();
@@ -269,11 +278,31 @@ namespace Rustline.Presentation
 
         private Vector2 NeighborPosition(int level)
         {
-            float scale = level == 0 ? selectedScale : neighborScale;
-            float x = lowerLeftMarginPixels + CardWidthPixels * scale * 0.5f;
-            float y = lowerLeftMarginPixels + CardHeightPixels * neighborScale * 0.5f +
-                level * neighborVerticalSeparationPixels;
-            return new Vector2(x, y);
+            return CalculateCardBounds(
+                level,
+                selectedScale,
+                neighborScale,
+                lowerLeftMarginPixels,
+                neighborVerticalSeparationPixels).center;
+        }
+
+        /// <summary>Pure logical-pixel layout used by runtime and focused EditMode tests.</summary>
+        public static Rect CalculateCardBounds(
+            int level,
+            float selectedCardScale,
+            float neighborCardScale,
+            int bottomLeftMarginPixels,
+            int neighborSeparationPixels)
+        {
+            float scale = level == 0 ? selectedCardScale : neighborCardScale;
+            float width = CardWidthPixels * scale;
+            float height = CardHeightPixels * scale;
+            float lowerNeighborCenterY = bottomLeftMarginPixels +
+                CardHeightPixels * neighborCardScale * 0.5f;
+            // level -1 is the lower neighbor. Starting it at its half-height above
+            // the configured margin preserves the full card rather than clipping it.
+            float centerY = lowerNeighborCenterY + (level + 1) * neighborSeparationPixels;
+            return new Rect(bottomLeftMarginPixels, centerY - height * 0.5f, width, height);
         }
         private static Vector2 Lerp(Vector2 from, Vector2 to, float t) => Vector2.Lerp(from, to, t);
         private static float Lerp(float from, float to, float t) => Mathf.Lerp(from, to, t);

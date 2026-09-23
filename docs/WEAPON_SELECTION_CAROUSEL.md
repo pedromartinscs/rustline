@@ -229,6 +229,8 @@ The implemented authority retains only the latest requested available slot while
 
 The production HUD renders four reusable sprite views into a logical-resolution transparent target and composites that target in the native-pixel final pass above the resolved world/penumbra. Its card material uses the shared five-level palette darkness lookup plus source-pixel-anchored Bayer binary-alpha dithering; it never uses CanvasGroup opacity.
 
+The lower neighbor is positioned from its own scaled half-height above the serialized lower-left margin, so the resting three-card stack remains inside the logical HUD target. The HUD camera renders its persistent logical target only when dirty or while a step is active; the final compositor continues to sample that retained target while the camera is disabled.
+
 ## Deferred visual tuning
 
 The three 360×175 production cards are now committed. The following presentation values remain tuning parameters rather than hard gameplay contracts and should be centralized/serialized so native-scale playtesting can refine them:

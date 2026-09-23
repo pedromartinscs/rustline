@@ -39,7 +39,12 @@ Shader "Rustline/Weapon Carousel Palette Fade"
                 float4 source = tex2D(_MainTex, input.uv);
                 if (source.a < 0.5) { discard; }
                 float fade = saturate(_Fade);
-                int level = min((int)floor((1.0 - fade) * 4.0), 4);
+                // Levels 0..3 span the normal visible phase. At the start of the
+                // final quarter survivors are already Deep Space (level 4), then
+                // source-pixel Bayer discard alone resolves them to transparency.
+                int level = fade <= 0.25
+                    ? 4
+                    : min((int)floor((1.0 - fade) * (4.0 / 0.75)), 3);
                 int3 quantized = (int3)round(saturate(source.rgb) * 31.0);
                 int lookupX = quantized.r + quantized.g * 32;
                 int lookupY = quantized.b + level * 32;

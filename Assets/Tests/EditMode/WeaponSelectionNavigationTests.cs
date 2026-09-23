@@ -64,6 +64,30 @@ namespace Rustline.Tests
             Assert.That(transition.IncomingNeighbor, Is.EqualTo(2));
         }
 
+        [Test]
+        public void CarouselLayout_KeepsAllInitialCardsInsideRepresentativeLogicalViewport()
+        {
+            const int logicalWidth = 800;
+            const int logicalHeight = 600;
+            for (int level = -1; level <= 1; level++)
+            {
+                Rect bounds = WeaponCarouselHud2D.CalculateCardBounds(level, 0.60f, 0.48f, 16, 86);
+                Assert.That(bounds.xMin, Is.EqualTo(16f));
+                Assert.That(bounds.yMin, Is.GreaterThanOrEqualTo(16f));
+                Assert.That(bounds.xMax, Is.LessThanOrEqualTo(logicalWidth));
+                Assert.That(bounds.yMax, Is.LessThanOrEqualTo(logicalHeight));
+            }
+        }
+
+        [Test]
+        public void CarouselFadeShader_CompilesWithoutErrors()
+        {
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(
+                "Assets/Shaders/RustlineWeaponCarouselFade.shader");
+            Assert.That(shader, Is.Not.Null);
+            Assert.That(ShaderUtil.ShaderHasError(shader), Is.False);
+        }
+
         [TestCase(0, 0)]
         [TestCase(1, 0)]
         [TestCase(2, 1)]
@@ -120,6 +144,29 @@ namespace Rustline.Tests
                 Assert.That(controller.WeaponDefinition.WeaponId, Is.EqualTo("longwatch_dmr"));
                 Assert.That(latch.enabled, Is.False);
                 Assert.That(longwatch.enabled, Is.True);
+            }
+            finally { Object.DestroyImmediate(instance); }
+        }
+
+        [Test]
+        public void EquipmentAuthority_RepeatedAdjacentRequestsAdvanceLatestTargetDuringStep()
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/Player/Player.prefab");
+            GameObject instance = Object.Instantiate(prefab);
+            try
+            {
+                PlayerWeaponEquipment2D equipment = instance.GetComponent<PlayerWeaponEquipment2D>();
+                MethodInfo awake = typeof(PlayerWeaponEquipment2D).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic);
+                awake.Invoke(equipment, null);
+
+                Assert.That(equipment.SelectedSlot, Is.EqualTo(2));
+                Assert.That(equipment.RequestAdjacent(WeaponCarouselDirection2D.Successor), Is.True);
+                Assert.That(equipment.RequestedSlot, Is.EqualTo(0));
+                Assert.That(equipment.RequestAdjacent(WeaponCarouselDirection2D.Successor), Is.True);
+                Assert.That(equipment.RequestedSlot, Is.EqualTo(1));
+
+                Assert.That(equipment.RequestAdjacent(WeaponCarouselDirection2D.Predecessor), Is.True);
+                Assert.That(equipment.RequestedSlot, Is.EqualTo(0));
             }
             finally { Object.DestroyImmediate(instance); }
         }

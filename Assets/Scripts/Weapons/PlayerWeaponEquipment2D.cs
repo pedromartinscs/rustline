@@ -111,7 +111,13 @@ namespace Rustline.Gameplay.Weapons
                 return false;
             }
 
-            return RequestSlot(WeaponSelectionNavigation2D.GetAdjacentSlot(_availableSlots, _selectedSlot, direction));
+            // Wheel input during a visible step advances the latest target, not the
+            // still-equipped center. The active step remains intact and commits normally.
+            int navigationBase = _stepActive && IsAvailable(_requestedSlot)
+                ? _requestedSlot
+                : _selectedSlot;
+            return RequestSlot(WeaponSelectionNavigation2D.GetAdjacentSlot(
+                _availableSlots, navigationBase, direction));
         }
 
         public bool TryGetEntry(int slot, out WeaponLoadoutEntry2D entry)
