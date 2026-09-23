@@ -45,44 +45,79 @@ namespace Rustline.Tests
         }
 
         [Test]
-        public void FourViewSuccessorTransition_UsesOutgoingLowerAndIncomingUpper()
+        public void SelectorPresentation_UsesExactlyTwoReusableViews()
         {
-            WeaponCarouselTransitionSlots2D transition = WeaponCarouselTransition2D.GetSlots(
-                new List<int> { 0, 1, 2, 3, 4, 5 }, 4, WeaponCarouselDirection2D.Successor);
-            Assert.That(transition.OutgoingNeighbor, Is.EqualTo(3));
-            Assert.That(transition.MovingCenter, Is.EqualTo(4));
-            Assert.That(transition.MovingNeighbor, Is.EqualTo(5));
-            Assert.That(transition.IncomingNeighbor, Is.EqualTo(0));
+            Assert.That(WeaponCarouselHud2D.ReusableViewCount, Is.EqualTo(2));
         }
 
         [Test]
-        public void FourViewPredecessorTransition_IsExactMirror()
-        {
-            WeaponCarouselTransitionSlots2D transition = WeaponCarouselTransition2D.GetSlots(
-                new List<int> { 0, 1, 2, 3, 4, 5 }, 4, WeaponCarouselDirection2D.Predecessor);
-            Assert.That(transition.OutgoingNeighbor, Is.EqualTo(5));
-            Assert.That(transition.MovingCenter, Is.EqualTo(4));
-            Assert.That(transition.MovingNeighbor, Is.EqualTo(3));
-            Assert.That(transition.IncomingNeighbor, Is.EqualTo(2));
-        }
-
-        [Test]
-        public void CarouselLayout_KeepsAllInitialCardsInsideRepresentativeLogicalViewport()
+        public void RestingCard_UsesOneFixedScaleInsideRepresentativeLogicalViewport()
         {
             const int logicalWidth = 800;
             const int logicalHeight = 600;
-            for (int level = -1; level <= 1; level++)
+            Rect bounds = WeaponCarouselHud2D.CalculateRestingCardBounds(0.60f, 16);
+
+            Assert.That(bounds.xMin, Is.EqualTo(16f));
+            Assert.That(bounds.yMin, Is.EqualTo(16f));
+            Assert.That(bounds.width, Is.EqualTo(216f).Within(0.001f));
+            Assert.That(bounds.height, Is.EqualTo(105f).Within(0.001f));
+            Assert.That(bounds.xMax, Is.LessThanOrEqualTo(logicalWidth));
+            Assert.That(bounds.yMax, Is.LessThanOrEqualTo(logicalHeight));
+        }
+
+        [TestCase(WeaponCarouselDirection2D.Successor)]
+        [TestCase(WeaponCarouselDirection2D.Predecessor)]
+        public void TransitionCards_KeepConstantNonOverlappingSeparation(
+            WeaponCarouselDirection2D direction)
+        {
+            const float scale = 0.60f;
+            const int gap = 20;
+            Rect resting = WeaponCarouselHud2D.CalculateRestingCardBounds(scale, 16);
+            float distance = WeaponCarouselHud2D.CalculateStepDistance(scale, gap);
+            float[] samples = { 0f, 0.25f, 0.5f, 0.75f, 1f };
+
+            foreach (float progress in samples)
             {
-                Rect bounds = WeaponCarouselHud2D.CalculateCardBounds(level, 0.60f, 0.48f, 16, 86);
-                Assert.That(bounds.xMin, Is.EqualTo(16f));
-                Assert.That(bounds.yMin, Is.GreaterThanOrEqualTo(16f));
-                Assert.That(bounds.xMax, Is.LessThanOrEqualTo(logicalWidth));
-                Assert.That(bounds.yMax, Is.LessThanOrEqualTo(logicalHeight));
+                Vector2 centers = WeaponCarouselHud2D.CalculateTransitionCenterYs(
+                    resting.center.y,
+                    distance,
+                    progress,
+                    direction);
+                float centerSeparation = Mathf.Abs(centers.y - centers.x);
+                float clearGap = centerSeparation - resting.height;
+
+                Assert.That(centerSeparation, Is.EqualTo(distance).Within(0.001f));
+                Assert.That(clearGap, Is.GreaterThanOrEqualTo(gap - 0.001f));
             }
         }
 
         [Test]
-        public void CarouselFadeShader_CompilesWithoutErrors()
+        public void SpatialPenumbra_UsesFixedMirroredHudSpaceBands()
+        {
+            Rect resting = WeaponCarouselHud2D.CalculateRestingCardBounds(0.60f, 16);
+            const float thickness = 20f;
+
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.center.y, resting.yMin, resting.yMax, thickness), Is.EqualTo(0f));
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMax, resting.yMin, resting.yMax, thickness), Is.EqualTo(0f));
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMax + 10f, resting.yMin, resting.yMax, thickness), Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMax + 20f, resting.yMin, resting.yMax, thickness), Is.EqualTo(1f).Within(0.001f));
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMax + 21f, resting.yMin, resting.yMax, thickness), Is.GreaterThan(1f));
+
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMin - 10f, resting.yMin, resting.yMax, thickness), Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMin - 20f, resting.yMin, resting.yMax, thickness), Is.EqualTo(1f).Within(0.001f));
+            Assert.That(WeaponCarouselHud2D.CalculateSpatialPenumbraDistance(
+                resting.yMin - 21f, resting.yMin, resting.yMax, thickness), Is.GreaterThan(1f));
+        }
+
+        [Test]
+        public void CarouselSpatialPenumbraShader_CompilesWithoutErrors()
         {
             Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(
                 "Assets/Shaders/RustlineWeaponCarouselFade.shader");

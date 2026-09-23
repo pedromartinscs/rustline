@@ -1,30 +1,35 @@
 using Rustline.Gameplay.Weapons;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.Serialization;
 
 namespace Rustline.Presentation
 {
-    /// <summary>Logical-pixel HUD renderer for the equipment authority's carousel steps.</summary>
+    /// <summary>Logical-pixel HUD renderer for the equipment authority's weapon selector.</summary>
     [DefaultExecutionOrder(900)]
     [DisallowMultipleComponent]
     public sealed class WeaponCarouselHud2D : MonoBehaviour
     {
         public const string RustlineHudLayerName = "RustlineHUD";
         public const int RustlineHudLayerIndex = 8;
+        public const int ReusableViewCount = 2;
+
         private const int CardWidthPixels = 360;
         private const int CardHeightPixels = 175;
+
         [SerializeField] private PlayerWeaponEquipment2D equipment;
         [SerializeField] private Shader paletteFadeShader;
-        [SerializeField, Range(0.1f, 1f)] private float selectedScale = 0.60f;
-        [SerializeField, Range(0.1f, 1f)] private float neighborScale = 0.48f;
+        [FormerlySerializedAs("selectedScale")]
+        [SerializeField, Range(0.1f, 1f)] private float cardScale = 0.60f;
         [SerializeField, Min(0)] private int lowerLeftMarginPixels = 16;
-        [SerializeField, Min(1)] private int neighborVerticalSeparationPixels = 86;
+        [SerializeField, Min(0)] private int visualGapPixels = 20;
+        [SerializeField, Min(1)] private int penumbraThicknessPixels = 20;
 
         private NativePixelPresentation _presentation;
         private Camera _camera;
         private Transform _root;
         private RenderTexture _target;
-        private readonly CardView[] _views = new CardView[4];
+        private readonly CardView[] _views = new CardView[ReusableViewCount];
         private bool _wasStepping;
         private bool _hudDirty;
         private int _lastLogicalWidth;
@@ -61,6 +66,7 @@ namespace Rustline.Presentation
                 equipment.StepStarted -= OnStepStarted;
                 equipment.EquipmentChanged -= OnEquipmentChanged;
             }
+
             _presentation?.SetWeaponCarouselHudSource(null);
             Release();
         }
@@ -78,6 +84,7 @@ namespace Rustline.Presentation
             {
                 return;
             }
+
             EnsureTarget(viewport);
             if (_camera == null)
             {
@@ -86,7 +93,11 @@ namespace Rustline.Presentation
 
             if (equipment.IsStepActive)
             {
-                DrawStep(equipment.StepProgress, equipment.StepDirection, equipment.SelectedSlot);
+                DrawStep(
+                    equipment.StepProgress,
+                    equipment.StepDirection,
+                    equipment.SelectedSlot,
+                    equipment.StepIncomingSlot);
                 _wasStepping = true;
             }
             else if (_wasStepping)
@@ -95,17 +106,20 @@ namespace Rustline.Presentation
                 _wasStepping = false;
             }
 
-            // The target remains composited while its camera is disabled. Enable only
-            // for a dirty frame or a live transition; URP renders it later this frame.
+            // The target remains composited while its camera is disabled. Render only a
+            // dirty resting frame or the live transition frames.
             _camera.enabled = _hudDirty || equipment.IsStepActive;
             _hudDirty = false;
         }
 
-        private void OnStepStarted(int fromSlot, int _, WeaponCarouselDirection2D direction)
+        private void OnStepStarted(
+            int fromSlot,
+            int incomingSlot,
+            WeaponCarouselDirection2D direction)
         {
             if (_presentation != null && _views[0] != null)
             {
-                DrawStep(0f, direction, fromSlot);
+                DrawStep(0f, direction, fromSlot, incomingSlot);
             }
         }
 
@@ -127,29 +141,45 @@ namespace Rustline.Presentation
 
         private void EnsureTarget(NativePixelViewport viewport)
         {
-            if (_target != null && _lastLogicalWidth == viewport.LogicalWidth &&
+            if (_target != null &&
+                _lastLogicalWidth == viewport.LogicalWidth &&
                 _lastLogicalHeight == viewport.LogicalHeight)
             {
                 return;
             }
+
             int hudLayer = ResolveHudLayer();
             if (hudLayer < 0)
             {
                 return;
             }
+
             Release();
             _lastLogicalWidth = viewport.LogicalWidth;
             _lastLogicalHeight = viewport.LogicalHeight;
-            _target = new RenderTexture(viewport.LogicalWidth, viewport.LogicalHeight, 0, RenderTextureFormat.ARGB32,
+
+            _target = new RenderTexture(
+                viewport.LogicalWidth,
+                viewport.LogicalHeight,
+                0,
+                RenderTextureFormat.ARGB32,
                 RenderTextureReadWrite.sRGB)
             {
                 name = "Rustline Weapon Carousel - Logical HUD",
-                filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, antiAliasing = 1,
-                useMipMap = false, autoGenerateMips = false, anisoLevel = 0,
+                filterMode = FilterMode.Point,
+                wrapMode = TextureWrapMode.Clamp,
+                antiAliasing = 1,
+                useMipMap = false,
+                autoGenerateMips = false,
+                anisoLevel = 0,
                 hideFlags = HideFlags.HideAndDontSave
             };
             _target.Create();
-            GameObject cameraObject = new GameObject("Weapon Carousel HUD Camera") { hideFlags = HideFlags.HideAndDontSave };
+
+            GameObject cameraObject = new GameObject("Weapon Carousel HUD Camera")
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
             _camera = cameraObject.AddComponent<Camera>();
             _camera.orthographic = true;
             _camera.clearFlags = CameraClearFlags.SolidColor;
@@ -160,15 +190,24 @@ namespace Rustline.Presentation
             _camera.targetTexture = _target;
             _camera.enabled = false;
             _camera.depth = _presentation.WorldCamera.depth + 0.25f;
-            // The deterministic scene builders own this serialized contract. Keep this
-            // runtime exclusion as a defensive guard for scenes authored outside them.
+
+            // Deterministic scene setup owns this serialized contract. Keep a runtime
+            // exclusion as a defensive guard for independently authored scenes.
             _presentation.WorldCamera.cullingMask &= ~(1 << hudLayer);
+
             cameraObject.AddComponent<UniversalAdditionalCameraData>();
-            _camera.orthographicSize = viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit);
+            _camera.orthographicSize =
+                viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit);
             _camera.transform.position = new Vector3(
                 viewport.LogicalWidth / (2f * NativePixelPresentation.PixelsPerUnit),
-                viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit), -10f);
-            _root = new GameObject("Weapon Carousel HUD Views") { hideFlags = HideFlags.HideAndDontSave }.transform;
+                viewport.LogicalHeight / (2f * NativePixelPresentation.PixelsPerUnit),
+                -10f);
+
+            _root = new GameObject("Weapon Carousel HUD Views")
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            }.transform;
+
             CreateViews();
             _presentation.SetWeaponCarouselHudSource(_target);
             DrawRest(equipment.SelectedSlot);
@@ -178,124 +217,202 @@ namespace Rustline.Presentation
         {
             for (int index = 0; index < _views.Length; index++)
             {
-                GameObject viewObject = new GameObject("Weapon Carousel Card " + index) { layer = RustlineHudLayerIndex, hideFlags = HideFlags.HideAndDontSave };
+                GameObject viewObject = new GameObject("Weapon Carousel Card " + index)
+                {
+                    layer = RustlineHudLayerIndex,
+                    hideFlags = HideFlags.HideAndDontSave
+                };
                 viewObject.transform.SetParent(_root, false);
+
                 SpriteRenderer renderer = viewObject.AddComponent<SpriteRenderer>();
                 renderer.sortingOrder = index;
-                Material material = new Material(paletteFadeShader) { hideFlags = HideFlags.HideAndDontSave };
+
+                Material material = new Material(paletteFadeShader)
+                {
+                    hideFlags = HideFlags.HideAndDontSave
+                };
                 material.SetTexture("_DarknessLookup", _presentation.DarknessLookupTexture);
+                material.SetFloat("_PixelsPerUnit", NativePixelPresentation.PixelsPerUnit);
                 renderer.sharedMaterial = material;
                 renderer.enabled = false;
-                _views[index] = new CardView { Renderer = renderer, Material = material, Slot = -1 };
+
+                _views[index] = new CardView
+                {
+                    Renderer = renderer,
+                    Material = material,
+                    Slot = -1
+                };
             }
         }
 
         private void DrawRest(int centerSlot)
         {
             _hudDirty = true;
-            if (!TryGetNeighbors(centerSlot, out int upper, out int lower))
-            {
-                HideAll();
-                return;
-            }
-            if (equipment.AvailableSlots.Count == 1)
-            {
-                SetCard(1, centerSlot, NeighborPosition(0), selectedScale, 1f, 1);
-                Hide(0); Hide(2); Hide(3);
-                return;
-            }
-            if (equipment.AvailableSlots.Count == 2)
-            {
-                SetCard(0, upper, NeighborPosition(+1), neighborScale, 1f, 0);
-                SetCard(1, centerSlot, NeighborPosition(0), selectedScale, 1f, 1);
-                Hide(2); Hide(3);
-                return;
-            }
-            SetCard(0, upper, NeighborPosition(+1), neighborScale, 1f, 0);
-            SetCard(1, centerSlot, NeighborPosition(0), selectedScale, 1f, 1);
-            SetCard(2, lower, NeighborPosition(-1), neighborScale, 1f, 2);
-            Hide(3);
+            Rect restingBounds = CalculateRestingCardBounds(cardScale, lowerLeftMarginPixels);
+            ConfigureSpatialPenumbra(restingBounds);
+
+            SetCard(0, centerSlot, restingBounds.center);
+            Hide(1);
         }
 
-        private void DrawStep(float progress, WeaponCarouselDirection2D direction, int centerSlot)
+        private void DrawStep(
+            float progress,
+            WeaponCarouselDirection2D direction,
+            int outgoingSlot,
+            int incomingSlot)
         {
             _hudDirty = true;
-            if (!TryGetNeighbors(centerSlot, out int upper, out int lower))
+            if (outgoingSlot < 0 || incomingSlot < 0)
             {
                 HideAll();
                 return;
             }
-            if (equipment.AvailableSlots.Count < 3)
-            {
-                // A two-entry ring has no distinct outgoing/incoming neighbors; keep the
-                // one other card as the moving counterpart instead of duplicating it.
-                int other = upper;
-                SetCard(0, centerSlot, Lerp(NeighborPosition(0), NeighborPosition(-1), progress), Lerp(selectedScale, neighborScale, progress), 1f, 0);
-                SetCard(1, other, Lerp(NeighborPosition(+1), NeighborPosition(0), progress), Lerp(neighborScale, selectedScale, progress), 1f, 1);
-                Hide(2); Hide(3);
-                return;
-            }
-            if (direction == WeaponCarouselDirection2D.Successor)
-            {
-                WeaponCarouselTransitionSlots2D slots = WeaponCarouselTransition2D.GetSlots(equipment.AvailableSlots, centerSlot, direction);
-                SetCard(0, slots.OutgoingNeighbor, NeighborPosition(-1), neighborScale, 1f - progress, 0);
-                SetCard(1, slots.MovingCenter, Lerp(NeighborPosition(0), NeighborPosition(-1), progress), Lerp(selectedScale, neighborScale, progress), 1f, 1);
-                SetCard(2, slots.MovingNeighbor, Lerp(NeighborPosition(+1), NeighborPosition(0), progress), Lerp(neighborScale, selectedScale, progress), 1f, 2);
-                SetCard(3, slots.IncomingNeighbor, NeighborPosition(+1), neighborScale, progress, 3);
-            }
-            else
-            {
-                WeaponCarouselTransitionSlots2D slots = WeaponCarouselTransition2D.GetSlots(equipment.AvailableSlots, centerSlot, direction);
-                SetCard(0, slots.OutgoingNeighbor, NeighborPosition(+1), neighborScale, 1f - progress, 0);
-                SetCard(1, slots.MovingCenter, Lerp(NeighborPosition(0), NeighborPosition(+1), progress), Lerp(selectedScale, neighborScale, progress), 1f, 1);
-                SetCard(2, slots.MovingNeighbor, Lerp(NeighborPosition(-1), NeighborPosition(0), progress), Lerp(neighborScale, selectedScale, progress), 1f, 2);
-                SetCard(3, slots.IncomingNeighbor, NeighborPosition(-1), neighborScale, progress, 3);
-            }
+
+            Rect restingBounds = CalculateRestingCardBounds(cardScale, lowerLeftMarginPixels);
+            ConfigureSpatialPenumbra(restingBounds);
+
+            float stepDistance = CalculateStepDistance(cardScale, visualGapPixels);
+            Vector2 centerYs = CalculateTransitionCenterYs(
+                restingBounds.center.y,
+                stepDistance,
+                progress,
+                direction);
+
+            SetCard(
+                0,
+                outgoingSlot,
+                new Vector2(restingBounds.center.x, centerYs.x));
+            SetCard(
+                1,
+                incomingSlot,
+                new Vector2(restingBounds.center.x, centerYs.y));
         }
 
-        private bool TryGetNeighbors(int centerSlot, out int upper, out int lower)
+        private void ConfigureSpatialPenumbra(Rect restingBounds)
         {
-            upper = lower = -1;
-            if (centerSlot < 0 || equipment.AvailableSlots.Count == 0)
+            float thickness = Mathf.Max(1f, penumbraThicknessPixels);
+            for (int index = 0; index < _views.Length; index++)
             {
-                return false;
+                Material material = _views[index]?.Material;
+                if (material == null)
+                {
+                    continue;
+                }
+
+                material.SetFloat("_ApertureBottom", restingBounds.yMin);
+                material.SetFloat("_ApertureTop", restingBounds.yMax);
+                material.SetFloat("_PenumbraThickness", thickness);
             }
-            upper = WeaponSelectionNavigation2D.GetAdjacentSlot(equipment.AvailableSlots, centerSlot, WeaponCarouselDirection2D.Successor);
-            lower = WeaponSelectionNavigation2D.GetAdjacentSlot(equipment.AvailableSlots, centerSlot, WeaponCarouselDirection2D.Predecessor);
-            return true;
         }
 
-        private void SetCard(int index, int slot, Vector2 logicalPosition, float scale, float fade, int sortingOrder)
+        private void SetCard(int index, int slot, Vector2 logicalPosition)
         {
             CardView view = _views[index];
-            if (!equipment.TryGetEntry(slot, out WeaponLoadoutEntry2D entry) || entry.CarouselSprite == null || fade <= 0f)
+            if (view == null ||
+                !equipment.TryGetEntry(slot, out WeaponLoadoutEntry2D entry) ||
+                entry.CarouselSprite == null)
             {
                 Hide(index);
                 return;
             }
+
+            Rect restingBounds = CalculateRestingCardBounds(cardScale, lowerLeftMarginPixels);
+            Vector2 quantizedPosition = QuantizeAroundRestingCenter(
+                logicalPosition,
+                restingBounds.center);
+
             view.Slot = slot;
             view.Renderer.sprite = entry.CarouselSprite;
-            view.Renderer.sortingOrder = sortingOrder;
+            view.Renderer.sortingOrder = index;
             view.Renderer.transform.localPosition = new Vector3(
-                Mathf.Round(logicalPosition.x) / NativePixelPresentation.PixelsPerUnit,
-                Mathf.Round(logicalPosition.y) / NativePixelPresentation.PixelsPerUnit,
+                quantizedPosition.x / NativePixelPresentation.PixelsPerUnit,
+                quantizedPosition.y / NativePixelPresentation.PixelsPerUnit,
                 0f);
-            view.Renderer.transform.localScale = Vector3.one * scale;
-            view.Material.SetFloat("_Fade", fade);
+            view.Renderer.transform.localScale = Vector3.one * cardScale;
             view.Renderer.enabled = true;
         }
 
-        private Vector2 NeighborPosition(int level)
+        public static int DedicatedHudCullingMask => 1 << RustlineHudLayerIndex;
+
+        /// <summary>Resting full-card bounds in logical HUD pixels.</summary>
+        public static Rect CalculateRestingCardBounds(
+            float presentationScale,
+            int bottomLeftMarginPixels)
         {
-            return CalculateCardBounds(
-                level,
-                selectedScale,
-                neighborScale,
-                lowerLeftMarginPixels,
-                neighborVerticalSeparationPixels).center;
+            float scale = Mathf.Max(0f, presentationScale);
+            return new Rect(
+                bottomLeftMarginPixels,
+                bottomLeftMarginPixels,
+                CardWidthPixels * scale,
+                CardHeightPixels * scale);
         }
 
-        public static int DedicatedHudCullingMask => 1 << RustlineHudLayerIndex;
+        /// <summary>
+        /// Center separation for a transition. Card height plus the explicit gap makes
+        /// rectangle overlap impossible by construction.
+        /// </summary>
+        public static float CalculateStepDistance(
+            float presentationScale,
+            int gapPixels)
+        {
+            return CardHeightPixels * Mathf.Max(0f, presentationScale) +
+                Mathf.Max(0, gapPixels);
+        }
+
+        /// <summary>
+        /// Returns (outgoingY, incomingY). Both cards travel the same signed distance,
+        /// so their center separation remains constant for the full step.
+        /// </summary>
+        public static Vector2 CalculateTransitionCenterYs(
+            float restingCenterY,
+            float stepDistance,
+            float progress,
+            WeaponCarouselDirection2D direction)
+        {
+            float t = Mathf.Clamp01(progress);
+            float outgoingSign =
+                direction == WeaponCarouselDirection2D.Successor ? -1f : 1f;
+
+            float outgoingY = Mathf.Lerp(
+                restingCenterY,
+                restingCenterY + outgoingSign * stepDistance,
+                t);
+            float incomingY = Mathf.Lerp(
+                restingCenterY - outgoingSign * stepDistance,
+                restingCenterY,
+                t);
+            return new Vector2(outgoingY, incomingY);
+        }
+
+        /// <summary>
+        /// Spatial distance from the fully visible aperture: 0 inside/on it, 1 at an
+        /// outer penumbra edge, and >1 beyond the visible penumbra.
+        /// </summary>
+        public static float CalculateSpatialPenumbraDistance(
+            float logicalY,
+            float apertureBottom,
+            float apertureTop,
+            float penumbraThickness)
+        {
+            if (logicalY >= apertureBottom && logicalY <= apertureTop)
+            {
+                return 0f;
+            }
+
+            float thickness = Mathf.Max(0.0001f, penumbraThickness);
+            return logicalY > apertureTop
+                ? (logicalY - apertureTop) / thickness
+                : (apertureBottom - logicalY) / thickness;
+        }
+
+        private static Vector2 QuantizeAroundRestingCenter(
+            Vector2 logicalPosition,
+            Vector2 restingCenter)
+        {
+            return new Vector2(
+                restingCenter.x + Mathf.Round(logicalPosition.x - restingCenter.x),
+                restingCenter.y + Mathf.Round(logicalPosition.y - restingCenter.y));
+        }
 
         private static int ResolveHudLayer()
         {
@@ -305,43 +422,58 @@ namespace Rustline.Presentation
                 return layer;
             }
 
-            Debug.LogError($"{RustlineHudLayerName} must exist at layer {RustlineHudLayerIndex}; carousel HUD was not created.");
+            Debug.LogError(
+                $"{RustlineHudLayerName} must exist at layer {RustlineHudLayerIndex}; " +
+                "weapon selector HUD was not created.");
             return -1;
         }
 
-        /// <summary>Pure logical-pixel layout used by runtime and focused EditMode tests.</summary>
-        public static Rect CalculateCardBounds(
-            int level,
-            float selectedCardScale,
-            float neighborCardScale,
-            int bottomLeftMarginPixels,
-            int neighborSeparationPixels)
+        private void Hide(int index)
         {
-            float scale = level == 0 ? selectedCardScale : neighborCardScale;
-            float width = CardWidthPixels * scale;
-            float height = CardHeightPixels * scale;
-            float lowerNeighborCenterY = bottomLeftMarginPixels +
-                CardHeightPixels * neighborCardScale * 0.5f;
-            // level -1 is the lower neighbor. Starting it at its half-height above
-            // the configured margin preserves the full card rather than clipping it.
-            float centerY = lowerNeighborCenterY + (level + 1) * neighborSeparationPixels;
-            return new Rect(bottomLeftMarginPixels, centerY - height * 0.5f, width, height);
+            if (_views[index] != null)
+            {
+                _views[index].Renderer.enabled = false;
+            }
         }
-        private static Vector2 Lerp(Vector2 from, Vector2 to, float t) => Vector2.Lerp(from, to, t);
-        private static float Lerp(float from, float to, float t) => Mathf.Lerp(from, to, t);
-        private void Hide(int index) { if (_views[index] != null) _views[index].Renderer.enabled = false; }
-        private void HideAll() { for (int index = 0; index < _views.Length; index++) Hide(index); }
-        private void Release()
+
+        private void HideAll()
         {
-            if (_root != null) Destroy(_root.gameObject);
             for (int index = 0; index < _views.Length; index++)
             {
-                if (_views[index]?.Material != null) Destroy(_views[index].Material);
+                Hide(index);
+            }
+        }
+
+        private void Release()
+        {
+            if (_root != null)
+            {
+                Destroy(_root.gameObject);
+            }
+
+            for (int index = 0; index < _views.Length; index++)
+            {
+                if (_views[index]?.Material != null)
+                {
+                    Destroy(_views[index].Material);
+                }
                 _views[index] = null;
             }
-            if (_camera != null) Destroy(_camera.gameObject);
-            if (_target != null) { _target.Release(); Destroy(_target); }
-            _root = null; _camera = null; _target = null;
+
+            if (_camera != null)
+            {
+                Destroy(_camera.gameObject);
+            }
+
+            if (_target != null)
+            {
+                _target.Release();
+                Destroy(_target);
+            }
+
+            _root = null;
+            _camera = null;
+            _target = null;
         }
     }
 }

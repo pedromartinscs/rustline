@@ -281,23 +281,22 @@ Rapid explicit wheel input advances relative to the latest requested target, not
 
 Explicit wheel direction is preserved for its requested step. Direct-number selection uses shortest-path routing with successor tie-break.
 
-## Current implementation transition note
+## Implemented presentation
 
-The currently versioned HUD before this contract update uses the earlier three-card/four-view visible-stack implementation.
+The production HUD now uses the single-card/two-view spatial-penumbra model defined above.
 
-The next presentation refactor should preserve the existing, already-validated foundations:
+The implementation preserves the already-validated foundations:
 
 - persistent equipment/loadout state;
-- input semantics;
-- shortest-path navigation;
+- input semantics and shortest-path navigation;
 - rapid retargeting;
 - persistent Latch-9 production wiring;
 - `RustlineHUD` isolation;
 - native-pixel HUD composition above penumbra;
-- palette lookup/dither infrastructure;
+- canonical palette darkness lookup/dither infrastructure;
 - render-on-demand HUD target.
 
-The refactor should replace only the visible selector presentation with the single-card/two-view spatial-penumbra model described here.
+At rest only the equipped card is rendered. During a step one outgoing and one incoming view move at the same fixed scale and constant separation. Their center distance is card height plus the configured visual gap, so their rectangles cannot overlap. The selector shader derives darkness from each fragment's logical-HUD Y coordinate relative to fixed upper/lower penumbra bands; time controls only card position.
 
 ## Deferred visual tuning
 
