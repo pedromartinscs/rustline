@@ -38,4 +38,6 @@ The enemy spawns at `(164, 0.02)`, after the existing x=150 Ground occluder. It 
 
 The prototype rhythm is intentionally `100 HP / 40 Longwatch damage`: 100 → 60 → 20 → 0, so the third normal shot kills. Death stops patrol, disables the weapon collider so later shots pass through, and disables the programmer-art silhouette. Reset returns the same instance to its exact spawn, restores full health and initial patrol direction, reenables the hitbox and living presentation, and clears stale flash/death state.
 
-Still pending for later M3 work: enemy attacks, player health and death/restart, production enemy art, advanced AI/pathing, the flying enemy, combat audio, and broader encounter spawning.
+M3B now has an approved programmer-art implementation contract for the first production enemy: the **Bombardier**. It reuses this health/hitbox foundation, adds a compact patrol -> committed telegraph -> ballistic bomb -> recover loop, adds player health/damage reception, and proves a repeatable player-death reset in MovementLab before any Salvage Intake placement. See [`BOMBARDIER.md`](BOMBARDIER.md).
+
+Still pending after the M3B programmer-art pass: production enemy art, advanced AI/pathing if later required, the flying enemy only if the demo needs it, combat audio, broader production encounter spawning, and final death/checkpoint presentation.
