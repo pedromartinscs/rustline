@@ -1,6 +1,6 @@
-# M3A Combat Foundation
+# M3 Combat Foundation and Bombardier
 
-M3A proves that the accepted Longwatch feels useful against one real, repeatable combat entity. It deliberately stops short of a complete enemy, AI, player-health, or encounter-spawning system.
+M3A established generic health and explicit weapon-hitbox routing. M3B graduates the single MovementLab prototype encounter into a programmer-art Bombardier with a committed ranged attack and repeatable player combat death.
 
 ## Generic damage and health
 
@@ -24,20 +24,22 @@ nearest hit Collider2D
 
 There is no `GetComponentInParent` fallback. A child collider becomes damageable only when it explicitly carries `WeaponHitbox2D` and points to its owner health. The router preserves Longwatch damage, world point, continuous shot direction, and weapon-definition identity while translating into the weapon-independent damage contract. Damage multipliers and headshots are not part of M3A.
 
-## Prototype ground enemy
+## Bombardier encounter
 
-The MovementLab prototype is split into narrow components:
+The MovementLab encounter uses narrow, production-named components:
 
 - `CombatHealth2D` on the enemy root, configured to `100` maximum health.
-- `PrototypeGroundEnemy2D` on the root for a deterministic kinematic horizontal patrol, short damage pause, death stop, hitbox disable, and exact reset.
-- `PrototypeGroundEnemyPresenter2D` on a removable LineRenderer child for Canonical28 living/flash colors and a disabled dead visual.
+- `Bombardier2D` on the root for deterministic kinematic patrol, Ground-only player detection, committed Windup, Recover, hit pause, death, and owned-bomb reset.
+- `BombardierPresenter2D` on the LineRenderer child for Canonical 28 Patrol, Windup, hit, and Dead presentation plus a locked-target marker.
 - `WeaponHitbox2D` beside a trigger `BoxCollider2D` on the explicit `Hitbox` child, routed to root health.
-- `MovementLabPrototypeEnemyEncounter2D` on the diagnostic encounter root for reuse after a `1.25 s` delay; no instantiate/destroy loop or production spawning framework is involved.
+- `MovementLabBombardierEncounter2D` on the diagnostic encounter root for reuse after a `1.25 s` delay and after owned bombs resolve. Explicit reset clears them.
+- `BombardierBallistics2D` solves the exact `0.85 s`, `22 u/s²` trajectory. `BombardierBomb2D` samples it in FixedUpdate and CircleCasts each segment against only Ground and PlayerDamageable. First contact immediately explodes without bounce; `3.0 s` timeout cleans up without damage.
+- `BombardierExplosion2D` applies one flat `25` damage to a player inside `1.75 u`, subject to Ground occlusion except on direct player contact.
 
-The enemy spawns at `(164, 0.02)`, after the existing x=150 Ground occluder. It patrols at `1.75 units/s` between x=162 and x=166, initially moving right, never changes its authored spawn Y, and pauses for `0.12 s` after a successful nonlethal hit. Its trigger-only CombatTarget-layer hitbox does not push the player.
+The enemy spawns at `(164, 0.02)`, after the existing x=150 Ground occluder. It patrols at `1.75 units/s` between x=162 and x=166, initially moving right, never changes its authored spawn Y, and pauses for `0.12 s` after a successful nonlethal hit. Its trigger-only CombatTarget-layer hitbox does not push the player. Detection uses a `12 u` horizontal and `6 u` vertical inclusive window and clear Ground-only LOS to the player capsule center. Windup locks that center once for `0.70 s`, launches one bomb, then Recover lasts `1.30 s`. Hit pause stops both timers. Death cancels an unlaunched attack and leaves launched bombs active.
 
-The prototype rhythm is intentionally `100 HP / 40 Longwatch damage`: 100 → 60 → 20 → 0, so the third normal shot kills. Death stops patrol, disables the weapon collider so later shots pass through, and disables the programmer-art silhouette. Reset returns the same instance to its exact spawn, restores full health and initial patrol direction, reenables the hitbox and living presentation, and clears stale flash/death state.
+The rhythm remains `100 HP / 40 Longwatch damage`: 100 → 60 → 20 → 0, so the third normal shot kills. Death stops patrol, disables the weapon collider so later shots pass through, and disables the programmer-art silhouette. Reset returns the same instance to its exact spawn, restores full health and initial patrol direction, reenables the hitbox and living presentation, and clears active bombs.
 
-M3B now has an approved programmer-art implementation contract for the first production enemy: the **Bombardier**. It reuses this health/hitbox foundation, adds a compact patrol -> committed telegraph -> ballistic bomb -> recover loop, adds player health/damage reception, and proves a repeatable player-death reset in MovementLab before any Salvage Intake placement. See [`BOMBARDIER.md`](BOMBARDIER.md).
+The Player root has `CombatHealth2D` at `100 HP`; its existing physical capsule is on PlayerDamageable layer 9. `MovementLabRespawn.RespawnNow()` serves both combat death and failure-height resets, restoring spawn position, Rigidbody and motor state, weapon transient state, full health, and the same Bombardier encounter. The player survives three valid explosions and resets on the fourth. See [`BOMBARDIER.md`](BOMBARDIER.md).
 
 Still pending after the M3B programmer-art pass: production enemy art, advanced AI/pathing if later required, the flying enemy only if the demo needs it, combat audio, broader production encounter spawning, and final death/checkpoint presentation.

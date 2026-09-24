@@ -4,16 +4,16 @@ using UnityEngine;
 namespace Rustline.Diagnostics
 {
     [DisallowMultipleComponent]
-    public sealed class MovementLabPrototypeEnemyEncounter2D : MonoBehaviour
+    public sealed class MovementLabBombardierEncounter2D : MonoBehaviour
     {
         public const float DefaultResetDelay = 1.25f;
 
-        [SerializeField] private PrototypeGroundEnemy2D enemy;
+        [SerializeField] private Bombardier2D enemy;
         [SerializeField, Min(0f)] private float resetDelay = DefaultResetDelay;
 
         private float _resetTimeRemaining;
 
-        public PrototypeGroundEnemy2D Enemy => enemy;
+        public Bombardier2D Enemy => enemy;
         public float ResetDelay => resetDelay;
         public float ResetTimeRemaining => _resetTimeRemaining;
         public bool IsResetPending { get; private set; }
@@ -44,7 +44,9 @@ namespace Rustline.Diagnostics
             }
 
             _resetTimeRemaining -= Time.deltaTime;
-            if (_resetTimeRemaining <= 0f)
+            // A death does not recall a launched bomb. Automatic reuse waits for
+            // every owned bomb to resolve; explicit encounter reset still clears it.
+            if (_resetTimeRemaining <= 0f && (enemy == null || enemy.ActiveBombCount == 0))
             {
                 ResetNow();
             }

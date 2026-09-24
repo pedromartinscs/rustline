@@ -119,11 +119,11 @@ namespace Rustline.Editor
                 new Color32(32, 237, 229, 255)),
             new DiagnosticLabel("LONGWATCH FIRING RANGE", new Vector3(140f, 8f, -0.2f), 0.11f,
                 new Color32(254, 212, 55, 255)),
-            new DiagnosticLabel("FIRST COMBAT ENTITY", new Vector3(164f, 4.25f, -0.2f), 0.1f,
+            new DiagnosticLabel("BOMBARDIER", new Vector3(164f, 4.25f, -0.2f), 0.1f,
                 new Color32(32, 237, 229, 255)),
         };
 
-        private static readonly Vector3 PrototypeEnemySpawnPosition = new Vector3(164f, 0.02f, -0.1f);
+        private static readonly Vector3 BombardierSpawnPosition = new Vector3(164f, 0.02f, -0.1f);
 
         private static readonly CombatTargetSpec[] CombatTargets =
         {
@@ -1316,7 +1316,7 @@ namespace Rustline.Editor
             SetFloat(respawn, "failureHeight", -12f);
 
             SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
-            SynchronizePrototypeEnemyEncounter(scene, root.transform, combatTargetLayer);
+            SynchronizeBombardierEncounter(scene, root.transform, combatTargetLayer);
             CreateCamera(root.transform, player.transform);
             EditorSceneManager.SaveScene(scene, ScenePath);
         }
@@ -1355,7 +1355,7 @@ namespace Rustline.Editor
 
             changed |= SynchronizeLabels(scene, root.transform);
             changed |= SynchronizeShootingRange(scene, root.transform, combatTargetLayer);
-            changed |= SynchronizePrototypeEnemyEncounter(scene, root.transform, combatTargetLayer);
+            changed |= SynchronizeBombardierEncounter(scene, root.transform, combatTargetLayer);
 
             if (changed)
             {
@@ -1670,7 +1670,7 @@ namespace Rustline.Editor
             return changed;
         }
 
-        private static bool SynchronizePrototypeEnemyEncounter(
+        private static bool SynchronizeBombardierEncounter(
             Scene scene,
             Transform parent,
             int combatTargetLayer)
@@ -1678,11 +1678,11 @@ namespace Rustline.Editor
             Material unlitMaterial = AssetDatabase.LoadAssetAtPath<Material>(SpriteUnlitMaterialPath);
             Require(unlitMaterial != null, "URP Sprite-Unlit-Default material is missing.");
 
-            GameObject encounterObject = FindGameObject(scene, "First Combat Entity Encounter");
+            GameObject encounterObject = FindGameObject(scene, "Bombardier Encounter");
             bool changed = false;
             if (encounterObject == null)
             {
-                encounterObject = new GameObject("First Combat Entity Encounter");
+                encounterObject = new GameObject("Bombardier Encounter");
                 encounterObject.transform.SetParent(parent, false);
                 changed = true;
             }
@@ -1692,19 +1692,19 @@ namespace Rustline.Editor
                 changed = true;
             }
 
-            MovementLabPrototypeEnemyEncounter2D encounter =
-                encounterObject.GetComponent<MovementLabPrototypeEnemyEncounter2D>();
+            MovementLabBombardierEncounter2D encounter =
+                encounterObject.GetComponent<MovementLabBombardierEncounter2D>();
             if (encounter == null)
             {
-                encounter = encounterObject.AddComponent<MovementLabPrototypeEnemyEncounter2D>();
+                encounter = encounterObject.AddComponent<MovementLabBombardierEncounter2D>();
                 changed = true;
             }
 
-            Transform enemyTransform = encounterObject.transform.Find("Prototype Ground Enemy");
+            Transform enemyTransform = encounterObject.transform.Find("Bombardier");
             GameObject enemyObject;
             if (enemyTransform == null)
             {
-                enemyObject = new GameObject("Prototype Ground Enemy");
+                enemyObject = new GameObject("Bombardier");
                 enemyObject.transform.SetParent(encounterObject.transform, false);
                 changed = true;
             }
@@ -1713,9 +1713,9 @@ namespace Rustline.Editor
                 enemyObject = enemyTransform.gameObject;
             }
 
-            if (enemyObject.transform.position != PrototypeEnemySpawnPosition)
+            if (enemyObject.transform.position != BombardierSpawnPosition)
             {
-                enemyObject.transform.position = PrototypeEnemySpawnPosition;
+                enemyObject.transform.position = BombardierSpawnPosition;
                 changed = true;
             }
 
@@ -1753,10 +1753,23 @@ namespace Rustline.Editor
                 changed = true;
             }
 
-            PrototypeGroundEnemy2D enemy = enemyObject.GetComponent<PrototypeGroundEnemy2D>();
+            Bombardier2D enemy = enemyObject.GetComponent<Bombardier2D>();
             if (enemy == null)
             {
-                enemy = enemyObject.AddComponent<PrototypeGroundEnemy2D>();
+                enemy = enemyObject.AddComponent<Bombardier2D>();
+                changed = true;
+            }
+
+            Transform throwOrigin = enemyObject.transform.Find("Throw Origin");
+            if (throwOrigin == null)
+            {
+                throwOrigin = new GameObject("Throw Origin").transform;
+                throwOrigin.SetParent(enemyObject.transform, false);
+                changed = true;
+            }
+            if (throwOrigin.localPosition != new Vector3(0f, 2f, 0f))
+            {
+                throwOrigin.localPosition = new Vector3(0f, 2f, 0f);
                 changed = true;
             }
 
@@ -1805,11 +1818,11 @@ namespace Rustline.Editor
                 changed = true;
             }
 
-            PrototypeGroundEnemyPresenter2D presenter =
-                visualObject.GetComponent<PrototypeGroundEnemyPresenter2D>();
+            BombardierPresenter2D presenter =
+                visualObject.GetComponent<BombardierPresenter2D>();
             if (presenter == null)
             {
-                presenter = visualObject.AddComponent<PrototypeGroundEnemyPresenter2D>();
+                presenter = visualObject.AddComponent<BombardierPresenter2D>();
                 changed = true;
             }
 
@@ -1864,16 +1877,19 @@ namespace Rustline.Editor
 
             SetObjectReference(weaponHitbox, "health", health);
             SetObjectReference(presenter, "health", health);
+            SetObjectReference(presenter, "enemy", enemy);
             SetObjectReference(presenter, "silhouetteRenderer", silhouette);
             SetObjectReference(enemy, "health", health);
             SetObjectReference(enemy, "body", enemyBody);
             SetObjectReference(enemy, "weaponHitCollider", hitCollider);
-            SetFloat(enemy, "patrolSpeed", PrototypeGroundEnemy2D.DefaultPatrolSpeed);
-            SetFloat(enemy, "patrolHalfDistance", PrototypeGroundEnemy2D.DefaultPatrolHalfDistance);
+            SetObjectReference(enemy, "throwOrigin", throwOrigin);
+            SetObjectReference(enemy, "presenter", presenter);
+            SetFloat(enemy, "patrolSpeed", Bombardier2D.DefaultPatrolSpeed);
+            SetFloat(enemy, "patrolHalfDistance", Bombardier2D.DefaultPatrolHalfDistance);
             SetInteger(enemy, "initialDirection", 1);
-            SetFloat(enemy, "hitPauseDuration", PrototypeGroundEnemy2D.DefaultHitPauseDuration);
+            SetFloat(enemy, "hitPauseDuration", Bombardier2D.DefaultHitPauseDuration);
             SetObjectReference(encounter, "enemy", enemy);
-            SetFloat(encounter, "resetDelay", MovementLabPrototypeEnemyEncounter2D.DefaultResetDelay);
+            SetFloat(encounter, "resetDelay", MovementLabBombardierEncounter2D.DefaultResetDelay);
 
             return changed;
         }
@@ -2653,17 +2669,17 @@ namespace Rustline.Editor
                         "MovementLab CombatTarget setup mismatch for " + spec.Name + ".");
                 }
 
-                MovementLabPrototypeEnemyEncounter2D encounter =
-                    FindInScene<MovementLabPrototypeEnemyEncounter2D>(scene);
-                PrototypeGroundEnemy2D enemy = encounter?.Enemy;
+                MovementLabBombardierEncounter2D encounter =
+                    FindInScene<MovementLabBombardierEncounter2D>(scene);
+                Bombardier2D enemy = encounter?.Enemy;
                 CombatHealth2D enemyHealth = enemy?.Health;
                 Rigidbody2D enemyBody = enemy?.Body;
                 Collider2D enemyHitCollider = enemy?.WeaponHitCollider;
                 WeaponHitbox2D enemyHitbox = enemyHitCollider?.GetComponent<WeaponHitbox2D>();
-                PrototypeGroundEnemyPresenter2D enemyPresenter =
-                    enemy?.GetComponentInChildren<PrototypeGroundEnemyPresenter2D>(true);
+                BombardierPresenter2D enemyPresenter =
+                    enemy?.GetComponentInChildren<BombardierPresenter2D>(true);
                 Require(encounter != null && enemy != null &&
-                    enemy.transform.position == PrototypeEnemySpawnPosition &&
+                    enemy.transform.position == BombardierSpawnPosition &&
                     enemyHealth != null && enemyHealth.MaximumHealth == 100 &&
                     enemyBody != null && enemyBody.bodyType == RigidbodyType2D.Kinematic &&
                     Mathf.Approximately(enemyBody.gravityScale, 0f) &&
@@ -2673,15 +2689,17 @@ namespace Rustline.Editor
                     enemyHitbox.transform.parent == enemy.transform &&
                     enemyHitbox.Health == enemyHealth &&
                     enemyPresenter != null && enemyPresenter.Health == enemyHealth &&
-                    Mathf.Approximately(enemy.PatrolSpeed, PrototypeGroundEnemy2D.DefaultPatrolSpeed) &&
+                    enemy.ThrowOrigin != null &&
+                    enemy.ThrowOrigin.localPosition == new Vector3(0f, 2f, 0f) &&
+                    Mathf.Approximately(enemy.PatrolSpeed, Bombardier2D.DefaultPatrolSpeed) &&
                     Mathf.Approximately(
                         enemy.PatrolHalfDistance,
-                        PrototypeGroundEnemy2D.DefaultPatrolHalfDistance) &&
+                        Bombardier2D.DefaultPatrolHalfDistance) &&
                     enemy.InitialDirection == 1 &&
                     Mathf.Approximately(
                         encounter.ResetDelay,
-                        MovementLabPrototypeEnemyEncounter2D.DefaultResetDelay),
-                    "MovementLab first combat entity hierarchy, tuning, or explicit hitbox routing is invalid.");
+                        MovementLabBombardierEncounter2D.DefaultResetDelay),
+                    "MovementLab Bombardier hierarchy, tuning, or explicit hitbox routing is invalid.");
 
                 Camera worldCamera = FindCamera(scene, "World Camera - Native Pixel Follow");
                 Camera driverCamera = FindCamera(scene, "Native Pixel Driver Camera");
@@ -2691,7 +2709,8 @@ namespace Rustline.Editor
                     !worldCamera.allowMSAA && worldCamera.CompareTag("MainCamera") &&
                     LayerMask.NameToLayer(RustlineWeaponSelectionSetup.RustlineHudLayerName) ==
                     RustlineWeaponSelectionSetup.RustlineHudLayerIndex &&
-                    (worldCamera.cullingMask & (1 << RustlineWeaponSelectionSetup.RustlineHudLayerIndex)) == 0,
+                    (worldCamera.cullingMask & (1 << RustlineWeaponSelectionSetup.RustlineHudLayerIndex)) == 0 &&
+                    (worldCamera.cullingMask & (1 << 9)) != 0,
                     "MovementLab logical world camera configuration is invalid.");
                 PixelCameraFollow2D cameraFollow = worldCamera.GetComponent<PixelCameraFollow2D>();
                 LongwatchCameraImpulse2D cameraImpulse = worldCamera.GetComponent<LongwatchCameraImpulse2D>();
@@ -2719,6 +2738,11 @@ namespace Rustline.Editor
                 PlayerLongwatchAimPresenter2D longwatchPresenter =
                     FindInScene<PlayerLongwatchAimPresenter2D>(scene);
                 PlayerAim2D playerAim = FindInScene<PlayerAim2D>(scene);
+                Require(playerAim != null && playerAim.gameObject.layer == 9 &&
+                    LayerMask.NameToLayer("PlayerDamageable") == 9 &&
+                    playerAim.GetComponent<CapsuleCollider2D>() != null &&
+                    playerAim.GetComponent<CombatHealth2D>()?.MaximumHealth == 100,
+                    "MovementLab player health, physical damage collider, or layer 9 is invalid.");
                 Shader penumbraShader = AssetDatabase.LoadAssetAtPath<Shader>(PenumbraShaderPath);
                 Shader presentationShader = AssetDatabase.LoadAssetAtPath<Shader>(PresentationShaderPath);
                 Require(presentation != null && presentation.gameObject == driverCamera.gameObject &&

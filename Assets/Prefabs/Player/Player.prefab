@@ -617,13 +617,27 @@ GameObject:
   - component: {fileID: 3031789671882538729}
   - component: {fileID: 4577391262399305045}
   - component: {fileID: 6814176262561081001}
-  m_Layer: 0
+  - component: {fileID: 6814176262561081002}
+  m_Layer: 9
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &6814176262561081002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8818021516152005166}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 44a18142c7c7d1b42a05c6b5a73c40f5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Combat.CombatHealth2D
+  maximumHealth: 100
 --- !u!4 &8561571167840580776
 Transform:
   m_ObjectHideFlags: 0

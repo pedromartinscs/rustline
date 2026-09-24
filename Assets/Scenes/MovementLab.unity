@@ -231,7 +231,7 @@ GameObject:
   - component: {fileID: 97145750}
   - component: {fileID: 97145751}
   m_Layer: 0
-  m_Name: Prototype Ground Enemy
+  m_Name: Bombardier
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -252,6 +252,7 @@ Transform:
   m_Children:
   - {fileID: 1849482714}
   - {fileID: 529659802}
+  - {fileID: 97145754}
   m_Father: {fileID: 2134874735}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &97145750
@@ -278,10 +279,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c20d3dba6e4fb14fa209853397c55d3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Combat.PrototypeGroundEnemy2D
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Gameplay.Combat.Bombardier2D
   health: {fileID: 97145750}
   body: {fileID: 97145752}
   weaponHitCollider: {fileID: 529659804}
+  throwOrigin: {fileID: 97145754}
+  presenter: {fileID: 1849482715}
   patrolSpeed: 1.75
   patrolHalfDistance: 2
   initialDirection: 1
@@ -313,6 +316,37 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 4
+--- !u!1 &97145753
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 97145754}
+  m_Layer: 0
+  m_Name: Throw Origin
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &97145754
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 97145753}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 2, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 97145749}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &280297754
 GameObject:
   m_ObjectHideFlags: 0
@@ -19349,9 +19383,10 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16a1aff09b8e2674f8ebc6ce168d5539, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.PrototypeGroundEnemyPresenter2D
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Presentation.BombardierPresenter2D
   health: {fileID: 97145750}
   silhouetteRenderer: {fileID: 1849482716}
+  enemy: {fileID: 97145751}
 --- !u!120 &1849482716
 LineRenderer:
   serializedVersion: 3
@@ -19488,7 +19523,7 @@ GameObject:
   - component: {fileID: 1870829362}
   - component: {fileID: 1870829361}
   m_Layer: 0
-  m_Name: FIRST COMBAT ENTITY
+  m_Name: BOMBARDIER
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19517,7 +19552,7 @@ TextMesh:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1870829359}
-  m_Text: FIRST COMBAT ENTITY
+  m_Text: BOMBARDIER
   m_OffsetZ: 0
   m_CharacterSize: 0.1
   m_LineSpacing: 1
@@ -19799,7 +19834,7 @@ GameObject:
   - component: {fileID: 2134874735}
   - component: {fileID: 2134874736}
   m_Layer: 0
-  m_Name: First Combat Entity Encounter
+  m_Name: Bombardier Encounter
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -19832,7 +19867,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a9d512a5afdbc9d4d8a801067dbf0e4c, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Diagnostics.MovementLabPrototypeEnemyEncounter2D
+  m_EditorClassIdentifier: Rustline.Runtime::Rustline.Diagnostics.MovementLabBombardierEncounter2D
   enemy: {fileID: 97145751}
   resetDelay: 1.25
 --- !u!1660057539 &9223372036854775807

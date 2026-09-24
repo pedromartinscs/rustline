@@ -11,7 +11,7 @@ using UnityEngine.TestTools;
 
 namespace Rustline.Tests
 {
-    public sealed class PrototypeGroundEnemyPlayModeTests
+    public sealed class BombardierPlayModeTests
     {
         [UnityTest]
         public IEnumerator LongwatchHitscan_ThreeShotsKillAndEncounterRestoresSameEnemy()
@@ -19,15 +19,15 @@ namespace Rustline.Tests
             SceneManager.LoadScene("MovementLab");
             yield return null;
 
-            PrototypeGroundEnemy2D enemy = Object.FindAnyObjectByType<PrototypeGroundEnemy2D>();
-            MovementLabPrototypeEnemyEncounter2D encounter =
-                Object.FindAnyObjectByType<MovementLabPrototypeEnemyEncounter2D>();
+            Bombardier2D enemy = Object.FindAnyObjectByType<Bombardier2D>();
+            MovementLabBombardierEncounter2D encounter =
+                Object.FindAnyObjectByType<MovementLabBombardierEncounter2D>();
             PlayerWeaponController2D weapon = Object.FindAnyObjectByType<PlayerWeaponController2D>();
             PlayerAim2D aim = weapon?.GetComponent<PlayerAim2D>();
             Rigidbody2D playerBody = weapon?.GetComponent<Rigidbody2D>();
             WeaponHitbox2D hitbox = enemy?.GetComponentInChildren<WeaponHitbox2D>();
-            PrototypeGroundEnemyPresenter2D presenter =
-                enemy?.GetComponentInChildren<PrototypeGroundEnemyPresenter2D>();
+            BombardierPresenter2D presenter =
+                enemy?.GetComponentInChildren<BombardierPresenter2D>();
 
             Assert.That(enemy, Is.Not.Null);
             Assert.That(encounter, Is.Not.Null);
@@ -127,9 +127,9 @@ namespace Rustline.Tests
             SceneManager.LoadScene("MovementLab");
             yield return null;
 
-            PrototypeGroundEnemy2D enemy = Object.FindAnyObjectByType<PrototypeGroundEnemy2D>();
-            MovementLabPrototypeEnemyEncounter2D encounter =
-                Object.FindAnyObjectByType<MovementLabPrototypeEnemyEncounter2D>();
+            Bombardier2D enemy = Object.FindAnyObjectByType<Bombardier2D>();
+            MovementLabBombardierEncounter2D encounter =
+                Object.FindAnyObjectByType<MovementLabBombardierEncounter2D>();
             Assert.That(enemy, Is.Not.Null);
             Assert.That(encounter, Is.Not.Null);
 
@@ -183,7 +183,7 @@ namespace Rustline.Tests
 
         private static void AssertEnemyHit(
             PlayerWeaponController2D weapon,
-            PrototypeGroundEnemy2D enemy,
+            Bombardier2D enemy,
             WeaponHitbox2D hitbox,
             int expectedHealth)
         {

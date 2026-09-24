@@ -135,9 +135,9 @@ The current Longwatch uses mouse-left fire, `1/12 s` shot interval (**12 shots/s
 - [x] First killable ground enemy prototype
 - [x] Enemy hit reaction and death
 - [x] Repeatable MovementLab prototype encounter/reset
-- [ ] Bombardier programmer-art enemy attack
-- [ ] Player health / PlayerDamageable collision contract
-- [ ] Player combat death/restart in MovementLab
+- [x] Bombardier programmer-art enemy attack in MovementLab
+- [x] Player health / PlayerDamageable collision contract
+- [x] Player combat death/restart in MovementLab
 - [ ] Bombardier human gameplay acceptance
 - [ ] Production ground-enemy art
 - [ ] Flying enemy, only if the demo needs it
@@ -147,7 +147,7 @@ The current Longwatch uses mouse-left fire, `1/12 s` shot interval (**12 shots/s
 
 M3A is a narrow combat proof point, not completion of M3. The programmer-art ground enemy has `100` health, deterministic horizontal patrol, a `0.12 s` nonlethal hit pause, explicit child-hitbox routing, and dies after three normal `40`-damage Longwatch hits before resetting in place.
 
-M3B now targets the first production enemy behavior using programmer art: the **Bombardier**. Its approved contract is a small patrol -> committed telegraph -> non-bouncing ballistic bomb -> recover loop, plus 100 HP player health and deterministic MovementLab death/reset. The bomb explodes on first Ground/player contact rather than bouncing or using a fuse. See [`BOMBARDIER.md`](BOMBARDIER.md) and [`COMBAT.md`](COMBAT.md).
+M3B implements the first production enemy behavior using programmer art: the **Bombardier**. Its loop is patrol -> committed telegraph -> non-bouncing ballistic bomb -> recover, with 100 HP player health and deterministic MovementLab death/reset. The bomb explodes on first Ground/player contact rather than bouncing or using a fuse. Human gameplay acceptance remains open. See [`BOMBARDIER.md`](BOMBARDIER.md) and [`COMBAT.md`](COMBAT.md).
 
 **Exit criterion:** a short room can be traversed and cleared repeatedly without debug intervention. **Satisfied by the MovementLab prototype; production encounter content remains pending.**
 
