@@ -6,6 +6,8 @@ namespace Rustline.Gameplay.Combat
     {
         [SerializeField] private CombatHealth2D[] members;
         [SerializeField] private Rect activationArea;
+        private Sentry2D[] _sentries;
+        private Bombardier2D[] _ranged;
         public CombatHealth2D[] Members => members;
         public Rect ActivationArea => activationArea;
         public bool IsActive { get; private set; }
@@ -13,35 +15,66 @@ namespace Rustline.Gameplay.Combat
         {
             get
             {
-                if (!IsActive || members == null || members.Length == 0) return false;
+                if (members == null || members.Length == 0) return false;
                 foreach (CombatHealth2D member in members)
                     if (member == null || member.IsAlive) return false;
                 return true;
             }
         }
 
+        private void Awake()
+        {
+            _sentries = new Sentry2D[members.Length];
+            _ranged = new Bombardier2D[members.Length];
+            for (int i = 0; i < members.Length; i++)
+            {
+                members[i].TryGetComponent(out _sentries[i]);
+                members[i].TryGetComponent(out _ranged[i]);
+            }
+        }
+
+        private void OnEnable()
+        {
+            foreach (CombatHealth2D member in members) member.Damaged += OnDamaged;
+        }
+
+        private void OnDisable()
+        {
+            foreach (CombatHealth2D member in members)
+                if (member != null) member.Damaged -= OnDamaged;
+        }
+
+        private void OnDamaged(DamageResult2D result)
+        {
+            if (result.DidApply && !IsActive) Activate();
+        }
+
         public void Activate()
         {
             IsActive = true;
-            foreach (CombatHealth2D member in members) member.gameObject.SetActive(true);
+            for (int i = 0; i < members.Length; i++) SetCombatActive(i, members[i].IsAlive);
         }
 
         public void ResetEncounter()
         {
-            foreach (CombatHealth2D member in members)
+            for (int i = 0; i < members.Length; i++)
             {
-                // Actors have all run Awake before the director's first Start.
-                if (member.TryGetComponent(out Bombardier2D ranged)) ranged.ResetForEncounter();
-                if (member.TryGetComponent(out Sentry2D sentry)) sentry.ResetForEncounter();
-                member.gameObject.SetActive(false);
+                SetCombatActive(i, false);
+                _ranged[i]?.ResetForEncounter();
+                _sentries[i]?.ResetForEncounter();
             }
             IsActive = false;
         }
 
         public void ClearBombs()
         {
-            foreach (CombatHealth2D member in members)
-                if (member.TryGetComponent(out Bombardier2D ranged)) ranged.ClearActiveBombs();
+            foreach (Bombardier2D ranged in _ranged) ranged?.ClearActiveBombs();
+        }
+
+        private void SetCombatActive(int index, bool active)
+        {
+            _sentries[index]?.SetCombatActive(active);
+            _ranged[index]?.SetCombatActive(active);
         }
     }
 }

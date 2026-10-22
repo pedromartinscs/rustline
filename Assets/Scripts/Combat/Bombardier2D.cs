@@ -57,6 +57,13 @@ namespace Rustline.Gameplay.Combat
         public int LaunchCount { get; private set; }
         public int ActiveBombCount => _bombs.Count;
         public bool IsPatrolling => State == BombardierState.Patrol && _hitPauseRemaining <= 0f;
+        public bool CombatActive { get; private set; } = true;
+
+        public void SetCombatActive(bool active)
+        {
+            CombatActive = active;
+            if (!active && body != null) body.linearVelocity = Vector2.zero;
+        }
 
         private void Awake()
         {
@@ -89,7 +96,7 @@ namespace Rustline.Gameplay.Combat
 
         private void FixedUpdate()
         {
-            if (body == null || health == null || State == BombardierState.Dead) return;
+            if (!CombatActive || body == null || health == null || State == BombardierState.Dead) return;
             float dt = Time.fixedDeltaTime;
             if (_hitPauseRemaining > 0f)
             {

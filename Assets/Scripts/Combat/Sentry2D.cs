@@ -28,6 +28,13 @@ namespace Rustline.Gameplay.Combat
         public CombatHealth2D Health => _health;
         public int StrikeCount { get; private set; }
         public Vector2 SpawnPosition => _spawn;
+        public bool CombatActive { get; private set; } = true;
+
+        public void SetCombatActive(bool active)
+        {
+            CombatActive = active;
+            if (!active && _body != null) _body.linearVelocity = Vector2.zero;
+        }
 
         private void Awake()
         {
@@ -59,7 +66,7 @@ namespace Rustline.Gameplay.Combat
 
         private void FixedUpdate()
         {
-            if (_health.IsDead) return;
+            if (!CombatActive || _health.IsDead) return;
             if (_hitPause > 0f) { _hitPause -= Time.fixedDeltaTime; return; }
             Vector2 sensor = _body.position + Vector2.up * 1.25f;
             Vector2 target = playerCollider != null ? (Vector2)playerCollider.bounds.center : sensor;
