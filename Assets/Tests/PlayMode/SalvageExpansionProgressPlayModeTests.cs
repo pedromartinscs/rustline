@@ -31,6 +31,7 @@ namespace Rustline.Tests
             Assert.That(_director.Progress.IsComplete,Is.False);
             for(int i=0;i<last;i++) { Defeat(i); yield return null; }
             Assert.That(_director.Progress.ClearedEncounters,Is.EqualTo(_director.Encounters.Length));
+            Assert.That(_director.Objective,Does.Contain("EXTRACT"), "Skipped optional stations must not hide the final objective.");
             yield return new WaitForSeconds(2.2f);
             Assert.That(_director.Progress.IsComplete,Is.True);
             _director.RestartRun(); yield return null;

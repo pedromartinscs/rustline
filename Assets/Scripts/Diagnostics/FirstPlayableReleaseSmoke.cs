@@ -50,10 +50,15 @@ namespace Rustline.Diagnostics
             _director.Player.Landed += () => _landings++;
             for (int i = 0; i < 120; i++) yield return new WaitForFixedUpdate();
             Require(_body.position.y > 0.95f && _director.Player.IsGrounded, "Spawn fell through the real Tilemap.");
-            var composite = FindAnyObjectByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>()
-                .GetComponent<CompositeCollider2D>();
-            Require(composite.pathCount > 0 && composite.pointCount > 0, "Release Composite is empty.");
-            Debug.Log($"FIRST_PLAYABLE_SMOKE_SPAWN_OK paths={composite.pathCount} points={composite.pointCount}");
+            var collisionMaps = FindObjectsByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>(FindObjectsSortMode.None);
+            Require(collisionMaps.Length == 2, "Expected the main terrain and precision ceiling collision maps.");
+            foreach (var collisionMap in collisionMaps)
+            {
+                var composite = collisionMap.GetComponent<CompositeCollider2D>();
+                Require(composite.pathCount > 0 && composite.pointCount > 0, "Release Composite is empty: " + collisionMap.name);
+                Debug.Log($"FIRST_PLAYABLE_SMOKE_COLLISION_OK object='{collisionMap.name}' paths={composite.pathCount} points={composite.pointCount}");
+            }
+            Debug.Log("FIRST_PLAYABLE_SMOKE_SPAWN_OK supported by real Tilemap");
             Capture("01-entry");
             int landedBefore = _landings;
             float startX = _body.position.x;

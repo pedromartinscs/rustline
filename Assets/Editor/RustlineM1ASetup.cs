@@ -2212,13 +2212,18 @@ namespace Rustline.Editor
             InputActionMap playerMap = input?.FindActionMap("Player", false);
             Require(input != null && input.actionMaps.Count == 1 && playerMap != null,
                 "Input asset must contain only the focused Player action map for M1A.");
-            Require(playerMap.actions.Count == 6 && playerMap.FindAction("Move", false) != null &&
+            Require(playerMap.FindAction("Move", false) != null &&
                 playerMap.FindAction("Jump", false) != null &&
                 playerMap.FindAction("Crouch", false) != null &&
                 playerMap.FindAction("Fire", false) != null &&
                 playerMap.FindAction("ToggleFireMode", false) != null &&
                 playerMap.FindAction("PointerPosition", false) != null,
                 "Player input must contain Move, Jump, Crouch, Fire, ToggleFireMode, and PointerPosition.");
+            Require(playerMap.FindAction("Reload", false) != null && playerMap.FindAction("WeaponCycle", false) != null,
+                "Player input must retain Reload and WeaponCycle.");
+            for (int slot = 0; slot < 10; slot++)
+                Require(playerMap.FindAction("WeaponSlot" + slot, false) != null,
+                    "Player input must retain WeaponSlot0 through WeaponSlot9.");
             Require(playerMap.FindAction("Move").bindings.Any(binding => binding.path == "<Gamepad>/dpad"),
                 "Move must support the gamepad D-pad.");
             Require(playerMap.FindAction("Jump").bindings.Any(binding => binding.path == "<Keyboard>/space") &&

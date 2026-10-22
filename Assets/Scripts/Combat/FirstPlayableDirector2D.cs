@@ -37,11 +37,12 @@ namespace Rustline.Gameplay.Combat
         {
             get
             {
+                int next = Progress.ClearedEncounters;
+                if (next == encounters.Length)
+                    return Progress.ExtractionTime > 0f ? "EXTRACTING / HOLD POSITION" : "REACH TERMINAL EXIT / HOLD POSITION";
                 for (int i = Progress.CheckpointIndex + 1; i < checkpoints.Length; i++)
                     if (checkpoints[i].RequiredClears <= Progress.ClearedEncounters) return "REACH " + checkpoints[i].Label;
-                int next = Progress.ClearedEncounters;
-                return next < encounters.Length ? (next + 1) + " / " + encounters[next].Objective :
-                    Progress.ExtractionTime > 0f ? "EXTRACTING / HOLD POSITION" : "REACH TERMINAL EXIT / HOLD POSITION";
+                return (next + 1) + " / " + encounters[next].Objective;
             }
         }
         public Rect ExtractionArea => extractionArea;
