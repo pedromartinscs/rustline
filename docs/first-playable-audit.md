@@ -15,7 +15,7 @@ Baseline: clean `feat/first-playable-phase-01`, HEAD `ae4eb0f`. No changes to th
 
 ## Incomplete systems and required work
 
-Salvage Intake has no production encounter progression, checkpoint, objective/completion, death presentation or level HUD. Its rig still uses the diagnostic respawn policy. Only one enemy archetype exists. Add a small close-range sentry, reuse Bombardier, author encounters into the existing route, and supply checkpoint/retry/restart plus clear health/objective/control feedback. Use one saved production scene with explicit serialized references and a repeatable content-only setup pass.
+Salvage Intake has no production encounter progression, checkpoint, objective/completion, death presentation or level HUD. The reusable respawn implementation belongs to MovementLab; the saved production rig has no equivalent run owner. Only one enemy archetype exists. Add a small close-range sentry, reuse Bombardier, author encounters into the existing route, and supply checkpoint/retry/restart plus clear health/objective/control feedback. Use one saved production scene with explicit serialized references and a repeatable content-only setup pass.
 
 ## Risks and decisions
 
@@ -28,3 +28,5 @@ Salvage Intake has no production encounter progression, checkpoint, objective/co
 ## Baseline validation
 
 Matching Unity batch EditMode run requested before source changes. First attempt stopped at a stale scene-backup dialog (not allowed in batch). Preserved `Temp/__Backupscenes` under `Logs/pre-first-playable-scene-backups`, then retried. Full results and subsequent validation are recorded in `first-playable-validation.md`; do not infer passing tests from a successful process launch.
+
+Baseline completed before gameplay source changes: **310/310 EditMode passed** with graphics enabled. Null graphics crashed the existing rendering tests; sandbox licensing IPC required the installed Editor to run outside the sandbox. Python metadata baseline: 19 tests, one Latch JSON CRLF/LF failure and one sandbox temporary-file permission error. Neither concerns new gameplay.

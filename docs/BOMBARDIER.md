@@ -1,5 +1,7 @@
 # Bombardier — First Production Enemy Contract
 
+Historical scope note: the M3B implementation below was limited to MovementLab. The subsequent [first-playable phase](FIRST_PLAYABLE.md) reuses this same enemy in Salvage Intake's bay and exit encounters, with production-owned activation/reset. It does not change the detection, committed throw, ballistics or damage contract below.
+
 This document defines the first programmer-art implementation of Rustline's first production enemy.
 
 The internal working name is **Bombardier**. The final player-facing name and production art are deliberately deferred.

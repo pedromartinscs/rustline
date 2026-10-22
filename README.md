@@ -66,11 +66,13 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
+The integrated first playable is **Salvage Intake** (build index 0): three ordered encounters, close-range sentries and existing Bombardiers, checkpoint/retry, and upper-deck extraction. Open the saved production scene and press Play. See [launch instructions, controls and build steps](docs/FIRST_PLAYABLE.md), [design](docs/first-playable-design.md), and [validation record](docs/first-playable-validation.md) for the verified scope and remaining gates.
+
 **The current player movement set, first-weapon Longwatch presentation/gunplay slice, and the M3A repeatable combat prototype are implemented.**
 
 `Assets/Scenes/MovementLab.unity` contains grounded forward/backpedal movement, combat crouch, Wall Brace / Wall Kick, committed six-frame LedgeClimb, the release-hardened Tilemap + Composite collision path, native-pixel presentation, Longwatch DMR continuous-aim hitscan, and a killable patrol enemy that resets in place. The Longwatch has authored aim-capable Idle, Run, Backpedal, Crouch, and Fall presentation plus non-firing three-frame Jump and two-frame Land carry. Wall Brace and LedgeClimb intentionally render no Longwatch carry; their traversal poses use the unarmed overlay and block firing. The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact.
 
-The next production focus is the **environment itself**: expand the modular structural family and build a first polished playable environment slice around the now-stable movement/collision metrics before multiplying additional gameplay content.
+The next production focus is human playtesting and polish of the integrated Salvage Intake loop: traversal, encounter balance, temporary enemy art/audio, UI readability, and standalone performance. The accepted movement/collision foundation remains unchanged.
 
 ## License
 

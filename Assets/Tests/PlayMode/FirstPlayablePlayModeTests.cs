@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using NUnit.Framework;
 using Rustline.Diagnostics;
 using Rustline.Gameplay.Combat;
@@ -24,6 +25,93 @@ namespace Rustline.Tests
             Assert.That(_director, Is.Not.Null);
             _body = _director.Player.GetComponent<Rigidbody2D>();
             yield return new WaitForFixedUpdate();
+        }
+
+        [UnityTest]
+        public IEnumerator Presentation_WorldAndPixelStatusRenderNonEmptyOffscreen()
+        {
+            yield return null;
+            string output = Path.GetFullPath("Logs/FirstPlayableRenders");
+            Directory.CreateDirectory(output);
+            var presentation = Object.FindAnyObjectByType<Rustline.Presentation.NativePixelPresentation>();
+            presentation.WorldCamera.Render();
+            SaveRender(presentation.WorldTarget, Path.Combine(output, "entry-world.png"));
+
+            Canvas canvas = GameObject.Find("First Playable Pixel HUD").GetComponent<Canvas>();
+            Assert.That(canvas, Is.Not.Null);
+            var cameraObject = new GameObject("Offscreen UI verification camera");
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.transform.position = new Vector3(10000f, 10000f, -10f);
+            camera.orthographic = true;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
+            var target = new RenderTexture(1280, 720, 24);
+            target.Create();
+            camera.targetTexture = target;
+            canvas.renderMode = RenderMode.ScreenSpaceCamera;
+            canvas.worldCamera = camera;
+            canvas.planeDistance = 1f;
+            try
+            {
+                Canvas.ForceUpdateCanvases();
+                camera.Render();
+                SaveRender(target, Path.Combine(output, "entry-status.png"));
+
+                Place(new Vector2(-17f, 1.05f)); yield return null;
+                Defeat(0); yield return null;
+                Place(new Vector2(8f, 0.08f));
+                for (int i = 0; i < 25; i++) yield return new WaitForFixedUpdate();
+                presentation.WorldCamera.Render();
+                SaveRender(presentation.WorldTarget, Path.Combine(output, "bay-world.png"));
+                Defeat(1); yield return null;
+                Place(new Vector2(22f, 1.08f));
+                for (int i = 0; i < 25; i++) yield return new WaitForFixedUpdate();
+                Assert.That(_director.Progress.HasCheckpoint, Is.True);
+                presentation.WorldCamera.Render();
+                SaveRender(presentation.WorldTarget, Path.Combine(output, "checkpoint-world.png"));
+                Place(new Vector2(35f, 17.08f));
+                for (int i = 0; i < 25; i++) yield return new WaitForFixedUpdate();
+                presentation.WorldCamera.Render();
+                SaveRender(presentation.WorldTarget, Path.Combine(output, "upper-defense-world.png"));
+                Defeat(2); yield return null;
+                Place(new Vector2(43f, 17.08f));
+                yield return new WaitForSeconds(2.2f);
+                Assert.That(_director.Progress.IsComplete, Is.True);
+                Canvas.ForceUpdateCanvases();
+                camera.Render();
+                SaveRender(target, Path.Combine(output, "completion-status.png"));
+            }
+            finally
+            {
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                canvas.worldCamera = null;
+                camera.targetTexture = null;
+                target.Release();
+                Object.Destroy(target);
+                Object.Destroy(cameraObject);
+            }
+        }
+
+        private static void SaveRender(RenderTexture target, string path)
+        {
+            RenderTexture previous = RenderTexture.active;
+            var readback = new Texture2D(target.width, target.height, TextureFormat.RGBA32, false);
+            try
+            {
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0f, 0f, target.width, target.height), 0, 0);
+                readback.Apply();
+                int bright = 0;
+                foreach (Color32 pixel in readback.GetPixels32())
+                    if (pixel.a > 0 && (pixel.r > 40 || pixel.g > 40 || pixel.b > 40)) bright++;
+                Assert.That(bright, Is.GreaterThan(100), "Render was blank: " + path);
+                File.WriteAllBytes(path, readback.EncodeToPNG());
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                Object.Destroy(readback);
+            }
         }
 
         [UnityTest]
