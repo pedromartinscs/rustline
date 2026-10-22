@@ -148,6 +148,9 @@ namespace Rustline.Editor
                 RustlineBuildSceneOrder.EnsureCanonicalOrder();
                 RustlineBuildSceneOrder.ValidateOrThrow();
 
+                // The base rebuild replaces the managed rig; gameplay must rebind afterwards.
+                RustlineFirstPlayableSetup.ApplyGameplay();
+
                 AssetDatabase.SaveAssets();
                 AssetDatabase.Refresh();
 

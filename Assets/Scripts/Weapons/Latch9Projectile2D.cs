@@ -319,6 +319,13 @@ namespace Rustline.Gameplay.Weapons
             return found;
         }
 
+        public void CancelForLevelReset()
+        {
+            enabled = false;
+            if (_renderer != null) _renderer.enabled = false;
+            Destroy(gameObject);
+        }
+
         private void ConfigureRenderer(Material sharedMaterial, int sortingLayerId, int sortingOrder)
         {
             _renderer.useWorldSpace = true;
