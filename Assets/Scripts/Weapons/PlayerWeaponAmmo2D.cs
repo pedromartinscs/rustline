@@ -35,6 +35,21 @@ namespace Rustline.Gameplay.Weapons
 
         public event Action<WeaponDefinition2D> AmmoChanged;
 
+        /// <summary>Resupply at a level checkpoint/retry; switching equipment never calls this.</summary>
+        public void ResetAmmunition()
+        {
+            var definitions = new List<WeaponDefinition2D>(_magazines.Keys);
+            foreach (WeaponDefinition2D definition in definitions)
+            {
+                _magazines[definition] = new MagazineState
+                {
+                    Rounds = definition.MagazineCapacity,
+                    ReserveMagazines = definition.InitialReserveMagazines
+                };
+                AmmoChanged?.Invoke(definition);
+            }
+        }
+
         public Snapshot GetSnapshot(WeaponDefinition2D definition)
         {
             if (definition == null)
