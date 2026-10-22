@@ -1,4 +1,3 @@
-using Rustline.Presentation;
 using UnityEngine;
 
 namespace Rustline.Gameplay.Combat
@@ -12,7 +11,6 @@ namespace Rustline.Gameplay.Combat
         [SerializeField] private CapsuleCollider2D playerCollider;
         [SerializeField] private CombatHealth2D playerHealth;
         [SerializeField] private Collider2D weaponHitCollider;
-        [SerializeField] private LineRenderer silhouette;
         [SerializeField] private float minimumX;
         [SerializeField] private float maximumX;
 
@@ -22,17 +20,23 @@ namespace Rustline.Gameplay.Combat
         private int _direction = -1;
         private int _strikeDirection;
         private float _hitPause;
-        private float _deadTime;
         private readonly SentryBrain2D _brain = new SentryBrain2D();
         public SentryState State => _brain.State;
         public CombatHealth2D Health => _health;
         public int StrikeCount { get; private set; }
         public Vector2 SpawnPosition => _spawn;
         public bool CombatActive { get; private set; } = true;
+        public int FacingDirection { get; private set; } = -1;
+        public float StateTimeRemaining => _brain.Remaining;
+        public float HitPauseRemaining => _hitPause;
+        // MovePosition's velocity is consumed by the physics step; retain its successful
+        // movement intent until the next AI step so render frames do not alternate with idle.
+        public bool IsMoving { get; private set; }
 
         public void SetCombatActive(bool active)
         {
             CombatActive = active;
+            if (!active) IsMoving = false;
             if (!active && _body != null) _body.linearVelocity = Vector2.zero;
         }
 
@@ -66,6 +70,7 @@ namespace Rustline.Gameplay.Combat
 
         private void FixedUpdate()
         {
+            IsMoving = false;
             if (!CombatActive || _health.IsDead) return;
             if (_hitPause > 0f) { _hitPause -= Time.fixedDeltaTime; return; }
             Vector2 sensor = _body.position + Vector2.up * 1.25f;
@@ -75,10 +80,15 @@ namespace Rustline.Gameplay.Combat
             bool sees = playerHealth != null && playerHealth.IsAlive && playerCollider != null && playerCollider.enabled &&
                         InDetectionWindow(sensor, target) && clear;
             bool reach = sees && Mathf.Abs(delta.x) <= StrikeReach && Mathf.Abs(delta.y) <= 1.5f;
+            if (sees && State != SentryState.Windup && State != SentryState.Recovery)
+                FacingDirection = delta.x < 0f ? -1 : 1;
             SentryState previous = State;
             bool strike = _brain.Step(Time.fixedDeltaTime, sees, reach);
             if (State == SentryState.Windup && previous != State)
+            {
                 _strikeDirection = delta.x < 0f ? -1 : 1;
+                FacingDirection = _strikeDirection;
+            }
             if (strike)
             {
                 StrikeCount++;
@@ -102,43 +112,33 @@ namespace Rustline.Gameplay.Combat
             if (next < minimumX || next > maximumX || !supported || blocked)
             {
                 _direction = -direction;
+                FacingDirection = _direction;
                 return;
             }
             _direction = direction;
+            FacingDirection = direction;
             _body.MovePosition(new Vector2(next, _spawn.y));
-        }
-
-        private void Update()
-        {
-            if (silhouette == null) return;
-            if (State == SentryState.Dead)
-            {
-                _deadTime += Time.deltaTime;
-                silhouette.transform.localScale = new Vector3(1f, Mathf.Max(0.1f, 1f - _deadTime * 4f), 1f);
-                silhouette.enabled = _deadTime < 0.4f;
-            }
-            int color = _hitPause > 0f ? 24 : State == SentryState.Windup ? 13 :
-                State == SentryState.Alert || State == SentryState.Pursuit ? 12 : 10;
-            silhouette.startColor = silhouette.endColor = RustlinePalette.GetColor(color);
+            IsMoving = true;
         }
 
         public void ResetForEncounter()
         {
             _brain.Reset();
-            _hitPause = _deadTime = 0f;
+            _hitPause = 0f;
             _direction = -1;
+            FacingDirection = -1;
+            IsMoving = false;
             _body.position = _spawn;
             _body.linearVelocity = Vector2.zero;
             _health.ResetHealth();
             weaponHitCollider.enabled = true;
-            silhouette.enabled = true;
-            silhouette.transform.localScale = Vector3.one;
         }
 
         private void OnDamaged(DamageResult2D result) { if (result.DidApply) _hitPause = 0.12f; }
         private void OnDied(DamageResult2D result)
         {
             _brain.Kill();
+            IsMoving = false;
             _body.linearVelocity = Vector2.zero;
             weaponHitCollider.enabled = false;
             _hitPause = 0f;

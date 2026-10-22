@@ -28,7 +28,9 @@ namespace Rustline.Tests
                 foreach (CombatHealth2D health in encounter.Members)
                 {
                     Assert.That(health.gameObject.activeInHierarchy, Is.True);
-                    Assert.That(health.GetComponentInChildren<LineRenderer>().enabled, Is.True);
+                    if (health.TryGetComponent(out Sentry2D _))
+                        Assert.That(health.GetComponentInChildren<Rustline.Presentation.SentryPresenter2D>().BodyRenderer.enabled, Is.True);
+                    else Assert.That(health.GetComponentInChildren<LineRenderer>().enabled, Is.True);
                     Assert.That(health.GetComponentInChildren<WeaponHitbox2D>().GetComponent<Collider2D>().enabled, Is.True);
                     if (health.TryGetComponent(out Sentry2D sentry)) Assert.That(sentry.CombatActive, Is.False);
                     if (health.TryGetComponent(out Bombardier2D ranged)) Assert.That(ranged.CombatActive, Is.False);
