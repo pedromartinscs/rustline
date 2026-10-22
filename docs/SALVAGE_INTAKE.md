@@ -2,7 +2,7 @@
 
 `SalvageIntake` is Rustline's first production-area scene and the first step away from the diagnostic `MovementLab` toward the itch.io vertical slice.
 
-The first-playable phase now adds three ordered combat encounters, close-range sentries and the existing Bombardier, a checkpoint before the shaft, death/retry, and extraction on the upper deck. These additions preserve the terrain/art contracts below. See [FIRST_PLAYABLE.md](FIRST_PLAYABLE.md) for launch, controls, managed gameplay ownership and current limitations; [first-playable-validation.md](first-playable-validation.md) records actual validation. The production setup's final step reapplies gameplay against the rebuilt rig.
+The expanded first playable preserves the introduction below and continues from x=43 to a final extraction at x=193, y=29. It now has seven encounters, fourteen defenders and three checkpoints. See [salvage-intake-expansion.md](salvage-intake-expansion.md) for the new terrain/authoring contract, [FIRST_PLAYABLE.md](FIRST_PLAYABLE.md) for launch and controls, and [salvage-intake-expansion-validation.md](salvage-intake-expansion-validation.md) for current evidence and manual gates. Production setup applies the expansion after the original dressing passes and before rebinding gameplay to the rebuilt rig.
 
 The current goal remains deliberately narrow: build one coherent industrial route that is enjoyable to traverse and aim through with the frozen player/Longwatch foundation before expanding into a broader environment library.
 

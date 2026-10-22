@@ -17,14 +17,11 @@ namespace Rustline.Presentation
         private float _refreshAt;
         private float _flashUntil;
         private float _damageUntil;
-        private LineRenderer _checkpointMarker;
         private LineRenderer _exitMarker;
-        [SerializeField] private LineRenderer checkpointMarker;
         [SerializeField] private LineRenderer exitMarker;
 
         private void Start()
         {
-            _checkpointMarker = checkpointMarker;
             _exitMarker = exitMarker;
             _atlas = WeaponHudBitmapFont.CreateAtlas();
             _material = new Material(uiShader) { hideFlags = HideFlags.HideAndDontSave };
@@ -65,12 +62,15 @@ namespace Rustline.Presentation
                 _refreshAt = Time.unscaledTime + 0.2f;
                 Refresh();
             }
-            if (_checkpointMarker != null)
-                _checkpointMarker.startColor = _checkpointMarker.endColor =
-                    RustlinePalette.GetColor(director.Progress.HasCheckpoint ? 20 : 13);
+            for (int i = 0; i < director.Checkpoints.Length; i++)
+            {
+                LineRenderer marker = director.Checkpoints[i].Beacon;
+                if (marker != null) marker.startColor = marker.endColor =
+                    RustlinePalette.GetColor(i <= director.Progress.CheckpointIndex ? 20 : 13);
+            }
             if (_exitMarker != null)
                 _exitMarker.startColor = _exitMarker.endColor =
-                    RustlinePalette.GetColor(director.Progress.ClearedEncounters == 3 ? 20 : 10);
+                    RustlinePalette.GetColor(director.Progress.ClearedEncounters == director.Progress.EncounterCount ? 20 : 10);
         }
 
         private void Refresh()
@@ -81,18 +81,15 @@ namespace Rustline.Presentation
             SetLine(1, "HEALTH " + director.PlayerHealth.CurrentHealth + " / 100   RETRIES " + progress.Retries);
             string objective;
             if (progress.IsComplete) objective = "EXTRACTION COMPLETE / ENTER TO RESTART";
-            else if (director.IsRetrying) objective = progress.HasCheckpoint ? "DOWN / RETURNING TO SERVICE STATION" : "DOWN / RETRYING FROM WEST BULKHEAD";
-            else if (Time.unscaledTime < _flashUntil) objective = "CHECKPOINT SAVED / HEALTH AND AMMO RESTORED";
-            else if (progress.ClearedEncounters == 0) objective = "01 / CLEAR WEST SECURITY";
-            else if (progress.ClearedEncounters == 1) objective = "02 / CLEAR THE TRANSFER BAY";
-            else if (progress.ClearedEncounters == 2) objective = progress.HasCheckpoint ? "03 / CLIMB SHAFT / CLEAR UPPER DECK" : "REACH SERVICE STATION / EAST STAGING";
-            else objective = progress.ExtractionTime > 0f ? "EXTRACTING / HOLD POSITION" : "04 / REACH UPPER EXIT / HOLD POSITION";
+            else if (director.IsRetrying) objective = progress.HasCheckpoint ? "DOWN / RETURNING TO " + director.Checkpoints[progress.CheckpointIndex].Label : "DOWN / RETRYING FROM WEST BULKHEAD";
+            else if (progress.HasCheckpoint && Time.unscaledTime < _flashUntil) objective = "CHECKPOINT SAVED / HEALTH AND AMMO RESTORED";
+            else objective = director.Objective;
             SetLine(2, objective);
             SetLine(3, "A/D MOVE / SPACE JUMP / S CROUCH");
             SetLine(4, "MOUSE AIM / LEFT FIRE / RIGHT MODE");
             SetLine(5, "1 LATCH-9 / 2 LONGWATCH / R RELOAD / F5 RESTART");
             int seconds = Mathf.FloorToInt(director.ElapsedSeconds);
-            SetLine(6, "TIME " + seconds / 60 + "M " + seconds % 60 + "S / ENCOUNTERS " + progress.ClearedEncounters + " / 3");
+            SetLine(6, "TIME " + seconds / 60 + "M " + seconds % 60 + "S / ENCOUNTERS " + progress.ClearedEncounters + " / " + progress.EncounterCount);
         }
 
         private void SetLine(int index, string value)

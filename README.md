@@ -66,7 +66,7 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-The integrated first playable is **Salvage Intake** (build index 0): three ordered encounters, close-range sentries and existing Bombardiers, checkpoint/retry, and upper-deck extraction. Open the saved production scene and press Play. See [launch instructions, controls and build steps](docs/FIRST_PLAYABLE.md), [design](docs/first-playable-design.md), and [validation record](docs/first-playable-validation.md) for the verified scope and remaining gates.
+The expanded first playable is **Salvage Intake** (build index 0): a continuous route from x=-20 to x=193, processing galleries, maintenance traversal and rail terminal, seven ordered encounters with sentries/Bombardiers, three checkpoints, retry and final extraction. Enemies remain visible/damageable before AI activation. Open the saved production scene and press Play. See [launch/controls](docs/FIRST_PLAYABLE.md), [expansion design](docs/salvage-intake-expansion.md), and [validation record](docs/salvage-intake-expansion-validation.md) for actual evidence and remaining gates.
 
 **The current player movement set, first-weapon Longwatch presentation/gunplay slice, and the M3A repeatable combat prototype are implemented.**
 

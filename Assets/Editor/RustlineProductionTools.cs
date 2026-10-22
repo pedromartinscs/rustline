@@ -149,6 +149,7 @@ namespace Rustline.Editor
                 RustlineBuildSceneOrder.ValidateOrThrow();
 
                 // The base rebuild replaces the managed rig; gameplay must rebind afterwards.
+                RustlineSalvageIntakeExpansionSetup.ApplyEnvironment();
                 RustlineFirstPlayableSetup.ApplyGameplay();
 
                 AssetDatabase.SaveAssets();
@@ -157,7 +158,7 @@ namespace Rustline.Editor
                 Debug.Log(
                     "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, architectural supports, catwalk clearance, safety-floor armor, and controlled Longwatch breaching applied, " +
                     "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
-                EditorUtility.DisplayDialog(
+                if (!Application.isBatchMode) EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +
                     "Salvage Intake was rebuilt with deterministic industrial-surface variants, accepted structural/route refinements, architectural supports, raised catwalk clearance, the protected lower safety-floor envelope, and controlled Longwatch structural breaching. " +
@@ -167,6 +168,7 @@ namespace Rustline.Editor
             catch (Exception exception)
             {
                 Debug.LogException(exception);
+                if (Application.isBatchMode) throw;
                 EditorUtility.DisplayDialog(
                     "Rustline Production Setup Failed",
                     "The production setup stopped at the first failing deterministic check. " +

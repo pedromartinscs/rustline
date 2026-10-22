@@ -68,27 +68,27 @@ namespace Rustline.Tests
         [Test]
         public void Progress_RejectsSkippedOrRepeatedEncountersAndEarlyCheckpoint()
         {
-            var run = new FirstPlayableProgress();
+            var run = new FirstPlayableProgress(3);
             Assert.That(run.ClearEncounter(1), Is.False);
-            Assert.That(run.TryCheckpoint(true), Is.False);
+            Assert.That(run.TryCheckpoint(0, 2, true), Is.False);
             Assert.That(run.ClearEncounter(0), Is.True);
             Assert.That(run.ClearEncounter(0), Is.False);
-            Assert.That(run.TryCheckpoint(true), Is.False);
+            Assert.That(run.TryCheckpoint(0, 2, true), Is.False);
             Assert.That(run.ClearEncounter(1), Is.True);
-            Assert.That(run.TryCheckpoint(false), Is.False);
-            Assert.That(run.TryCheckpoint(true), Is.True);
-            Assert.That(run.TryCheckpoint(true), Is.False);
+            Assert.That(run.TryCheckpoint(0, 2, false), Is.False);
+            Assert.That(run.TryCheckpoint(0, 2, true), Is.True);
+            Assert.That(run.TryCheckpoint(0, 2, true), Is.False);
         }
 
         [Test]
         public void Progress_RetryRestoresOnlyCommittedClearsAndRestartErasesCheckpoint()
         {
-            var run = new FirstPlayableProgress();
+            var run = new FirstPlayableProgress(3);
             run.ClearEncounter(0);
             run.Retry();
             Assert.That(run.ClearedEncounters, Is.Zero);
             run.ClearEncounter(0); run.ClearEncounter(1);
-            run.TryCheckpoint(true);
+            run.TryCheckpoint(0, 2, true);
             run.ClearEncounter(2);
             run.TickExtraction(1f, true, true);
             run.Retry();
@@ -104,7 +104,7 @@ namespace Rustline.Tests
         [Test]
         public void Progress_CompletionRequiresClearAliveUninterruptedHoldAndEmitsOnce()
         {
-            var run = new FirstPlayableProgress();
+            var run = new FirstPlayableProgress(3);
             Assert.That(run.TickExtraction(20f, true, true), Is.False);
             for (int i = 0; i < 3; i++) run.ClearEncounter(i);
             Assert.That(run.TickExtraction(1f, true, true), Is.False);

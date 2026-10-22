@@ -50,10 +50,15 @@ namespace Rustline.Diagnostics
             _director.Player.Landed += () => _landings++;
             for (int i = 0; i < 120; i++) yield return new WaitForFixedUpdate();
             Require(_body.position.y > 0.95f && _director.Player.IsGrounded, "Spawn fell through the real Tilemap.");
-            var composite = FindAnyObjectByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>()
-                .GetComponent<CompositeCollider2D>();
-            Require(composite.pathCount > 0 && composite.pointCount > 0, "Release Composite is empty.");
-            Debug.Log($"FIRST_PLAYABLE_SMOKE_SPAWN_OK paths={composite.pathCount} points={composite.pointCount}");
+            var collisionMaps = FindObjectsByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>();
+            Require(collisionMaps.Length == 2, "Expected the main terrain and precision ceiling collision maps.");
+            foreach (var collisionMap in collisionMaps)
+            {
+                var composite = collisionMap.GetComponent<CompositeCollider2D>();
+                Require(composite.pathCount > 0 && composite.pointCount > 0, "Release Composite is empty: " + collisionMap.name);
+                Debug.Log($"FIRST_PLAYABLE_SMOKE_COLLISION_OK object='{collisionMap.name}' paths={composite.pathCount} points={composite.pointCount}");
+            }
+            Debug.Log("FIRST_PLAYABLE_SMOKE_SPAWN_OK supported by real Tilemap");
             Capture("01-entry");
             int landedBefore = _landings;
             float startX = _body.position.x;
@@ -90,7 +95,34 @@ namespace Rustline.Diagnostics
                 "Checkpoint auto retry did not preserve clears or restore its spawn.");
             Debug.Log("FIRST_PLAYABLE_SMOKE_RETRY_OK before/after checkpoint");
             yield return Fight(2, new Vector2(34.75f, 17.08f));
-            Place(new Vector2(43f, 17.08f));
+            Place(new Vector2(43f,17.08f)); yield return new WaitForSeconds(0.3f);
+            Require(_director.Progress.CheckpointIndex == 1, "Former extraction did not become the upper relay checkpoint.");
+            Require(!_director.Progress.IsComplete, "Former extraction completed the expanded level.");
+            Place(new Vector2(40f,17.05f));
+            Keys(Key.D);
+            for (int i=0;i<80;i++) yield return new WaitForFixedUpdate();
+            Keys();
+            Require(_body.position.x > 49f && _body.position.y > 16.9f, "Release extension seam traversal failed.");
+            Debug.Log("FIRST_PLAYABLE_SMOKE_EXPANDED_SEAM_OK actual input from old exit into gallery");
+            Vector2[] fightPositions = { new Vector2(55f,17.08f),new Vector2(110f,17.08f),
+                new Vector2(152f,29.08f),new Vector2(174.5f,29.08f) };
+            for(int index=3;index<_director.Encounters.Length;index++)
+            {
+                yield return Fight(index,fightPositions[index-3]);
+                for(int stationIndex=1;stationIndex<_director.Checkpoints.Length;stationIndex++)
+                {
+                    var station=_director.Checkpoints[stationIndex];
+                    if (station.RequiredClears != index+1) continue;
+                    Place(station.transform.position); yield return new WaitForSeconds(0.3f);
+                    Require(_director.Progress.CheckpointIndex == stationIndex,"Expanded checkpoint not saved.");
+                    _director.PlayerHealth.ApplyDamage(in death);
+                    yield return new WaitForSeconds(1.2f);
+                    Require(_director.Progress.ClearedEncounters == station.RequiredClears &&
+                        Vector2.Distance(_body.position,station.transform.position)<0.2f,"Expanded checkpoint retry failed.");
+                }
+            }
+            Rect extraction=_director.ExtractionArea;
+            Place(new Vector2(extraction.center.x,extraction.yMin+0.28f));
             yield return new WaitForSeconds(2.3f);
             Require(_director.Progress.IsComplete && !_body.simulated, "Extraction did not complete/freeze the run.");
             Capture("05-complete");
@@ -98,7 +130,7 @@ namespace Rustline.Diagnostics
             _director.RestartRun();
             Require(!_director.Progress.HasCheckpoint && !_director.Progress.IsComplete &&
                 _director.Progress.ClearedEncounters == 0 && _body.simulated, "Full restart failed.");
-            Debug.Log("FIRST_PLAYABLE_SMOKE_PASS: Release collision, input movement, actual hitscan combat, retry, checkpoint, extraction and restart. Encounter placement was automated; shaft traversal/balance are manual gates.");
+            Debug.Log("FIRST_PLAYABLE_SMOKE_PASS: expanded Release collision, input across original/extension Tilemaps, all 7 actual hitscan encounters, checkpoints, retry, extraction and restart. Fight staging was automated; full-route human traversal/balance remain manual gates.");
             Keys();
             if (Array.IndexOf(Environment.GetCommandLineArgs(), "--smoke-auto-quit") >= 0) Application.Quit(0);
         }

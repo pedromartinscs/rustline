@@ -14,8 +14,7 @@ namespace Rustline.Gameplay.Combat
         [SerializeField] private CombatHealth2D playerHealth;
         [SerializeField] private FirstPlayableEncounter2D[] encounters;
         [SerializeField] private Transform entrySpawn;
-        [SerializeField] private Transform checkpointSpawn;
-        [SerializeField] private Rect checkpointArea;
+        [SerializeField] private FirstPlayableCheckpoint2D[] checkpoints;
         [SerializeField] private Rect extractionArea;
         [SerializeField] private float failureHeight = -10f;
 
@@ -26,13 +25,26 @@ namespace Rustline.Gameplay.Combat
         private PlayerWeaponEquipment2D _equipment;
         private float _retryDelay;
         private bool _started;
-        public FirstPlayableProgress Progress { get; } = new FirstPlayableProgress();
+        public FirstPlayableProgress Progress { get; private set; }
         public CombatHealth2D PlayerHealth => playerHealth;
         public PlayerMotor2D Player => player;
         public FirstPlayableEncounter2D[] Encounters => encounters;
         public bool IsRetrying { get; private set; }
         public float ElapsedSeconds { get; private set; }
-        public Transform ActiveSpawn => Progress.HasCheckpoint ? checkpointSpawn : entrySpawn;
+        public FirstPlayableCheckpoint2D[] Checkpoints => checkpoints;
+        public Transform ActiveSpawn => Progress.HasCheckpoint ? checkpoints[Progress.CheckpointIndex].transform : entrySpawn;
+        public string Objective
+        {
+            get
+            {
+                int next = Progress.ClearedEncounters;
+                if (next == encounters.Length)
+                    return Progress.ExtractionTime > 0f ? "EXTRACTING / HOLD POSITION" : "REACH TERMINAL EXIT / HOLD POSITION";
+                for (int i = Progress.CheckpointIndex + 1; i < checkpoints.Length; i++)
+                    if (checkpoints[i].RequiredClears <= Progress.ClearedEncounters) return "REACH " + checkpoints[i].Label;
+                return (next + 1) + " / " + encounters[next].Objective;
+            }
+        }
         public Rect ExtractionArea => extractionArea;
         public event Action Changed;
         public event Action CheckpointReached;
@@ -40,7 +52,7 @@ namespace Rustline.Gameplay.Combat
         private void Awake()
         {
             if (player == null || playerHealth == null || encounters == null ||
-                encounters.Length != FirstPlayableProgress.EncounterCount || entrySpawn == null || checkpointSpawn == null)
+                encounters.Length == 0 || entrySpawn == null || checkpoints == null || checkpoints.Length == 0)
             {
                 Debug.LogError("First playable scene is missing its authored run references.", this);
                 enabled = false;
@@ -51,6 +63,7 @@ namespace Rustline.Gameplay.Combat
             _weapon = player.GetComponent<PlayerWeaponController2D>();
             _ammo = player.GetComponent<PlayerWeaponAmmo2D>();
             _equipment = player.GetComponent<PlayerWeaponEquipment2D>();
+            Progress = new FirstPlayableProgress(encounters.Length);
         }
 
         private void OnEnable()
@@ -91,27 +104,34 @@ namespace Rustline.Gameplay.Combat
                 return;
             }
             if (_body.position.y < failureHeight) { BeginRetry(); return; }
-            int next = Progress.ClearedEncounters;
-            if (next < encounters.Length)
+            // Proximity and early hits can wake future encounters. Only the defeated prefix
+            // advances objectives; activation never resets health or requires an earlier trigger.
+            foreach (FirstPlayableEncounter2D encounter in encounters)
             {
-                FirstPlayableEncounter2D encounter = encounters[next];
                 if (!encounter.IsActive && encounter.ActivationArea.Contains(_body.position))
                 {
                     encounter.Activate();
                     Changed?.Invoke();
                 }
-                if (encounter.IsDefeated)
+            }
+            bool advanced = false;
+            while (Progress.ClearedEncounters < encounters.Length && encounters[Progress.ClearedEncounters].IsDefeated)
+            {
+                Progress.ClearEncounter(Progress.ClearedEncounters);
+                advanced = true;
+            }
+            if (advanced) Changed?.Invoke();
+            for (int i = 0; i < checkpoints.Length; i++)
+            {
+                FirstPlayableCheckpoint2D checkpoint = checkpoints[i];
+                if (Progress.TryCheckpoint(i, checkpoint.RequiredClears, checkpoint.Area.Contains(_body.position)))
                 {
-                    Progress.ClearEncounter(next);
+                    ClearTransientCombat();
+                    playerHealth.ResetHealth();
+                    _ammo.ResetAmmunition();
+                    CheckpointReached?.Invoke();
                     Changed?.Invoke();
                 }
-            }
-            if (Progress.TryCheckpoint(checkpointArea.Contains(_body.position)))
-            {
-                playerHealth.ResetHealth();
-                _ammo.ResetAmmunition();
-                CheckpointReached?.Invoke();
-                Changed?.Invoke();
             }
             if (Progress.TickExtraction(Time.deltaTime, extractionArea.Contains(_body.position), playerHealth.IsAlive))
             {
@@ -191,7 +211,7 @@ namespace Rustline.Gameplay.Combat
             foreach (FirstPlayableEncounter2D encounter in encounters) encounter.ClearBombs();
             _weapon.ResetTransientState();
             // Only a retry/restart/completion path, never a per-frame discovery query.
-            foreach (Latch9Projectile2D projectile in FindObjectsByType<Latch9Projectile2D>(FindObjectsSortMode.None))
+            foreach (Latch9Projectile2D projectile in FindObjectsByType<Latch9Projectile2D>())
                 projectile.CancelForLevelReset();
         }
 
