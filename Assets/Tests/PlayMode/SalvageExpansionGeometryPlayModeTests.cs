@@ -171,12 +171,39 @@ namespace Rustline.Tests
         public IEnumerator RealInput_ClimbsSecondFourUnitShaftUsingWallKicksAndLedgeExit()
         {
             yield return LoadRoute();
-            Place(123f,17.05f); yield return Steps(20);
+            yield return ClimbWell(123f,17.05f,128.2f);
+        }
+
+        [UnityTest]
+        public IEnumerator RealInput_ReturnsFromRailRecoveryWell()
+        {
+            yield return LoadRoute();
+            yield return ClimbWell(145f,21.05f,150.2f);
+        }
+
+        [UnityTest]
+        public IEnumerator RealInput_CanLedgeClimbOntoAlternateMaintenanceRoof()
+        {
+            yield return LoadRoute();
+            Place(100f,17.05f); yield return Steps(20);
+            bool climbed=false;
+            _motor.LedgeClimbStarted += () => climbed=true;
+            Keys(Key.D,Key.Space);
+            for(int i=0;i<100 && _body.position.x < 104f;i++) yield return new WaitForFixedUpdate();
+            Keys(); yield return Steps(20);
+            Assert.That(climbed,Is.True);
+            Assert.That(_body.position.x,Is.GreaterThan(102.5f));
+            Assert.That(_body.position.y,Is.GreaterThan(20.5f));
+        }
+
+        private IEnumerator ClimbWell(float spawnX,float spawnY,float exitX)
+        {
+            Place(spawnX,spawnY); yield return Steps(20);
             int direction = 1;
             bool held = true;
             int braces = 0;
             Keys(Key.D,Key.Space);
-            for (int i = 0; i < 650 && !(_body.position.x > 128.2f && _body.position.y > 28.9f); i++)
+            for (int i = 0; i < 650 && !(_body.position.x > exitX && _body.position.y > 28.9f); i++)
             {
                 yield return new WaitForFixedUpdate();
                 if (_motor.IsLedgeClimbing) { Keys(Key.D); held = false; continue; }
@@ -196,7 +223,7 @@ namespace Rustline.Tests
                 }
             }
             Assert.That(braces, Is.GreaterThan(1));
-            Assert.That(_body.position.x, Is.GreaterThan(128.2f), "Shaft traversal stalled at " + _body.position);
+            Assert.That(_body.position.x, Is.GreaterThan(exitX), "Shaft traversal stalled at " + _body.position);
             Assert.That(_body.position.y, Is.GreaterThan(28.9f));
         }
 

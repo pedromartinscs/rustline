@@ -25,6 +25,7 @@ namespace Rustline.Editor
         public static void ApplyGameplay()
         {
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            RustlineSalvageIntakeExpansionSetup.ValidateScene(scene);
             Transform preserve = Find<Transform>(scene, "Gameplay Content - Preserve");
             PlayerMotor2D player = Find<PlayerMotor2D>(scene);
             if (preserve == null || player == null) throw new InvalidOperationException("Production scene/rig missing.");
@@ -40,10 +41,15 @@ namespace Rustline.Editor
             Material material = AssetDatabase.LoadAssetAtPath<Material>(
                 "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat");
             if (material == null) throw new InvalidOperationException("Existing sprite material missing.");
-            var waves = new FirstPlayableEncounter2D[3];
+            var waves = new FirstPlayableEncounter2D[7];
             waves[0] = Encounter(root.transform, "01 West Security", new Rect(-18f, -1f, 16f, 10f));
             waves[1] = Encounter(root.transform, "02 Transfer Bay", new Rect(1f, -1f, 26f, 14f));
             waves[2] = Encounter(root.transform, "03 Exit Defense", new Rect(33.5f, 16f, 13f, 15f));
+            SetString(waves[2], "objective", "CLIMB SHAFT / CLEAR UPPER DECK");
+            waves[3] = Encounter(root.transform, "04 Processing Gallery", new Rect(52f, 16f, 43f, 16f));
+            waves[4] = Encounter(root.transform, "05 Maintenance", new Rect(96f, 16f, 32f, 19f));
+            waves[5] = Encounter(root.transform, "06 Rail Battery", new Rect(148f, 28f, 23f, 10f));
+            waves[6] = Encounter(root.transform, "07 Terminal Defense", new Rect(172f, 28f, 24f, 10f));
             CombatHealth2D west = Sentry(waves[0].transform, "West Sentry", new Vector2(-10f, 1.02f),
                 -11.25f, -8.75f, player, material);
             SetMembers(waves[0], west);
@@ -55,33 +61,48 @@ namespace Rustline.Editor
                 34.75f, 40f, player, material);
             CombatHealth2D upperBomb = Bombardier(waves[2].transform, "Upper Bombardier", new Vector2(42f, 17.02f), 1f, material);
             SetMembers(waves[2], upper, upperBomb);
-            Transform station = Child(root.transform, "Service Station Spawn").transform;
-            station.position = new Vector3(22f, 1.08f, 0f);
-            LineRenderer checkpoint = Marker(root.transform, "Checkpoint Beacon", new Vector2(22f, 1.02f), material, 13);
-            LineRenderer exit = Marker(root.transform, "Extraction Beacon", new Vector2(43f, 17.02f), material, 10);
+            SetMembers(waves[3],
+                Sentry(waves[3].transform, "Gallery Sentry", new Vector2(60f,17.02f),56f,64f,player,material),
+                Bombardier(waves[3].transform, "Gallery Battery", new Vector2(82f,20.02f),1.5f,material));
+            SetMembers(waves[4],
+                Sentry(waves[4].transform, "Maintenance Sentry", new Vector2(114f,17.02f),111f,119f,player,material),
+                Bombardier(waves[4].transform, "Maintenance Bombardier", new Vector2(118f,17.02f),0.6f,material));
+            SetMembers(waves[5],
+                Sentry(waves[5].transform, "Rail Sentry", new Vector2(155f,29.02f),150f,157f,player,material),
+                Bombardier(waves[5].transform, "Raised Rail Battery", new Vector2(164f,32.02f),2f,material));
+            SetMembers(waves[6],
+                Sentry(waves[6].transform, "Terminal West Sentry", new Vector2(176f,29.02f),173f,179f,player,material),
+                Sentry(waves[6].transform, "Terminal East Sentry", new Vector2(185f,29.02f),183f,186.3f,player,material),
+                Bombardier(waves[6].transform, "Terminal Bombardier", new Vector2(188f,29.02f),1f,material));
+            var checkpoints = new[]
+            {
+                Station(root.transform,"SERVICE STATION",new Vector2(22f,1.08f),new Rect(19f,0.8f,4.5f,4f),2,material),
+                Station(root.transform,"UPPER RELAY",new Vector2(43f,17.08f),new Rect(40f,16.8f,6f,4f),3,material),
+                Station(root.transform,"SERVICE REFUGE",new Vector2(135f,29.08f),new Rect(133f,28.8f,5f,4f),5,material)
+            };
+            LineRenderer exit = Marker(root.transform, "Extraction Beacon", new Vector2(193f, 29.02f), material, 10);
             Set(director, "player", player);
             Set(director, "playerHealth", playerHealth);
             Set(director, "entrySpawn", Find<Transform>(scene, "Player Spawn"));
-            Set(director, "checkpointSpawn", station);
-            SetRect(director, "checkpointArea", new Rect(19f, 0.8f, 4.5f, 4f));
-            SetRect(director, "extractionArea", new Rect(41.5f, 16.8f, 3.5f, 3.5f));
+            SetArray(director, "checkpoints", checkpoints);
+            SetRect(director, "extractionArea", new Rect(191.5f, 28.8f, 3.3f, 3.5f));
             SetArray(director, "encounters", waves);
             FirstPlayableHud2D hud = root.AddComponent<FirstPlayableHud2D>();
             Set(hud, "director", director);
             Set(hud, "uiShader", Shader.Find("UI/Default"));
-            Set(hud, "checkpointMarker", checkpoint);
             Set(hud, "exitMarker", exit);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             ValidateScene(scene);
-            Debug.Log("RUSTLINE_FIRST_PLAYABLE_SETUP_OK: 3 encounters, 5 enemies, checkpoint and extraction saved.");
+            Debug.Log("RUSTLINE_FIRST_PLAYABLE_SETUP_OK: 7 encounters, 14 defenders, 3 checkpoints, extraction x=193 saved.");
         }
 
         public static void ValidateScene(Scene scene)
         {
             FirstPlayableDirector2D director = Find<FirstPlayableDirector2D>(scene);
             if (director == null || director.Player == null || director.PlayerHealth == null ||
-                director.Encounters == null || director.Encounters.Length != 3 ||
+                director.Encounters == null || director.Encounters.Length == 0 ||
+                director.Checkpoints == null || director.Checkpoints.Length == 0 ||
                 Find<MovementLabRespawn>(scene) != null)
                 throw new InvalidOperationException("Production run references/respawn policy invalid.");
             int count = 0;
@@ -97,7 +118,16 @@ namespace Rustline.Editor
                     count++;
                 }
             }
-            if (count != 5) throw new InvalidOperationException("Expected 5 authored defenders.");
+            if (count == 0) throw new InvalidOperationException("No authored defenders.");
+            int previousRequired = 0;
+            foreach (FirstPlayableCheckpoint2D checkpoint in director.Checkpoints)
+            {
+                if (checkpoint == null || checkpoint.Beacon == null || checkpoint.RequiredClears <= previousRequired ||
+                    checkpoint.RequiredClears > director.Encounters.Length || !checkpoint.Area.Contains(checkpoint.transform.position))
+                    throw new InvalidOperationException("Checkpoint references/order/spawn area invalid.");
+                previousRequired = checkpoint.RequiredClears;
+            }
+            RustlineSalvageIntakeExpansionSetup.ValidateScene(scene);
             RustlineBuildSceneOrder.ValidateOrThrow();
         }
 
@@ -134,7 +164,17 @@ namespace Rustline.Editor
         {
             var encounter = Child(parent, name).AddComponent<FirstPlayableEncounter2D>();
             SetRect(encounter, "activationArea", area);
+            SetString(encounter, "objective", "CLEAR " + name.Substring(3).ToUpperInvariant());
             return encounter;
+        }
+
+        private static FirstPlayableCheckpoint2D Station(Transform parent, string label, Vector2 spawn, Rect area, int clears, Material material)
+        {
+            var station = Child(parent,label).AddComponent<FirstPlayableCheckpoint2D>();
+            station.transform.position = spawn;
+            SetString(station,"label",label); SetInt(station,"requiredClears",clears); SetRect(station,"area",area);
+            Set(station,"beacon",Marker(station.transform,label + " Beacon",spawn,material,13));
+            return station;
         }
 
         private static CombatHealth2D Actor(Transform parent, string name, Vector2 position, Material material,
@@ -239,6 +279,12 @@ namespace Rustline.Editor
         {
             var serialized = new SerializedObject(target);
             serialized.FindProperty(field).intValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+        private static void SetString(UnityEngine.Object target, string field, string value)
+        {
+            var serialized = new SerializedObject(target);
+            serialized.FindProperty(field).stringValue = value;
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
         private static void SetRect(UnityEngine.Object target, string field, Rect value)

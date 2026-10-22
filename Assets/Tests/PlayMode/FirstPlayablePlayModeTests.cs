@@ -74,7 +74,16 @@ namespace Rustline.Tests
                 presentation.WorldCamera.Render();
                 SaveRender(presentation.WorldTarget, Path.Combine(output, "upper-defense-world.png"));
                 Defeat(2); yield return null;
-                Place(new Vector2(43f, 17.08f));
+                Vector2[] views = { new Vector2(62f,17.08f),new Vector2(112f,17.08f),new Vector2(153f,29.08f),new Vector2(175f,29.08f) };
+                for (int i = 3; i < _director.Encounters.Length; i++)
+                {
+                    Place(views[i-3]);
+                    for (int frame = 0; frame < 25; frame++) yield return new WaitForFixedUpdate();
+                    presentation.WorldCamera.Render();
+                    SaveRender(presentation.WorldTarget, Path.Combine(output,"expanded-section-" + i + ".png"));
+                    Defeat(i); yield return null;
+                }
+                Place(new Vector2(193f,29.08f));
                 yield return new WaitForSeconds(2.2f);
                 Assert.That(_director.Progress.IsComplete, Is.True);
                 Canvas.ForceUpdateCanvases();
@@ -115,7 +124,7 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
-        public IEnumerator Scene_HasOnePlayerFiveRoutedEnemiesAndSupportedReleaseFloor()
+        public IEnumerator Scene_HasOnePlayerFourteenRoutedEnemiesAndSupportedReleaseFloor()
         {
             Assert.That(Object.FindObjectsByType<PlayerMotor2D>(FindObjectsSortMode.None).Length, Is.EqualTo(1));
             Assert.That(Object.FindAnyObjectByType<MovementLabRespawn>(), Is.Null);
@@ -129,7 +138,9 @@ namespace Rustline.Tests
                     Assert.That(health.GetComponentInChildren<WeaponHitbox2D>(true).Health, Is.SameAs(health));
                 }
             }
-            Assert.That(members, Is.EqualTo(5));
+            Assert.That(members, Is.EqualTo(14));
+            Assert.That(_director.Encounters.Length, Is.EqualTo(7));
+            Assert.That(_director.Checkpoints.Length, Is.EqualTo(3));
             var initializer = Object.FindAnyObjectByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>();
             Assert.That(initializer.HasGeneratedGeometry, Is.True);
             for (int i = 0; i < 100; i++) yield return new WaitForFixedUpdate();
@@ -195,6 +206,14 @@ namespace Rustline.Tests
             Place(new Vector2(43f, 0.1f)); yield return null;
             Assert.That(_director.Progress.ExtractionTime, Is.Zero, "Lower floor cannot complete the level.");
             Place(new Vector2(43f, 17.08f));
+            yield return new WaitForSeconds(2.2f);
+            Assert.That(_director.Progress.IsComplete, Is.False, "The former extraction is now an intermediate checkpoint.");
+            for (int i = 3; i < _director.Encounters.Length; i++)
+            {
+                _director.Encounters[i].Activate();
+                Defeat(i); yield return null;
+            }
+            Place(new Vector2(193f,29.08f));
             yield return new WaitForSeconds(2.2f);
             Assert.That(_director.Progress.IsComplete, Is.True);
             Assert.That(_body.simulated, Is.False);

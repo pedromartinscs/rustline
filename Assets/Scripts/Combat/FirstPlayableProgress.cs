@@ -5,13 +5,21 @@ namespace Rustline.Gameplay.Combat
     /// <summary>Run state only. Checkpoints commit cleared encounters, never visual/scene state.</summary>
     public sealed class FirstPlayableProgress
     {
-        public const int EncounterCount = 3;
         public const float ExtractionDuration = 2f;
+        public int EncounterCount { get; }
         public int ClearedEncounters { get; private set; }
-        public bool HasCheckpoint { get; private set; }
+        public int CheckpointIndex { get; private set; } = -1;
+        public int CommittedEncounters { get; private set; }
+        public bool HasCheckpoint => CheckpointIndex >= 0;
         public bool IsComplete { get; private set; }
         public int Retries { get; private set; }
         public float ExtractionTime { get; private set; }
+
+        public FirstPlayableProgress(int encounterCount)
+        {
+            if (encounterCount <= 0) throw new ArgumentOutOfRangeException(nameof(encounterCount));
+            EncounterCount = encounterCount;
+        }
 
         public bool ClearEncounter(int index)
         {
@@ -20,10 +28,12 @@ namespace Rustline.Gameplay.Combat
             return true;
         }
 
-        public bool TryCheckpoint(bool insideStation)
+        public bool TryCheckpoint(int index, int requiredClears, bool insideStation)
         {
-            if (!insideStation || HasCheckpoint || IsComplete || ClearedEncounters < 2) return false;
-            HasCheckpoint = true;
+            if (!insideStation || IsComplete || index <= CheckpointIndex || requiredClears <= CommittedEncounters ||
+                requiredClears > ClearedEncounters || requiredClears > EncounterCount) return false;
+            CheckpointIndex = index;
+            CommittedEncounters = requiredClears;
             return true;
         }
 
@@ -46,7 +56,7 @@ namespace Rustline.Gameplay.Combat
         public void Retry()
         {
             if (IsComplete) return;
-            ClearedEncounters = HasCheckpoint ? 2 : 0;
+            ClearedEncounters = CommittedEncounters;
             ExtractionTime = 0f;
             Retries++;
         }
@@ -55,7 +65,9 @@ namespace Rustline.Gameplay.Combat
         {
             ClearedEncounters = Retries = 0;
             ExtractionTime = 0f;
-            HasCheckpoint = IsComplete = false;
+            CheckpointIndex = -1;
+            CommittedEncounters = 0;
+            IsComplete = false;
         }
     }
 }

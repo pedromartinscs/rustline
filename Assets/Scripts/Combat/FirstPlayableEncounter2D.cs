@@ -6,10 +6,12 @@ namespace Rustline.Gameplay.Combat
     {
         [SerializeField] private CombatHealth2D[] members;
         [SerializeField] private Rect activationArea;
+        [SerializeField] private string objective;
         private Sentry2D[] _sentries;
         private Bombardier2D[] _ranged;
         public CombatHealth2D[] Members => members;
         public Rect ActivationArea => activationArea;
+        public string Objective => objective;
         public bool IsActive { get; private set; }
         public bool IsDefeated
         {
