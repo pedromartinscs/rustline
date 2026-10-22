@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Rustline.Presentation;
 using Rustline.Gameplay.Player;
 using UnityEngine;
 
@@ -24,7 +23,7 @@ namespace Rustline.Gameplay.Combat
         [SerializeField] private Rigidbody2D body;
         [SerializeField] private Collider2D weaponHitCollider;
         [SerializeField] private Transform throwOrigin;
-        [SerializeField] private BombardierPresenter2D presenter;
+        [SerializeField] private Material projectileMaterial;
         [SerializeField, Min(0f)] private float patrolSpeed = DefaultPatrolSpeed;
         [SerializeField, Min(0f)] private float patrolHalfDistance = DefaultPatrolHalfDistance;
         [SerializeField] private int initialDirection = 1;
@@ -43,6 +42,7 @@ namespace Rustline.Gameplay.Combat
         public Rigidbody2D Body => body;
         public Collider2D WeaponHitCollider => weaponHitCollider;
         public Transform ThrowOrigin => throwOrigin;
+        public Material ProjectileMaterial => projectileMaterial;
         public Vector2 SpawnPosition => _spawnPosition;
         public float PatrolSpeed => patrolSpeed;
         public float PatrolHalfDistance => patrolHalfDistance;
@@ -58,10 +58,12 @@ namespace Rustline.Gameplay.Combat
         public int ActiveBombCount => _bombs.Count;
         public bool IsPatrolling => State == BombardierState.Patrol && _hitPauseRemaining <= 0f;
         public bool CombatActive { get; private set; } = true;
+        public bool IsMoving { get; private set; }
 
         public void SetCombatActive(bool active)
         {
             CombatActive = active;
+            if (!active) IsMoving = false;
             if (!active && body != null) body.linearVelocity = Vector2.zero;
         }
 
@@ -69,7 +71,6 @@ namespace Rustline.Gameplay.Combat
         {
             if (health == null) health = GetComponent<CombatHealth2D>();
             if (body == null) body = GetComponent<Rigidbody2D>();
-            if (presenter == null) presenter = GetComponentInChildren<BombardierPresenter2D>();
             PlayerMotor2D player = FindAnyObjectByType<PlayerMotor2D>();
             if (player != null)
             {
@@ -96,6 +97,7 @@ namespace Rustline.Gameplay.Combat
 
         private void FixedUpdate()
         {
+            IsMoving = false;
             if (!CombatActive || body == null || health == null || State == BombardierState.Dead) return;
             float dt = Time.fixedDeltaTime;
             if (_hitPauseRemaining > 0f)
@@ -147,6 +149,7 @@ namespace Rustline.Gameplay.Combat
 
         public void ResetForEncounter()
         {
+            IsMoving = false;
             ClearActiveBombs();
             State = BombardierState.Patrol;
             _stateTimeRemaining = 0f;
@@ -181,6 +184,7 @@ namespace Rustline.Gameplay.Combat
             float nextX = body.position.x + _patrolDirection * patrolSpeed * dt;
             if (nextX >= PatrolMaximumX) { nextX = PatrolMaximumX; _patrolDirection = -1; }
             else if (nextX <= PatrolMinimumX) { nextX = PatrolMinimumX; _patrolDirection = 1; }
+            IsMoving = !Mathf.Approximately(nextX, body.position.x);
             body.MovePosition(new Vector2(nextX, _spawnPosition.y));
         }
 
@@ -198,9 +202,7 @@ namespace Rustline.Gameplay.Combat
             GameObject bombObject = new GameObject("Bombardier Bomb");
             bombObject.transform.position = origin;
             BombardierBomb2D bomb = bombObject.AddComponent<BombardierBomb2D>();
-            Material material = presenter != null && presenter.SilhouetteRenderer != null
-                ? presenter.SilhouetteRenderer.sharedMaterial : null;
-            bomb.Launch(this, origin, LockedTargetPoint, _playerHealth, _playerCollider, material);
+            bomb.Launch(this, origin, LockedTargetPoint, _playerHealth, _playerCollider, projectileMaterial);
             _bombs.Add(bomb);
             LaunchCount++;
         }
@@ -212,6 +214,7 @@ namespace Rustline.Gameplay.Combat
 
         private void OnDied(DamageResult2D result)
         {
+            IsMoving = false;
             State = BombardierState.Dead;
             _stateTimeRemaining = 0f;
             _hitPauseRemaining = 0f;

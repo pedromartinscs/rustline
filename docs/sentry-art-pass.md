@@ -1,5 +1,7 @@
 # M4 — Sentry visual production pass
 
+M5 follow-up: the original art below is preserved. Windup is now 0.48 seconds; a separate three-frame subset-only dissolution follows the collapse and wreck hold, then hides only the renderer. See [bombardier-art-pass.md](bombardier-art-pass.md) for current timing, reset behavior and validation. The M4 timing/permanent-wreck descriptions below remain the historical milestone record.
+
 ## Audit and scope
 
 Start: clean `feat/sentry-art-pass` at `6be6f85`, current main merge containing the validated expansion. Read AGENTS, FIRST_PLAYABLE, PRESENTATION, ART_DIRECTION, PALETTE, SALVAGE_INTAKE and the original/expanded design and validation records. Unity remains 6000.4.0f1, URP 2D, existing native-pixel presentation. This pass owns Sentry presentation only; no route, Bombardier, collision, health or combat-policy redesign.

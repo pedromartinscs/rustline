@@ -100,6 +100,7 @@ namespace Rustline.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             AssetDatabase.ImportAsset(SheetPath, ImportAssetOptions.ForceSynchronousImport);
             Slice();
+            RustlineSentryDissolutionSetup.RebuildSprites();
         }
 
         private static void ConfigureReferenceSource()
@@ -233,6 +234,10 @@ namespace Rustline.Editor
             SerializedProperty array = serialized.FindProperty("frames");
             array.arraySize = frames.Length;
             for (int i = 0; i < frames.Length; i++) array.GetArrayElementAtIndex(i).objectReferenceValue = frames[i];
+            Sprite[] dissolution = RustlineSentryDissolutionSetup.LoadFrames();
+            array = serialized.FindProperty("dissolutionFrames");
+            array.arraySize = dissolution.Length;
+            for (int i = 0; i < dissolution.Length; i++) array.GetArrayElementAtIndex(i).objectReferenceValue = dissolution[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

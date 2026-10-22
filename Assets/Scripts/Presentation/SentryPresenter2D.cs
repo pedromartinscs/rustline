@@ -11,6 +11,7 @@ namespace Rustline.Presentation
         [SerializeField] private Sentry2D enemy;
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private Sprite[] frames;
+        [SerializeField] private Sprite[] dissolutionFrames;
         private CombatHealth2D _health;
         private float _elapsed;
         private float _deathElapsed;
@@ -24,6 +25,8 @@ namespace Rustline.Presentation
             {
                 if (FrameCount != SentryAnimationFrames.Count) return false;
                 foreach (Sprite frame in frames) if (frame == null) return false;
+                if (dissolutionFrames == null || dissolutionFrames.Length != SentryAnimationFrames.DissolutionCount) return false;
+                foreach (Sprite frame in dissolutionFrames) if (frame == null) return false;
                 return true;
             }
         }
@@ -34,7 +37,7 @@ namespace Rustline.Presentation
             if (bodyRenderer == null) bodyRenderer = GetComponent<SpriteRenderer>();
             if (enemy == null || !HasCompleteFrames)
             {
-                Debug.LogError("Sentry presentation requires its actor and all sixteen authored frames.", this);
+                Debug.LogError("Sentry presentation requires its actor, sixteen poses and three dissolution frames.", this);
                 enabled = false;
             }
         }
@@ -75,20 +78,22 @@ namespace Rustline.Presentation
         private void OnHealthReset()
         {
             _elapsed = 0f;
-            _deathElapsed = _health.IsDead ? SentryAnimationFrames.DeathFrameDuration * 3f : 0f;
-            FrameIndex = -1;
+            _deathElapsed = _health.IsDead ? SentryAnimationFrames.DeathEnd : 0f;
+            FrameIndex = -2;
             bodyRenderer.enabled = true;
             bodyRenderer.color = Color.white; // Preserve authored canonical colors; no interpolated tint/fade.
             bodyRenderer.flipX = enemy.FacingDirection < 0;
-            ApplyFrame(_health.IsDead ? 15 : 0);
+            ApplyFrame(_health.IsDead ? -1 : 0);
             SnapVisual();
         }
 
         private void ApplyFrame(int index)
         {
-            if (FrameIndex == index || frames == null || frames.Length != SentryAnimationFrames.Count) return;
+            if (FrameIndex == index) return;
             FrameIndex = index;
-            bodyRenderer.sprite = frames[index];
+            bodyRenderer.enabled = index >= 0;
+            if (index >= 0) bodyRenderer.sprite = index < SentryAnimationFrames.Count ? frames[index] :
+                dissolutionFrames[index - SentryAnimationFrames.Count];
         }
 
         private void SnapVisual()

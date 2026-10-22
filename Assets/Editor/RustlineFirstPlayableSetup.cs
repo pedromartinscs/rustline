@@ -130,6 +130,7 @@ namespace Rustline.Editor
             RustlineSalvageIntakeExpansionSetup.ValidateScene(scene);
             RustlineBuildSceneOrder.ValidateOrThrow();
             RustlineSentryArtSetup.ValidateScene(scene);
+            RustlineBombardierArtSetup.ValidateScene(scene);
         }
 
         [UnityEditor.MenuItem("Tools/Rustline/First Playable/Build Windows Release")]
@@ -227,16 +228,14 @@ namespace Rustline.Editor
         private static CombatHealth2D Bombardier(Transform parent, string name, Vector2 position, float patrol, Material material)
         {
             CombatHealth2D health = Actor(parent, name, position, material, out Rigidbody2D body,
-                out BoxCollider2D collider, out LineRenderer line);
+                out BoxCollider2D collider, out _, false);
             var actor = health.gameObject.AddComponent<Bombardier2D>();
             Transform origin = Child(health.transform, "Throw Origin").transform;
             origin.localPosition = Vector3.up * 2f;
-            var presenter = line.gameObject.AddComponent<BombardierPresenter2D>();
-            line.startColor = line.endColor = RustlinePalette.GetColor(19);
             Set(actor, "health", health); Set(actor, "body", body); Set(actor, "weaponHitCollider", collider);
-            Set(actor, "throwOrigin", origin); Set(actor, "presenter", presenter);
+            Set(actor, "throwOrigin", origin);
             SetFloat(actor, "patrolHalfDistance", patrol);
-            Set(presenter, "health", health); Set(presenter, "enemy", actor); Set(presenter, "silhouetteRenderer", line);
+            RustlineBombardierArtSetup.Configure(actor, material);
             return health;
         }
 

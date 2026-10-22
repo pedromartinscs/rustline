@@ -2,6 +2,8 @@
 
 Open this repository with **Unity 6000.4.0f1**. Open `Assets/Scenes/Demo/SalvageIntake.unity` and press Play. This saved scene is also build index **0**; no runtime generation or setup button is required to play the committed content.
 
+Both enemy archetypes now use original Canonical-28 pixel-art sprites. M5 retains the approved Sentry artwork, shortens its melee preparation to 0.48 seconds and adds a pixel-disintegration finish after collapse. The Bombardier has its own animated demolition-automaton presentation with unchanged ranged timing, locked target and bomb trajectory. See [bombardier-art-pass.md](bombardier-art-pass.md) for assets, authoring and validation.
+
 Clear west security and the transfer bay, climb the first service shaft and clear the upper deck. The former extraction at x=43 is now the **Upper Relay checkpoint**. Continue east through the processing gallery, maintenance underpass/roof and second shaft, then cross the rail bridge and defeat the terminal defense. The final extraction is at **x=193, y=29**, after **seven encounters / fourteen defenders**. Hold the exit for two uninterrupted seconds; leaving or taking damage interrupts it. Follow the current objective in the HUD.
 
 Three session-local stations restore health/magazines and clear transient projectiles: **Service Station (x=22, after 2 encounters)**, **Upper Relay (x=43, after 3)** and **Service Refuge (x=135, after 5)**. Death/falling retries after a short delay. The latest station's committed encounters stay defeated; every later encounter resets in place. F5 restarts the entire level; Enter does the same after completion.
