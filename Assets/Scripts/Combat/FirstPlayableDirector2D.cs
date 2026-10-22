@@ -211,7 +211,7 @@ namespace Rustline.Gameplay.Combat
             foreach (FirstPlayableEncounter2D encounter in encounters) encounter.ClearBombs();
             _weapon.ResetTransientState();
             // Only a retry/restart/completion path, never a per-frame discovery query.
-            foreach (Latch9Projectile2D projectile in FindObjectsByType<Latch9Projectile2D>(FindObjectsSortMode.None))
+            foreach (Latch9Projectile2D projectile in FindObjectsByType<Latch9Projectile2D>())
                 projectile.CancelForLevelReset();
         }
 

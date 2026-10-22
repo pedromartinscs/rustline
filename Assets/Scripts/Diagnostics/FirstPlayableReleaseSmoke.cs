@@ -50,7 +50,7 @@ namespace Rustline.Diagnostics
             _director.Player.Landed += () => _landings++;
             for (int i = 0; i < 120; i++) yield return new WaitForFixedUpdate();
             Require(_body.position.y > 0.95f && _director.Player.IsGrounded, "Spawn fell through the real Tilemap.");
-            var collisionMaps = FindObjectsByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>(FindObjectsSortMode.None);
+            var collisionMaps = FindObjectsByType<Rustline.Physics.TilemapCompositeColliderInitializer2D>();
             Require(collisionMaps.Length == 2, "Expected the main terrain and precision ceiling collision maps.");
             foreach (var collisionMap in collisionMaps)
             {

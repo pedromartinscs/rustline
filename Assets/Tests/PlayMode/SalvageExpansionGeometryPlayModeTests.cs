@@ -70,7 +70,7 @@ namespace Rustline.Tests
             Assert.That(collision.HasTile(new Vector3Int(45,16,0)), Is.True);
             Assert.That(collision.HasTile(new Vector3Int(46,16,0)), Is.True);
             Assert.That(collision.HasTile(new Vector3Int(193,28,0)), Is.True);
-            var initializers = Object.FindObjectsByType<TilemapCompositeColliderInitializer2D>(FindObjectsSortMode.None);
+            var initializers = Object.FindObjectsByType<TilemapCompositeColliderInitializer2D>();
             Assert.That(initializers.Length, Is.EqualTo(2));
             foreach (var initializer in initializers)
             {

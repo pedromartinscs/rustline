@@ -44,12 +44,11 @@ namespace Rustline.Tests
         [UnityTest]
         public IEnumerator EveryCheckpoint_RestoresCommittedStateAmmoAndSameVisibleActors()
         {
-            int playerId = _director.Player.GetInstanceID();
-            int[][] ids = new int[_director.Encounters.Length][];
-            for(int i=0;i<ids.Length;i++)
+            var originalPlayer = _director.Player;
+            var originalMembers = new CombatHealth2D[_director.Encounters.Length][];
+            for(int i=0;i<originalMembers.Length;i++)
             {
-                ids[i]=new int[_director.Encounters[i].Members.Length];
-                for(int j=0;j<ids[i].Length;j++) ids[i][j]=_director.Encounters[i].Members[j].GetInstanceID();
+                originalMembers[i]=(CombatHealth2D[])_director.Encounters[i].Members.Clone();
             }
             for(int stationIndex=0;stationIndex<_director.Checkpoints.Length;stationIndex++)
             {
@@ -72,16 +71,16 @@ namespace Rustline.Tests
                 Assert.That(_director.PlayerHealth.CurrentHealth,Is.EqualTo(100));
                 Assert.That(ammo.GetSnapshot(weapon.WeaponDefinition).Rounds,Is.EqualTo(50));
                 Assert.That(ammo.GetSnapshot(weapon.WeaponDefinition).ReserveMagazines,Is.EqualTo(3));
-                Assert.That(_director.Player.GetInstanceID(),Is.EqualTo(playerId));
-                for(int i=0;i<ids.Length;i++)
-                    for(int j=0;j<ids[i].Length;j++)
+                Assert.That(_director.Player,Is.SameAs(originalPlayer));
+                for(int i=0;i<originalMembers.Length;i++)
+                    for(int j=0;j<originalMembers[i].Length;j++)
                     {
                         var health=_director.Encounters[i].Members[j];
-                        Assert.That(health.GetInstanceID(),Is.EqualTo(ids[i][j]));
+                        Assert.That(health,Is.SameAs(originalMembers[i][j]));
                         Assert.That(health.IsAlive,Is.EqualTo(i>=station.RequiredClears));
                         Assert.That(health.gameObject.activeInHierarchy,Is.True);
                     }
-                Assert.That(Object.FindObjectsByType<BombardierBomb2D>(FindObjectsSortMode.None),Is.Empty);
+                Assert.That(Object.FindObjectsByType<BombardierBomb2D>(),Is.Empty);
             }
         }
 
