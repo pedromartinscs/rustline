@@ -149,6 +149,7 @@ namespace Rustline.Editor
                 RustlineBuildSceneOrder.ValidateOrThrow();
 
                 // The base rebuild replaces the managed rig; gameplay must rebind afterwards.
+                RustlineSalvageIntakeExpansionSetup.ApplyEnvironment();
                 RustlineFirstPlayableSetup.ApplyGameplay();
 
                 AssetDatabase.SaveAssets();
