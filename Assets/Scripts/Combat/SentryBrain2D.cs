@@ -8,7 +8,7 @@ namespace Rustline.Gameplay.Combat
     public sealed class SentryBrain2D
     {
         public const float AlertDuration = 0.35f;
-        public const float WindupDuration = 0.55f;
+        public const float WindupDuration = 0.48f;
         public const float RecoveryDuration = 0.9f;
         public SentryState State { get; private set; }
         public float Remaining { get; private set; }

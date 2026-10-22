@@ -11094,6 +11094,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &272626843
 SpriteRenderer:
   serializedVersion: 2
@@ -17597,6 +17601,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &767213927
 SpriteRenderer:
   serializedVersion: 2
@@ -18310,6 +18318,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &866297962
 SpriteRenderer:
   serializedVersion: 2
@@ -30323,6 +30335,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &1556086651
 SpriteRenderer:
   serializedVersion: 2
@@ -32123,6 +32139,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &1775753302
 SpriteRenderer:
   serializedVersion: 2
@@ -32461,6 +32481,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &1811261798
 SpriteRenderer:
   serializedVersion: 2
@@ -34165,6 +34189,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &1970815151
 SpriteRenderer:
   serializedVersion: 2
@@ -34836,6 +34864,10 @@ MonoBehaviour:
   - {fileID: -2097859151, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: 118855134, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
   - {fileID: -121864363, guid: 7ab8a66f2f7ac54489ebfaadda830ac5, type: 3}
+  dissolutionFrames:
+  - {fileID: 1007046405, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: 1960698377, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
+  - {fileID: -1805086257, guid: 92c91b056c76002498ccc9febfd78747, type: 3}
 --- !u!212 &2054717891
 SpriteRenderer:
   serializedVersion: 2

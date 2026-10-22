@@ -13,6 +13,36 @@ namespace Rustline.Tests
     public sealed class SentryPresentationPlayModeTests
     {
         private FirstPlayableDirector2D _director;
+
+        [UnityTest]
+        public IEnumerator DeathFinish_ResetsDuringCollapseHoldEachDissolveFrameAndAfterHidden()
+        {
+            _director.enabled = false;
+            var enemy = _director.Encounters[6].Members[0].GetComponent<Sentry2D>();
+            var visual = enemy.GetComponentInChildren<SentryPresenter2D>();
+            float[] ages = { 0.15f, 0.75f, 1.13f, 1.26f, 1.39f, 1.55f };
+            int[] frames = { 13, 15, 16, 17, 18, -1 };
+            for (int phase = 0; phase < ages.Length; phase++)
+            {
+                _director.RestartRun();
+                var hit = new DamageInfo2D(1000, enemy.transform.position, Vector2.right, null);
+                enemy.Health.ApplyDamage(in hit);
+                yield return new WaitForSeconds(ages[phase]);
+                Assert.That(visual.FrameIndex, Is.EqualTo(frames[phase]), "Death phase " + phase);
+                Assert.That(visual.BodyRenderer.enabled, Is.EqualTo(phase < 5));
+                Assert.That(enemy.Health.IsDead && enemy.gameObject.activeInHierarchy, Is.True);
+                Assert.That(enemy.GetComponentInChildren<Collider2D>().enabled, Is.False);
+                _director.RetryNow();
+                Assert.That(visual.FrameIndex, Is.Zero);
+                Assert.That(visual.BodyRenderer.enabled && enemy.Health.IsAlive, Is.True);
+                enemy.Health.ApplyDamage(in hit);
+                yield return new WaitForSeconds(ages[phase]);
+                _director.RestartRun();
+                Assert.That(visual.FrameIndex, Is.Zero);
+                Assert.That(visual.BodyRenderer.enabled && enemy.Health.IsAlive, Is.True);
+                Assert.That(visual.BodyRenderer.sprite.name, Is.EqualTo("sentry_idle_0"));
+            }
+        }
         [UnitySetUp]
         public IEnumerator Load()
         {
