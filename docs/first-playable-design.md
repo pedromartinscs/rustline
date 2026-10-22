@@ -1,5 +1,7 @@
 # Salvage Intake — first playable design
 
+This records the original human-tested first-playable milestone. The current level preserves that introduction and extends continuously beyond its former endpoint; [salvage-intake-expansion.md](salvage-intake-expansion.md) is the current route/activation/checkpoint design. The old exit is now a checkpoint, and enemies remain visible/damageable while dormant.
+
 Use the existing industrial room and accepted geometry. This phase delivers a compact combat/traversal loop; **8–12 minutes is a future playtest target, not a measured claim**.
 
 | Beat | Space | Gameplay goal |

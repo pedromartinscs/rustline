@@ -8,7 +8,7 @@ The introductory playable route projects from **x=-20 to x=43**, with the first 
 
 `RustlineSalvageIntakeSetup` rebuilds `Environment - Managed Graybox` and `Player Rig - Managed`. Production passes subsequently refine terrain and regenerate named dressing/parallax children. `Art Dressing - Preserve` and `Gameplay Content - Preserve` preserve unrelated authoring. FirstPlayable setup owns only `First Playable - Managed`. Scene content is mostly deterministically authored; preserved roots are extension points for hand authoring, not permission to destroy their contents.
 
-The expansion is a deterministic **final terrain/dressing pass before gameplay setup**, not runtime generation. It owns extension cells x=46..195, y=16..40 on existing structural/collision Tilemaps and its own named managed child. Original collision cells x<46 stay unchanged. New precision maintenance ceiling is a separate offset Tilemap/Composite, not a replacement floor. Both bake through the existing initializer sequence and actual-build guard. No movement tuning, capsule changes, penumbra changes, package upgrades or automated gap enforcement.
+The expansion is a deterministic **final terrain/dressing pass before gameplay setup**, not runtime generation. It owns extension cells x=46..195, y=15..40 on existing structural/collision Tilemaps and its own named managed child. Original collision cells x<46 stay unchanged. New precision maintenance ceiling is a separate offset Tilemap/Composite, not a replacement floor. Both bake through the existing initializer sequence and actual-build guard. No movement tuning, capsule changes, penumbra changes, package upgrades or automated gap enforcement.
 
 ## Continuous physical route
 
@@ -19,7 +19,7 @@ The expansion is a deterministic **final terrain/dressing pass before gameplay s
 | Processing gallery | x=46..95, floor y=17; cover, jump steps, elevated firing platform and machinery landmarks | 04 gallery pair |
 | Maintenance machinery | x=96..127, floor y=17; 42 px crouch underpass and optional elevated roof route, then a four-unit wall-kick shaft from y=17 to y=29 | 05 maintenance pair |
 | Upper service refuge | x=135, y=29; respite after the second shaft | Commits 5 |
-| Rail transfer | x=140..168, y=29; four-unit bridge gap, lower catch/recovery stairs, elevated ranged position | 06 rail pair |
+| Rail transfer | x=140..168, y=29; four-unit bridge gap, lower catch floor with wall-kick return, elevated ranged position | 06 rail pair |
 | Terminal defense | x=174..195, y=29; larger final fighting deck with low cover | 07 final trio |
 | Final extraction | x=193, y=29; all seven encounters plus uninterrupted two-second hold | Completion |
 
