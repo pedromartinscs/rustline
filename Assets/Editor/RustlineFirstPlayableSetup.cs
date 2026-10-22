@@ -129,6 +129,7 @@ namespace Rustline.Editor
             }
             RustlineSalvageIntakeExpansionSetup.ValidateScene(scene);
             RustlineBuildSceneOrder.ValidateOrThrow();
+            RustlineSentryArtSetup.ValidateScene(scene);
         }
 
         [UnityEditor.MenuItem("Tools/Rustline/First Playable/Build Windows Release")]
@@ -178,7 +179,7 @@ namespace Rustline.Editor
         }
 
         private static CombatHealth2D Actor(Transform parent, string name, Vector2 position, Material material,
-            out Rigidbody2D body, out BoxCollider2D collider, out LineRenderer line)
+            out Rigidbody2D body, out BoxCollider2D collider, out LineRenderer line, bool createPlaceholder = true)
         {
             GameObject actor = Child(parent, name);
             actor.transform.position = position;
@@ -194,6 +195,8 @@ namespace Rustline.Editor
             collider.size = new Vector2(1.2f, 2.5f);
             collider.isTrigger = true;
             hitbox.AddComponent<WeaponHitbox2D>().Configure(health);
+            line = null;
+            if (!createPlaceholder) return health;
             line = Child(actor.transform, "Temporary Enemy Silhouette").AddComponent<LineRenderer>();
             line.sharedMaterial = material;
             line.useWorldSpace = false;
@@ -209,19 +212,15 @@ namespace Rustline.Editor
         private static CombatHealth2D Sentry(Transform parent, string name, Vector2 position, float minX,
             float maxX, PlayerMotor2D player, Material material)
         {
-            CombatHealth2D health = Actor(parent, name, position, material, out _, out BoxCollider2D collider, out LineRenderer line);
+            CombatHealth2D health = Actor(parent, name, position, material, out _, out BoxCollider2D collider, out _, false);
             var actor = health.gameObject.AddComponent<Sentry2D>();
             SetInt(health, "maximumHealth", 80);
-            // A lower, angular silhouette distinguishes close combat from the tall thrower.
-            line.SetPosition(2, new Vector3(-0.6f, 2.1f));
-            line.SetPosition(3, new Vector3(0.6f, 2.1f));
-            line.startColor = line.endColor = RustlinePalette.GetColor(10);
             Set(actor, "playerCollider", player.GetComponent<CapsuleCollider2D>());
             Set(actor, "playerHealth", player.GetComponent<CombatHealth2D>());
             Set(actor, "weaponHitCollider", collider);
-            Set(actor, "silhouette", line);
             SetFloat(actor, "minimumX", minX);
             SetFloat(actor, "maximumX", maxX);
+            RustlineSentryArtSetup.Configure(actor);
             return health;
         }
 

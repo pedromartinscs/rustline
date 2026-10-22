@@ -72,7 +72,7 @@ The expanded first playable is **Salvage Intake** (build index 0): a continuous 
 
 `Assets/Scenes/MovementLab.unity` contains grounded forward/backpedal movement, combat crouch, Wall Brace / Wall Kick, committed six-frame LedgeClimb, the release-hardened Tilemap + Composite collision path, native-pixel presentation, Longwatch DMR continuous-aim hitscan, and a killable patrol enemy that resets in place. The Longwatch has authored aim-capable Idle, Run, Backpedal, Crouch, and Fall presentation plus non-firing three-frame Jump and two-frame Land carry. Wall Brace and LedgeClimb intentionally render no Longwatch carry; their traversal poses use the unarmed overlay and block firing. The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact.
 
-The next production focus is human playtesting and polish of the integrated Salvage Intake loop: traversal, encounter balance, temporary enemy art/audio, UI readability, and standalone performance. The accepted movement/collision foundation remains unchanged.
+Sentry has an integrated original Canonical-28 sprite set and state-driven presenter; see the [Sentry art pass](docs/sentry-art-pass.md). Human playtesting and polish remain: traversal, encounter balance, Bombardier art/audio, UI readability, and standalone performance. The accepted movement/collision foundation remains unchanged.
 
 ## License
 
