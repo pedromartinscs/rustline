@@ -89,7 +89,7 @@ namespace Rustline.Presentation
 
         private void ApplyFrame(int index)
         {
-            if (FrameIndex == index || !HasCompleteFrames) return;
+            if (FrameIndex == index) return;
             FrameIndex = index;
             bodyRenderer.enabled = index >= 0;
             if (index >= 0) bodyRenderer.sprite = index < SentryAnimationFrames.Count ? frames[index] :

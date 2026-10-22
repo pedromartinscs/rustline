@@ -1773,59 +1773,6 @@ namespace Rustline.Editor
                 changed = true;
             }
 
-            Transform visualTransform = enemyObject.transform.Find("Programmer Art Presentation");
-            GameObject visualObject;
-            if (visualTransform == null)
-            {
-                visualObject = new GameObject("Programmer Art Presentation");
-                visualObject.transform.SetParent(enemyObject.transform, false);
-                changed = true;
-            }
-            else
-            {
-                visualObject = visualTransform.gameObject;
-            }
-            if (visualObject.transform.localPosition != Vector3.zero)
-            {
-                visualObject.transform.localPosition = Vector3.zero;
-                changed = true;
-            }
-
-            LineRenderer silhouette = visualObject.GetComponent<LineRenderer>();
-            if (silhouette == null)
-            {
-                silhouette = visualObject.AddComponent<LineRenderer>();
-                changed = true;
-            }
-            changed |= ConfigureLineRenderer(silhouette, unlitMaterial, 7, false, 20);
-            changed |= SetLinePosition(silhouette, 0, new Vector3(-0.6f, 0f));
-            changed |= SetLinePosition(silhouette, 1, new Vector3(-0.6f, 1.8f));
-            changed |= SetLinePosition(silhouette, 2, new Vector3(-0.3f, 2.5f));
-            changed |= SetLinePosition(silhouette, 3, new Vector3(0.3f, 2.5f));
-            changed |= SetLinePosition(silhouette, 4, new Vector3(0.6f, 1.8f));
-            changed |= SetLinePosition(silhouette, 5, new Vector3(0.6f, 0f));
-            changed |= SetLinePosition(silhouette, 6, new Vector3(-0.6f, 0f));
-            Color aliveColor = RustlinePalette.GetColor(19);
-            if (silhouette.startColor != aliveColor || silhouette.endColor != aliveColor)
-            {
-                silhouette.startColor = aliveColor;
-                silhouette.endColor = aliveColor;
-                changed = true;
-            }
-            if (!silhouette.enabled)
-            {
-                silhouette.enabled = true;
-                changed = true;
-            }
-
-            BombardierPresenter2D presenter =
-                visualObject.GetComponent<BombardierPresenter2D>();
-            if (presenter == null)
-            {
-                presenter = visualObject.AddComponent<BombardierPresenter2D>();
-                changed = true;
-            }
-
             Transform hitboxTransform = enemyObject.transform.Find("Hitbox");
             GameObject hitboxObject;
             if (hitboxTransform == null)
@@ -1876,18 +1823,18 @@ namespace Rustline.Editor
             }
 
             SetObjectReference(weaponHitbox, "health", health);
-            SetObjectReference(presenter, "health", health);
-            SetObjectReference(presenter, "enemy", enemy);
-            SetObjectReference(presenter, "silhouetteRenderer", silhouette);
             SetObjectReference(enemy, "health", health);
             SetObjectReference(enemy, "body", enemyBody);
             SetObjectReference(enemy, "weaponHitCollider", hitCollider);
             SetObjectReference(enemy, "throwOrigin", throwOrigin);
-            SetObjectReference(enemy, "presenter", presenter);
             SetFloat(enemy, "patrolSpeed", Bombardier2D.DefaultPatrolSpeed);
             SetFloat(enemy, "patrolHalfDistance", Bombardier2D.DefaultPatrolHalfDistance);
             SetInteger(enemy, "initialDirection", 1);
             SetFloat(enemy, "hitPauseDuration", Bombardier2D.DefaultHitPauseDuration);
+            var previousPresenter = enemy.GetComponentInChildren<BombardierPresenter2D>(true);
+            changed |= previousPresenter == null || !previousPresenter.HasCompleteFrames ||
+                enemy.ProjectileMaterial != unlitMaterial;
+            RustlineBombardierArtSetup.Configure(enemy, unlitMaterial);
             SetObjectReference(encounter, "enemy", enemy);
             SetFloat(encounter, "resetDelay", MovementLabBombardierEncounter2D.DefaultResetDelay);
 
