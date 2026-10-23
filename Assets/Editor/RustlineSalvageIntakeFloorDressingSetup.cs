@@ -28,13 +28,13 @@ namespace Rustline.Editor
             "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
 
         private const string FloorLeftPath =
-            "Assets/Art/Environment/Architecture/Floor/floor_edge_left.png";
+            "Assets/Art/Environment/Hardening/reinforced_floor_left.png";
         private const string FloorMidAPath =
-            "Assets/Art/Environment/Architecture/Floor/floor_edge_mid_a.png";
+            "Assets/Art/Environment/Hardening/reinforced_floor_mid_a.png";
         private const string FloorMidBPath =
-            "Assets/Art/Environment/Architecture/Floor/floor_edge_mid_b.png";
+            "Assets/Art/Environment/Hardening/reinforced_floor_mid_b.png";
         private const string FloorRightPath =
-            "Assets/Art/Environment/Architecture/Floor/floor_edge_right.png";
+            "Assets/Art/Environment/Hardening/reinforced_floor_right.png";
 
         private const int SourceWidth = 48;
         private const int SourceHeight = 32;
@@ -95,7 +95,7 @@ namespace Rustline.Editor
                 "OK");
         }
 
-        private static void ApplyAndValidate()
+        internal static void ApplyAndValidate()
         {
             Require(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null,
                 "SalvageIntake does not exist. Rebuild the graybox first.");

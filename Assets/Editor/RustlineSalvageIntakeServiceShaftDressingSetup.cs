@@ -25,9 +25,9 @@ namespace Rustline.Editor
             "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat";
 
         private const string LeftWallPath =
-            "Assets/Art/Environment/Architecture/ServiceShaft/shaft_wall_a.png";
+            "Assets/Art/Environment/Hardening/reinforced_shaft_a.png";
         private const string RightWallPath =
-            "Assets/Art/Environment/Architecture/ServiceShaft/shaft_wall_b.png";
+            "Assets/Art/Environment/Hardening/reinforced_shaft_b.png";
 
         private const int PixelsPerUnit = 16;
         private const int ExpectedHeightPixels = 240;
@@ -69,7 +69,7 @@ namespace Rustline.Editor
                 "OK");
         }
 
-        private static void ApplyAndValidate()
+        internal static void ApplyAndValidate()
         {
             Require(AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null,
                 "SalvageIntake does not exist. Rebuild the production scene first.");

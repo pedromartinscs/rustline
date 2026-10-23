@@ -129,6 +129,7 @@ namespace Rustline.Editor
             }
             RustlineSalvageIntakeExpansionSetup.ValidateScene(scene);
             RustlineBuildSceneOrder.ValidateOrThrow();
+            RustlineEnvironmentVisualHardeningSetup.ValidateScene(scene);
             RustlineSentryArtSetup.ValidateScene(scene);
             RustlineBombardierArtSetup.ValidateScene(scene);
         }

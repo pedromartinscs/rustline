@@ -6,6 +6,8 @@ Both enemy archetypes now use original Canonical-28 pixel-art sprites. M5 retain
 
 M5.1 adds a six-frame pixel-art bomb explosion and a Bombardier wreck-dissolution finish, preserving damage/occlusion and the approved character sprites. See [combat-vfx-polish.md](combat-vfx-polish.md).
 
+M7 reinforces the traversal-support/wall/floor presentation and replaces repeated late cranes with original pressure, exhaust and conduit infrastructure. Saved collision, breaching policy and route geometry are preserved. See [environment-visual-hardening.md](environment-visual-hardening.md) for authoring, assets, validation and remaining human review.
+
 Clear west security and the transfer bay, climb the first service shaft and clear the upper deck. The former extraction at x=43 is now the **Upper Relay checkpoint**. Continue east through the processing gallery, maintenance underpass/roof and second shaft, then cross the rail bridge and defeat the terminal defense. The final extraction is at **x=193, y=29**, after **seven encounters / fourteen defenders**. Hold the exit for two uninterrupted seconds; leaving or taking damage interrupts it. Follow the current objective in the HUD.
 
 Three session-local stations restore health/magazines and clear transient projectiles: **Service Station (x=22, after 2 encounters)**, **Upper Relay (x=43, after 3)** and **Service Refuge (x=135, after 5)**. Death/falling retries after a short delay. The latest station's committed encounters stay defeated; every later encounter resets in place. F5 restarts the entire level; Enter does the same after completion.

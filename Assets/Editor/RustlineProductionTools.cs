@@ -158,7 +158,7 @@ namespace Rustline.Editor
 
                 Debug.Log(
                     "RUSTLINE_PRODUCTION_SETUP_OK: Salvage Intake rebuilt, industrial-surface variants applied, route refinements, architectural supports, catwalk clearance, safety-floor armor, and controlled Longwatch breaching applied, " +
-                    "production dressing refreshed, parallax layers applied, and release build-scene order validated.");
+                    "production dressing refreshed with M7 reinforced traversal plates and service machinery, parallax layers applied, and release build-scene order validated.");
                 if (!Application.isBatchMode) EditorUtility.DisplayDialog(
                     "Rustline Production Setup",
                     "Production setup applied successfully.\n\n" +

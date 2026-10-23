@@ -1,0 +1,910 @@
+fileFormatVersion: 2
+guid: 0e71ebc2c3640844ca5438dbb0be5a5d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -3814928651821529065
+    second: conduit_rack_0
+  - first:
+      213: 6031763627223267378
+    second: conduit_rack_1
+  - first:
+      213: 6609788919200374173
+    second: conduit_rack_2
+  - first:
+      213: -8795332932042695414
+    second: conduit_rack_3
+  - first:
+      213: 8526827969090719376
+    second: conduit_rack_4
+  - first:
+      213: -4465397709956435881
+    second: conduit_rack_5
+  - first:
+      213: -1055753932899877627
+    second: conduit_rack_6
+  - first:
+      213: -4353327962116041778
+    second: conduit_rack_7
+  - first:
+      213: -3525126381164516098
+    second: conduit_rack_8
+  - first:
+      213: 740259955657094941
+    second: conduit_rack_9
+  - first:
+      213: -5626333177155715121
+    second: conduit_rack_10
+  - first:
+      213: -2943047759124828533
+    second: conduit_rack_11
+  - first:
+      213: -8180059747264410559
+    second: conduit_rack_12
+  - first:
+      213: 6881156841054976294
+    second: conduit_rack_13
+  - first:
+      213: -2383167056625023612
+    second: conduit_rack_14
+  - first:
+      213: 3569203015671354529
+    second: conduit_rack_15
+  - first:
+      213: -6931132774282538736
+    second: conduit_rack_16
+  - first:
+      213: 7069858176132259730
+    second: conduit_rack_17
+  - first:
+      213: -1361693380823114719
+    second: conduit_rack_18
+  - first:
+      213: 6908189534977124108
+    second: conduit_rack_19
+  - first:
+      213: 5007455413055810005
+    second: conduit_rack_20
+  - first:
+      213: -1293064648587850161
+    second: conduit_rack_21
+  - first:
+      213: 6301355396792600262
+    second: conduit_rack_22
+  - first:
+      213: -88373676434204881
+    second: conduit_rack_23
+  - first:
+      213: 7852644900050273759
+    second: conduit_rack_24
+  - first:
+      213: -6298075962583652878
+    second: conduit_rack_25
+  - first:
+      213: 7361741406786922646
+    second: conduit_rack_26
+  - first:
+      213: -8340085855117991441
+    second: conduit_rack_27
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: VisionOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: tvOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: conduit_rack_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 1755
+        height: 886
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 718c7b08a96ae0bc0800000000000000
+      internalID: -3814928651821529065
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_1
+      rect:
+        serializedVersion: 2
+        x: 1310
+        y: 879
+        width: 12
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 238b3c1bf0125b350800000000000000
+      internalID: 6031763627223267378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_2
+      rect:
+        serializedVersion: 2
+        x: 695
+        y: 833
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d9d50497000babb50800000000000000
+      internalID: 6609788919200374173
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_3
+      rect:
+        serializedVersion: 2
+        x: 599
+        y: 807
+        width: 13
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a0ddc484c43b0f580800000000000000
+      internalID: -8795332932042695414
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_4
+      rect:
+        serializedVersion: 2
+        x: 623
+        y: 799
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09e848e5cd0655670800000000000000
+      internalID: 8526827969090719376
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_5
+      rect:
+        serializedVersion: 2
+        x: 516
+        y: 789
+        width: 15
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75034350178b702c0800000000000000
+      internalID: -4465397709956435881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_6
+      rect:
+        serializedVersion: 2
+        x: 1220
+        y: 757
+        width: 41
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 50df74344653951f0800000000000000
+      internalID: -1055753932899877627
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_7
+      rect:
+        serializedVersion: 2
+        x: 1276
+        y: 783
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec35c4b884fd593c0800000000000000
+      internalID: -4353327962116041778
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_8
+      rect:
+        serializedVersion: 2
+        x: 1066
+        y: 88
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: efca456bb3c341fc0800000000000000
+      internalID: -3525126381164516098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_9
+      rect:
+        serializedVersion: 2
+        x: 1032
+        y: 68
+        width: 7
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d173362f18ee54a00800000000000000
+      internalID: 740259955657094941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_10
+      rect:
+        serializedVersion: 2
+        x: 1038
+        y: 64
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fcf73a3f8cf3be1b0800000000000000
+      internalID: -5626333177155715121
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_11
+      rect:
+        serializedVersion: 2
+        x: 1183
+        y: 62
+        width: 24
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b8eea50f7a13827d0800000000000000
+      internalID: -2943047759124828533
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_12
+      rect:
+        serializedVersion: 2
+        x: 1201
+        y: 61
+        width: 10
+        height: 16
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 14c45daeff69a7e80800000000000000
+      internalID: -8180059747264410559
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_13
+      rect:
+        serializedVersion: 2
+        x: 484
+        y: 47
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 629b4d260b7ce7f50800000000000000
+      internalID: 6881156841054976294
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_14
+      rect:
+        serializedVersion: 2
+        x: 1137
+        y: 47
+        width: 7
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 485c375403a4deed0800000000000000
+      internalID: -2383167056625023612
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_15
+      rect:
+        serializedVersion: 2
+        x: 1143
+        y: 45
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a418587b3b588130800000000000000
+      internalID: 3569203015671354529
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_16
+      rect:
+        serializedVersion: 2
+        x: 1207
+        y: 55
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 01152d9e67bafcf90800000000000000
+      internalID: -6931132774282538736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_17
+      rect:
+        serializedVersion: 2
+        x: 385
+        y: 36
+        width: 17
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29f11c0bd8e2d1260800000000000000
+      internalID: 7069858176132259730
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_18
+      rect:
+        serializedVersion: 2
+        x: 671
+        y: 31
+        width: 22
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12c990fa51b4a1de0800000000000000
+      internalID: -1361693380823114719
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_19
+      rect:
+        serializedVersion: 2
+        x: 1062
+        y: 30
+        width: 18
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c07e169e7c1dedf50800000000000000
+      internalID: 6908189534977124108
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_20
+      rect:
+        serializedVersion: 2
+        x: 1334
+        y: 37
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d96cc3ea2e0e7540800000000000000
+      internalID: 5007455413055810005
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_21
+      rect:
+        serializedVersion: 2
+        x: 1345
+        y: 19
+        width: 17
+        height: 21
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4e4e459d8c1e0ee0800000000000000
+      internalID: -1293064648587850161
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_22
+      rect:
+        serializedVersion: 2
+        x: 699
+        y: 15
+        width: 18
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6c6405de859e27750800000000000000
+      internalID: 6301355396792600262
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_23
+      rect:
+        serializedVersion: 2
+        x: 708
+        y: 27
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f27d4a80c9806cef0800000000000000
+      internalID: -88373676434204881
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_24
+      rect:
+        serializedVersion: 2
+        x: 1135
+        y: 20
+        width: 7
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd587c67ee23afc60800000000000000
+      internalID: 7852644900050273759
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_25
+      rect:
+        serializedVersion: 2
+        x: 1296
+        y: 23
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2f566c9d74db898a0800000000000000
+      internalID: -6298075962583652878
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_26
+      rect:
+        serializedVersion: 2
+        x: 1032
+        y: 17
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 698a1d72ec82a2660800000000000000
+      internalID: 7361741406786922646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: conduit_rack_27
+      rect:
+        serializedVersion: 2
+        x: 1105
+        y: 11
+        width: 23
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe1ae693a10124c80800000000000000
+      internalID: -8340085855117991441
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      conduit_rack_0: -3814928651821529065
+      conduit_rack_1: 6031763627223267378
+      conduit_rack_10: -5626333177155715121
+      conduit_rack_11: -2943047759124828533
+      conduit_rack_12: -8180059747264410559
+      conduit_rack_13: 6881156841054976294
+      conduit_rack_14: -2383167056625023612
+      conduit_rack_15: 3569203015671354529
+      conduit_rack_16: -6931132774282538736
+      conduit_rack_17: 7069858176132259730
+      conduit_rack_18: -1361693380823114719
+      conduit_rack_19: 6908189534977124108
+      conduit_rack_2: 6609788919200374173
+      conduit_rack_20: 5007455413055810005
+      conduit_rack_21: -1293064648587850161
+      conduit_rack_22: 6301355396792600262
+      conduit_rack_23: -88373676434204881
+      conduit_rack_24: 7852644900050273759
+      conduit_rack_25: -6298075962583652878
+      conduit_rack_26: 7361741406786922646
+      conduit_rack_27: -8340085855117991441
+      conduit_rack_3: -8795332932042695414
+      conduit_rack_4: 8526827969090719376
+      conduit_rack_5: -4465397709956435881
+      conduit_rack_6: -1055753932899877627
+      conduit_rack_7: -4353327962116041778
+      conduit_rack_8: -3525126381164516098
+      conduit_rack_9: 740259955657094941
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
