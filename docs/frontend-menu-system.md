@@ -61,3 +61,32 @@ Rendered frontend evidence is exported to `Logs/FrontendRenders/frontend-<width>
 Reproduce suites with Unity 6000.4.0f1 using `-batchmode -projectPath <repo> -runTests -testPlatform EditMode` or `PlayMode`, plus `-testResults <xml> -logFile <log>`; retain graphics support. Build with `-executeMethod Rustline.Editor.RustlineFirstPlayableSetup.BuildWindowsRelease -quit`. With all project Editors closed, launch the executable normally for title/menu interaction, and separately with `-batchmode --first-playable-smoke --smoke-auto-quit -screen-width 1280 -screen-height 720 -screen-fullscreen 0` to repeat the existing gameplay smoke.
 
 Human checks still required: approve title/background composition and text readability at the target displays; play a real run through repeated pause/options/resume, death/retry and extraction; confirm hover/pressed feel, slider behavior and fresh Start after abandoning a checkpoint; check sustained standalone performance. No human acceptance is claimed. Production clips do not exist, so real music/SFX listening remains pending. Full geometry/art regeneration is outside this UI change; its bridge/order and saved-scene validation paths are covered without rewriting approved terrain/art.
+
+## Final validation record
+
+| Check | Result / evidence |
+| --- | --- |
+| Baseline EditMode | 377/377; `Logs/m6-baseline-edit.xml` |
+| Full final EditMode | **397/397**; `Logs/m6-complete-edit.xml` |
+| Full final PlayMode | **104/104**; `Logs/m6-complete-play.xml` |
+| Input ownership regression | **8/8**; `Logs/m6-owned-input-order.xml` |
+| UI rendering | Canonical pixels, integral mesh vertices and point mask at 800x600, 1280x720, 1920x1080, 320x180 and 128x128; `Logs/FrontendRenders/` |
+| Windows x64 Release | **Succeeded**, `BuildOptions.None`; `Logs/m6-title-entry-build.log`, `Builds/FirstPlayable/Rustline.exe` |
+| Actual release startup | **Passed** `FIRST_PLAYABLE_SMOKE_TITLE_ENTRY_OK`: MainMenu scene, Title state, initialized bitmap UI, point sampling, timeScale 1 and unpaused audio |
+| Existing opt-in gameplay smoke | **Passed, exit 0**; `Logs/m6-title-entry-release-smoke.log` |
+| Graphical standalone interaction | **Manual gate**: Computer Use launch returned `Computer Use app approval timed out`; window inventory confirmed no game window was opened |
+
+The final smoke first allows the normal title to initialize and asserts its startup contract. It then loads the real playable scene through the deterministic test-only path. Every original collision/input/combat/checkpoint/retry/extraction/restart assertion remains. Its Release-only non-development assertion still runs. Build processing baked the actual exported SalvageIntake ground Composite to **4 paths / 78 points**, its precision crouch map to **1 / 4**, and MovementLab ground to **9 / 48**. Runtime smoke confirmed supported spawn, real Tilemap traversal/jump/landing without entry seam phantom Land, all seven staged actual hitscan encounters, checkpoint retries, final extraction and full restart. This is controlled gameplay staging, not a human full-route or balance acceptance.
+
+The final PlayMode coverage also verifies that moving a menu pointer cannot change player aim and that a held menu button remains suppressed after Resume while run timers resume with simulation. Build-only temporary performance-test resources and project-setting changes were excluded from commits. Production art, gameplay terrain, Composite initialization/build guard and native compositor files remain unchanged.
+
+The player log retains Unity/URP's existing shutdown `ComputeBuffer` disposal warning, also present in the pre-M6 `Logs/M51/release-smoke.log`. The smoke exits 0; M6 does not create ComputeBuffers or change the compositor.
+
+Before human acceptance, run the normal executable with the Editor closed and check:
+
+1. Inspect the title/background and all screens at 800x600, 1280x720 and 1920x1080, plus a small/portrait window.
+2. Use mouse and keyboard for Start, Options, Credits and Back; verify hover/pressed focus and clean standalone Quit.
+3. Pause during movement/combat, retry and extraction; open Pause Options, Back, Resume repeatedly and confirm no shot/jump/aim leaks.
+4. Abandon a checkpoint run using Quit to Main Menu, then Start and confirm fresh health/ammo/encounters/checkpoints and normal time.
+5. Set different Music/SFX values, return through both contexts, quit/relaunch the executable and verify persistence. Storage reload and scene persistence are automated; this interactive process-restart check remains manual.
+6. Approve feel/readability and sustained standalone performance. Validate audible Music/SFX once actual production clips are supplied.
