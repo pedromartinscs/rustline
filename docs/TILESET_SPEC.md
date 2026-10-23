@@ -16,6 +16,19 @@ Planned production file:
 
 `Assets/Art/Environment/Tiles/industrial_surface.png`
 
+## Gameplay material language
+
+Only `industrial_surface.png` represents destructible gameplay surfaces. Other art
+represents permanent structure or clearly background-only decoration. Do not use
+reinforced skins or look-alike damaged sprite overlays on breachable cells. Solid
+wall-kick supports retain their existing hidden collision, with no structural visual
+tile underneath the continuous skin. `BreachableTilemap2D` already excludes such
+architecture; its runtime eligibility and weapon rules are unchanged. Scenic damage
+is acceptable when it cannot be mistaken for an immediate gameplay affordance.
+
+The final production presentation validator enforces industrial-only tiles in
+Salvage Intake's breachable visual map. See [M7.1 cleanup](environment-coherence-cleanup.md).
+
 ## Cardinal connectivity semantics
 
 The first 16 slots are the canonical structural Rule Tile cases.

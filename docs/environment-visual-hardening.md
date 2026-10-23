@@ -1,5 +1,10 @@
 # M7 environment visual hardening
 
+Historical M7 report. [M7.1 coherence cleanup](environment-coherence-cleanup.md)
+supersedes the modular reinforced-plate/destruction policy below: reinforced traversal
+walls are now continuous permanent structure, and only `industrial_surface.png`
+represents destructible gameplay material. The original assets remain unchanged.
+
 ## Audit and plan
 
 Baseline: merged main `ca14060`; clean branch `feat/m7-environment-visual-hardening`. Read AGENTS, ART_DIRECTION, PALETTE, TILESET_SPEC, ENVIRONMENT_GAMEPLAY_METRICS, RELEASE_COLLISION, FIRST_PLAYABLE, saved SalvageIntake, imported environment PNGs/metadata, production/expansion/dressing builders, breaching authority, geometry/render tests and Release helper.
