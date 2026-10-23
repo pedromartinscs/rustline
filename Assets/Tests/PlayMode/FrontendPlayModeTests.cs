@@ -336,6 +336,167 @@ namespace Rustline.Tests
             Assert.That(Menu.Navigation.State,Is.EqualTo(FrontendState.TitleOptions));
         }
 
+        [UnityTest]
+        public IEnumerator PauseRendering_DirectGameplayEntry()
+        {
+            // This is the same scene-load path as opening SalvageIntake and pressing Play.
+            yield return Load(FrontendController.PlayScene);
+            yield return VerifyPauseRendering("direct");
+        }
+
+        [UnityTest]
+        public IEnumerator PauseRendering_TitleToGameplayEntry()
+        {
+            yield return Load(FrontendController.TitleScene);
+            yield return Tap(Key.Enter);
+            yield return WaitForScene(FrontendController.PlayScene);
+            yield return VerifyPauseRendering("from-title");
+        }
+
+        private IEnumerator VerifyPauseRendering(string entry)
+        {
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.Playing));
+            AssertGameplayMeshEmpty();
+            yield return Tap(Key.Escape);
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.Paused));
+            Assert.That(Time.timeScale, Is.Zero);
+            foreach (Vector2Int size in new[] { new Vector2Int(800,600), new Vector2Int(1280,720), new Vector2Int(1920,1080) })
+                AssertPausePixels(entry + "-first", size.x, size.y, false);
+
+            yield return Tap(Key.Enter); // Selected Resume Game.
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.Playing));
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+            AssertGameplayMeshEmpty();
+            yield return Tap(Key.Escape);
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.Paused));
+            AssertPausePixels(entry + "-second", 1280, 720, false);
+
+            yield return Tap(Key.DownArrow); yield return Tap(Key.Space);
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.PauseOptions));
+            Assert.That(Time.timeScale, Is.Zero);
+            AssertPausePixels(entry + "-options", 1280, 720, true);
+            yield return Tap(Key.DownArrow); yield return Tap(Key.DownArrow); yield return Tap(Key.Enter); // Back.
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.Paused));
+            Assert.That(Time.timeScale, Is.Zero);
+            AssertPausePixels(entry + "-back", 1280, 720, false);
+            yield return Tap(Key.Space);
+            Assert.That(Menu.Navigation.State, Is.EqualTo(FrontendState.Playing));
+            Assert.That(Time.timeScale, Is.EqualTo(1f));
+            AssertGameplayMeshEmpty();
+        }
+
+        private void AssertGameplayMeshEmpty()
+        {
+            Assert.That(Menu.View.PixelMesh.vertexCount, Is.Zero, "Gameplay must hide the frontend geometry.");
+            Assert.That(Menu.View.Canvas.GetComponentInChildren<CanvasRenderer>().GetMesh().vertexCount, Is.Zero);
+        }
+
+        private void AssertPausePixels(string phase, int width, int height, bool options)
+        {
+            FrontendView view = Menu.View;
+            Canvas canvas = view.Canvas;
+            CanvasRenderer renderer = canvas.GetComponentInChildren<CanvasRenderer>();
+            var cameraObject = new GameObject("Pause Render Verification", typeof(Camera));
+            var target = new RenderTexture(width,height,24,RenderTextureFormat.ARGB32)
+                { antiAliasing = 1, filterMode = FilterMode.Point };
+            var image = new Texture2D(width,height,TextureFormat.RGB24,false);
+            RenderTexture prior = RenderTexture.active;
+            try
+            {
+                Camera camera = cameraObject.GetComponent<Camera>();
+                camera.transform.position = new Vector3(10000,10000,-10);
+                camera.orthographic = true; camera.clearFlags = CameraClearFlags.SolidColor;
+                camera.backgroundColor = RustlinePalette.DeepSpace; camera.allowMSAA = camera.allowHDR = false;
+                target.Create(); camera.targetTexture = target;
+                // Render the existing Canvas in isolation, without repairing its material/texture.
+                // Overlay order is checked separately; the gameplay scene and its real input stay live.
+                Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+                Assert.That(canvas.sortingOrder, Is.GreaterThan(1000));
+                canvas.renderMode = RenderMode.ScreenSpaceCamera; canvas.worldCamera = camera; canvas.planeDistance = 1;
+                view.RefreshViewport(width,height); Canvas.ForceUpdateCanvases(); camera.Render();
+                RenderTexture.active = target;
+                image.ReadPixels(new Rect(0,0,width,height),0,0); image.Apply();
+                Color32[] pixels = image.GetPixels32();
+                int visible = pixels.Count(pixel => !pixel.Equals((Color32)RustlinePalette.DeepSpace));
+                Debug.Log($"PAUSE_RENDER {phase} {width}x{height}: state={Menu.Navigation.State}, " +
+                    $"mesh={view.PixelMesh.vertexCount}, materials={renderer.materialCount}, cull={renderer.cull}, visiblePixels={visible}");
+                string output = Path.GetFullPath("Logs/FrontendRenders"); Directory.CreateDirectory(output);
+                File.WriteAllBytes(Path.Combine(output,$"pause-{phase}-{width}x{height}.png"),image.EncodeToPNG());
+                Assert.That(visible, Is.GreaterThan(100), "Paused state has no rendered panel.");
+                Assert.That(canvas.isActiveAndEnabled && renderer.gameObject.activeInHierarchy, Is.True);
+                Assert.That(renderer.cull, Is.False);
+                Assert.That(view.PixelMesh.vertexCount, Is.GreaterThan(0));
+                Assert.That(renderer.GetMesh().vertexCount, Is.EqualTo(view.PixelMesh.vertexCount));
+                Assert.That(renderer.materialCount, Is.EqualTo(1));
+                Material material = renderer.GetMaterial(0);
+                Assert.That(material, Is.Not.Null);
+                Assert.That(material.shader, Is.EqualTo(Menu.PixelShader));
+                Assert.That(material.mainTexture, Is.SameAs(view.MaskAtlas));
+                Assert.That(view.MaskAtlas.filterMode, Is.EqualTo(FilterMode.Point));
+                var palette = new HashSet<Color32>(Enumerable.Range(0,RustlinePalette.ColorCount).Select(RustlinePalette.GetColor));
+                Assert.That(pixels.All(palette.Contains), Is.True, "Noncanonical paused UI pixel.");
+                foreach (Vector3 vertex in view.PixelMesh.vertices)
+                {
+                    Assert.That(vertex.x, Is.EqualTo(Mathf.Round(vertex.x)).Within(0.0001));
+                    Assert.That(vertex.y, Is.EqualTo(Mathf.Round(vertex.y)).Within(0.0001));
+                }
+                NativePixelViewport viewport = NativePixelViewportMath.Calculate(width,height);
+                Color32 Pixel(int x, int y) => pixels[(viewport.OutputOffsetY +
+                    (viewport.LogicalHeight - 1 - y) * viewport.IntegerScale) * width +
+                    viewport.OutputOffsetX + x * viewport.IntegerScale];
+                RectInt panel = view.Layout.Panel;
+                Assert.That(Pixel(panel.x + 1,panel.y + 1), Is.EqualTo(RustlinePalette.GetColor(5)), "Panel steel edge missing.");
+                Assert.That(view.Layout.Controls.Length, Is.EqualTo(3));
+                // Literal expected labels: check every ink and background pixel against the
+                // bitmap font, so a mesh containing only decoration cannot pass this test.
+                if (options)
+                    AssertLabelPixels("BACK", 2, view.Layout, Pixel);
+                else
+                {
+                    AssertLabelPixels("RESUME GAME", 0, view.Layout, Pixel);
+                    AssertLabelPixels("OPTIONS", 1, view.Layout, Pixel);
+                    AssertLabelPixels("QUIT TO MAIN MENU", 2, view.Layout, Pixel);
+                }
+            }
+            finally
+            {
+                RenderTexture.active = prior;
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay; canvas.worldCamera = null;
+                view.RefreshViewport(Screen.width,Screen.height);
+                cameraObject.GetComponent<Camera>().targetTexture = null;
+                target.Release(); Object.Destroy(target); Object.Destroy(image); Object.Destroy(cameraObject);
+            }
+        }
+
+        private void AssertLabelPixels(string text, int control, FrontendLayout layout, System.Func<int,int,Color32> pixel)
+        {
+            RectInt row = layout.Controls[control];
+            int scale = layout.TextScale;
+            int left = layout.Panel.x + layout.Panel.width / 2 - (text.Length * WeaponHudBitmapFont.CellWidth - 1) * scale / 2;
+            int top = row.y + (row.height - WeaponHudBitmapFont.GlyphHeight * scale) / 2;
+            Color32 ink = RustlinePalette.GetColor(Menu.Selected == control ? 20 : 6);
+            Color32 background = RustlinePalette.GetColor(Menu.Selected == control ? 2 : 1);
+            var glyph = new Mesh();
+            try
+            {
+                for (int i = 0; i < text.Length; i++)
+                {
+                    WeaponHudBitmapFont.BuildMesh(glyph,text[i].ToString(),1);
+                    Vector2 uv = glyph.uv[0];
+                    int atlasX = Mathf.RoundToInt(uv.x * Menu.View.MaskAtlas.width);
+                    int atlasY = Mathf.RoundToInt(uv.y * Menu.View.MaskAtlas.height) - 1;
+                    for (int y = 0; y < WeaponHudBitmapFont.GlyphHeight; y++)
+                        for (int x = 0; x < WeaponHudBitmapFont.GlyphWidth; x++)
+                        {
+                            bool lit = Menu.View.MaskAtlas.GetPixel(atlasX+x,atlasY-y).a > 0.5f;
+                            Assert.That(pixel(left+(i*WeaponHudBitmapFont.CellWidth+x)*scale,top+y*scale),
+                                Is.EqualTo(lit ? ink : background), $"{text}: glyph {i}, pixel {x},{y}");
+                        }
+                }
+            }
+            finally { Object.Destroy(glyph); }
+        }
+
         private IEnumerator WaitForScene(string path)
         {
             float deadline=Time.realtimeSinceStartup+20;

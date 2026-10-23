@@ -103,7 +103,14 @@ namespace Rustline.Presentation
             FrontendState state = _owner.Navigation.State;
             Layout = new FrontendLayout(width, height, state);
             _vertices.Clear(); _uvs.Clear(); _colors.Clear(); _triangles.Clear();
-            if (state == FrontendState.Playing) { _renderer.Clear(); return; }
+            if (state == FrontendState.Playing)
+            {
+                // Clear() also discards CanvasRenderer's material/texture bindings.
+                // Hide only the geometry so the next pause can render normally.
+                _mesh.Clear();
+                _renderer.SetMesh(_mesh);
+                return;
+            }
             if (state == FrontendState.Transition)
             {
                 Rect(0, 0, width, height, 0);
@@ -113,6 +120,8 @@ namespace Rustline.Presentation
             _mesh.Clear();
             _mesh.SetVertices(_vertices); _mesh.SetUVs(0, _uvs); _mesh.SetColors(_colors);
             _mesh.SetTriangles(_triangles, 0); _mesh.RecalculateBounds();
+            // Reassert both bindings whenever presenting a visible menu.
+            _renderer.SetMaterial(_material, _atlas);
             _renderer.SetMesh(_mesh);
         }
 
