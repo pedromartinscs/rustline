@@ -88,6 +88,7 @@ namespace Rustline.Editor
             foreach (int x in new[] { 48, 72, 94 }) Fill(background, new RectInt(x, 5, 2, 10), visualTile);
             foreach (int x in new[] { 152, 174, 192 }) Fill(background, new RectInt(x, 17, 2, 10), visualTile);
             Dress(root, material);
+            RustlineEnvironmentVisualHardeningSetup.ApplyVisuals(scene);
             foreach (Tilemap map in new[] { collision, surface, background, ceiling, ceilingVisual }) map.RefreshAllTiles();
             Bake(collision);
             Bake(ceiling);
@@ -177,17 +178,38 @@ namespace Rustline.Editor
                 Sprite("Gallery / maintenance deck " + x, "Architecture/Floor/floor_edge_mid_" + (x % 5 == 0 ? "b" : "a"), x + 1.5f, 16f, 2);
             for (int x = 128; x < 143; x += 3) Sprite("Upper service deck " + x, "Architecture/Floor/floor_edge_mid_a", x + 1.5f, 28f, 2);
             for (int x = 148; x < 193; x += 3) Sprite("Terminal deck " + x, "Architecture/Floor/floor_edge_mid_" + (x % 5 == 0 ? "b" : "a"), x + 1.5f, 28f, 2);
-            foreach (int x in new[] { 52, 72, 93 }) Sprite("Gallery gantry " + x, "Machinery/gantry_upright_a", x, 23.625f);
-            Sprite("Processing handler", "Machinery/salvage_handler", 62f, 30f);
-            Sprite("Processing housing", "Machinery/machine_housing", 82f, 19.3125f, -16);
-            Sprite("Maintenance housing", "Machinery/machine_housing", 108f, 19.3125f, -16, true);
-            Sprite("Maintenance suspended handler", "Machinery/salvage_handler", 115f, 32f);
-            Sprite("Maintenance west gantry", "Machinery/gantry_upright_a", 117f, 26f);
-            Sprite("Maintenance east gantry", "Machinery/gantry_upright_b", 131f, 26f);
-            foreach (int x in new[] { 153, 174, 190 }) Sprite("Terminal gantry " + x, "Machinery/gantry_upright_b", x, 35.625f);
-            Sprite("Rail terminal overhead", "Machinery/gantry_overhead_rail", 175f, 39f);
-            Sprite("Terminal machine housing", "Machinery/machine_housing", 164f, 31.3125f, -16);
+            // Native-size background equipment is planted on the existing deck, not suspended
+            // without supports. Keep the claw/gantry identity exclusive to the introductory bay.
+            Sprite("Processing pressure reclamation", "Hardening/pressure_reclaimer", 62f, 23f, -16);
+            Sprite("Processing exhaust station", "Hardening/exhaust_station", 84f, 21.5f, -16);
+            Sprite("Maintenance conduit manifold", "Hardening/conduit_rack", 113f, 30f, -16);
+            Sprite("Service refuge accumulators", "Hardening/pressure_reclaimer", 135f, 35f, -16);
+            Sprite("Rail battery ventilation", "Hardening/exhaust_station", 164f, 33.5f, -16);
+            Sprite("Terminal service conduits", "Hardening/conduit_rack", 181f, 35f, -16);
+            foreach (int x in new[] {52,93}) Column(x,17f,31f);
+            foreach (int x in new[] {110,116}) Column(x,17f,34f);
+            foreach (int x in new[] {153,174,190}) Column(x,29f,39f);
             Sprite("Extraction bulkhead", "Architecture/bulkhead_door_frame_small", 192f, 32.125f, -10);
+
+            void Column(int x, float bottom, float top)
+            {
+                string name = "Service framework " + x;
+                Sprite(name,"Hardening/service_column",x,(bottom+top)/2f,-18);
+                var renderer = root.Find(name).GetComponent<SpriteRenderer>();
+                renderer.drawMode = SpriteDrawMode.Tiled;
+                renderer.size = new Vector2(2f,top-bottom); // repeat source pixels; Transform remains 1.
+            }
+        }
+
+        /// <summary>Refresh only owned renderers; never recreate terrain or the precision grid.</summary>
+        public static void RefreshDressing(Scene scene)
+        {
+            Transform root = Find<Transform>(scene, ManagedName);
+            if (root == null) throw new InvalidOperationException("Expansion root missing.");
+            foreach (SpriteRenderer renderer in root.GetComponentsInChildren<SpriteRenderer>())
+                UnityEngine.Object.DestroyImmediate(renderer.gameObject);
+            Dress(root, AssetDatabase.LoadAssetAtPath<Material>(
+                "Packages/com.unity.render-pipelines.universal/Runtime/Materials/Sprite-Unlit-Default.mat"));
         }
     }
 }

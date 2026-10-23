@@ -168,6 +168,13 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
+        public IEnumerator RealInput_ClimbsReinforcedFirstShaftUsingWallKicksAndLedgeExit()
+        {
+            yield return LoadRoute();
+            yield return ClimbWell(29f,0.05f,34.2f,17f);
+        }
+
+        [UnityTest]
         public IEnumerator RealInput_ClimbsSecondFourUnitShaftUsingWallKicksAndLedgeExit()
         {
             yield return LoadRoute();
@@ -196,14 +203,14 @@ namespace Rustline.Tests
             Assert.That(_body.position.y,Is.GreaterThan(20.5f));
         }
 
-        private IEnumerator ClimbWell(float spawnX,float spawnY,float exitX)
+        private IEnumerator ClimbWell(float spawnX,float spawnY,float exitX,float exitY=29f)
         {
             Place(spawnX,spawnY); yield return Steps(20);
             int direction = 1;
             bool held = true;
             int braces = 0;
             Keys(Key.D,Key.Space);
-            for (int i = 0; i < 650 && !(_body.position.x > exitX && _body.position.y > 28.9f); i++)
+            for (int i = 0; i < 650 && !(_body.position.x > exitX && _body.position.y > exitY-0.1f); i++)
             {
                 yield return new WaitForFixedUpdate();
                 if (_motor.IsLedgeClimbing) { Keys(Key.D); held = false; continue; }
@@ -217,14 +224,14 @@ namespace Rustline.Tests
                 }
                 else
                 {
-                    if (_body.position.y > 29f) direction = 1;
+                    if (_body.position.y > exitY) direction = 1;
                     _aim.ApplyWorldAimVector(Vector2.right * direction);
                     Keys(held ? new[] { direction > 0 ? Key.D : Key.A, Key.Space } : new[] { direction > 0 ? Key.D : Key.A });
                 }
             }
             Assert.That(braces, Is.GreaterThan(1));
             Assert.That(_body.position.x, Is.GreaterThan(exitX), "Shaft traversal stalled at " + _body.position);
-            Assert.That(_body.position.y, Is.GreaterThan(28.9f));
+            Assert.That(_body.position.y, Is.GreaterThan(exitY-0.1f));
         }
 
         private void Place(float x,float y)
