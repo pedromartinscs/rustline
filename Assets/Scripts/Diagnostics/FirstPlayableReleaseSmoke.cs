@@ -27,7 +27,9 @@ namespace Rustline.Diagnostics
             Application.runInBackground = true;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
             if (Keyboard.current == null) InputSystem.AddDevice<Keyboard>();
-            new GameObject("First Playable Release Smoke").AddComponent<FirstPlayableReleaseSmoke>();
+            GameObject smoke = new GameObject("First Playable Release Smoke");
+            DontDestroyOnLoad(smoke);
+            smoke.AddComponent<FirstPlayableReleaseSmoke>();
         }
 
         private void Awake() => Application.logMessageReceived += OnLog;
@@ -41,6 +43,11 @@ namespace Rustline.Diagnostics
         {
             _outputDirectory = Path.GetFullPath("Logs/FirstPlayableSmoke");
             Directory.CreateDirectory(_outputDirectory);
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path != Presentation.FrontendController.PlayScene)
+            {
+                yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(Presentation.FrontendController.PlayScene);
+                Debug.Log("FIRST_PLAYABLE_SMOKE_DIRECT_LOAD_OK: title entry routed to the actual gameplay scene.");
+            }
             yield return null;
             _director = FindAnyObjectByType<FirstPlayableDirector2D>();
             Require(_director != null && !Debug.isDebugBuild, "Expected the production scene in a non-development Release.");

@@ -136,6 +136,7 @@ namespace Rustline.Editor
         [UnityEditor.MenuItem("Tools/Rustline/First Playable/Build Windows Release")]
         public static void BuildWindowsRelease()
         {
+            RustlineFrontendSetup.Validate();
             ValidateScene(EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single));
             Directory.CreateDirectory("Builds/FirstPlayable");
             string[] sideEffects = { "Assets/Settings/UniversalRP.asset", "Assets/UniversalRenderPipelineGlobalSettings.asset",

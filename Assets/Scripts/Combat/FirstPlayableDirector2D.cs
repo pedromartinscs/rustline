@@ -89,11 +89,13 @@ namespace Rustline.Gameplay.Combat
 
         private void Update()
         {
-            if (!_started) return;
+            if (!_started || (Rustline.Presentation.FrontendController.Current != null &&
+                Rustline.Presentation.FrontendController.Current.Navigation.IsModal)) return;
             bool restart = Keyboard.current != null && Keyboard.current.f5Key.wasPressedThisFrame;
             if (Progress.IsComplete)
                 restart |= (Keyboard.current != null && Keyboard.current.enterKey.wasPressedThisFrame) ||
                            (Gamepad.current != null && Gamepad.current.startButton.wasPressedThisFrame);
+            if (Rustline.Presentation.FrontendController.BlockGameplayInput) restart = false;
             if (restart) { RestartRun(); return; }
             if (Progress.IsComplete) return;
             ElapsedSeconds += Time.deltaTime;
@@ -163,6 +165,7 @@ namespace Rustline.Gameplay.Combat
         public void RestartRun()
         {
             if (!_started) return;
+            Rustline.Presentation.FrontendController.Current?.PrepareForRunRestart();
             ClearTransientCombat();
             Progress.Restart();
             ElapsedSeconds = 0f;

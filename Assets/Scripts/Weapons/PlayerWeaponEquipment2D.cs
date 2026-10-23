@@ -76,6 +76,7 @@ namespace Rustline.Gameplay.Weapons
 
         private void Update()
         {
+            if (Rustline.Presentation.FrontendController.BlockGameplayInput) return;
             ConsumeSelectionInput();
             if (!_stepActive || Time.unscaledTime - _stepStartedAt < carouselStepDuration)
             {

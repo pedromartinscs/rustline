@@ -70,7 +70,7 @@ namespace Rustline.Gameplay.Weapons
 
         private void Update()
         {
-            if (input == null)
+            if (input == null || FrontendController.BlockGameplayInput)
             {
                 return;
             }
