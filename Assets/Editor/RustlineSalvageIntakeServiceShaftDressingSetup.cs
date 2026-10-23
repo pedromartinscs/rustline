@@ -132,7 +132,8 @@ namespace Rustline.Editor
                 unlitMaterial,
                 alignLeftEdgeWorldX: RightInnerFaceX,
                 bottomWorldY: RightBottomY,
-                flipX: RightFlipX);
+                flipX: RightFlipX,
+                heightWorld: 17f);
 
             EditorSceneManager.MarkSceneDirty(scene);
             Require(EditorSceneManager.SaveScene(scene, ScenePath),
@@ -150,7 +151,8 @@ namespace Rustline.Editor
             float? alignLeftEdgeWorldX = null,
             float? alignRightEdgeWorldX = null,
             float bottomWorldY = 0f,
-            bool flipX = false)
+            bool flipX = false,
+            float heightWorld = 15f)
         {
             Require(alignLeftEdgeWorldX.HasValue ^ alignRightEdgeWorldX.HasValue,
                 name + " must align exactly one horizontal source edge.");
@@ -164,6 +166,9 @@ namespace Rustline.Editor
             renderer.sharedMaterial = material;
             renderer.sortingOrder = SortingOrder;
             renderer.flipX = flipX;
+            renderer.drawMode = SpriteDrawMode.Tiled;
+            renderer.tileMode = SpriteTileMode.Continuous;
+            renderer.size = new Vector2(sprite.rect.width / PixelsPerUnit, heightWorld);
 
             float leftOffset = -sprite.pivot.x / PixelsPerUnit;
             float rightOffset = (sprite.rect.width - sprite.pivot.x) / PixelsPerUnit;
@@ -178,7 +183,7 @@ namespace Rustline.Editor
             float x = alignLeftEdgeWorldX.HasValue
                 ? alignLeftEdgeWorldX.Value - leftOffset
                 : alignRightEdgeWorldX.Value - rightOffset;
-            float y = bottomWorldY + sprite.pivot.y / PixelsPerUnit;
+            float y = bottomWorldY + heightWorld * sprite.pivot.y / sprite.rect.height;
             spriteObject.transform.position = new Vector3(x, y, 0f);
         }
 
@@ -257,7 +262,8 @@ namespace Rustline.Editor
                 LeftInnerFaceX,
                 LeftBottomY,
                 alignLeftEdge: false,
-                flipX: LeftFlipX);
+                flipX: LeftFlipX,
+                expectedHeight: 15f);
             ValidateWallObject(
                 managedRoot,
                 "Service Shaft Wall - Right B",
@@ -265,7 +271,8 @@ namespace Rustline.Editor
                 RightInnerFaceX,
                 RightBottomY,
                 alignLeftEdge: true,
-                flipX: RightFlipX);
+                flipX: RightFlipX,
+                expectedHeight: 17f);
 
             Require(managedRoot.GetComponentsInChildren<SpriteRenderer>(true).Length == 2,
                 "Service Shaft Wall Skin v0 must contain exactly two wall SpriteRenderers.");
@@ -278,7 +285,8 @@ namespace Rustline.Editor
             float expectedInnerFaceX,
             float expectedBottomY,
             bool alignLeftEdge,
-            bool flipX)
+            bool flipX,
+            float expectedHeight)
         {
             Transform child = managedRoot.Find(name);
             Require(child != null, "Missing shaft-wall dressing object: " + name);
@@ -301,7 +309,9 @@ namespace Rustline.Editor
             }
 
             float actualInnerFaceX = child.position.x + (alignLeftEdge ? leftOffset : rightOffset);
-            float actualBottomY = child.position.y - expectedSprite.pivot.y / PixelsPerUnit;
+            float actualBottomY = renderer.bounds.min.y;
+            Require(renderer.drawMode == SpriteDrawMode.Tiled && Mathf.Approximately(renderer.bounds.size.y, expectedHeight),
+                name + " must cover the complete solid shaft face with a continuous native skin.");
             Require(Mathf.Approximately(actualInnerFaceX, expectedInnerFaceX),
                 name + " no longer aligns to the canonical playable shaft face at x=" + expectedInnerFaceX + ".");
             Require(Mathf.Approximately(actualBottomY, expectedBottomY),
@@ -322,9 +332,9 @@ namespace Rustline.Editor
 
         private static Vector3Int[] EnumerateRightWallCells()
         {
-            Vector3Int[] cells = new Vector3Int[30];
+            Vector3Int[] cells = new Vector3Int[34];
             int index = 0;
-            for (int y = 0; y < 15; y++)
+            for (int y = 0; y < 17; y++)
             {
                 cells[index++] = new Vector3Int(32, y, 0);
                 cells[index++] = new Vector3Int(33, y, 0);

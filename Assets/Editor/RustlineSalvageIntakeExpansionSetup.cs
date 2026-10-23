@@ -117,8 +117,8 @@ namespace Rustline.Editor
                 for (int y = 17; y < 31; y++)
                     if (collision.HasTile(new Vector3Int(x,y,0))) throw new InvalidOperationException("Second shaft opening obstructed.");
             Transform root = Find<Transform>(scene, ManagedName);
-            if (root == null || root.GetComponentsInChildren<SpriteRenderer>().Length < 40)
-                throw new InvalidOperationException("Expansion dressing missing.");
+            if (root == null || root.GetComponentsInChildren<SpriteRenderer>().Length != 14)
+                throw new InvalidOperationException("Expansion dressing must contain six machines, seven support columns and one extraction bulkhead (no floor overlays).");
             foreach (SpriteRenderer sprite in root.GetComponentsInChildren<SpriteRenderer>())
                 if (sprite.sprite == null || sprite.transform.localScale != Vector3.one || sprite.GetComponent<Collider2D>() != null)
                     throw new InvalidOperationException("Expansion art must remain native scale, valid and noncolliding.");
@@ -174,10 +174,8 @@ namespace Rustline.Editor
                 var renderer = go.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite; renderer.sharedMaterial = material; renderer.sortingOrder = order; renderer.flipX = flip;
             }
-            for (int x = 46; x < 127; x += 3)
-                Sprite("Gallery / maintenance deck " + x, "Architecture/Floor/floor_edge_mid_" + (x % 5 == 0 ? "b" : "a"), x + 1.5f, 16f, 2);
-            for (int x = 128; x < 143; x += 3) Sprite("Upper service deck " + x, "Architecture/Floor/floor_edge_mid_a", x + 1.5f, 28f, 2);
-            for (int x = 148; x < 193; x += 3) Sprite("Terminal deck " + x, "Architecture/Floor/floor_edge_mid_" + (x % 5 == 0 ? "b" : "a"), x + 1.5f, 28f, 2);
+            // M7.1: show actual industrial_surface tiles on breachable decks. A detached
+            // damaged sprite strip must not hide their material or survive their destruction.
             // Native-size background equipment is planted on the existing deck, not suspended
             // without supports. Keep the claw/gantry identity exclusive to the introductory bay.
             Sprite("Processing pressure reclamation", "Hardening/pressure_reclaimer", 62f, 23f, -16);

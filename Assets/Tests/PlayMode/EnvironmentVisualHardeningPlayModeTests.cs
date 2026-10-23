@@ -17,7 +17,7 @@ namespace Rustline.Tests
     public sealed class EnvironmentVisualHardeningPlayModeTests
     {
         [UnityTest]
-        public IEnumerator ReinforcedModularPlates_KeepExistingBreachingWhilePermanentSkinsStaySolid()
+        public IEnumerator SolidTraversalWalls_RejectBreachingWhileIndustrialDeckStillBreaches()
         {
             SceneManager.LoadScene("SalvageIntake"); yield return null;
             var collision = GameObject.Find("Ground Collision - Hidden").GetComponent<Tilemap>();
@@ -25,20 +25,34 @@ namespace Rustline.Tests
             Tilemap surface = receiver.StructuralVisualTilemap;
             var weapon = Object.FindAnyObjectByType<PlayerWeaponController2D>().WeaponDefinition;
             Assert.That(receiver.AllowsWeapon(weapon), Is.True);
-            var cell = new Vector3Int(126,22,0);
-            Assert.That(surface.GetSprite(cell).texture.name, Is.EqualTo("reinforced_plate_left"));
-            var hit = new WeaponHitInfo2D(weapon,new Vector2(125,22.5f),Vector2.right,
-                new Vector2(126,22.5f),Vector2.left,1,40,collision.GetComponent<CompositeCollider2D>());
-            receiver.ReceiveHit(in hit);
-            Assert.That(surface.HasTile(cell), Is.False);
-            Assert.That(collision.HasTile(cell), Is.False, "Reinforcement must not silently disable existing Longwatch breaching.");
-            // First-shaft architecture had no visual tile before M7 and remains permanent.
-            var permanent = new Vector3Int(27,8,0);
-            Assert.That(surface.HasTile(permanent), Is.False);
-            hit = new WeaponHitInfo2D(weapon,new Vector2(29,8.5f),Vector2.left,
-                new Vector2(28,8.5f),Vector2.right,1,40,collision.GetComponent<CompositeCollider2D>());
-            receiver.ReceiveHit(in hit);
-            Assert.That(collision.HasTile(permanent), Is.True);
+            // Exercise actual hit handling at exposed faces, including the old four-block
+            // first-shaft cap and both recovery-well lips, not just tile-presence assertions.
+            foreach (var face in new[] {
+                (point:new Vector2(28,8.5f), normal:Vector2.right, cell:new Vector3Int(27,8,0)),
+                (point:new Vector2(32,15.5f), normal:Vector2.left, cell:new Vector3Int(32,15,0)),
+                (point:new Vector2(122,25.5f), normal:Vector2.right, cell:new Vector3Int(121,25,0)),
+                (point:new Vector2(126,22.5f), normal:Vector2.left, cell:new Vector3Int(126,22,0)),
+                (point:new Vector2(144,28.5f), normal:Vector2.right, cell:new Vector3Int(143,28,0)),
+                (point:new Vector2(148,28.5f), normal:Vector2.left, cell:new Vector3Int(148,28,0)),
+                (point:new Vector2(195,31.5f), normal:Vector2.left, cell:new Vector3Int(195,31,0)) })
+            {
+                Assert.That(surface.HasTile(face.cell), Is.False);
+                Assert.That(collision.HasTile(face.cell), Is.True);
+                var hit = new WeaponHitInfo2D(weapon,face.point+face.normal,-face.normal,
+                    face.point,face.normal,1,40,collision.GetComponent<CompositeCollider2D>());
+                receiver.ReceiveHit(in hit);
+                Assert.That(collision.HasTile(face.cell), Is.True, "Solid skin must remain trustworthy: " + face.cell);
+            }
+            var industrial = new Vector3Int(60,16,0);
+            Assert.That(surface.GetSprite(industrial).texture.name, Is.EqualTo("industrial_surface"));
+            var floorHit = new WeaponHitInfo2D(weapon,new Vector2(60.5f,18),Vector2.down,
+                new Vector2(60.5f,17),Vector2.up,1,40,collision.GetComponent<CompositeCollider2D>());
+            receiver.ReceiveHit(in floorHit);
+            Assert.That(surface.HasTile(industrial), Is.False);
+            Assert.That(collision.HasTile(industrial), Is.False, "Existing industrial floors retain Longwatch breaching.");
+            Assert.That(Object.FindObjectsByType<SpriteRenderer>().Any(r=>r.name.StartsWith("Gallery / maintenance deck ") ||
+                r.name.StartsWith("Upper service deck ") || r.name.StartsWith("Terminal deck ")), Is.False,
+                "No detached damaged overlay may survive the real floor's destruction.");
         }
 
         [UnityTest]
@@ -51,7 +65,7 @@ namespace Rustline.Tests
             director.Player.GetComponent<Rigidbody2D>().simulated = false;
             var presentation = Object.FindAnyObjectByType<NativePixelPresentation>();
             presentation.WorldCamera.GetComponent<PixelCameraFollow2D>().enabled = false;
-            string output = Path.GetFullPath("Logs/M7/RouteRenders"); Directory.CreateDirectory(output);
+            string output = Path.GetFullPath("Logs/M71/RouteRenders"); Directory.CreateDirectory(output);
             Vector2[] views = {new Vector2(-20,1),new Vector2(8,1),new Vector2(30,8),new Vector2(38,17),
                 new Vector2(62,17),new Vector2(100,17),new Vector2(124,23),new Vector2(146,24),
                 new Vector2(164,29),new Vector2(185,29)};

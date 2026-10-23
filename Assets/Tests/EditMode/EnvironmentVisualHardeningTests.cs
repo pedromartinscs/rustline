@@ -53,6 +53,60 @@ namespace Rustline.Tests
             Assert.That(SceneRenderers(scene).Count(r=>r.sprite != null && r.sprite.texture.name == "salvage_handler"), Is.EqualTo(1));
         }
 
+        [TestCase("Service Shaft Wall - Right B",32f,0f,2.25f,17f)]
+        [TestCase("Maintenance Shaft - Left",119.9375f,21f,2.0625f,10f)]
+        [TestCase("Maintenance Shaft - Right",126f,17f,2.25f,12f)]
+        [TestCase("Rail Recovery - Left",141.9375f,21f,2.0625f,8f)]
+        [TestCase("Rail Recovery - Right",148f,21f,2.25f,8f)]
+        [TestCase("Terminal Solid End Stop",195f,29f,1f,6f)]
+        [TestCase("Maintenance Solid Ceiling",102f,19.625f,6f,1f)]
+        [TestCase("Catwalk Skin - Left",4f,4f,6f,1f)]
+        [TestCase("Catwalk Skin - Right",10f,4f,6f,1f)]
+        public void SolidSkins_CoverCompleteFacesAtNativeScale(string name,float x,float y,float width,float height)
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
+            SpriteRenderer renderer = SceneRenderers(scene).Single(r=>r.name == name);
+            Assert.That(renderer.drawMode, Is.EqualTo(SpriteDrawMode.Tiled));
+            Assert.That(renderer.tileMode, Is.EqualTo(SpriteTileMode.Continuous));
+            Assert.That(renderer.transform.lossyScale, Is.EqualTo(Vector3.one));
+            Assert.That(Vector2.Distance(renderer.bounds.min,new Vector2(x,y)), Is.LessThan(0.001f));
+            Assert.That(Vector2.Distance(renderer.bounds.size,new Vector2(width,height)), Is.LessThan(0.001f));
+            Assert.That(renderer.sprite.texture.name, Does.StartWith("reinforced_"));
+            Assert.That(renderer.GetComponent<Collider2D>(), Is.Null);
+        }
+
+        [Test]
+        public void ForegroundMaterialLanguage_OnlyIndustrialTilesAreBreachable_NoSmallPlatesOrDamagedOverlays()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
+            var map = GameObject.Find("Industrial Surface - Visual").GetComponent<Tilemap>();
+            int count = 0;
+            foreach (Vector3Int cell in map.cellBounds.allPositionsWithin)
+                if (map.HasTile(cell))
+                {
+                    Assert.That(map.GetSprite(cell).texture.name, Is.EqualTo("industrial_surface"),cell.ToString());
+                    count++;
+                }
+            Assert.That(count, Is.GreaterThan(100),"Retain actual industrial terrain and cover.");
+            Assert.That(GameObject.Find("Maintenance Crouch Visual").GetComponent<Tilemap>().GetUsedTilesCount(), Is.Zero);
+            Assert.That(GameObject.Find("Expansion Environment - Managed").GetComponentsInChildren<SpriteRenderer>().Length, Is.EqualTo(14));
+            Assert.That(SceneRenderers(scene).Any(r=>r.sprite != null && r.sprite.texture.name.StartsWith("reinforced_plate_")), Is.False);
+        }
+
+        [Test]
+        public void ProductionValidator_RejectsNonIndustrialDestructibleMaterial()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
+            try
+            {
+                GameObject.Find("Industrial Surface - Visual").GetComponent<Tilemap>().SetTile(new Vector3Int(60,16,0),
+                    AssetDatabase.LoadAssetAtPath<TileBase>(Art+"ReinforcedPlateLeft.asset"));
+                var failure = Assert.Throws<TargetInvocationException>(()=>Invoke("RustlineEnvironmentVisualHardeningSetup","ValidateScene",scene));
+                Assert.That(failure.InnerException.Message, Does.Contain("Only industrial_surface"));
+            }
+            finally { EditorSceneManager.NewScene(NewSceneSetup.EmptyScene,NewSceneMode.Single); }
+        }
+
         [Test]
         public void VisualRefresh_IsIdempotentWithoutChangingGameplayOrUnrelatedArt()
         {
