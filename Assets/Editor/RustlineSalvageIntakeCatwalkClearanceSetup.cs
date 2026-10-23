@@ -119,7 +119,11 @@ namespace Rustline.Editor
                 name + " must remain at native scale 1.0.");
 
             Vector3 position = child.position;
-            child.position = new Vector3(position.x, ProductionArtY, position.z);
+            SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
+            // The final coherence pass uses a continuous one-unit steel deck. Preserve
+            // that newer skin when rerunning this older collision-clearance migration.
+            float artY = IsContinuousSteelDeck(renderer) ? ProductionCollisionRow + 0.5f : ProductionArtY;
+            child.position = new Vector3(position.x, artY, position.z);
         }
 
         private static void ValidateScene(Scene scene)
@@ -170,11 +174,17 @@ namespace Rustline.Editor
             Require(child != null, "Missing production catwalk sprite: " + name + ".");
             Require(child.localScale == Vector3.one,
                 name + " must remain at native scale 1.0.");
-            Require(Mathf.Approximately(child.position.y, ProductionArtY),
+            SpriteRenderer renderer = child.GetComponent<SpriteRenderer>();
+            float artY = IsContinuousSteelDeck(renderer) ? ProductionCollisionRow + 0.5f : ProductionArtY;
+            Require(Mathf.Approximately(child.position.y, artY),
                 name + " must align its authored deck surface to y=" + ProductionWalkableY + ".");
             Require(child.GetComponent<Collider2D>() == null,
                 name + " must remain visual-only; hidden Tilemap collision is authoritative.");
         }
+
+        private static bool IsContinuousSteelDeck(SpriteRenderer renderer) => renderer != null &&
+            renderer.sprite != null && renderer.sprite.texture.name == "reinforced_floor_mid_a" &&
+            renderer.drawMode == SpriteDrawMode.Tiled && renderer.size == new Vector2(6f,1f);
 
         private static Transform FindTransform(Scene scene, string name)
         {
