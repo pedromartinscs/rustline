@@ -45,6 +45,14 @@ namespace Rustline.Diagnostics
             Directory.CreateDirectory(_outputDirectory);
             if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path != Presentation.FrontendController.PlayScene)
             {
+                yield return null; // Let the normal title render/initialize before the test-only route.
+                var frontend = Presentation.FrontendController.Current;
+                Require(UnityEngine.SceneManagement.SceneManager.GetActiveScene().path == Presentation.FrontendController.TitleScene &&
+                    frontend != null && frontend.Navigation.State == Presentation.FrontendState.Title &&
+                    frontend.View != null && frontend.View.PixelMesh.vertexCount > 0 &&
+                    frontend.View.MaskAtlas.filterMode == FilterMode.Point && Time.timeScale == 1f && !AudioListener.pause,
+                    "Expected a usable native-pixel MainMenu as normal Windows Release entry.");
+                Debug.Log("FIRST_PLAYABLE_SMOKE_TITLE_ENTRY_OK: MainMenu startup, initialized pixel UI and normal global time/audio state.");
                 yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(Presentation.FrontendController.PlayScene);
                 Debug.Log("FIRST_PLAYABLE_SMOKE_DIRECT_LOAD_OK: title entry routed to the actual gameplay scene.");
             }
