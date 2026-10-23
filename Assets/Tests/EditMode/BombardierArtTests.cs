@@ -36,7 +36,7 @@ namespace Rustline.Tests
                 Assert.That(BombardierAnimationFrames.Select(BombardierState.Dead, false, false, true, 0, 0, i * 0.14f + 0.01f), Is.EqualTo(12 + i));
                 Assert.That(BombardierAnimationFrames.Select(BombardierState.Patrol, true, true, false, 0, i / 8f, 0), Is.EqualTo(2 + i));
             }
-            Assert.That(BombardierAnimationFrames.Select(BombardierState.Dead, true, true, true, 0, 0, 100), Is.EqualTo(15));
+            Assert.That(BombardierAnimationFrames.Select(BombardierState.Dead, true, true, true, 0, 0, 100), Is.EqualTo(-1));
         }
 
         [Test]

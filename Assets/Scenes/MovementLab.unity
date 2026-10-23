@@ -285,6 +285,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 529659804}
   throwOrigin: {fileID: 97145754}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 2
   initialDirection: 1
@@ -8700,6 +8707,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &438785512
 SpriteRenderer:

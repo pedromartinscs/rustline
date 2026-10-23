@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Rustline.Presentation;
 using Rustline.Gameplay.Player;
 using UnityEngine;
 
@@ -24,6 +25,7 @@ namespace Rustline.Gameplay.Combat
         [SerializeField] private Collider2D weaponHitCollider;
         [SerializeField] private Transform throwOrigin;
         [SerializeField] private Material projectileMaterial;
+        [SerializeField] private Sprite[] explosionFrames;
         [SerializeField, Min(0f)] private float patrolSpeed = DefaultPatrolSpeed;
         [SerializeField, Min(0f)] private float patrolHalfDistance = DefaultPatrolHalfDistance;
         [SerializeField] private int initialDirection = 1;
@@ -43,6 +45,16 @@ namespace Rustline.Gameplay.Combat
         public Collider2D WeaponHitCollider => weaponHitCollider;
         public Transform ThrowOrigin => throwOrigin;
         public Material ProjectileMaterial => projectileMaterial;
+        public IReadOnlyList<Sprite> ExplosionFrames => explosionFrames;
+        public bool HasExplosionFrames
+        {
+            get
+            {
+                if (explosionFrames == null || explosionFrames.Length != BombardierExplosionPresenter2D.FrameCount) return false;
+                foreach (Sprite frame in explosionFrames) if (frame == null) return false;
+                return true;
+            }
+        }
         public Vector2 SpawnPosition => _spawnPosition;
         public float PatrolSpeed => patrolSpeed;
         public float PatrolHalfDistance => patrolHalfDistance;
@@ -202,7 +214,7 @@ namespace Rustline.Gameplay.Combat
             GameObject bombObject = new GameObject("Bombardier Bomb");
             bombObject.transform.position = origin;
             BombardierBomb2D bomb = bombObject.AddComponent<BombardierBomb2D>();
-            bomb.Launch(this, origin, LockedTargetPoint, _playerHealth, _playerCollider, projectileMaterial);
+            bomb.Launch(this, origin, LockedTargetPoint, _playerHealth, _playerCollider, projectileMaterial, explosionFrames);
             _bombs.Add(bomb);
             LaunchCount++;
         }
