@@ -173,6 +173,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 701783345}
   throwOrigin: {fileID: 1609484256}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 0.6
   initialDirection: 1
@@ -471,6 +478,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 1087138187}
   throwOrigin: {fileID: 876940483}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 1
   initialDirection: 1
@@ -11004,6 +11018,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &239477871
 SpriteRenderer:
@@ -17075,6 +17093,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &722804604
 SpriteRenderer:
@@ -17824,6 +17846,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 1726382390}
   throwOrigin: {fileID: 1448989431}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 1
   initialDirection: 1
@@ -19079,6 +19108,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 1737529997}
   throwOrigin: {fileID: 1507821573}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 2
   initialDirection: 1
@@ -19188,6 +19224,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &936531076
 SpriteRenderer:
@@ -26401,6 +26441,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &1007192136
 SpriteRenderer:
@@ -26619,6 +26663,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &1023963942
 SpriteRenderer:
@@ -27916,6 +27964,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 1533721959}
   throwOrigin: {fileID: 1047909688}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 2
   initialDirection: 1
@@ -28105,6 +28160,13 @@ MonoBehaviour:
   weaponHitCollider: {fileID: 1850047194}
   throwOrigin: {fileID: 1383554335}
   projectileMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  explosionFrames:
+  - {fileID: 5519258353883473037, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4084924114689352826, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -6562514636070587114, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 4138408242761511221, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: -7663056207769554481, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
+  - {fileID: 3857273620188026417, guid: b7972b74c88e85d4ab6b5bd4c705cf3a, type: 3}
   patrolSpeed: 1.75
   patrolHalfDistance: 1.5
   initialDirection: 1
@@ -28791,6 +28853,10 @@ MonoBehaviour:
   - {fileID: -1829204867, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: 1118063610, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
   - {fileID: -1794345467, guid: e1b6f89ecf1c0e146b3fb85287d0f1af, type: 3}
+  dissolutionFrames:
+  - {fileID: 549487720, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: 1936237828, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
+  - {fileID: -1628798549, guid: 19c6d778198e8cc40a9890dfbd8c832a, type: 3}
   markerMaterial: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
 --- !u!212 &1395122433
 SpriteRenderer:

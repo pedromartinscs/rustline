@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Rustline.Presentation;
 using UnityEngine;
 
@@ -6,16 +8,17 @@ namespace Rustline.Gameplay.Combat
     [DisallowMultipleComponent]
     public sealed class BombardierBomb2D : MonoBehaviour
     {
-        private const float BlastVisualDuration = 0.16f;
         private readonly RaycastHit2D[] _hits = new RaycastHit2D[8];
         private Bombardier2D _owner;
         private CombatHealth2D _playerHealth;
         private CapsuleCollider2D _playerCollider;
         private LineRenderer _line;
+        private Material _material;
+        private IReadOnlyList<Sprite> _explosionFrames;
+        private BombardierExplosionPresenter2D _explosion;
         private Vector2 _origin;
         private Vector2 _velocity;
         private float _age;
-        private float _blastVisualRemaining;
         private bool _launched;
         private ContactFilter2D _contactFilter;
 
@@ -25,10 +28,16 @@ namespace Rustline.Gameplay.Combat
         public Collider2D FirstContactCollider { get; private set; }
         public Vector2 InitialVelocity => _velocity;
         public float Age => _age;
+        public BombardierExplosionPresenter2D ExplosionVisual => _explosion;
 
         public void Launch(Bombardier2D owner, Vector2 origin, Vector2 target,
-            CombatHealth2D playerHealth, CapsuleCollider2D playerCollider, Material sharedMaterial)
+            CombatHealth2D playerHealth, CapsuleCollider2D playerCollider, Material sharedMaterial,
+            IReadOnlyList<Sprite> explosionFrames)
         {
+            if (explosionFrames == null || explosionFrames.Count != BombardierExplosionPresenter2D.FrameCount)
+                throw new ArgumentException("Bombardier bomb requires six explosion sprites.", nameof(explosionFrames));
+            _explosionFrames = explosionFrames;
+            _material = sharedMaterial;
             _owner = owner;
             _playerHealth = playerHealth;
             _playerCollider = playerCollider;
@@ -56,8 +65,8 @@ namespace Rustline.Gameplay.Combat
             if (!_launched) return;
             if (HasExploded)
             {
-                _blastVisualRemaining -= Time.fixedDeltaTime;
-                if (_blastVisualRemaining <= 0f) Destroy(gameObject);
+                // Spent and inert. Only the presentation clock controls its remaining lifetime.
+                if (_explosion == null || _explosion.IsComplete) Destroy(gameObject);
                 return;
             }
 
@@ -100,6 +109,8 @@ namespace Rustline.Gameplay.Combat
         {
             _launched = false;
             enabled = false;
+            if (_line != null) _line.enabled = false;
+            if (_explosion != null) _explosion.Cancel();
             Destroy(gameObject);
         }
 
@@ -110,10 +121,14 @@ namespace Rustline.Gameplay.Combat
             FirstContactCollider = directCollider;
             ImpactPoint = point;
             transform.position = point;
-            SetCircle(BombardierBallistics2D.ExplosionRadius, 24,
-                RustlinePalette.GetColor(23));
-            _blastVisualRemaining = BlastVisualDuration;
+            _line.enabled = false; // Keep only the flight body; never draw the old circular blast.
+            var visual = new GameObject("Explosion Visual");
+            visual.transform.SetParent(transform, false);
+            _explosion = visual.AddComponent<BombardierExplosionPresenter2D>();
+            _explosion.Play(_explosionFrames, _material, point);
 
+            // Must remain in this detonation tick. A lethal hit may synchronously cancel
+            // this owned visual through the existing player-death/reset cleanup path.
             BombardierExplosion2D.TryDamagePlayer(point, normal, directCollider,
                 _playerHealth, _playerCollider, this);
         }

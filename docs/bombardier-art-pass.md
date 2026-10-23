@@ -1,5 +1,7 @@
 # M5 — Bombardier art and Sentry finish
 
+M5.1 follow-up preserves this approved character art and adds an original six-key explosion plus a separate Bombardier wreck dissolution. See [combat-vfx-polish.md](combat-vfx-polish.md) for current visual lifetime, cleanup, timing and validation; the retained-wreck description below records M5.
+
 ## Audit and scope
 
 Baseline: current main merge `05cd1fe` (M4 `60fe63c`), clean dedicated branch `feat/m5-enemy-art-and-sentry-polish`, Unity 6000.4.0f1. Read AGENTS, palette/art/presentation, M4 source/prompt/converter, first-playable and expansion design/validation, saved scenes, enemy gameplay/presenters, production and MovementLab builders, and related tests. The accepted Sentry is the primary visual reference; player 48×64 cells and the industrial environment establish scale/materials. Production art requires exact Canonical 28 RGB and binary alpha, 16 PPU, Point/Full Rect, stable bottom-center pivots, no compression/mipmaps/generated physics.

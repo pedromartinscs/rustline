@@ -118,6 +118,7 @@ namespace Rustline.Editor
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             AssetDatabase.ImportAsset(SheetPath, ImportAssetOptions.ForceSynchronousImport);
             Slice();
+            RustlineBombardierDissolutionSetup.RebuildSprites();
         }
 
         private static void ConfigureReferenceSource()
@@ -234,6 +235,10 @@ namespace Rustline.Editor
             if (projectileMaterial == null) throw new InvalidOperationException("Bombardier projectile material missing: " + enemy.name);
             var actor = new SerializedObject(enemy);
             actor.FindProperty("projectileMaterial").objectReferenceValue = projectileMaterial;
+            Sprite[] explosion = RustlineCombatVfxSetup.LoadExplosionFrames();
+            SerializedProperty explosionArray = actor.FindProperty("explosionFrames");
+            explosionArray.arraySize = explosion.Length;
+            for (int i = 0; i < explosion.Length; i++) explosionArray.GetArrayElementAtIndex(i).objectReferenceValue = explosion[i];
             actor.ApplyModifiedPropertiesWithoutUndo();
             Transform visual = enemy.transform.Find("Bombardier Visual");
             if (visual == null)
@@ -265,6 +270,10 @@ namespace Rustline.Editor
             SerializedProperty array = serialized.FindProperty("frames");
             array.arraySize = frames.Length;
             for (int i = 0; i < frames.Length; i++) array.GetArrayElementAtIndex(i).objectReferenceValue = frames[i];
+            Sprite[] dissolution = RustlineBombardierDissolutionSetup.LoadFrames();
+            array = serialized.FindProperty("dissolutionFrames");
+            array.arraySize = dissolution.Length;
+            for (int i = 0; i < dissolution.Length; i++) array.GetArrayElementAtIndex(i).objectReferenceValue = dissolution[i];
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
@@ -273,7 +282,7 @@ namespace Rustline.Editor
             foreach (Bombardier2D enemy in scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Bombardier2D>(true)))
             {
                 var presenter = enemy.GetComponentInChildren<BombardierPresenter2D>(true);
-                if (presenter == null || !presenter.HasCompleteFrames ||
+                if (presenter == null || !presenter.HasCompleteFrames || !enemy.HasExplosionFrames ||
                     presenter.BodyRenderer == null || presenter.BodyRenderer.sprite == null || enemy.ProjectileMaterial == null ||
                     presenter.transform.localScale != Vector3.one || enemy.GetComponentInChildren<LineRenderer>(true) != null)
                     throw new InvalidOperationException("Bombardier sprite presentation incomplete: " + enemy.name);

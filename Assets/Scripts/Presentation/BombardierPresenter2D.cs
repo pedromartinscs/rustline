@@ -13,10 +13,12 @@ namespace Rustline.Presentation
         [SerializeField] private Bombardier2D enemy;
         [SerializeField] private SpriteRenderer bodyRenderer;
         [SerializeField] private Sprite[] frames;
+        [SerializeField] private Sprite[] dissolutionFrames;
         [SerializeField] private Material markerMaterial;
         private LineRenderer _targetMarker;
         private float _elapsed;
         private float _deathElapsed;
+        private int _deathStartedFrame = -1;
 
         public CombatHealth2D Health => health;
         public SpriteRenderer BodyRenderer => bodyRenderer;
@@ -29,6 +31,8 @@ namespace Rustline.Presentation
             {
                 if (FrameCount != BombardierAnimationFrames.Count) return false;
                 foreach (Sprite frame in frames) if (frame == null) return false;
+                if (dissolutionFrames == null || dissolutionFrames.Length != BombardierAnimationFrames.DissolutionCount) return false;
+                foreach (Sprite frame in dissolutionFrames) if (frame == null) return false;
                 return true;
             }
         }
@@ -45,7 +49,7 @@ namespace Rustline.Presentation
             if (bodyRenderer == null) bodyRenderer = GetComponent<SpriteRenderer>();
             if (enemy == null || health == null || !HasCompleteFrames || markerMaterial == null)
             {
-                Debug.LogError("Bombardier presentation requires actor, health, sixteen sprites and warning material.", this);
+                Debug.LogError("Bombardier presentation requires actor, health, sixteen poses, three dissolution sprites and warning material.", this);
                 enabled = false;
                 return;
             }
@@ -95,7 +99,7 @@ namespace Rustline.Presentation
         private void LateUpdate()
         {
             _elapsed += Time.deltaTime;
-            if (health.IsDead) _deathElapsed += Time.deltaTime;
+            if (health.IsDead && Time.frameCount != _deathStartedFrame) _deathElapsed += Time.deltaTime;
             ApplyFrame(BombardierAnimationFrames.Select(enemy.State, enemy.CombatActive, enemy.IsMoving,
                 IsHitReacting, enemy.StateTimeRemaining, _elapsed, _deathElapsed));
             bool left = enemy.PatrolDirection < 0;
@@ -118,6 +122,7 @@ namespace Rustline.Presentation
         {
             DeathPresentationCount++;
             _deathElapsed = 0f;
+            _deathStartedFrame = Time.frameCount;
             ApplyFrame(12);
             _targetMarker.enabled = false;
         }
@@ -131,12 +136,13 @@ namespace Rustline.Presentation
         private void RestorePose()
         {
             _elapsed = 0f;
-            _deathElapsed = health.IsDead ? BombardierAnimationFrames.DeathFrameDuration * 3f : 0f;
-            FrameIndex = -1;
+            _deathStartedFrame = -1;
+            _deathElapsed = health.IsDead ? BombardierAnimationFrames.DeathEnd : 0f;
+            FrameIndex = -2;
             bodyRenderer.enabled = true;
             bodyRenderer.color = Color.white;
             bodyRenderer.flipX = enemy.PatrolDirection < 0;
-            ApplyFrame(health.IsDead ? 15 : 0);
+            ApplyFrame(health.IsDead ? -1 : 0);
             if (_targetMarker != null) _targetMarker.enabled = false;
             SnapVisual();
         }
@@ -145,7 +151,9 @@ namespace Rustline.Presentation
         {
             if (FrameIndex == index) return;
             FrameIndex = index;
-            bodyRenderer.sprite = frames[index];
+            bodyRenderer.enabled = index >= 0;
+            if (index >= 0) bodyRenderer.sprite = index < BombardierAnimationFrames.Count ? frames[index] :
+                dissolutionFrames[index - BombardierAnimationFrames.Count];
         }
 
         private void SnapVisual()
