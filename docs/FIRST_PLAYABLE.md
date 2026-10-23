@@ -1,6 +1,6 @@
 # First playable — Salvage Intake
 
-Open this repository with **Unity 6000.4.0f1**. Open `Assets/Scenes/Demo/SalvageIntake.unity` and press Play. This saved scene is also build index **0**; no runtime generation or setup button is required to play the committed content.
+Open this repository with **Unity 6000.4.0f1**. Open `Assets/Scenes/Demo/SalvageIntake.unity` and press Play for direct development gameplay. Normal builds now start at `Assets/Scenes/UI/MainMenu.unity` (index **0**); Start Game loads SalvageIntake (index **1**). No setup button is required. See [frontend-menu-system.md](frontend-menu-system.md).
 
 Both enemy archetypes now use original Canonical-28 pixel-art sprites. M5 retains the approved Sentry artwork, shortens its melee preparation to 0.48 seconds and adds a pixel-disintegration finish after collapse. The Bombardier has its own animated demolition-automaton presentation with unchanged ranged timing, locked target and bomb trajectory. See [bombardier-art-pass.md](bombardier-art-pass.md) for assets, authoring and validation.
 
@@ -26,6 +26,7 @@ Alive enemies remain visible and damageable before activation. Proximity or an e
 | Equipment | 0 hands, 1 Latch-9, 2 Longwatch; mouse wheel cycles |
 | Reload Longwatch | R (discards the partial magazine) |
 | Restart whole run | F5; Enter after extraction |
+| Pause / resume / menu Back | Escape |
 
 Existing gamepad movement, jump and crouch bindings remain available. The audited aim/fire configuration is mouse based; a complete gamepad combat/control pass is still pending. Start restarts after completion.
 
@@ -60,6 +61,6 @@ Look for `FIRST_PLAYABLE_SMOKE_PASS` and exit code 0. This verifies real collisi
 
 `FirstPlayableProgress` owns deterministic ordered progression/checkpoint/extraction rules. `FirstPlayableDirector2D` owns the run and resets existing player/weapon components. `FirstPlayableEncounter2D` owns authored member activation. `SentryBrain2D` owns timed state transitions; `Sentry2D` owns Ground LOS, wall/edge checks and melee damage. The existing Bombardier, generic health/hitboxes, authored player/weapon animation, Tilemap collision, rendering and performance systems are reused.
 
-Sentry now uses original Canonical-28 sprites and `SentryPresenter2D`, driven by the existing combat state/timer. Idle/walk, alert, windup/strike/recovery, hit and death are integrated in the saved scene and gameplay builder. See [Sentry art pass](sentry-art-pass.md) for assets, rebuilding, evidence and manual visual gates. Bombardier retains its existing temporary line presentation.
+Sentry uses original Canonical-28 sprites and `SentryPresenter2D`, driven by the existing combat state/timer. Idle/walk, alert, windup/strike/recovery, hit and death are integrated in the saved scene and gameplay builder. See [Sentry art pass](sentry-art-pass.md). Bombardier also uses its approved original sprites, explosion and death finish; see [Bombardier art pass](bombardier-art-pass.md) and [combat VFX polish](combat-vfx-polish.md).
 
-The [expanded physical route/design](salvage-intake-expansion.md) increases the spawn-to-exit horizontal projection from 63 to 213 units, preserving all introductory collision cells. Gallery elevation changes, a 42 px crouch passage with an alternate ledge-climb roof route, a second four-unit shaft and a rail gap/recovery well add actual terrain. **Bombardier art remains temporary, audio is absent, and duration/FPS/balance are unmeasured.** Original environment/player/weapon assets and rendering are retained; no external assets or packages were introduced. Human traversal/combat feel, final window composition and sustained standalone performance remain explicit acceptance gates.
+The [expanded physical route/design](salvage-intake-expansion.md) increases the spawn-to-exit horizontal projection from 63 to 213 units, preserving all introductory collision cells. Gallery elevation changes, a 42 px crouch passage with an alternate ledge-climb roof route, a second four-unit shaft and a rail gap/recovery well add actual terrain. M6 adds title/pause menus and independent persistent Music/SFX routing. **Production audio clips remain absent, and duration/FPS/balance are unmeasured.** Original environment/player/weapon assets and rendering are retained; no external assets or packages were introduced. Human traversal/combat feel, menu artistic acceptance and sustained standalone performance remain explicit acceptance gates.

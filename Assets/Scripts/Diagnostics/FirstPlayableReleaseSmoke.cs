@@ -27,7 +27,9 @@ namespace Rustline.Diagnostics
             Application.runInBackground = true;
             InputSystem.settings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
             if (Keyboard.current == null) InputSystem.AddDevice<Keyboard>();
-            new GameObject("First Playable Release Smoke").AddComponent<FirstPlayableReleaseSmoke>();
+            GameObject smoke = new GameObject("First Playable Release Smoke");
+            DontDestroyOnLoad(smoke);
+            smoke.AddComponent<FirstPlayableReleaseSmoke>();
         }
 
         private void Awake() => Application.logMessageReceived += OnLog;
@@ -41,6 +43,19 @@ namespace Rustline.Diagnostics
         {
             _outputDirectory = Path.GetFullPath("Logs/FirstPlayableSmoke");
             Directory.CreateDirectory(_outputDirectory);
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().path != Presentation.FrontendController.PlayScene)
+            {
+                yield return null; // Let the normal title render/initialize before the test-only route.
+                var frontend = Presentation.FrontendController.Current;
+                Require(UnityEngine.SceneManagement.SceneManager.GetActiveScene().path == Presentation.FrontendController.TitleScene &&
+                    frontend != null && frontend.Navigation.State == Presentation.FrontendState.Title &&
+                    frontend.View != null && frontend.View.PixelMesh.vertexCount > 0 &&
+                    frontend.View.MaskAtlas.filterMode == FilterMode.Point && Time.timeScale == 1f && !AudioListener.pause,
+                    "Expected a usable native-pixel MainMenu as normal Windows Release entry.");
+                Debug.Log("FIRST_PLAYABLE_SMOKE_TITLE_ENTRY_OK: MainMenu startup, initialized pixel UI and normal global time/audio state.");
+                yield return UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(Presentation.FrontendController.PlayScene);
+                Debug.Log("FIRST_PLAYABLE_SMOKE_DIRECT_LOAD_OK: title entry routed to the actual gameplay scene.");
+            }
             yield return null;
             _director = FindAnyObjectByType<FirstPlayableDirector2D>();
             Require(_director != null && !Debug.isDebugBuild, "Expected the production scene in a non-development Release.");

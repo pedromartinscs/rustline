@@ -100,7 +100,7 @@ namespace Rustline.Gameplay.Player
         {
             using (AimMarker.Auto())
             {
-                if (input == null || nativePixelPresentation == null ||
+                if (FrontendController.BlockGameplayInput || input == null || nativePixelPresentation == null ||
                     nativePixelPresentation.WorldCamera == null)
                 {
                     return;

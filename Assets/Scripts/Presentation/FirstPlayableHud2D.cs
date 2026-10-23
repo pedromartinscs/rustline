@@ -87,7 +87,7 @@ namespace Rustline.Presentation
             SetLine(2, objective);
             SetLine(3, "A/D MOVE / SPACE JUMP / S CROUCH");
             SetLine(4, "MOUSE AIM / LEFT FIRE / RIGHT MODE");
-            SetLine(5, "1 LATCH-9 / 2 LONGWATCH / R RELOAD / F5 RESTART");
+            SetLine(5, "1 LATCH-9 / 2 LONGWATCH / R RELOAD / F5 RESTART / ESC PAUSE");
             int seconds = Mathf.FloorToInt(director.ElapsedSeconds);
             SetLine(6, "TIME " + seconds / 60 + "M " + seconds % 60 + "S / ENCOUNTERS " + progress.ClearedEncounters + " / " + progress.EncounterCount);
         }

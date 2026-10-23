@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Rustline.Editor
 {
     /// <summary>
-    /// Keeps Rustline's production scene as Build Index 0 while retaining diagnostic scenes
+    /// Keeps Rustline's title scene as Build Index 0 while retaining production and diagnostic scenes
     /// immediately after it. This is intentionally enforced whenever Unity's build-scene list
     /// changes so deterministic scene builders cannot accidentally restore a lab scene as the
     /// release entry point.
@@ -15,12 +15,14 @@ namespace Rustline.Editor
     [InitializeOnLoad]
     public static class RustlineBuildSceneOrder
     {
+        private const string MainMenuPath = "Assets/Scenes/UI/MainMenu.unity";
         private const string SalvageIntakePath = "Assets/Scenes/Demo/SalvageIntake.unity";
         private const string MovementLabPath = "Assets/Scenes/MovementLab.unity";
         private const string ArtShowcasePath = "Assets/Scenes/ArtShowcase.unity";
 
         private static readonly string[] CanonicalLeadingScenes =
         {
+            MainMenuPath,
             SalvageIntakePath,
             MovementLabPath,
             ArtShowcasePath
@@ -41,7 +43,7 @@ namespace Rustline.Editor
             ValidateOrThrow();
             EditorUtility.DisplayDialog(
                 "Rustline Build Scenes",
-                "Canonical build order applied: SalvageIntake (0), MovementLab (1), ArtShowcase (2).",
+                "Canonical build order applied: MainMenu (0), SalvageIntake (1), MovementLab (2), ArtShowcase (3).",
                 "OK");
         }
 
@@ -51,7 +53,7 @@ namespace Rustline.Editor
             ValidateOrThrow();
             EditorUtility.DisplayDialog(
                 "Rustline Build Scenes",
-                "Canonical build-scene order is valid. Release starts in SalvageIntake.",
+                "Canonical build-scene order is valid. Release starts in MainMenu.",
                 "OK");
         }
 

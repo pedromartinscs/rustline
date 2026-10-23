@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Rustline.Presentation;
 
 namespace Rustline.Gameplay.Player
 {
@@ -18,6 +19,7 @@ namespace Rustline.Gameplay.Player
         [SerializeField] private string weaponSlotActionPrefix = "WeaponSlot";
 
         private InputActionMap _actionMap;
+        private InputActionAsset _runtimeActions;
         private InputAction _moveAction;
         private InputAction _jumpAction;
         private InputAction _crouchAction;
@@ -36,10 +38,12 @@ namespace Rustline.Gameplay.Player
         private int _weaponCycleDirection;
         private int _weaponSlotPressed = -1;
 
-        public float MoveX { get; private set; }
-        public bool JumpHeld { get; private set; }
-        public bool CrouchHeld { get; private set; }
-        public bool IsFireHeld => _fireHeld;
+        private float _moveX;
+        private bool _jumpHeld, _crouchHeld;
+        public float MoveX { get => FrontendController.BlockGameplayInput ? 0f : _moveX; private set => _moveX = value; }
+        public bool JumpHeld { get => !FrontendController.BlockGameplayInput && _jumpHeld; private set => _jumpHeld = value; }
+        public bool CrouchHeld { get => !FrontendController.BlockGameplayInput && _crouchHeld; private set => _crouchHeld = value; }
+        public bool IsFireHeld => !FrontendController.BlockGameplayInput && _fireHeld;
         public Vector2 PointerScreenPosition { get; private set; }
 
         private void OnEnable()
@@ -106,49 +110,49 @@ namespace Rustline.Gameplay.Player
         {
             bool value = _jumpPressed;
             _jumpPressed = false;
-            return value;
+            return value && !FrontendController.BlockGameplayInput;
         }
 
         public bool ConsumeJumpReleased()
         {
             bool value = _jumpReleased;
             _jumpReleased = false;
-            return value;
+            return value && !FrontendController.BlockGameplayInput;
         }
 
         public bool ConsumeFirePressed()
         {
             bool value = _firePressed;
             _firePressed = false;
-            return value;
+            return value && !FrontendController.BlockGameplayInput;
         }
 
         public bool ConsumeToggleFireModePressed()
         {
             bool value = _toggleFireModePressed;
             _toggleFireModePressed = false;
-            return value;
+            return value && !FrontendController.BlockGameplayInput;
         }
 
         public bool ConsumeReloadPressed()
         {
             bool value = _reloadPressed;
             _reloadPressed = false;
-            return value;
+            return value && !FrontendController.BlockGameplayInput;
         }
 
         public int ConsumeWeaponCycleDirection()
         {
             int value = _weaponCycleDirection;
             _weaponCycleDirection = 0;
-            return value;
+            return FrontendController.BlockGameplayInput ? 0 : value;
         }
 
         public int ConsumeWeaponSlotPressed()
         {
             int value = _weaponSlotPressed;
             _weaponSlotPressed = -1;
-            return value;
+            return FrontendController.BlockGameplayInput ? -1 : value;
         }
 
         public void ClearTransientState()
@@ -162,9 +166,23 @@ namespace Rustline.Gameplay.Player
             _weaponSlotPressed = -1;
         }
 
+        /// <summary>Discard both edges and held values at modal boundaries.</summary>
+        public void FlushForMenu()
+        {
+            ClearTransientState();
+            _moveX = 0f; _jumpHeld = false; _crouchHeld = false; _fireHeld = false;
+        }
+
         private void ResolveActions()
         {
-            _actionMap = inputActions != null ? inputActions.FindActionMap(actionMapName, false) : null;
+            // A scene owns its enabled action state and subscriptions. The imported asset
+            // is definition data, never a shared live map across scene/test-runtime reloads.
+            if (_runtimeActions == null && inputActions != null)
+            {
+                _runtimeActions = Instantiate(inputActions);
+                _runtimeActions.name = "Rustline Player Input - Runtime";
+            }
+            _actionMap = _runtimeActions != null ? _runtimeActions.FindActionMap(actionMapName, false) : null;
             _moveAction = _actionMap?.FindAction(moveActionName, false);
             _jumpAction = _actionMap?.FindAction(jumpActionName, false);
             _crouchAction = _actionMap?.FindAction(crouchActionName, false);
@@ -198,6 +216,11 @@ namespace Rustline.Gameplay.Player
                     return;
                 }
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (_runtimeActions != null) Destroy(_runtimeActions);
         }
 
         private void OnMove(InputAction.CallbackContext context)

@@ -66,13 +66,13 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-The expanded first playable is **Salvage Intake** (build index 0): a continuous route from x=-20 to x=193, processing galleries, maintenance traversal and rail terminal, seven ordered encounters with sentries/Bombardiers, three checkpoints, retry and final extraction. Enemies remain visible/damageable before AI activation. Open the saved production scene and press Play. See [launch/controls](docs/FIRST_PLAYABLE.md), [expansion design](docs/salvage-intake-expansion.md), and [validation record](docs/salvage-intake-expansion-validation.md) for actual evidence and remaining gates.
+Normal builds open the **Main Menu** (build index 0), with Start Game, Options, Credits and Quit. **Salvage Intake** (index 1) remains directly playable in the Editor: a continuous route from x=-20 to x=193, processing galleries, maintenance traversal and rail terminal, seven ordered encounters with sentries/Bombardiers, three checkpoints, retry and final extraction. Escape pauses the run; Options provide independent persistent Music/SFX volume routing. See the [frontend system](docs/frontend-menu-system.md), [launch/controls](docs/FIRST_PLAYABLE.md), [expansion design](docs/salvage-intake-expansion.md), and [validation record](docs/salvage-intake-expansion-validation.md).
 
 **The current player movement set, first-weapon Longwatch presentation/gunplay slice, and the M3A repeatable combat prototype are implemented.**
 
 `Assets/Scenes/MovementLab.unity` contains grounded forward/backpedal movement, combat crouch, Wall Brace / Wall Kick, committed six-frame LedgeClimb, the release-hardened Tilemap + Composite collision path, native-pixel presentation, Longwatch DMR continuous-aim hitscan, and a killable patrol enemy that resets in place. The Longwatch has authored aim-capable Idle, Run, Backpedal, Crouch, and Fall presentation plus non-firing three-frame Jump and two-frame Land carry. Wall Brace and LedgeClimb intentionally render no Longwatch carry; their traversal poses use the unarmed overlay and block firing. The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact.
 
-Sentry has an integrated original Canonical-28 sprite set and state-driven presenter; see the [Sentry art pass](docs/sentry-art-pass.md). Human playtesting and polish remain: traversal, encounter balance, Bombardier art/audio, UI readability, and standalone performance. The accepted movement/collision foundation remains unchanged.
+Both enemy archetypes have approved original Canonical-28 sprites and state-driven presentation; see the [Sentry art pass](docs/sentry-art-pass.md), [Bombardier art pass](docs/bombardier-art-pass.md) and [combat VFX](docs/combat-vfx-polish.md). Production audio clips remain absent. Human menu acceptance, traversal/balance and standalone performance remain explicit validation gates. The accepted movement/collision foundation remains unchanged.
 
 ## License
 
