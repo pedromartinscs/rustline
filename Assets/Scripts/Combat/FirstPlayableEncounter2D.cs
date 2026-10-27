@@ -81,6 +81,12 @@ namespace Rustline.Gameplay.Combat
             IsActive = false;
         }
 
+        internal void SetVoidTopHeight(float height)
+        {
+            foreach (Sentry2D sentry in _sentries) if (sentry != null) sentry.SetVoidTopHeight(height);
+            foreach (Bombardier2D ranged in _ranged) if (ranged != null) ranged.SetVoidTopHeight(height);
+        }
+
         public void ClearBombs()
         {
             foreach (Bombardier2D ranged in _ranged) ranged?.ClearActiveBombs();

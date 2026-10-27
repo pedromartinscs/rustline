@@ -31,6 +31,7 @@ namespace Rustline.Gameplay.Combat
         public FirstPlayableEncounter2D[] Encounters => encounters;
         public bool IsRetrying { get; private set; }
         public float ElapsedSeconds { get; private set; }
+        public float EnemyVoidTopHeight { get; private set; }
         public FirstPlayableCheckpoint2D[] Checkpoints => checkpoints;
         public Transform ActiveSpawn => Progress.HasCheckpoint ? checkpoints[Progress.CheckpointIndex].transform : entrySpawn;
         public string Objective
@@ -83,7 +84,13 @@ namespace Rustline.Gameplay.Combat
         private void Start()
         {
             _started = true;
-            foreach (FirstPlayableEncounter2D encounter in encounters) encounter.ResetEncounter();
+            // All collider Awake initialization has completed before deriving this immutable envelope.
+            EnemyVoidTopHeight = EnemyGroundSupport2D.VoidTopHeightFor(gameObject.scene);
+            foreach (FirstPlayableEncounter2D encounter in encounters)
+            {
+                encounter.SetVoidTopHeight(EnemyVoidTopHeight);
+                encounter.ResetEncounter();
+            }
             Changed?.Invoke();
         }
 

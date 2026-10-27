@@ -20,7 +20,8 @@ namespace Rustline.Diagnostics
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
         {
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"--gameplay-ux-review")<0) return;
+            string[] args=Environment.GetCommandLineArgs();
+            if(Array.IndexOf(args,"--gameplay-ux-review")<0 && Array.IndexOf(args,"--enemy-void-review")<0) return;
             Application.runInBackground=true;
             InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
             if(Keyboard.current==null) InputSystem.AddDevice<Keyboard>();
@@ -41,6 +42,11 @@ namespace Rustline.Diagnostics
             while(SceneManager.GetActiveScene().path!=FrontendController.PlayScene) yield return null;
             yield return null; yield return null; yield return null;
             _director=FindAnyObjectByType<FirstPlayableDirector2D>();
+            if(Array.IndexOf(Environment.GetCommandLineArgs(),"--enemy-void-review")>=0)
+            {
+                yield return VerifyVoidExtraction();
+                Application.Quit(0); yield break;
+            }
             var equipment=_director.Player.GetComponent<PlayerWeaponEquipment2D>();
             var hud=FindAnyObjectByType<FirstPlayableHud2D>();
             Require(!hud.DeveloperVisible,"Developer mode must default off.");
@@ -159,6 +165,7 @@ namespace Rustline.Diagnostics
                 _director.Player.transform.position=start+Vector2.left*5;
                 camera.transform.position=new Vector3(start.x,start.y+2,-10);
                 for(int i=0;i<3;i++) yield return null;
+                start=actor.transform.position; // Patrol continues while the camera settles.
                 var weapon=_director.Player.GetComponent<PlayerWeaponController2D>().WeaponDefinition;
                 foreach(float dx in new[] {-1.5f,-.5f,.5f,1.5f})
                 {
@@ -170,8 +177,12 @@ namespace Rustline.Diagnostics
                     terrain.ReceiveHit(in info);
                 }
                 Require(Physics2D.Raycast(start+Vector2.up*.3f,Vector2.down,.7f,1<<6).collider==null,"Breach did not remove current support.");
+                var footprint=actor.GetComponentInChildren<WeaponHitbox2D>().GetComponent<Collider2D>().bounds;
+                Require(Physics2D.BoxCast(footprint.center,footprint.size,0,Vector2.down,.04f,1<<6).collider==null,
+                    "Recoverable-fall fixture retained support under part of the hitbox.");
                 for(int i=0;i<110;i++) yield return new WaitForFixedUpdate();
                 Require(actor.transform.position.y<start.y-.5f,"Actor hovered after real ground loss.");
+                Require(actor.IsAlive,"Recoverable production landing incorrectly killed an enemy.");
                 var support=Physics2D.Raycast((Vector2)actor.transform.position+Vector2.up*.1f,Vector2.down,.15f,1<<6);
                 Require(support.collider!=null && actor.transform.position.y>=support.point.y,"Actor did not land above real lower terrain.");
                 float landed=actor.transform.position.y;
@@ -180,6 +191,88 @@ namespace Rustline.Diagnostics
                 CaptureFrame(output+"/"+actor.name+"-support.png");
                 Debug.Log($"GAMEPLAY_UX_RELEASE_SUPPORT_OK {actor.name} startY={start.y:F3} landedY={landed:F3} Ground={support.collider.name} body={actor.GetComponent<Rigidbody2D>().bodyType}");
             }
+        }
+
+        private void HoldReviewPlayer(Vector2 position)
+        {
+            _director.Player.enabled=false; _director.Player.GetComponent<PlayerAim2D>().enabled=false;
+            var body=_director.Player.GetComponent<Rigidbody2D>(); body.simulated=false;
+            _director.Player.GetComponent<Collider2D>().enabled=false;
+            _director.Player.transform.position=position; body.position=position;
+            Physics2D.SyncTransforms();
+        }
+
+        private static void ReviewKill(CombatHealth2D actor)
+        {
+            var hit=new DamageInfo2D(actor.CurrentHealth,actor.transform.position,Vector2.zero,null);
+            actor.ApplyDamage(in hit);
+        }
+
+        private IEnumerator VerifyVoidExtraction()
+        {
+            string output=Path.GetFullPath("Logs/GameplayUxPhase42/Release");
+            yield return VerifyGroundSupport(output); // Both real lower landings must remain survivable.
+            SceneManager.LoadScene(FrontendController.PlayScene);
+            yield return null; yield return null; yield return null;
+            _director=FindAnyObjectByType<FirstPlayableDirector2D>();
+            HoldReviewPlayer(new Vector2(-24,1.02f));
+            var future=_director.Encounters[3]; var deaths=new int[future.Members.Length];
+            var weapon=_director.Player.GetComponent<PlayerWeaponController2D>().WeaponDefinition;
+            for(int member=0;member<future.Members.Length;member++)
+            {
+                int index=member; var actor=future.Members[member]; actor.Died+=_=>deaths[index]++;
+                Vector2 start=actor.transform.position; bool cleared=false;
+                for(int depth=0;depth<8 && !cleared;depth++)
+                {
+                    cleared=true;
+                    foreach(float dx in new[] {-1.5f,-.5f,.5f,1.5f})
+                    {
+                        Vector2 origin=new Vector2(Mathf.Floor(start.x)+dx,start.y+.3f);
+                        var hit=Physics2D.Raycast(origin,Vector2.down,80,1<<6);
+                        if(hit.collider==null) continue;
+                        cleared=false;
+                        var terrain=hit.collider.GetComponent<BreachableTilemap2D>();
+                        Require(terrain!=null,"Void reproduction must use the real breaching receiver.");
+                        var info=new WeaponHitInfo2D(weapon,origin,Vector2.down,hit.point,hit.normal,hit.distance,weapon.Damage,hit.collider);
+                        terrain.ReceiveHit(in info);
+                    }
+                }
+                Require(cleared,"Production floor shaft did not open to the void.");
+            }
+            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            Require(future.IsDefeated && _director.Progress.ClearedEncounters==0,"Future void deaths skipped progress or remained alive.");
+            for(int i=0;i<future.Members.Length;i++)
+            {
+                var actor=future.Members[i]; Vector2 stopped=actor.GetComponent<Rigidbody2D>().position;
+                Require(deaths[i]==1,"Environmental death event was duplicated.");
+                yield return new WaitForFixedUpdate();
+                Require(actor.GetComponent<Rigidbody2D>().position==stopped,"Terminal void actor kept falling.");
+                Debug.Log($"ENEMY_VOID_RELEASE_DEATH_OK {actor.name} rootY={stopped.y:F3} policyTop={_director.EnemyVoidTopHeight:F3} deaths={deaths[i]}");
+            }
+            for(int i=0;i<2;i++) foreach(var member in _director.Encounters[i].Members) ReviewKill(member);
+            yield return null;
+            HoldReviewPlayer(_director.Checkpoints[0].transform.position); yield return null;
+            Require(_director.Progress.CheckpointIndex==0,"Checkpoint did not commit after the first two encounters.");
+            _director.BeginRetry(); _director.RetryNow(); HoldReviewPlayer(_director.Checkpoints[0].transform.position);
+            foreach(var actor in future.Members) Require(actor.IsAlive,"Retry failed to restore pending void actors.");
+            Require(_director.Progress.ClearedEncounters==2,"Retry lost committed progress.");
+            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            Require(future.IsDefeated && _director.Progress.ClearedEncounters==2,"Persistent void did not reset/death correctly or skipped encounter three.");
+            foreach(var member in _director.Encounters[2].Members) ReviewKill(member);
+            yield return null;
+            Require(_director.Progress.ClearedEncounters==4,"Defeated-prefix progression did not include environmental deaths.");
+            for(int i=4;i<7;i++) foreach(var member in _director.Encounters[i].Members) ReviewKill(member);
+            yield return null;
+            HoldReviewPlayer(new Vector2(193,29.08f)); yield return new WaitForSeconds(2.2f);
+            Require(_director.Progress.ClearedEncounters==7 && _director.Progress.IsComplete,"Void deaths still blocked final extraction.");
+            CaptureFrame(output+"/void-extraction.png");
+            _director.RestartRun(); HoldReviewPlayer(new Vector2(-24,1.02f));
+            foreach(var encounter in _director.Encounters) foreach(var actor in encounter.Members)
+                Require(actor.IsAlive,"Full restart did not restore an encounter member.");
+            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            Require(future.IsDefeated && _director.Progress.ClearedEncounters==0 && deaths[0]==3 && deaths[1]==3,
+                "Terminal state or death events did not reset once per life.");
+            Debug.Log("ENEMY_VOID_RELEASE_PASS: recoverable falls survived; real breached shafts caused one authoritative death per life; future order, checkpoint retry, seven encounters, extraction and restart passed. Automated staging, not human traversal.");
         }
 
         private static IEnumerator Tap(Key key)

@@ -33,6 +33,7 @@ namespace Rustline.Gameplay.Combat
 
         private readonly List<BombardierBomb2D> _bombs = new List<BombardierBomb2D>();
         private EnemyGroundSupport2D _groundSupport;
+        internal void SetVoidTopHeight(float height) => _groundSupport.SetVoidTopHeight(height);
         private CombatHealth2D _playerHealth;
         private CapsuleCollider2D _playerCollider;
         private Vector2 _spawnPosition;
@@ -128,7 +129,7 @@ namespace Rustline.Gameplay.Combat
             IsMoving = false;
             if (body == null || health == null || !CombatActive && !health.IsDead) return;
             float dt = Time.fixedDeltaTime;
-            if (_groundSupport.Step(body, dt)) return;
+            if (_groundSupport.Step(body, health, dt)) return;
             if (State == BombardierState.Dead) return;
             if (_hitPauseRemaining > 0f)
             {

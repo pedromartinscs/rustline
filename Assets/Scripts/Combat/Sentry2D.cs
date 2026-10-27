@@ -23,6 +23,7 @@ namespace Rustline.Gameplay.Combat
         private float _hitPause;
         private readonly SentryBrain2D _brain = new SentryBrain2D();
         private EnemyGroundSupport2D _groundSupport;
+        internal void SetVoidTopHeight(float height) => _groundSupport.SetVoidTopHeight(height);
         private Camera _worldCamera;
         internal bool RequireVisibleDetection { get; set; }
         public event Action PlayerDetected;
@@ -85,7 +86,7 @@ namespace Rustline.Gameplay.Combat
         {
             IsMoving = false;
             if (!CombatActive && !_health.IsDead) return;
-            if (_groundSupport.Step(_body, Time.fixedDeltaTime)) return;
+            if (_groundSupport.Step(_body, _health, Time.fixedDeltaTime)) return;
             if (_health.IsDead) return;
             if (_hitPause > 0f) { _hitPause -= Time.fixedDeltaTime; return; }
             Vector2 sensor = _body.position + Vector2.up * 1.25f;

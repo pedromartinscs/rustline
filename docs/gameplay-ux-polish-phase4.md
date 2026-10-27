@@ -427,3 +427,141 @@ Final hardware Num Lock/focus checks and a human route run remain acceptance wor
 The exact original human incident cannot be matched without its recording;
 the supported-spawn audit and deterministic real-terrain-loss reproduction bound
 the confirmed diagnosis. No further UX, art, sound or release packaging is included.
+
+## Phase 4.2 — Enemy Void Death & Extraction
+
+### Confirmed cause and reproduction
+
+Fetched origin and confirmed local HEAD and the existing remote branch at approved
+`c8a696591b41708eb52b6505a0d395d517cf3ca3`, with a clean tree. Work continues on
+`codex/gameplay-ux-polish-phase4`. The Phase 4.1 fall integrator had no terminal
+condition. It could move a living enemy indefinitely below the level while its
+health remained positive. `IsDefeated` correctly stayed false, so the director's
+ordered encounter prefix and extraction remained blocked.
+
+The baseline Play Mode reproduction loaded the production Salvage Intake scene
+and used Longwatch hits through `BreachableTilemap2D.ReceiveHit` to remove all
+floor layers beneath the Gallery Sentry and Gallery Battery. Four adjacent cells
+were breached per layer, opening real shafts without replacing collision or
+editing the saved scene. After four seconds, the sentry was at **Y=-49.862** and
+the bombardier at **Y=-46.862**, both alive, with **zero death events**. Their
+future encounter could not be defeated. Both new void assertions failed before
+the fix; the geometry audit passed (`Logs/phase42-before.xml/log`).
+
+### Terminal boundary contract
+
+The actual initialized static Ground collision spans **Y=-4 to 35**. The precision
+maintenance collider lies at **Y=19.625 to 20.625**; legitimate actor floors span
+the lower bay and upper routes, including recoverable gallery/raised-deck drops.
+The player's separate global failure height is **-10**, and is unchanged.
+
+After collider Awake initialization and before encounter reset, the director
+derives one immutable boundary from enabled, non-trigger, non-empty static Ground
+colliders in its own scene: **lowest initial Ground Y minus one tile**. In current
+Salvage Intake this gives **Y=-5 for the top of the enemy footprint**. An actor is
+terminal only once its entire cached physical hitbox is below this plane; current
+2.5-unit hitboxes therefore cross at a root below **Y=-7.5**. This is below every
+possible initial landing surface, including elevated actors' lower destinations.
+
+The envelope is not recomputed as destruction shrinks terrain. There is no fall
+distance, timeout, camera/player-distance test, or reuse of the player threshold.
+Scene loading derives a fresh envelope; retry/restart retain that scene's original
+envelope. Missing static Ground is an explicit configuration error rather than a
+guessed kill height. MovementLab's independent diagnostic actors retain their
+existing policy; only production encounters receive this boundary.
+
+### Authoritative environmental death and cleanup
+
+`EnemyGroundSupport2D` applies lethal downward environmental damage equal to the
+actor's current health, through `CombatHealth2D.ApplyDamage`, with no weapon source.
+The existing damage/death events retain control of hitbox disabling, AI death,
+health bars, presentation, and encounter bookkeeping. Already-dead falling actors
+receive no additional damage or death event when crossing the boundary.
+
+A terminal latch is set before damage callbacks. Falling velocity is cleared and
+subsequent support steps skip casts/integration. Actors and their encounter
+references remain intact; the death presentation can finish normally. Encounter
+reset clears the terminal latch and fall speed with the existing reset path.
+Destroyed terrain still persists: restored actors over a permanent shaft fall and
+die normally again, emitting one death event per life.
+
+Implementation is limited to the support helper, boundary configuration in the
+director/encounter and two actor adapters. The defeated-prefix and extraction
+algorithms themselves are unchanged. No scene, collision geometry, combat balance,
+detection, input, HUD, art, camera, checkpoint presentation or audio is modified.
+
+### Regression verification
+
+New `EnemyVoidPlayModeTests` covers both real shafts, one death event per life,
+terminal motion stopping, final-member defeat, out-of-order deaths, 25-unit
+recoverable falls, pause/resume, ordinary combat death during falling, checkpoint
+retry, persistent destruction, all-seven extraction and full restart without lost
+member references. Existing lower-floor tests gain an explicit survival assertion.
+No existing expectations or validation rules were weakened.
+
+The focused void/support/progression run passed **14/14**. At the same four-second
+sample used by the baseline reproduction:
+
+| Gallery actor | Baseline root Y / health state | Corrected root Y / health state | Corrected death events |
+| --- | --- | --- | --- |
+| Sentry | -49.862 / alive | -7.811 / dead and stationary | 1 |
+| Bombardier | -46.862 / alive | -7.530 / dead and stationary | 1 |
+
+| Phase 4.2 validation | Result |
+| --- | --- |
+| Focused void/support/progression | **14 / 14 passed** |
+| Full Edit Mode | **439 / 439 passed** |
+| Full Play Mode | **141 / 141 passed** |
+| Protected scene/collision blocks vs Phase 4.1 | **130 unchanged** |
+| Production art palette/alpha audit | **46 PNGs**, zero violations |
+| Windows x64 non-development Release | **Succeeded**, exit 0 |
+| Existing standalone smoke | **Passed**, exit 0 / `FIRST_PLAYABLE_SMOKE_PASS` |
+| Targeted void-to-extraction Release run | **Passed**, exit 0 / `ENEMY_VOID_RELEASE_PASS` |
+
+Results/logs are local `Logs/phase42-focused.xml/log`,
+`Logs/phase42-editmode.xml/log`, and `Logs/phase42-playmode.xml/log`.
+The final `Rustline.Editor.RustlineFirstPlayableSetup.BuildWindowsRelease` produced
+`Builds/FirstPlayable/Rustline.exe` with `RUSTLINE_FIRST_PLAYABLE_RELEASE_OK`.
+The unchanged export guard retained Ground **4 paths / 78 points**, maintenance
+**1 / 4**, and MovementLab **9 / 48**. Final logs are
+`Logs/phase42-release-build-final.log`, `Logs/phase42-release-smoke-final.log`,
+and `Logs/phase42-release-void-final.log`.
+
+### Release evidence and remaining checks
+
+The opt-in `--enemy-void-review` diagnostic uses the actual non-development player,
+verifies both recoverable production landings, reloads the production scene, opens
+real shafts, and checks authoritative void deaths. It stages the other enemies'
+ordinary health deaths, checks the defeated prefix, saves/retries a checkpoint,
+clears seven encounters, holds the real extraction area, and restarts. It is never
+installed through F3 or ordinary gameplay. Automated staging is not human combat
+or route validation. Logs, temporary captures and build outputs stay unversioned.
+
+The first standalone attempt passed the existing smoke but failed the reused
+recoverable-fall diagnostic: it saved an actor position before camera-settling
+frames, during which the bombardier continued patrolling. The diagnostic now
+samples the current position after settling and verifies that no Ground remains
+under any part of its hitbox before measuring descent. Runtime void behavior and
+the full-suite-tested gameplay code are unchanged by this diagnostic correction.
+The production executable and standalone checks were rebuilt/rerun afterward.
+The 439/141 full-suite results precede this final diagnostic-only sampling fix;
+the affected standalone scenario and smoke both passed against the rebuilt player.
+
+The final **1280×720 non-development player** verified recoverable landings at
+Y=16.025 and 19.025 with living enemies, then recorded one void death each at
+Y=-7.811 and -7.530. The same run completed all seven encounters and extraction,
+then restored/repeated pending void deaths correctly after restart. The existing
+smoke separately passed all seven real hitscan encounters and normal collision,
+input, checkpoint/retry and extraction checks. Previously documented unused
+lens-flare shader and ComputeBuffer shutdown warnings remain non-blocking.
+
+[Rendered Release extraction after environmental deaths](reference/gameplay-ux-polish-phase4/phase42/void-extraction-release.png)
+shows the actual Unity-rendered world and completion HUD using the established
+offscreen composition helper. This is automated staging, not a desktop screenshot
+or a human playthrough. Only this representative frame and the report are added;
+raw logs, temporary lower-floor captures and builds are not committed.
+
+Human final acceptance of the terrain-destruction route remains appropriate.
+The boundary assumes this scene's existing static Ground envelope: a future system
+that adds platforms below that envelope would need to establish its envelope
+before configuring encounters. The current game creates no such lower platforms.

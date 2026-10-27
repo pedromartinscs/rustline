@@ -148,6 +148,7 @@ namespace Rustline.Tests
             Assert.That(actor.transform.position.y,Is.LessThan(start.y-.5f),"Actor hovered after its real floor was destroyed.");
             AssertSupported(actor);
             float landedY=actor.transform.position.y;
+            Assert.That(actor.IsAlive,Is.True,"A real lower platform must remain a survivable landing.");
             for(int i=0;i<25;i++)
             {
                 yield return new WaitForFixedUpdate();
