@@ -32,6 +32,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('baseline', nargs='?', default='ca14060')
     parser.add_argument('--allow-enemy-health-bars', action='store_true')
+    parser.add_argument('--allow-industrial-backgrounds', action='store_true')
     args = parser.parse_args()
     baseline = subprocess.run(['git','show',args.baseline+':'+SCENE],
                               check=True,capture_output=True,text=True).stdout
@@ -41,11 +42,18 @@ if __name__ == '__main__':
     types = (50,61,66,114,58,60,70,19719996)
     protected = {k:v for k,v in original.items() if k[0] in types}
     added = {k for k in current if k[0] in types} - set(protected)
+    allowed = set()
     if args.allow_enemy_health_bars:
         guid = re.search(r'^guid: (\w+)', Path('Assets/Scripts/Presentation/EnemyHealthBar2D.cs.meta').read_text(), re.M).group(1)
-        assert len(added) == 14 and all(k[0] == 114 and f'guid: {guid},' in current[k] for k in added), 'Only fourteen new enemy bar presenters are allowed'
-    else:
-        assert not added, 'Gameplay/physics components added'
+        bars = {k for k in added if k[0] == 114 and f'guid: {guid},' in current[k]}
+        assert len(bars) == 14, 'Exactly fourteen new enemy bar presenters required'
+        allowed.update(bars)
+    if args.allow_industrial_backgrounds:
+        guid = re.search(r'^guid: (\w+)', Path('Assets/Scripts/Presentation/PixelSnappedBackgroundPlane2D.cs.meta').read_text(), re.M).group(1)
+        planes = {k for k in added if k[0] == 114 and f'guid: {guid},' in current[k]}
+        assert len(planes) == 2, 'Exactly two new industrial background planes required'
+        allowed.update(planes)
+    assert added == allowed, 'Unauthorized gameplay/physics components added'
     assert set(protected) <= set(current), 'Gameplay/physics components removed'
     protected.update(dict(collision_maps(original)))
     assert all(current.get(k)==v for k,v in protected.items()), 'Protected gameplay/collision data changed'

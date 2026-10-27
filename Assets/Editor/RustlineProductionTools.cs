@@ -151,6 +151,9 @@ namespace Rustline.Editor
                 // The base rebuild replaces the managed rig; gameplay must rebind afterwards.
                 RustlineSalvageIntakeExpansionSetup.ApplyEnvironment();
                 RustlineFirstPlayableSetup.ApplyGameplay();
+                RustlineIndustrialBackgroundSetup.ApplyToScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+                RustlineIndustrialBackgroundSetup.ValidateScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
+                UnityEditor.SceneManagement.EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
                 RustlineFrontendSetup.Validate();
 
                 AssetDatabase.SaveAssets();

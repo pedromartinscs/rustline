@@ -379,7 +379,10 @@ namespace Rustline.Editor
                 root.transform.Find(GameplayContentPreserveName) != null,
                 "SalvageIntake preserved authoring roots are missing.");
 
-            Grid grid = FindInScene<Grid>(scene);
+            // Preserved decorative grids may precede the rebuilt environment in the hierarchy.
+            // Validate the authoritative gameplay grid, never whichever Grid is encountered first.
+            Transform gridObject = root.transform.Find(EnvironmentManagedName + "/" + GridName);
+            Grid grid = gridObject != null ? gridObject.GetComponent<Grid>() : null;
             Require(grid != null && grid.cellSize == Vector3.one,
                 "SalvageIntake environment grid must remain 1x1 Unity units / 16x16 source pixels.");
 

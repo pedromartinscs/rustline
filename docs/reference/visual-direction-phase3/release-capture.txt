@@ -1,0 +1,1 @@
+Normal Windows Release; actual window 1920x1080; logical 1072x1072. Real PixelCameraFollow2D, held actors, dormant encounters. Logical resolved and final native-presentation pass output captured directly; overlay status HUD excluded. Not desktop screenshots.

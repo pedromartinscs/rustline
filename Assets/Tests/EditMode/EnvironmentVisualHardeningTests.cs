@@ -156,6 +156,7 @@ namespace Rustline.Tests
                 Scene scene = SceneManager.GetActiveScene();
                 Invoke("RustlineEnvironmentVisualHardeningSetup","ValidateScene",scene);
                 Invoke("RustlineVisualRefinementSetup","ValidateScene",scene);
+                Invoke("RustlineIndustrialBackgroundSetup","ValidateScene",scene);
                 AssertBaselineCollision(scene);
             }
             finally

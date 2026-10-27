@@ -1,0 +1,7 @@
+phase,view,active_background_sprites,active_background_tilemaps,unique_textures,rgba32_source_bytes,unity_texture_runtime_bytes,median_draw_calls,median_batches,median_main_thread_ms
+phase2,transfer,5,1,4,31188480,56928544,-1,-1,16.655
+phase2,gallery,5,1,4,31188480,56928544,-1,-1,16.656
+phase2,extraction,5,1,4,31188480,56928544,-1,-1,16.654
+phase3,transfer,3,1,4,6291456,11537952,-1,-1,16.657
+phase3,gallery,3,1,4,6291456,11537952,-1,-1,16.655
+phase3,extraction,3,1,4,6291456,11537952,-1,-1,16.656
