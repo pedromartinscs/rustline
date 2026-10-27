@@ -22,6 +22,7 @@ namespace Rustline.Gameplay.Combat
         private int _strikeDirection;
         private float _hitPause;
         private readonly SentryBrain2D _brain = new SentryBrain2D();
+        private EnemyGroundSupport2D _groundSupport;
         private Camera _worldCamera;
         internal bool RequireVisibleDetection { get; set; }
         public event Action PlayerDetected;
@@ -56,6 +57,7 @@ namespace Rustline.Gameplay.Combat
             _body = GetComponent<Rigidbody2D>();
             _health = GetComponent<CombatHealth2D>();
             _spawn = _body.position;
+            _groundSupport = new EnemyGroundSupport2D(_body, weaponHitCollider);
         }
 
         private void OnEnable()
@@ -82,7 +84,9 @@ namespace Rustline.Gameplay.Combat
         private void FixedUpdate()
         {
             IsMoving = false;
-            if (!CombatActive || _health.IsDead) return;
+            if (!CombatActive && !_health.IsDead) return;
+            if (_groundSupport.Step(_body, Time.fixedDeltaTime)) return;
+            if (_health.IsDead) return;
             if (_hitPause > 0f) { _hitPause -= Time.fixedDeltaTime; return; }
             Vector2 sensor = _body.position + Vector2.up * 1.25f;
             Vector2 target = playerCollider != null ? (Vector2)playerCollider.bounds.center : sensor;
@@ -128,10 +132,9 @@ namespace Rustline.Gameplay.Combat
         private void Move(int direction, float speed)
         {
             float next = _body.position.x + direction * speed * Time.fixedDeltaTime;
-            Vector2 footAhead = new Vector2(next + direction * 0.65f, _spawn.y + 0.3f);
+            Vector2 footAhead = new Vector2(next + direction * 0.65f, _body.position.y + 0.3f);
             bool supported = Physics2D.Raycast(footAhead, Vector2.down, 0.7f, 1 << 6).collider != null;
-            bool blocked = Physics2D.Raycast(_body.position + Vector2.up, Vector2.right * direction,
-                0.8f, 1 << 6).collider != null;
+            bool blocked = _groundSupport.BlocksHorizontal(_body, direction);
             if (next < minimumX || next > maximumX || !supported || blocked)
             {
                 _direction = -direction;
@@ -140,12 +143,13 @@ namespace Rustline.Gameplay.Combat
             }
             _direction = direction;
             FacingDirection = direction;
-            _body.MovePosition(new Vector2(next, _spawn.y));
+            _body.MovePosition(new Vector2(next, _body.position.y));
             IsMoving = true;
         }
 
         public void ResetForEncounter()
         {
+            _groundSupport.Reset();
             _brain.Reset();
             _hitPause = 0f;
             _direction = -1;

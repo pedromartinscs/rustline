@@ -259,3 +259,171 @@ shutdown warnings are outside this gameplay/UX iteration.
 Actors retain their existing kinematic, horizontal patrol model at their authored
 height. Support checks turn them away from missing ground; this phase introduces
 no new enemy falling/ledge traversal mechanics.
+
+## Phase 4.1 — Final Bugfixes
+
+### Baseline and confirmed reproduction
+
+Fetched origin and confirmed local HEAD and the existing remote Phase 4 branch
+both at `68dadba0da1fbd36f8e24459c51a2b67020786e7`, with a clean working tree.
+Continued on `codex/gameplay-ux-polish-phase4`. Read the agent guardrails, collision
+contract, environment metrics, this report, enemy/input implementations and tests.
+This section supersedes Phase 4's horizontal-only unsupported-movement limitation.
+
+The runtime audit checked all **14 production defenders** against actual Ground
+collision. Every spawn was supported, with the authored foot approximately
+`.02` units above solid geometry. Both actor types have kinematic Rigidbody2D,
+zero gravity, FreezeRotation, discrete collision detection, and a trigger-only
+weapon hitbox measuring **1.2×2.5 units**, centered 1.25 units above the root.
+They have no solid body collider that would resolve falling automatically.
+Machinery sprites are decorative and are not a substitute for terrain support.
+
+Reproduction used the actual Gallery Sentry and Gallery Battery at roughly
+`(60,17.02)` and `(82,20.02)`. Four adjacent floor cells were destroyed through
+`BreachableTilemap2D.ReceiveHit` with the production Longwatch definition. The
+real Composite updated immediately and a current-foot Ground ray no longer hit
+within `.7` units. After 2.2 seconds both actors were still at their original
+height. Their forward probes prevented horizontal movement, but neither actor
+checked current support or integrated vertical motion. Normal movement also
+explicitly wrote the stored spawn Y. This confirms a terrain-loss hovering bug;
+it does not identify the exact human-reported moment without that screenshot or
+a gameplay recording. No unsupported production spawn was found.
+
+The baseline input reproduction also failed: a real Input System
+`KeyboardState(Key.Numpad1)` event left slot 2 equipped. The actions had only
+top-row bindings. Baseline results are retained locally in
+`Logs/phase41-reproduction.xml/log`: spawn audit passed; both terrain-loss cases
+and numpad selection failed as expected.
+
+### Minimal support correction
+
+`EnemyGroundSupport2D` is a small shared movement helper, not a new component or
+physics framework. It caches the existing hitbox's world footprint once per actor.
+One nonallocating BoxCast per active physics step checks only non-trigger Ground
+geometry, accepting upward-facing contacts. Missing support produces controlled
+downward acceleration using project gravity, capped at 24 units/second. The cast
+sweeps the actual intended step and clips descent above the next solid surface,
+with a `.02` unit skin. Physics shape-query tolerance is verified within `.04`
+units of real support, less than one 16-PPU source pixel.
+
+While descending, horizontal AI and committed attack timers wait. Once grounded,
+their existing state machines continue. Patrol probes and MovePosition now use
+current body Y, so landing cannot restore the old height. Existing horizontal
+bounds, obstacle/edge checks, detection, damage, health and attack parameters are
+unchanged. Death still disables the weapon trigger and runs the same visual
+finish; the cached footprint lets an unsupported corpse descend as well, even
+when encounter engagement has disabled its combat activity.
+
+Landing explicitly clears the kinematic body's residual velocity, including dead
+or idle actors. Regression testing also exposed the old mid-height wall ray
+missing the side of a one-tile step after a drop. A horizontal footprint sweep
+replaces that ray, keeping the same `.8` unit forward limit while checking low
+steps too. This prevents walking into the original deck after landing below it.
+The helper reuses a fixed eight-hit buffer; no scene discovery, new collider or
+per-step collection allocation is introduced.
+
+Reset clears falling speed and restores the original authored spawn and encounter
+state. Existing retry does not rebuild breached terrain: a restored actor above
+a persistent hole descends again, rather than hovering or being teleported upward.
+No enemy body type, gravity setting, collider, scene cell, player physics,
+encounter progression, health bar, presentation adapter or environment asset is
+changed. Existing projectile cleanup remains authoritative.
+
+### Numpad bindings and lifecycle
+
+Installed Input System **1.19.0**, `InputSystem/Devices/Keyboard.cs` lines 139–148,
+declares the exact controls `numpad1` through `numpad9` and `numpad0`. Added exactly
+ten bindings: `<Keyboard>/numpad0`–`<Keyboard>/numpad9`, each on the existing
+`WeaponSlot0`–`WeaponSlot9` action, using its existing Press interaction and
+Keyboard group. All existing action/binding IDs and the asset GUID are preserved;
+only the ten additional bindings have new IDs. The input reader, equipment,
+navigation, carousel, ammunition and weapon code remain unchanged.
+
+Tests resolve all ten physical numpad controls on the reader's owned runtime
+asset, exercise both numeric banks, unavailable slots, wheel, rapid mixed requests,
+visible transitions, re-enable/action counts, held pause input, retry/stale edges,
+restart and main-menu loading. The existing frontend intentionally keeps gameplay
+blocked until held modal keys are released; no pending selection then replays.
+
+These are physical key bindings, independent of text character production. There
+is no Num Lock conditional, global hook, navigation-key alias or platform-specific
+workaround. Synthetic tests also press/release the separate NumLock control;
+KeyboardState has no latched OS Num Lock/LED state. **No physical keyboard or OS
+LED state was tested.** Verify actual hardware with Num Lock on and off during
+final acceptance; if a backend reports navigation keys with Num Lock off, those
+remain navigation keys rather than being rebound to weapons.
+
+### Regression and Release validation
+
+New `EnemySupportPlayModeTests` checks all production spawns, real destructible
+floor loss for both types, landing without penetration, stable physical and
+native-snapped visual Y, reset over persistent destruction, unsupported placement,
+pause/resume, death in midair and checkpoint retry. Existing edge/obstacle, AI,
+seven-encounter, checkpoint, health-bar, HUD and frontend fixtures are retained.
+`GameplayUxPlayModeTests` gains focused numpad integration/lifecycle tests.
+The opt-in Release review extends its existing synthetic input and scene review
+with numpad lifecycle and actual production floor-loss/landing assertions.
+
+The new fixtures first caught the two hovering cases and missing numpad binding,
+then residual landing velocity and low-step penetration. Their setup was corrected
+to distinguish a one-tile drop from a deeper shaft, allow the existing modal
+release barrier's extra frame, and destroy support at the actor's reset destination.
+No existing test assertions or collision validation rules were relaxed.
+
+Intentional implementation files are `Sentry2D.cs`, `Bombardier2D.cs`, new
+`EnemyGroundSupport2D.cs`, and `InputSystem_Actions.inputactions`. Validation changes
+are new `EnemySupportPlayModeTests.cs`, added cases in `GameplayUxPlayModeTests.cs`,
+and the existing opt-in `GameplayUxReleaseReview.cs`. This report and two small
+reference PNGs complete the deliverables; no saved scene changes are required.
+
+| Phase 4.1 validation | Result |
+| --- | --- |
+| Final focused support suite | **5 / 5 passed** |
+| Full Edit Mode suite | **439 / 439 passed** |
+| Full Play Mode suite | **134 / 134 passed**, including both new numpad cases |
+| Production art audit | **46 PNGs**, zero off-palette or partial-alpha pixels |
+| Protected scene/collision blocks against approved Phase 4 | **130 unchanged** |
+| Windows x64 non-development Release | **Succeeded**, build exit 0 |
+| Existing standalone smoke | **Passed**, exit 0 / `FIRST_PLAYABLE_SMOKE_PASS` |
+| Extended standalone UX/support review | **Passed**, exit 0 / `GAMEPLAY_UX_RELEASE_PASS` |
+
+Full-suite logs/results are local `Logs/phase41-editmode.xml/log` and
+`Logs/phase41-playmode.xml/log`; final support checks are
+`Logs/phase41-support-verified.xml/log`.
+
+Executed `Rustline.Editor.RustlineFirstPlayableSetup.BuildWindowsRelease`, producing
+the actual non-development `Builds/FirstPlayable/Rustline.exe` with
+`RUSTLINE_FIRST_PLAYABLE_RELEASE_OK`. The unchanged export guard baked Ground
+**4 paths / 78 points**, Maintenance **1 / 4**, and MovementLab **9 / 48**.
+The existing standalone smoke verified real collision/input, all seven hitscan
+encounters, checkpoint/retry, extraction and restart.
+
+The extended review ran the exported player at **1280×720**, using the normal
+title-to-play route, both numeric banks and wheel, unavailable numpad 9, input
+reader re-enable, held modal suppression, retry and restart. It then removed real
+Gallery floor cells through the production breaching receiver. The sentry landed
+at **Y=16.025 from 17.020** and the bombardier at **Y=19.025 from 20.020**, on
+`Ground Collision - Hidden`, retaining kinematic bodies and the landed height
+during subsequent patrol. Actual rendered Release frames were inspected locally.
+These assertions used synthetic Input System events, not hardware keystrokes.
+
+Final Release logs are `Logs/phase41-release-build.log`,
+`Logs/phase41-release-smoke.log`, and `Logs/phase41-release-review.log`.
+The previously documented unused lens-flare shader and renderer shutdown
+ComputeBuffer warnings remain non-blocking. Temporary outputs and executables
+remain unversioned. There are no changes to saved scenes or approved art assets.
+
+### Rendered evidence and remaining manual acceptance
+
+Baseline and corrected production renders use the existing Unity composition
+capture described above. The Gallery Battery beside the industrial machinery is
+the target actor; the player is held in place for deterministic illumination and
+the camera is fixed. These are controlled repro scenes, not human playthroughs.
+
+- [Baseline: hovering after real floor destruction](reference/gameplay-ux-polish-phase4/phase41/gallery-battery-before.png)
+- [Corrected: standing on the exposed lower floor](reference/gameplay-ux-polish-phase4/phase41/gallery-battery-after.png)
+
+Final hardware Num Lock/focus checks and a human route run remain acceptance work.
+The exact original human incident cannot be matched without its recording;
+the supported-spawn audit and deterministic real-terrain-loss reproduction bound
+the confirmed diagnosis. No further UX, art, sound or release packaging is included.

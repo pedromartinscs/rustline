@@ -32,6 +32,7 @@ namespace Rustline.Gameplay.Combat
         [SerializeField, Min(0f)] private float hitPauseDuration = DefaultHitPauseDuration;
 
         private readonly List<BombardierBomb2D> _bombs = new List<BombardierBomb2D>();
+        private EnemyGroundSupport2D _groundSupport;
         private CombatHealth2D _playerHealth;
         private CapsuleCollider2D _playerCollider;
         private Vector2 _spawnPosition;
@@ -104,6 +105,7 @@ namespace Rustline.Gameplay.Combat
                 _playerCollider = player.GetComponent<CapsuleCollider2D>();
             }
             _spawnPosition = body != null ? body.position : (Vector2)transform.position;
+            _groundSupport = new EnemyGroundSupport2D(body, weaponHitCollider);
             _patrolDirection = InitialDirection;
         }
 
@@ -124,8 +126,10 @@ namespace Rustline.Gameplay.Combat
         private void FixedUpdate()
         {
             IsMoving = false;
-            if (!CombatActive || body == null || health == null || State == BombardierState.Dead) return;
+            if (body == null || health == null || !CombatActive && !health.IsDead) return;
             float dt = Time.fixedDeltaTime;
+            if (_groundSupport.Step(body, dt)) return;
+            if (State == BombardierState.Dead) return;
             if (_hitPauseRemaining > 0f)
             {
                 _hitPauseRemaining = Mathf.Max(0f, _hitPauseRemaining - dt);
@@ -178,6 +182,7 @@ namespace Rustline.Gameplay.Combat
 
         public void ResetForEncounter()
         {
+            _groundSupport.Reset();
             IsMoving = false;
             ClearActiveBombs();
             State = BombardierState.Patrol;
@@ -216,13 +221,12 @@ namespace Rustline.Gameplay.Combat
             if (nextX >= PatrolMaximumX) { nextX = PatrolMaximumX; _patrolDirection = -1; }
             else if (nextX <= PatrolMinimumX) { nextX = PatrolMinimumX; _patrolDirection = 1; }
             // Same terrain-support/obstacle discipline as the sentry, including runtime breaches.
-            Vector2 footAhead = new Vector2(nextX + movingDirection * 0.65f, _spawnPosition.y + 0.3f);
+            Vector2 footAhead = new Vector2(nextX + movingDirection * 0.65f, body.position.y + 0.3f);
             bool supported = Physics2D.Raycast(footAhead, Vector2.down, 0.7f, 1 << 6).collider != null;
-            bool blocked = Physics2D.Raycast(body.position + Vector2.up, Vector2.right * movingDirection,
-                0.8f, 1 << 6).collider != null;
+            bool blocked = _groundSupport.BlocksHorizontal(body, movingDirection);
             if (!supported || blocked) { _patrolDirection = -movingDirection; return; }
             IsMoving = !Mathf.Approximately(nextX, body.position.x);
-            body.MovePosition(new Vector2(nextX, _spawnPosition.y));
+            body.MovePosition(new Vector2(nextX, body.position.y));
         }
 
         private void BeginWindup()

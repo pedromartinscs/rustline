@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using Rustline.Gameplay.Combat;
+using Rustline.Gameplay.Environment;
 using Rustline.Gameplay.Player;
 using Rustline.Gameplay.Weapons;
 using Rustline.Presentation;
@@ -60,6 +61,7 @@ namespace Rustline.Diagnostics
             yield return Tap(Key.Digit2); yield return new WaitForSeconds(.3f);
             yield return Tap(Key.Digit9); yield return new WaitForSeconds(.3f);
             Require(equipment.SelectedSlot==2,"Unavailable slot changed equipment.");
+            yield return VerifyNumpad(equipment);
             Debug.Log("GAMEPLAY_UX_RELEASE_INPUT_OK: real Input System 0/1/2, unavailable 9, wheel and title-to-play.");
             while(_director.ElapsedSeconds<18.5f) yield return null; // Show the settled player HUD after the short tutorial.
             var health=_director.Encounters[0].Members[0];
@@ -104,11 +106,80 @@ namespace Rustline.Diagnostics
             Require(!hud.DeveloperVisible,"Restart retained developer mode.");
             yield return Tap(Key.Digit2); yield return new WaitForSeconds(.3f);
             Require(equipment.SelectedSlot==2,"Numeric bindings did not survive restart.");
+            yield return Tap(Key.Numpad1); yield return new WaitForSeconds(.3f);
+            Require(equipment.SelectedSlot==1,"Numpad bindings did not survive restart.");
+            yield return Tap(Key.Numpad2); yield return new WaitForSeconds(.3f);
+            yield return VerifyGroundSupport(output);
             File.WriteAllText(output+"/capture.txt","Actual non-development Windows player "+Screen.width+"x"+Screen.height+
                 "; world/carousel final presentation rendered to target, then actual player/menu canvases drawn by Unity in their native viewport positions. "+
                 "Equivalent offscreen composition; not desktop screenshots. Checkpoint enemies were defeated by diagnostic staging. Normal input and patrol assertions used the production systems.");
-            Debug.Log("GAMEPLAY_UX_RELEASE_PASS: numeric/wheel input, living distant patrols, checkpoint feedback/resources, F3/modal/reset and rendered HUD review.");
+            Debug.Log("GAMEPLAY_UX_RELEASE_PASS: numeric/numpad/wheel input, living distant patrols, physical support loss/landing, checkpoint feedback/resources, F3/modal/reset and rendered HUD review.");
             Application.Quit(0);
+        }
+
+        private IEnumerator VerifyNumpad(PlayerWeaponEquipment2D equipment)
+        {
+            var reader=equipment.GetComponent<PlayerInputReader>();
+            int actions=InputSystem.ListEnabledActions().Count;
+            for(int i=0;i<3;i++) { reader.enabled=false; reader.enabled=true; }
+            Require(actions==InputSystem.ListEnabledActions().Count,"Reader re-enable duplicated actions.");
+            foreach(Key key in new[] {Key.Numpad0,Key.Numpad1,Key.Numpad2})
+            {
+                yield return Tap(key); yield return new WaitForSeconds(.3f);
+                int slot=key==Key.Numpad0 ? 0 : key==Key.Numpad1 ? 1 : 2;
+                Require(equipment.SelectedSlot==slot,"Physical numpad binding failed: "+key);
+            }
+            yield return Tap(Key.Numpad9); yield return new WaitForSeconds(.3f);
+            Require(equipment.SelectedSlot==2,"Unavailable numpad slot changed equipment.");
+            yield return Tap(Key.Escape);
+            InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState(Key.Numpad0)); yield return null;
+            InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState(Key.Numpad0,Key.Escape)); yield return null;
+            InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState(Key.Numpad0)); yield return null;
+            Require(equipment.SelectedSlot==2,"Held modal numpad input changed equipment.");
+            InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState()); yield return null; yield return null;
+            Require(equipment.SelectedSlot==2,"Stale numpad input replayed after resume.");
+            _director.BeginRetry(); _director.RetryNow(); yield return null;
+            yield return Tap(Key.Numpad1); yield return new WaitForSeconds(.3f);
+            Require(equipment.SelectedSlot==1,"Numpad input failed after retry.");
+            yield return Tap(Key.Digit2); yield return new WaitForSeconds(.3f);
+            Debug.Log("GAMEPLAY_UX_RELEASE_NUMPAD_OK: physical Numpad0/1/2 actions, unavailable 9, reader re-enable, modal held-key barrier and retry; synthetic device events, no hardware/NumLock LED claim.");
+        }
+
+        private IEnumerator VerifyGroundSupport(string output)
+        {
+            _director.enabled=false; _director.Player.enabled=false;
+            _director.Player.GetComponent<Rigidbody2D>().simulated=false;
+            _director.Player.GetComponent<Collider2D>().enabled=false;
+            _director.Player.GetComponent<PlayerAim2D>().enabled=false;
+            var camera=FindAnyObjectByType<NativePixelPresentation>().WorldCamera;
+            camera.GetComponent<PixelCameraFollow2D>().enabled=false;
+            foreach(var actor in _director.Encounters[3].Members)
+            {
+                Vector2 start=actor.transform.position;
+                _director.Player.transform.position=start+Vector2.left*5;
+                camera.transform.position=new Vector3(start.x,start.y+2,-10);
+                for(int i=0;i<3;i++) yield return null;
+                var weapon=_director.Player.GetComponent<PlayerWeaponController2D>().WeaponDefinition;
+                foreach(float dx in new[] {-1.5f,-.5f,.5f,1.5f})
+                {
+                    Vector2 origin=new Vector2(Mathf.Floor(start.x)+dx,start.y+.5f);
+                    var hit=Physics2D.Raycast(origin,Vector2.down,2,1<<6);
+                    var terrain=hit.collider!=null ? hit.collider.GetComponent<BreachableTilemap2D>() : null;
+                    Require(terrain!=null,"Expected real breachable production deck.");
+                    var info=new WeaponHitInfo2D(weapon,origin,Vector2.down,hit.point,hit.normal,hit.distance,weapon.Damage,hit.collider);
+                    terrain.ReceiveHit(in info);
+                }
+                Require(Physics2D.Raycast(start+Vector2.up*.3f,Vector2.down,.7f,1<<6).collider==null,"Breach did not remove current support.");
+                for(int i=0;i<110;i++) yield return new WaitForFixedUpdate();
+                Require(actor.transform.position.y<start.y-.5f,"Actor hovered after real ground loss.");
+                var support=Physics2D.Raycast((Vector2)actor.transform.position+Vector2.up*.1f,Vector2.down,.15f,1<<6);
+                Require(support.collider!=null && actor.transform.position.y>=support.point.y,"Actor did not land above real lower terrain.");
+                float landed=actor.transform.position.y;
+                for(int i=0;i<25;i++) yield return new WaitForFixedUpdate();
+                Require(actor.transform.position.y<=landed+.001f,"Patrol restored original height after landing.");
+                CaptureFrame(output+"/"+actor.name+"-support.png");
+                Debug.Log($"GAMEPLAY_UX_RELEASE_SUPPORT_OK {actor.name} startY={start.y:F3} landedY={landed:F3} Ground={support.collider.name} body={actor.GetComponent<Rigidbody2D>().bodyType}");
+            }
         }
 
         private static IEnumerator Tap(Key key)

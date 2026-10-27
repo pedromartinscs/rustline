@@ -87,6 +87,87 @@ namespace Rustline.Tests
         }
 
         [UnityTest]
+        public IEnumerator NumpadKeys_ResolveOwnedActionsAndMixWithDigitsWheelAndTransitions()
+        {
+            yield return Load();
+            var reader=_director.Player.GetComponent<PlayerInputReader>();
+            var runtime=(InputActionAsset)typeof(PlayerInputReader).GetField("_runtimeActions",
+                System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(reader);
+            Key[] keys={Key.Numpad0,Key.Numpad1,Key.Numpad2,Key.Numpad3,Key.Numpad4,Key.Numpad5,Key.Numpad6,Key.Numpad7,Key.Numpad8,Key.Numpad9};
+            // Exercise equipment first so the baseline records the human-reported failure.
+            yield return Tap(Key.Numpad1); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(1),"Actual Numpad1 did not select Latch-9.");
+            for(int i=0;i<keys.Length;i++)
+                Assert.That(runtime.FindAction("Player/WeaponSlot"+i,true).controls.Contains(_keyboard[keys[i]]),Is.True,"Unresolved physical numpad "+i);
+            foreach(Key key in new[] {Key.Numpad0,Key.Numpad2,Key.Digit1,Key.Digit0,Key.Digit2})
+            {
+                yield return Tap(key); yield return new WaitForSecondsRealtime(.3f);
+                int expected=key==Key.Numpad0||key==Key.Digit0 ? 0 : key==Key.Digit1 ? 1 : 2;
+                Assert.That(Equipment.SelectedSlot,Is.EqualTo(expected));
+            }
+            int steps=0; Equipment.StepStarted+=(a,b,d)=>steps++;
+            yield return Tap(Key.Numpad1);
+            Assert.That(Equipment.IsStepActive,Is.True);
+            yield return Tap(Key.Digit0); yield return Tap(Key.Numpad2); yield return Tap(Key.Numpad9);
+            yield return new WaitForSecondsRealtime(.6f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(2));
+            Assert.That(steps,Is.EqualTo(2),"Mixed requests must retain visible committed steps and latest valid target.");
+            for(int i=3;i<10;i++) yield return Tap(keys[i]);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(2));
+            InputSystem.QueueStateEvent(_mouse,new MouseState { scroll=new Vector2(0,120) }); yield return null;
+            InputSystem.QueueStateEvent(_mouse,new MouseState()); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.Zero);
+            // NumLock is a separate physical button in KeyboardState, not a simulated OS LED.
+            yield return Tap(Key.NumLock);
+            yield return Tap(Key.Numpad1); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(1));
+            yield return Tap(Key.NumLock);
+            yield return Tap(Key.Numpad0); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.Zero);
+        }
+
+        [UnityTest]
+        public IEnumerator NumpadSelection_SurvivesModalHeldKeysReenableRetryRestartAndMenu()
+        {
+            yield return Load();
+            var reader=_director.Player.GetComponent<PlayerInputReader>();
+            int actionCount=InputSystem.ListEnabledActions().Count;
+            int steps=0; Equipment.StepStarted+=(a,b,d)=>steps++;
+            for(int i=0;i<3;i++) { reader.enabled=false; reader.enabled=true; Equipment.enabled=false; Equipment.enabled=true; }
+            Assert.That(InputSystem.ListEnabledActions().Count,Is.EqualTo(actionCount));
+            yield return Tap(Key.Numpad1); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(1)); Assert.That(steps,Is.EqualTo(1));
+            yield return Tap(Key.Escape);
+            InputSystem.QueueStateEvent(_keyboard,new KeyboardState(Key.Numpad2)); yield return null;
+            InputSystem.QueueStateEvent(_keyboard,new KeyboardState(Key.Numpad2,Key.Escape)); yield return null;
+            InputSystem.QueueStateEvent(_keyboard,new KeyboardState(Key.Numpad2));
+            yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(FrontendController.BlockGameplayInput,Is.True,"Existing modal release barrier must hold until the keypad key is released.");
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(1),"Held modal input must not replay.");
+            InputSystem.QueueStateEvent(_keyboard,new KeyboardState()); yield return null; yield return null;
+            Assert.That(FrontendController.BlockGameplayInput,Is.False);
+            yield return Tap(Key.Numpad2); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(2));
+            InputSystem.QueueStateEvent(_keyboard,new KeyboardState(Key.Numpad1)); InputSystem.Update();
+            _director.BeginRetry(); _director.RetryNow();
+            InputSystem.QueueStateEvent(_keyboard,new KeyboardState()); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(2),"Retry must discard stale keypad edges.");
+            yield return Tap(Key.Numpad0); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.Zero);
+            _director.RestartRun(); yield return null;
+            yield return Tap(Key.Numpad1); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.EqualTo(1));
+            SceneManager.LoadScene(FrontendController.TitleScene); yield return null; yield return null;
+            yield return Tap(Key.Numpad2);
+            FrontendController.Current.StartGame();
+            for(int i=0;i<180 && SceneManager.GetActiveScene().path!=FrontendController.PlayScene;i++) yield return null;
+            yield return null; yield return null; yield return null;
+            _director=Object.FindAnyObjectByType<FirstPlayableDirector2D>();
+            yield return Tap(Key.Numpad0); yield return new WaitForSecondsRealtime(.3f);
+            Assert.That(Equipment.SelectedSlot,Is.Zero);
+        }
+
+        [UnityTest]
         public IEnumerator NumericAndWheel_LatestNumericTargetWinsWithoutSkippingVisibleSteps()
         {
             yield return Load();
