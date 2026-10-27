@@ -32,6 +32,7 @@ namespace Rustline.Presentation
         private Vector2 _lastNavigation;
         public int Selected => _selected;
         public int Pressed => _pressed;
+        public bool DeveloperHudEnabled { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => _current = null;
@@ -87,7 +88,13 @@ namespace Rustline.Presentation
                 Back();
                 return; // One edge can perform at most one navigation transition.
             }
-            if (!Navigation.IsModal || Navigation.State == FrontendState.Transition) return;
+            if (!Navigation.IsModal)
+            {
+                if (!BlockGameplayInput && keyboard != null && keyboard.f3Key.wasPressedThisFrame)
+                    DeveloperHudEnabled = !DeveloperHudEnabled;
+                return;
+            }
+            if (Navigation.State == FrontendState.Transition) return;
             Vector2 navigation = Vector2.zero;
             if (keyboard != null)
             {
@@ -197,6 +204,7 @@ namespace Rustline.Presentation
 
         public void PrepareForRunRestart()
         {
+            DeveloperHudEnabled = false;
             if (Navigation.IsOptions && Navigation.IsPaused) Navigation.Back();
             if (Navigation.IsPaused) { Navigation.Back(); ApplyState(); }
         }

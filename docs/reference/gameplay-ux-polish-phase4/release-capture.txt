@@ -1,0 +1,1 @@
+Actual non-development Windows player 1280x720; world/carousel final presentation rendered to target, then actual player/menu canvases drawn by Unity in their native viewport positions. Equivalent offscreen composition; not desktop screenshots. Checkpoint enemies were defeated by diagnostic staging. Normal input and patrol assertions used the production systems.

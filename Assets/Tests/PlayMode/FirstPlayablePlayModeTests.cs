@@ -131,7 +131,9 @@ namespace Rustline.Tests
             int members = 0;
             foreach (FirstPlayableEncounter2D wave in _director.Encounters)
             {
-                Assert.That(wave.IsActive, Is.False);
+                // The nearby west patrol may legitimately see the entry player. Future
+                // encounters must remain quiet until local detection, proximity or a hit.
+                if (wave != _director.Encounters[0]) Assert.That(wave.IsActive, Is.False);
                 foreach (CombatHealth2D health in wave.Members)
                 {
                     members++;

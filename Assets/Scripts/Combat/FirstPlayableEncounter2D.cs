@@ -32,18 +32,24 @@ namespace Rustline.Gameplay.Combat
             {
                 members[i].TryGetComponent(out _sentries[i]);
                 members[i].TryGetComponent(out _ranged[i]);
+                if (_sentries[i] != null) _sentries[i].RequireVisibleDetection = true;
+                if (_ranged[i] != null) _ranged[i].RequireVisibleDetection = true;
             }
         }
 
         private void OnEnable()
         {
             foreach (CombatHealth2D member in members) member.Damaged += OnDamaged;
+            foreach (Sentry2D sentry in _sentries) if (sentry != null) sentry.PlayerDetected += Activate;
+            foreach (Bombardier2D ranged in _ranged) if (ranged != null) ranged.PlayerDetected += Activate;
         }
 
         private void OnDisable()
         {
             foreach (CombatHealth2D member in members)
                 if (member != null) member.Damaged -= OnDamaged;
+            foreach (Sentry2D sentry in _sentries) if (sentry != null) sentry.PlayerDetected -= Activate;
+            foreach (Bombardier2D ranged in _ranged) if (ranged != null) ranged.PlayerDetected -= Activate;
         }
 
         private void OnDamaged(DamageResult2D result)
@@ -54,16 +60,23 @@ namespace Rustline.Gameplay.Combat
         public void Activate()
         {
             IsActive = true;
-            for (int i = 0; i < members.Length; i++) SetCombatActive(i, members[i].IsAlive);
+            for (int i = 0; i < members.Length; i++)
+            {
+                SetCombatActive(i, members[i].IsAlive);
+                _sentries[i]?.SetCombatEngaged(members[i].IsAlive);
+                _ranged[i]?.SetCombatEngaged(members[i].IsAlive);
+            }
         }
 
         public void ResetEncounter()
         {
             for (int i = 0; i < members.Length; i++)
             {
-                SetCombatActive(i, false);
                 _ranged[i]?.ResetForEncounter();
                 _sentries[i]?.ResetForEncounter();
+                SetCombatActive(i, true);
+                _sentries[i]?.SetCombatEngaged(false);
+                _ranged[i]?.SetCombatEngaged(false);
             }
             IsActive = false;
         }

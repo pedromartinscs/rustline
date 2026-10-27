@@ -14,7 +14,7 @@ namespace Rustline.Presentation
         public const int CellHeight = 8;
         private const int AtlasCellWidth = 10;
         private const int Columns = 8;
-        private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -/()×∞";
+        private const string Characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -/()×∞.";
         // HUD text is rebuilt on the main thread. Mesh.SetVertices/SetUVs/SetTriangles
         // copy these buffers, so the next line can reuse them without allocating lists.
         private static readonly List<Vector3> Vertices = new List<Vector3>(128);
@@ -37,7 +37,7 @@ namespace Rustline.Presentation
             "0E 10 10 1E 11 11 0E", "1F 01 02 04 08 08 08", "0E 11 11 0E 11 11 0E",
             "0E 11 11 0F 01 01 0E", "00 00 00 00 00 00 00", "00 00 00 1F 00 00 00",
             "01 02 02 04 08 08 10", "02 04 08 08 08 04 02", "08 04 02 02 02 04 08",
-            "00 11 0A 04 0A 11 00", "000 0C6 129 111 129 0C6 000"
+            "00 11 0A 04 0A 11 00", "000 0C6 129 111 129 0C6 000", "00 00 00 00 00 0C 0C"
         };
 
         public static bool Supports(char character) => Characters.IndexOf(character) >= 0;

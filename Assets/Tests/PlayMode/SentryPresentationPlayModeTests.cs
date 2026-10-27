@@ -120,7 +120,7 @@ namespace Rustline.Tests
                 Assert.That(presenter.BodyRenderer.sprite, Is.Not.Null);
                 Assert.That(presenter.transform.localScale, Is.EqualTo(Vector3.one));
                 Assert.That(enemy.GetComponentInChildren<LineRenderer>(), Is.Null);
-                Assert.That(enemy.CombatActive, Is.False);
+                Assert.That(enemy.CombatActive, Is.True, "Unengaged sentries remain active patrol actors.");
             }
             var future = _director.Encounters[6].Members[0].GetComponent<Sentry2D>();
             var visual = future.GetComponentInChildren<SentryPresenter2D>();

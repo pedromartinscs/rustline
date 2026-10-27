@@ -117,6 +117,20 @@ namespace Rustline.Presentation
                 CenterText("DEPLOYING", width / 2, height / 2 - 7, width >= 300 ? 2 : 1, 19);
             }
             else DrawPanel(state);
+            if(state==FrontendState.Paused)
+            {
+                // Controls remain accessible after the brief in-game tutorial has gone away.
+                int scale=height-Layout.Panel.yMax>=80 && width>=700 ? 2 : 1;
+                int top=Layout.Panel.yMax+8;
+                string[] controls={"A/D MOVE / SPACE JUMP / S CROUCH", "MOUSE AIM / LEFT FIRE / RIGHT MODE / R RELOAD",
+                    "0 UNARMED / 1 LATCH-9 / 2 LONGWATCH / WHEEL", "F5 RESTART / F3 DEVELOPER HUD"};
+                if(height-top>=4*(7*scale+4))
+                {
+                    Rect(Layout.Panel.x,top-2,Layout.Panel.width,4*(7*scale+4)+2,0);
+                    Rect(Layout.Panel.x,top-2,Layout.Panel.width,1,2);
+                    for(int i=0;i<controls.Length;i++) CenterText(controls[i],width/2,top+i*(7*scale+4),scale,5);
+                }
+            }
             _mesh.Clear();
             _mesh.SetVertices(_vertices); _mesh.SetUVs(0, _uvs); _mesh.SetColors(_colors);
             _mesh.SetTriangles(_triangles, 0); _mesh.RecalculateBounds();

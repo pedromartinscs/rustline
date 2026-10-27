@@ -39,7 +39,7 @@ namespace Rustline.Tests
                 Assert.That(visual.TargetMarker.sharedMaterial, Is.SameAs(enemy.ProjectileMaterial));
                 Assert.That(visual.TargetMarker.enabled, Is.False);
                 Assert.That(enemy.GetComponentInChildren<LineRenderer>(), Is.Null, "No obsolete body outline may remain.");
-                Assert.That(enemy.CombatActive, Is.False);
+                Assert.That(enemy.CombatActive, Is.True, "Unengaged bombardiers remain active patrol actors.");
                 Assert.That(enemy.WeaponHitCollider.enabled, Is.True);
             }
             var future = _director.Encounters[6].Members[2].GetComponent<Bombardier2D>();

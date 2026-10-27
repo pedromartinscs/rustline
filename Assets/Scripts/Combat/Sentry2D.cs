@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Rustline.Gameplay.Combat
@@ -21,6 +22,10 @@ namespace Rustline.Gameplay.Combat
         private int _strikeDirection;
         private float _hitPause;
         private readonly SentryBrain2D _brain = new SentryBrain2D();
+        private Camera _worldCamera;
+        internal bool RequireVisibleDetection { get; set; }
+        public event Action PlayerDetected;
+        public bool CombatEngaged { get; private set; } = true;
         public SentryState State => _brain.State;
         public CombatHealth2D Health => _health;
         public int StrikeCount { get; private set; }
@@ -38,6 +43,12 @@ namespace Rustline.Gameplay.Combat
             CombatActive = active;
             if (!active) IsMoving = false;
             if (!active && _body != null) _body.linearVelocity = Vector2.zero;
+        }
+
+        public void SetCombatEngaged(bool engaged)
+        {
+            CombatEngaged = engaged;
+            if (!engaged && _health != null && _health.IsAlive) _brain.Reset();
         }
 
         private void Awake()
@@ -76,9 +87,9 @@ namespace Rustline.Gameplay.Combat
             Vector2 sensor = _body.position + Vector2.up * 1.25f;
             Vector2 target = playerCollider != null ? (Vector2)playerCollider.bounds.center : sensor;
             Vector2 delta = target - sensor;
-            bool clear = Physics2D.Raycast(sensor, delta.normalized, delta.magnitude, 1 << 6).collider == null;
-            bool sees = playerHealth != null && playerHealth.IsAlive && playerCollider != null && playerCollider.enabled &&
-                        InDetectionWindow(sensor, target) && clear;
+            bool sees = CanDetectPlayer();
+            if (sees && !CombatEngaged) PlayerDetected?.Invoke();
+            sees &= CombatEngaged;
             bool reach = sees && Mathf.Abs(delta.x) <= StrikeReach && Mathf.Abs(delta.y) <= 1.5f;
             if (sees && State != SentryState.Windup && State != SentryState.Recovery)
                 FacingDirection = delta.x < 0f ? -1 : 1;
@@ -100,6 +111,18 @@ namespace Rustline.Gameplay.Combat
             }
             if (State == SentryState.Patrol) Move(_direction, 1.3f);
             else if (State == SentryState.Pursuit && !reach) Move(delta.x < 0f ? -1 : 1, 2.8f);
+        }
+
+        public bool CanDetectPlayer()
+        {
+            if (!CombatActive || _health == null || _health.IsDead || playerHealth == null ||
+                !playerHealth.IsAlive || playerCollider == null || !playerCollider.enabled) return false;
+            Vector2 sensor = _body.position + Vector2.up * 1.25f;
+            Vector2 target = playerCollider.bounds.center;
+            if (!InDetectionWindow(sensor, target) ||
+                RequireVisibleDetection && !EnemyPerception2D.InView(ref _worldCamera, sensor)) return false;
+            Vector2 delta = target - sensor;
+            return Physics2D.Raycast(sensor, delta.normalized, delta.magnitude, 1 << 6).collider == null;
         }
 
         private void Move(int direction, float speed)
@@ -128,6 +151,7 @@ namespace Rustline.Gameplay.Combat
             _direction = -1;
             FacingDirection = -1;
             IsMoving = false;
+            transform.position = _spawn;
             _body.position = _spawn;
             _body.linearVelocity = Vector2.zero;
             _health.ResetHealth();

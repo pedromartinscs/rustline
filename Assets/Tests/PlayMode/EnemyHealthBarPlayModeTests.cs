@@ -33,7 +33,12 @@ namespace Rustline.Tests
         {
             var all = Object.FindObjectsByType<EnemyHealthBar2D>(FindObjectsSortMode.None);
             Assert.That(all.Length, Is.EqualTo(14));
-            Assert.That(all.All(b => !b.IsVisible), Is.True, "Dormant enemies must stay quiet.");
+            foreach (var bar in all)
+            {
+                bool patrol = bar.TryGetComponent(out Sentry2D actor) ? actor.State == SentryState.Patrol :
+                    bar.GetComponent<Bombardier2D>().State == BombardierState.Patrol;
+                if (patrol) Assert.That(bar.IsVisible, Is.False, "Unengaged patrols must stay quiet.");
+            }
             CombatHealth2D[] enemies = { _director.Encounters[0].Members[0], _director.Encounters[1].Members[1] };
             foreach (CombatHealth2D health in enemies)
             {

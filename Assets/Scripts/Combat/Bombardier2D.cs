@@ -38,6 +38,10 @@ namespace Rustline.Gameplay.Combat
         private int _patrolDirection;
         private float _hitPauseRemaining;
         private float _stateTimeRemaining;
+        private Camera _worldCamera;
+        internal bool RequireVisibleDetection { get; set; }
+        public event Action PlayerDetected;
+        public bool CombatEngaged { get; private set; } = true;
 
         public event Action Died;
         public CombatHealth2D Health => health;
@@ -77,6 +81,16 @@ namespace Rustline.Gameplay.Combat
             CombatActive = active;
             if (!active) IsMoving = false;
             if (!active && body != null) body.linearVelocity = Vector2.zero;
+        }
+
+        public void SetCombatEngaged(bool engaged)
+        {
+            CombatEngaged = engaged;
+            if (!engaged && State != BombardierState.Dead)
+            {
+                State = BombardierState.Patrol;
+                _stateTimeRemaining = 0f;
+            }
         }
 
         private void Awake()
@@ -121,7 +135,9 @@ namespace Rustline.Gameplay.Combat
             switch (State)
             {
                 case BombardierState.Patrol:
-                    if (CanDetectPlayer()) BeginWindup();
+                    bool detects = CanDetectPlayer();
+                    if (detects && !CombatEngaged) PlayerDetected?.Invoke();
+                    if (detects && CombatEngaged) BeginWindup();
                     else AdvancePatrol(dt);
                     break;
                 case BombardierState.Windup:
@@ -150,11 +166,12 @@ namespace Rustline.Gameplay.Combat
 
         public bool CanDetectPlayer()
         {
-            if (_playerHealth == null || !_playerHealth.IsAlive ||
+            if (!CombatActive || health == null || health.IsDead || _playerHealth == null || !_playerHealth.IsAlive ||
                 _playerCollider == null || !_playerCollider.enabled) return false;
             Vector2 sensor = body.position + new Vector2(0f, 1.25f);
             Vector2 target = _playerCollider.bounds.center;
-            if (!IsInsideDetectionRange(sensor, target)) return false;
+            if (!IsInsideDetectionRange(sensor, target) ||
+                RequireVisibleDetection && !EnemyPerception2D.InView(ref _worldCamera, sensor)) return false;
             Vector2 delta = target - sensor;
             return Physics2D.Raycast(sensor, delta.normalized, delta.magnitude, 1 << 6).collider == null;
         }
@@ -170,6 +187,7 @@ namespace Rustline.Gameplay.Combat
             LockedTargetPoint = default;
             if (body != null)
             {
+                transform.position = _spawnPosition;
                 body.position = _spawnPosition;
                 body.rotation = 0f;
                 body.linearVelocity = Vector2.zero;
@@ -193,9 +211,16 @@ namespace Rustline.Gameplay.Combat
 
         private void AdvancePatrol(float dt)
         {
+            int movingDirection = _patrolDirection;
             float nextX = body.position.x + _patrolDirection * patrolSpeed * dt;
             if (nextX >= PatrolMaximumX) { nextX = PatrolMaximumX; _patrolDirection = -1; }
             else if (nextX <= PatrolMinimumX) { nextX = PatrolMinimumX; _patrolDirection = 1; }
+            // Same terrain-support/obstacle discipline as the sentry, including runtime breaches.
+            Vector2 footAhead = new Vector2(nextX + movingDirection * 0.65f, _spawnPosition.y + 0.3f);
+            bool supported = Physics2D.Raycast(footAhead, Vector2.down, 0.7f, 1 << 6).collider != null;
+            bool blocked = Physics2D.Raycast(body.position + Vector2.up, Vector2.right * movingDirection,
+                0.8f, 1 << 6).collider != null;
+            if (!supported || blocked) { _patrolDirection = -movingDirection; return; }
             IsMoving = !Mathf.Approximately(nextX, body.position.x);
             body.MovePosition(new Vector2(nextX, _spawnPosition.y));
         }
