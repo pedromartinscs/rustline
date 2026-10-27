@@ -183,7 +183,8 @@ namespace Rustline.Editor
         }
 
         private static bool IsContinuousSteelDeck(SpriteRenderer renderer) => renderer != null &&
-            renderer.sprite != null && renderer.sprite.texture.name == "reinforced_floor_mid_a" &&
+            renderer.sprite != null && (renderer.sprite.texture.name == "reinforced_floor_mid_a" ||
+                renderer.sprite.texture.name == "reinforced_floor_ibeam_shallow") &&
             renderer.drawMode == SpriteDrawMode.Tiled && renderer.size == new Vector2(6f,1f);
 
         private static Transform FindTransform(Scene scene, string name)

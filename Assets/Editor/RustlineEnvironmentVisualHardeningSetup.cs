@@ -46,6 +46,38 @@ namespace Rustline.Editor
             Debug.Log("RUSTLINE_M71_COHERENCE_OK: continuous solid traversal skins; industrial-only destructible tiles; collision untouched.");
         }
 
+        [UnityEditor.MenuItem("Tools/Rustline/Apply Horizontal Floor Asset")]
+        public static void ApplyHorizontalFloor()
+        {
+            Scene scene = EditorSceneManager.OpenScene(RustlineFirstPlayableSetup.ScenePath,OpenSceneMode.Single);
+            // Migrate the old cabinet-module floor skins without regenerating any other art.
+            Transform artRoot = Find<Transform>(scene,"Art Dressing - Preserve");
+            Transform solidRoot = artRoot.Find(ManagedName);
+            foreach (string name in new[] {"Structural Floor Skin v0 - Managed","Safety Floor Armor v0 - Managed"})
+            {
+                Transform previous = Find<Transform>(scene,name);
+                foreach (var renderer in previous.GetComponentsInChildren<SpriteRenderer>(true))
+                    UnityEngine.Object.DestroyImmediate(renderer.gameObject);
+            }
+            foreach (var floor in new[] {
+                (name:"Catwalk Skin - Left", bounds:new Rect(4,4,6,1)),
+                (name:"Catwalk Skin - Right", bounds:new Rect(10,4,6,1)),
+                (name:"Maintenance Solid Ceiling", bounds:new Rect(102,19.625f,6,1)),
+                (name:"Lower Bay Structural Beam", bounds:new Rect(1,-2,18,2)),
+                (name:"Safety Floor Structural Beam", bounds:new Rect(-28,-4,62,2)) })
+            {
+                var renderer = Find<SpriteRenderer>(scene,floor.name);
+                if (renderer == null && (floor.name == "Lower Bay Structural Beam" || floor.name == "Safety Floor Structural Beam"))
+                    renderer = CreateRenderer(solidRoot,floor.name);
+                if (renderer == null) throw new InvalidOperationException("Missing horizontal floor: " + floor.name);
+                ConfigureHorizontalFloor(renderer,floor.bounds);
+            }
+            ValidateScene(scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            Debug.Log("RUSTLINE_HORIZONTAL_FLOOR_OK: five owned floor renderers updated; all other art and collision preserved.");
+        }
+
         public static void ApplyVisuals(Scene scene)
         {
             Tilemap surface = Find<Tilemap>(scene,"Industrial Surface - Visual");
@@ -73,14 +105,24 @@ namespace Rustline.Editor
             if (ceiling == null || ceilingCollision == null)
                 throw new InvalidOperationException("Missing precision ceiling maps.");
             ClearStructuralCells(ceiling,ceilingCollision,new RectInt(102,19,6,1));
-            Configure(CreateRenderer(root,"Maintenance Solid Ceiling"),RequireSprite("reinforced_floor_mid_a"),
+            ConfigureHorizontalFloor(CreateRenderer(root,"Maintenance Solid Ceiling"),
                 new Rect(102,19.625f,6,1));
             foreach (var deck in new[] { (name:"Catwalk Skin - Left", x:4f), (name:"Catwalk Skin - Right", x:10f) })
             {
                 SpriteRenderer renderer = Find<SpriteRenderer>(scene,deck.name);
                 if (renderer == null) throw new InvalidOperationException("Missing transfer catwalk skin.");
-                Configure(renderer,RequireSprite("reinforced_floor_mid_a"),new Rect(deck.x,4,6,1));
+                ConfigureHorizontalFloor(renderer,new Rect(deck.x,4,6,1));
             }
+            // Replace owned cabinet modules with one continuous structural beam per span.
+            foreach (string name in new[] {"Structural Floor Skin v0 - Managed","Safety Floor Armor v0 - Managed"})
+            {
+                Transform previous = Find<Transform>(scene,name);
+                if (previous == null) throw new InvalidOperationException("Missing permanent floor root: " + name);
+                foreach (var renderer in previous.GetComponentsInChildren<SpriteRenderer>(true))
+                    UnityEngine.Object.DestroyImmediate(renderer.gameObject);
+            }
+            ConfigureHorizontalFloor(CreateRenderer(root,"Lower Bay Structural Beam"),new Rect(1,-2,18,2));
+            ConfigureHorizontalFloor(CreateRenderer(root,"Safety Floor Structural Beam"),new Rect(-28,-4,62,2));
             surface.RefreshAllTiles(); ceiling.RefreshAllTiles();
             EditorUtility.SetDirty(surface); EditorUtility.SetDirty(ceiling);
         }
@@ -116,8 +158,12 @@ namespace Rustline.Editor
             renderer.color = Color.white; renderer.flipX = renderer.flipY = false;
             renderer.sortingOrder = 2;
             renderer.transform.localScale = Vector3.one;
+            renderer.transform.localRotation = Quaternion.identity;
             renderer.transform.position = new Vector3(bounds.center.x,bounds.center.y,0);
         }
+
+        private static void ConfigureHorizontalFloor(SpriteRenderer renderer,Rect bounds) =>
+            Configure(renderer,RequireSprite(bounds.height == 2 ? "reinforced_floor_ibeam_deep" : "reinforced_floor_ibeam_shallow"),bounds);
 
         public static void ValidateScene(Scene scene)
         {
@@ -142,9 +188,11 @@ namespace Rustline.Editor
             Tilemap ceiling = Find<Tilemap>(scene,"Maintenance Crouch Visual");
             if (ceiling == null || ceiling.GetUsedTilesCount() != 0)
                 throw new InvalidOperationException("Permanent precision ceiling must not show destructible tiles.");
-            ValidateSkin(scene,"Maintenance Solid Ceiling","reinforced_floor_mid_a",new Rect(102,19.625f,6,1));
-            ValidateSkin(scene,"Catwalk Skin - Left","reinforced_floor_mid_a",new Rect(4,4,6,1));
-            ValidateSkin(scene,"Catwalk Skin - Right","reinforced_floor_mid_a",new Rect(10,4,6,1));
+            ValidateSkin(scene,"Maintenance Solid Ceiling","reinforced_floor_ibeam_shallow",new Rect(102,19.625f,6,1));
+            ValidateSkin(scene,"Catwalk Skin - Left","reinforced_floor_ibeam_shallow",new Rect(4,4,6,1));
+            ValidateSkin(scene,"Catwalk Skin - Right","reinforced_floor_ibeam_shallow",new Rect(10,4,6,1));
+            ValidateSkin(scene,"Lower Bay Structural Beam","reinforced_floor_ibeam_deep",new Rect(1,-2,18,2));
+            ValidateSkin(scene,"Safety Floor Structural Beam","reinforced_floor_ibeam_deep",new Rect(-28,-4,62,2));
             SpriteRenderer[] renderers = scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<SpriteRenderer>(true)).ToArray();
             var handlers = renderers.Where(r=>r.sprite != null && r.sprite.texture.name == "salvage_handler").ToArray();
             if (handlers.Length != 1 || handlers[0].transform.position.x != 0f)
@@ -165,6 +213,7 @@ namespace Rustline.Editor
             SpriteRenderer renderer = Find<SpriteRenderer>(scene,name);
             if (renderer == null || renderer.sprite != RequireSprite(sprite) || renderer.drawMode != SpriteDrawMode.Tiled ||
                 renderer.tileMode != SpriteTileMode.Continuous ||
+                Quaternion.Angle(renderer.transform.rotation,Quaternion.identity)>0.001f ||
                 Vector2.Distance(renderer.bounds.min,expected.min)>0.001f ||
                 Vector2.Distance(renderer.bounds.max,expected.max)>0.001f)
                 throw new InvalidOperationException("Continuous native structure has invalid source/bounds: " + name);

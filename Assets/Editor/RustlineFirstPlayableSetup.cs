@@ -224,6 +224,7 @@ namespace Rustline.Editor
             SetFloat(actor, "minimumX", minX);
             SetFloat(actor, "maximumX", maxX);
             RustlineSentryArtSetup.Configure(actor);
+            RustlineVisualRefinementSetup.ConfigureEnemy(health, material);
             return health;
         }
 
@@ -238,6 +239,7 @@ namespace Rustline.Editor
             Set(actor, "throwOrigin", origin);
             SetFloat(actor, "patrolHalfDistance", patrol);
             RustlineBombardierArtSetup.Configure(actor, material);
+            RustlineVisualRefinementSetup.ConfigureEnemy(health, material);
             return health;
         }
 

@@ -1,8 +1,8 @@
 """Compare M7 saved scene against a Git baseline without opening or changing Unity assets."""
 import hashlib
+import argparse
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 SCENE = 'Assets/Scenes/Demo/SalvageIntake.unity'
@@ -29,14 +29,24 @@ def collision_maps(objects):
 
 
 if __name__ == '__main__':
-    baseline = subprocess.run(['git','show',(sys.argv[1] if len(sys.argv)>1 else 'ca14060')+':'+SCENE],
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('baseline', nargs='?', default='ca14060')
+    parser.add_argument('--allow-enemy-health-bars', action='store_true')
+    args = parser.parse_args()
+    baseline = subprocess.run(['git','show',args.baseline+':'+SCENE],
                               check=True,capture_output=True,text=True).stdout
     original,current=blocks(baseline),blocks(Path(SCENE).read_text())
     # All existing MonoBehaviours and physics components must be byte-identical. This
     # includes player tuning, encounters, checkpoints, menu integration and breaching.
     types = (50,61,66,114,58,60,70,19719996)
     protected = {k:v for k,v in original.items() if k[0] in types}
-    assert set(protected) == {k for k in current if k[0] in types}, 'Gameplay/physics components added or removed'
+    added = {k for k in current if k[0] in types} - set(protected)
+    if args.allow_enemy_health_bars:
+        guid = re.search(r'^guid: (\w+)', Path('Assets/Scripts/Presentation/EnemyHealthBar2D.cs.meta').read_text(), re.M).group(1)
+        assert len(added) == 14 and all(k[0] == 114 and f'guid: {guid},' in current[k] for k in added), 'Only fourteen new enemy bar presenters are allowed'
+    else:
+        assert not added, 'Gameplay/physics components added'
+    assert set(protected) <= set(current), 'Gameplay/physics components removed'
     protected.update(dict(collision_maps(original)))
     assert all(current.get(k)==v for k,v in protected.items()), 'Protected gameplay/collision data changed'
     list(collision_maps(current))

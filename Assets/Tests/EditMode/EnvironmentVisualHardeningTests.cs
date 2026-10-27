@@ -18,7 +18,8 @@ namespace Rustline.Tests
     {
         private const string ScenePath = "Assets/Scenes/Demo/SalvageIntake.unity";
         private const string Art = "Assets/Art/Environment/Hardening/";
-        private static readonly string[] Assets = Directory.GetFiles(Art,"*.png");
+        private static readonly string[] Assets = Directory.GetFiles(Art,"*.png")
+            .Concat(Directory.GetFiles("Assets/Art/Environment/TransferBay/", "*.png")).ToArray();
 
         [TestCaseSource(nameof(Assets))]
         public void ProductionArt_HasExactCanonicalPixelsAndNativeImport(string path)
@@ -62,6 +63,8 @@ namespace Rustline.Tests
         [TestCase("Maintenance Solid Ceiling",102f,19.625f,6f,1f)]
         [TestCase("Catwalk Skin - Left",4f,4f,6f,1f)]
         [TestCase("Catwalk Skin - Right",10f,4f,6f,1f)]
+        [TestCase("Lower Bay Structural Beam",1f,-2f,18f,2f)]
+        [TestCase("Safety Floor Structural Beam",-28f,-4f,62f,2f)]
         public void SolidSkins_CoverCompleteFacesAtNativeScale(string name,float x,float y,float width,float height)
         {
             Scene scene = EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
@@ -73,6 +76,18 @@ namespace Rustline.Tests
             Assert.That(Vector2.Distance(renderer.bounds.size,new Vector2(width,height)), Is.LessThan(0.001f));
             Assert.That(renderer.sprite.texture.name, Does.StartWith("reinforced_"));
             Assert.That(renderer.GetComponent<Collider2D>(), Is.Null);
+        }
+
+        [Test]
+        public void RestoredBeamFloors_RetainNativeHorizontalArtworkAndShaftMaterial()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ScenePath,OpenSceneMode.Single);
+            var floors = SceneRenderers(scene).Where(r=>r.sprite != null &&
+                r.sprite.texture.name.StartsWith("reinforced_floor_ibeam_")).ToArray();
+            Assert.That(floors.Length, Is.EqualTo(5));
+            Assert.That(floors.All(r=>r.transform.rotation == Quaternion.identity), Is.True);
+            Assert.That(GameObject.Find("Service Shaft Wall - Right B").GetComponent<SpriteRenderer>().sprite.texture.name,
+                Is.EqualTo("reinforced_shaft_b"));
         }
 
         [Test]
@@ -140,6 +155,7 @@ namespace Rustline.Tests
                 Invoke("RustlineProductionTools","ApplyProductionSetup");
                 Scene scene = SceneManager.GetActiveScene();
                 Invoke("RustlineEnvironmentVisualHardeningSetup","ValidateScene",scene);
+                Invoke("RustlineVisualRefinementSetup","ValidateScene",scene);
                 AssertBaselineCollision(scene);
             }
             finally
