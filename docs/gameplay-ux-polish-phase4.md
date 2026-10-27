@@ -565,3 +565,212 @@ Human final acceptance of the terrain-destruction route remains appropriate.
 The boundary assumes this scene's existing static Ground envelope: a future system
 that adds platforms below that envelope would need to establish its envelope
 before configuring encounters. The current game creates no such lower platforms.
+
+## Phase 4.3 — Final Visual Micro-Polish
+
+### Baseline and scope
+
+Fetched origin and confirmed local HEAD and the remote Phase 4 branch both at
+`d0a0d2f0496450ffe5f910d761dbb153fda9a19b`, with a clean working tree. This
+iteration changes only the terminal fall presentation margin and the final
+presentation's Deep Space color handling, plus focused validation and evidence.
+Saved scenes, collision, artwork, palette, LUT, camera behavior, HUD, input,
+combat, falling acceleration/speed, death events and progression are preserved.
+
+### Diagnosis
+
+The Phase 4.2 terminal plane was **Y=-5**, tested against the upper physical
+footprint edge; current enemy roots therefore died just below **Y=-7.5**.
+Native presentation caps each logical dimension at 1072 pixels: at 16 PPU the
+largest vertical half-view is **33.5 units**. The production follow offset is
+**+2 Y**, without a lower clamp. Near the unchanged player failure height of
+**-10**, the camera can show ground far below the former enemy terminal plane.
+
+The committed Phase 4.2 Release composition independently reproduces the color
+defect: its dark logical world is **RGB(1,2,11)**, but unobstructed physical
+surround pixels are **RGB(0,0,1)**, rather than true RGB(0,0,0). The visible
+boundary is real even though the surround is technically one blue code value
+above black. Validation samples the final RenderGraph output as well as the
+complete world/UI composition, rather than trusting a material property.
+
+### Fixed boundary and preserved falling behavior
+
+The fixed initial Ground-envelope clearance is now **46 units**, giving
+**Y=-50 for the physical footprint top**, or roots below **Y=-52.5**. This
+allows the 33.5-unit maximum half-view, the low player/follow position and the
+actual sprites' approximately 1.5-unit overhang above their 2.5-unit hitboxes.
+Failure is checked in Update after FixedUpdate catch-up: the configured maximum
+0.333-second catch-up at 18 units/second can add six units below the failure plane.
+The final test includes another half-unit of conservative slack, holding the real
+follow target at -16.5. Its settled camera center is -14.5, with a largest viewport
+bottom of **-48**. No camera or player threshold is changed or consulted at enemy death.
+
+| Gallery actor | Previous terminal root / rendered top | New terminal root / rendered top | New fall duration |
+| --- | --- | --- | --- |
+| Sentry | -7.811 / -3.813 | -52.742 / -48.750 | 4.14 seconds |
+| Bombardier | approximately -7.530 / -3.5 | -52.622 / -48.625 | 4.26 seconds |
+
+The old sentry reproduction died after **2.26 seconds**, still visibly inside
+even the 640x480 camera view. Updated tests check actual renderer bounds at the
+death event against all four requested viewports. Both new rendered tops are
+below the largest view's bottom. The terminal latch, authoritative lethal
+`ApplyDamage`, one event per life, stopped terminal simulation, recoverable
+landings, reset, ordered progression and extraction remain unchanged. Void test
+waits increase from four to five seconds to observe the deliberately later death;
+recoverable landing/patrol tests retain their original timing and assertions.
+
+### Corrected final presentation stage
+
+`RustlineNativePixelPresentFeature` already supplies linear Deep Space, including
+the RenderGraph clear. The penumbra's `_DeepSpaceColor` is a plain shader uniform;
+the final presentation declared the same input as a **ShaderLab Color property**.
+Unity converted that already-linear material value from sRGB to linear again.
+The sRGB output therefore stored approximately **(0,0,1)** in the surround,
+while sampled world/penumbra pixels correctly stored **(1,2,11)**.
+
+The correction changes that one hidden presentation property from `Color` to
+`Vector`, explicitly accepting the existing linear uniform. The final sRGB target
+encodes it once to **#01020B**. Camera clears, RenderGraph clear values, penumbra
+uniforms, the LUT, palette, shader sampling, output rectangles and HUD composition
+are otherwise unchanged. This adds no pass, allocation or per-frame operation.
+
+The equivalent 1280x720 before/after GPU readbacks have **zero changed logical
+world pixels**. The physical surround alone changes. Representative stored RGB:
+
+| Region / physical pixel (image coordinates) | Before | After |
+| --- | --- | --- |
+| Illuminated world (250,200) | 13,23,44 | 13,23,44 |
+| Adjacent penumbra dither pixels (1090,360) / (1091,360) | 1,2,11 / 13,23,44 | 1,2,11 / 13,23,44 |
+| Fully dark world (1170,700) | 1,2,11 | 1,2,11 |
+| Inside logical right edge (1175,360) | 1,2,11 | 1,2,11 |
+| Immediately outside (1176,360) | 0,0,1 | 1,2,11 |
+| Physical corner (1279,719) | 0,0,1 | 1,2,11 |
+
+[Before](reference/gameplay-ux-polish-phase4/phase43/deep-space-before.png) and
+[after](reference/gameplay-ux-polish-phase4/phase43/deep-space-after.png) are actual
+final-pass GPU readbacks, retaining RenderTexture orientation. They are not
+desktop screenshots. Fully composed, correctly oriented Release captures are
+also collected by the existing Unity world/UI composition helper.
+
+### Validation contracts
+
+New `PresentationMicroPolishPlayModeTests` exercises the actual production world,
+logical penumbra and final RenderGraph passes at **640x480, 1280x720, 1920x1080
+and 2560x1080**, with penumbra ON/OFF and a constrained driver camera rectangle.
+It samples the full-dark world and scans every unobstructed surround pixel,
+explicitly rejecting RGB(0,0,0). The R8G8B8A8 sRGB readback allows at most one
+byte code value per channel for backend encoding rounding; measured D3D11 output
+is exactly (1,2,11). Existing strict Canonical 28/LUT tests remain unchanged.
+
+`EnemyVoidPlayModeTests` adds actual sprite-bound assertions for both production
+types with the real follow camera at its conservative lowest position. Existing
+real-floor destruction, surviving lower landings, single death events, dead-body
+falling, pause, checkpoint/retry, persistent destruction, restart and all-seven
+extraction assertions are retained. Both new reproductions failed against the
+unchanged baseline before the two runtime corrections.
+
+The opt-in `--visual-micro-polish-review` extends the existing Release diagnostic.
+It uses actual window resizing, the production rendering passes and composition,
+both real lower-floor landings, real breached Gallery shafts, the lowest camera
+configuration and existing ordered progression/retry/extraction checks. Outside
+batch mode it additionally captures the actual composed player backbuffer after
+overlay UI, including title, gameplay and pause. These diagnostics are never
+installed in ordinary play and provide no F3 command or gameplay modifier.
+
+Main files: `EnemyGroundSupport2D.cs`, `RustlineNativePixelPresent.shader`,
+`EnemyVoidPlayModeTests.cs`, new `PresentationMicroPolishPlayModeTests.cs` and
+its new GUID, `GameplayUxReleaseReview.cs`, this report and small reference PNGs.
+The production fix adds no renderer, texture, pass, dependency or normal-frame
+allocation. Void actors intentionally run the existing fall integrator for
+approximately two seconds longer in the reproduced Gallery cases.
+
+### Final results and Release evidence
+
+| Phase 4.3 validation | Result |
+| --- | --- |
+| Baseline reproductions | Both failed as expected: visible death and RGB(0,0,1) surround |
+| Focused support/void/rendering suite | **14 / 14 passed** |
+| Full Edit Mode | **439 / 439 passed** |
+| Full Play Mode | **143 / 143 passed** |
+| Protected scene/collision blocks vs Phase 4.2 | **130 unchanged** |
+| Production palette/alpha audit | **46 PNGs**, zero violations |
+| Windows x64 non-development Release | **Succeeded**, exit 0 |
+| Existing standalone smoke | **Passed**, exit 0 / `FIRST_PLAYABLE_SMOKE_PASS` |
+| Final Release color review | **Passed** / `DEEP_SPACE_RELEASE_PASS` |
+| Final Release void/retry/extraction review | **Passed**, exit 0 / `ENEMY_VOID_RELEASE_PASS` |
+
+Full results are `Logs/phase43-focused-clearance.xml/log`,
+`Logs/phase43-editmode-clearance.xml/log` and `Logs/phase43-playmode-clearance.xml/log`.
+The final build uses `Rustline.Editor.RustlineFirstPlayableSetup.BuildWindowsRelease`
+with `BuildOptions.None`, producing **Builds/FirstPlayable/Rustline.exe** and
+`RUSTLINE_FIRST_PLAYABLE_RELEASE_OK`. Final build/standalone logs are
+`Logs/phase43-build-clearance.log`,
+`Logs/phase43-release-smoke-clearance.log` and
+`Logs/phase43-release-micro-clearance.log`. The unchanged collision guard/smoke
+retains Ground **4 paths / 78 points**, maintenance **1 / 4**, and MovementLab
+**9 / 48**. No scene, collider, art, palette or existing asset GUID changed.
+
+The non-development player verified recoverable landings at **Y=16.025** and
+**19.025**, then terminal deaths at **Y=-52.742** and **-52.622**, one event each.
+Actual production camera bounds exclude both complete rendered bodies at death.
+The same run verified committed checkpoint progress, repeated environmental
+deaths over persistent breaches, ordered completion of all seven encounters,
+successful extraction and full restart. These are automated staged scenarios,
+not a human combat playthrough.
+
+Final **actual composed player-backbuffer captures**, rather than just the
+offscreen world target, succeeded at **640x480, 1280x720 and 1920x1080** with
+penumbra ON/OFF; title and pause were also captured and inspected. At 1280x720,
+pixels immediately inside/outside both logical horizontal edges and physical
+corners are exactly **RGB(1,2,11)**. The 1280x720 and 1920x1080 gameplay captures
+contain **zero RGB(0,0,0) pixels**. The physical surround has no rectangular
+black boundary. At 640x480 the world fills the physical viewport; illuminated
+world corners are naturally allowed to show other canonical colors.
+
+An incidental whole-frame scan found the same **106 health-bar pixels** at
+RGB(0,0,13) / RGB(244,61,42) as the already-approved Phase 4
+`player-hud-off-release-1280x720.png`. This existing SpriteRenderer color
+quantization is outside the two requested changes; health-bar presentation and
+the Canonical 28 definitions are preserved. It does not affect the corrected
+full-dark world or physical surround.
+
+Representative evidence (seven PNGs, under 1 MB total):
+
+- [Actual Release gameplay backbuffer](reference/gameplay-ux-polish-phase4/phase43/player-release.png)
+- [Actual Release title](reference/gameplay-ux-polish-phase4/phase43/title-release.png)
+- [Actual Release pause overlay](reference/gameplay-ux-polish-phase4/phase43/pause-release.png)
+- [Living enemies past the former death plane](reference/gameplay-ux-polish-phase4/phase43/fall-past-old-plane.png)
+- [Same camera after terminal cleanup below the viewport](reference/gameplay-ux-polish-phase4/phase43/terminal-below-viewport.png)
+- Matching final-pass before/after readbacks linked above.
+
+The fall pair uses the established explicit Unity world/UI composition helper;
+the player is deliberately held at the conservative low-camera test position.
+The falling enemies, not that staged player position, are under test. The menu
+and gameplay backbuffer images use `ScreenCapture.CaptureScreenshotAsTexture`
+after frame composition. Logs, builds and other temporary captures are unversioned.
+
+### Diagnostic corrections and remaining acceptance
+
+Early standalone attempts failed on an entirely transparent initial title
+capture, an unsupported optional 2560x1080 window request, and a combined-test
+retry fixture whose enemies had patrolled away from their authored spawns during
+resolution review. The diagnostic now initializes/resizes its title window,
+explicitly reports unsupported ultrawide output, and loads a fresh production
+scene before opening the retry shafts. Valid captures with opaque black or wrong
+surround colors still fail. The unchanged runtime fix passed the full suites;
+these subsequent standalone-only fixture corrections were compiled and verified
+in the final rebuilt Release and repeated smoke/review runs.
+
+This host clamps the optional **2560x1080 window to 1920x1080**. The actual D3D11
+offscreen RenderGraph regression covers 2560x1080, including every surround pixel,
+but a physical ultrawide window remains a specific human acceptance check.
+Final human acceptance should inspect the seamless surround with penumbra ON/OFF,
+resize/fullscreen presentation, and a terrain-destruction fall in ordinary play.
+Automated frame captures do not constitute human or physical-monitor validation.
+The existing unused lens-flare/shutdown ComputeBuffer warnings remain non-blocking.
+Final review also included the configured maximum physics catch-up, increasing
+clearance from the initially tested 40 units to 46. The final focused/full suites
+and Release were rerun with that allowance; falling integration stayed unchanged.
+Future changes to maximum logical height, camera offset/failure range or enemy
+sprite extents must revalidate the documented fixed presentation clearance.
+No PR, merge, audio work or additional design changes are included.

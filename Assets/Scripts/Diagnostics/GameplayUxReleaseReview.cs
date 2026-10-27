@@ -21,7 +21,8 @@ namespace Rustline.Diagnostics
         private static void Install()
         {
             string[] args=Environment.GetCommandLineArgs();
-            if(Array.IndexOf(args,"--gameplay-ux-review")<0 && Array.IndexOf(args,"--enemy-void-review")<0) return;
+            if(Array.IndexOf(args,"--gameplay-ux-review")<0 && Array.IndexOf(args,"--enemy-void-review")<0 &&
+                Array.IndexOf(args,"--visual-micro-polish-review")<0) return;
             Application.runInBackground=true;
             InputSystem.settings.backgroundBehavior=InputSettings.BackgroundBehavior.IgnoreFocus;
             if(Keyboard.current==null) InputSystem.AddDevice<Keyboard>();
@@ -37,14 +38,21 @@ namespace Rustline.Diagnostics
         private IEnumerator Start()
         {
             Require(!Debug.isDebugBuild,"Expected a non-development Release.");
+            bool micro=Array.IndexOf(Environment.GetCommandLineArgs(),"--visual-micro-polish-review")>=0;
             yield return null;
+            if(micro && !Application.isBatchMode)
+            {
+                Screen.SetResolution(640,480,FullScreenMode.Windowed);
+                yield return null; yield return null;
+                yield return CaptureDisplayedFrame("Logs/GameplayUxPhase43/Release/display-title.png",null);
+            }
             FrontendController.Current.StartGame();
             while(SceneManager.GetActiveScene().path!=FrontendController.PlayScene) yield return null;
             yield return null; yield return null; yield return null;
             _director=FindAnyObjectByType<FirstPlayableDirector2D>();
-            if(Array.IndexOf(Environment.GetCommandLineArgs(),"--enemy-void-review")>=0)
+            if(micro || Array.IndexOf(Environment.GetCommandLineArgs(),"--enemy-void-review")>=0)
             {
-                yield return VerifyVoidExtraction();
+                yield return VerifyVoidExtraction(micro);
                 Application.Quit(0); yield break;
             }
             var equipment=_director.Player.GetComponent<PlayerWeaponEquipment2D>();
@@ -208,14 +216,122 @@ namespace Rustline.Diagnostics
             actor.ApplyDamage(in hit);
         }
 
-        private IEnumerator VerifyVoidExtraction()
+        private IEnumerator VerifyPresentation(string output)
         {
-            string output=Path.GetFullPath("Logs/GameplayUxPhase42/Release");
+            foreach(var size in new[] {new Vector2Int(640,480),new Vector2Int(1280,720),
+                new Vector2Int(1920,1080),new Vector2Int(2560,1080)})
+            {
+                Screen.SetResolution(size.x,size.y,FullScreenMode.Windowed);
+                for(int frame=0;frame<60 && (Screen.width!=size.x || Screen.height!=size.y);frame++) yield return null;
+                if(size.x==2560 && (Screen.width!=size.x || Screen.height!=size.y))
+                {
+                    Debug.LogWarning($"DEEP_SPACE_OPTIONAL_VIEWPORT_UNAVAILABLE: requested {size}, actual {Screen.width}x{Screen.height}; covered by the four-size offscreen regression instead.");
+                    continue;
+                }
+                Require(Screen.width==size.x && Screen.height==size.y,"Requested Release viewport unavailable: "+size);
+                yield return null; yield return null; yield return null;
+                var presentation=FindAnyObjectByType<NativePixelPresentation>();
+                foreach(bool enabled in new[] {true,false})
+                {
+                    presentation.SetPenumbraEnabled(enabled);
+                    yield return null;
+                    string label=$"{size.x}x{size.y}-{(enabled ? "on" : "off")}";
+                    var target=new RenderTexture(size.x,size.y,16,RenderTextureFormat.ARGB32,RenderTextureReadWrite.sRGB);
+                    target.Create();
+                    var pixels=new Texture2D(size.x,size.y,TextureFormat.RGBA32,false,true);
+                    RenderTexture prior=RenderTexture.active;
+                    try
+                    {
+                        presentation.ProcessingCamera.targetTexture=target;
+                        presentation.WorldCamera.Render(); presentation.ProcessingCamera.Render();
+                        RenderTexture.active=target;
+                        pixels.ReadPixels(new Rect(0,0,size.x,size.y),0,0,false); pixels.Apply();
+                        var viewport=presentation.Viewport;
+                        if(viewport.OutputOffsetX>0)
+                        {
+                            foreach(var point in new[] {new Vector2Int(0,size.y-1),new Vector2Int(size.x-1,size.y-1),
+                                new Vector2Int(viewport.OutputOffsetX-1,size.y/2),new Vector2Int(size.x-1,size.y/2)})
+                                RequireDeepSpace((Color32)pixels.GetPixel(point.x,point.y),label+" physical surround "+point);
+                            if(enabled) RequireDeepSpace((Color32)pixels.GetPixel(viewport.OutputOffsetX+1,size.y-viewport.OutputOffsetY-2),label+" fully dark world");
+                        }
+                        Debug.Log($"DEEP_SPACE_RELEASE {label} format={target.graphicsFormat} worldEdge={(Color32)pixels.GetPixel(viewport.OutputOffsetX+1,size.y-viewport.OutputOffsetY-2)} corner={(Color32)pixels.GetPixel(0,size.y-1)}");
+                    }
+                    finally
+                    {
+                        RenderTexture.active=prior; presentation.ProcessingCamera.targetTexture=null;
+                        target.Release(); Destroy(target); Destroy(pixels);
+                    }
+                    CaptureFrame(output+"/presentation-"+label+".png");
+                    if(!Application.isBatchMode)
+                        yield return CaptureDisplayedFrame(output+"/display-"+label+".png",presentation);
+                }
+            }
+            var native=FindAnyObjectByType<NativePixelPresentation>(); native.SetPenumbraEnabled(true);
+            FrontendController.Current.Back(); yield return null;
+            CaptureFrame(output+"/paused.png");
+            if(!Application.isBatchMode)
+                yield return CaptureDisplayedFrame(output+"/display-paused.png",native);
+            FrontendController.Current.Back(); yield return null;
+            Screen.SetResolution(1920,1080,FullScreenMode.Windowed);
+            for(int i=0;i<5;i++) yield return null;
+            Debug.Log("DEEP_SPACE_RELEASE_PASS: final RenderGraph dark-world/surround pixels and composed gameplay/pause verified at supported window sizes, penumbra ON/OFF; available player-backbuffer captures logged separately. Automated rendering, not human acceptance.");
+        }
+
+        private static IEnumerator CaptureDisplayedFrame(string path,NativePixelPresentation presentation)
+        {
+            // Unlike batch-mode camera probes, this reads the actual composed player
+            // backbuffer after world, presentation and overlay UI have all rendered.
+            yield return new WaitForEndOfFrame();
+            Texture2D image=ScreenCapture.CaptureScreenshotAsTexture();
+            Require(image!=null,"Player backbuffer capture unavailable.");
+            try
+            {
+                bool covered=false;
+                foreach(Color32 value in image.GetPixels32())
+                    if(value.r+value.g+value.b+value.a>0) { covered=true; break; }
+                if(!covered)
+                {
+                    // This host also returns an entirely transparent image in a hidden
+                    // non-batch player. It contains no rendered UI/world to validate.
+                    // Opaque black or partially rendered captures still fail below.
+                    Debug.LogWarning("DEEP_SPACE_BACKBUFFER_UNAVAILABLE: "+path+" returned only RGBA(0,0,0,0); retain physical-window human acceptance.");
+                    yield break;
+                }
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllBytes(path,image.EncodeToPNG());
+                if(presentation==null || presentation.Viewport.OutputOffsetX>0)
+                    foreach(var point in new[] {new Vector2Int(0,image.height-1),new Vector2Int(image.width-1,image.height-1)})
+                        RequireDeepSpace((Color32)image.GetPixel(point.x,point.y),path+" backbuffer corner "+point);
+                Debug.Log($"DEEP_SPACE_BACKBUFFER {path} {image.width}x{image.height} corner={(Color32)image.GetPixel(0,image.height-1)}");
+            }
+            finally { Destroy(image); }
+        }
+
+        private static void RequireDeepSpace(Color32 pixel,string context)
+        {
+            Require(pixel.r+pixel.g+pixel.b>0 && Mathf.Abs(pixel.r-1)<=1 && Mathf.Abs(pixel.g-2)<=1 && Mathf.Abs(pixel.b-11)<=1,
+                context+" expected #01020B, got "+pixel);
+        }
+
+        private IEnumerator VerifyVoidExtraction(bool presentationReview=false)
+        {
+            string output=Path.GetFullPath("Logs/GameplayUxPhase43/Release");
+            Directory.CreateDirectory(output);
             yield return VerifyGroundSupport(output); // Both real lower landings must remain survivable.
             SceneManager.LoadScene(FrontendController.PlayScene);
             yield return null; yield return null; yield return null;
             _director=FindAnyObjectByType<FirstPlayableDirector2D>();
             HoldReviewPlayer(new Vector2(-24,1.02f));
+            if(presentationReview)
+            {
+                yield return VerifyPresentation(output);
+                // Patrols continue during the multi-resolution review. Start the reset
+                // fixture afresh so its breached shafts also cover authored retry spawns.
+                SceneManager.LoadScene(FrontendController.PlayScene);
+                yield return null; yield return null; yield return null;
+                _director=FindAnyObjectByType<FirstPlayableDirector2D>();
+                HoldReviewPlayer(new Vector2(-24,1.02f));
+            }
             var future=_director.Encounters[3]; var deaths=new int[future.Members.Length];
             var weapon=_director.Player.GetComponent<PlayerWeaponController2D>().WeaponDefinition;
             for(int member=0;member<future.Members.Length;member++)
@@ -239,7 +355,33 @@ namespace Rustline.Diagnostics
                 }
                 Require(cleared,"Production floor shaft did not open to the void.");
             }
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            var camera=FindAnyObjectByType<NativePixelPresentation>().WorldCamera;
+            if(presentationReview)
+            {
+                HoldReviewPlayer(new Vector2(60,-16.5f));
+                _director.enabled=false;
+            }
+            for(int i=0;i<250;i++)
+            {
+                yield return new WaitForFixedUpdate();
+                if(presentationReview && i==115)
+                {
+                    foreach(var actor in future.Members) Require(actor.IsAlive,"Enemy still died near the old visible boundary.");
+                    CaptureFrame(output+"/fall-past-old-plane.png");
+                }
+                if(presentationReview) foreach(var actor in future.Members)
+                    if(actor.IsDead)
+                    {
+                        var visual=actor.TryGetComponent(out Sentry2D _) ? actor.GetComponentInChildren<SentryPresenter2D>().BodyRenderer : actor.GetComponentInChildren<BombardierPresenter2D>().BodyRenderer;
+                        Require(visual.bounds.max.y<camera.transform.position.y-camera.orthographicSize,
+                            "Terminal death remained inside the production camera viewport.");
+                    }
+            }
+            if(presentationReview)
+            {
+                CaptureFrame(output+"/terminal-below-viewport.png");
+                _director.enabled=true; HoldReviewPlayer(new Vector2(-24,1.02f));
+            }
             Require(future.IsDefeated && _director.Progress.ClearedEncounters==0,"Future void deaths skipped progress or remained alive.");
             for(int i=0;i<future.Members.Length;i++)
             {
@@ -256,7 +398,7 @@ namespace Rustline.Diagnostics
             _director.BeginRetry(); _director.RetryNow(); HoldReviewPlayer(_director.Checkpoints[0].transform.position);
             foreach(var actor in future.Members) Require(actor.IsAlive,"Retry failed to restore pending void actors.");
             Require(_director.Progress.ClearedEncounters==2,"Retry lost committed progress.");
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Require(future.IsDefeated && _director.Progress.ClearedEncounters==2,"Persistent void did not reset/death correctly or skipped encounter three.");
             foreach(var member in _director.Encounters[2].Members) ReviewKill(member);
             yield return null;
@@ -269,7 +411,7 @@ namespace Rustline.Diagnostics
             _director.RestartRun(); HoldReviewPlayer(new Vector2(-24,1.02f));
             foreach(var encounter in _director.Encounters) foreach(var actor in encounter.Members)
                 Require(actor.IsAlive,"Full restart did not restore an encounter member.");
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Require(future.IsDefeated && _director.Progress.ClearedEncounters==0 && deaths[0]==3 && deaths[1]==3,
                 "Terminal state or death events did not reset once per life.");
             Debug.Log("ENEMY_VOID_RELEASE_PASS: recoverable falls survived; real breached shafts caused one authoritative death per life; future order, checkpoint retry, seven encounters, extraction and restart passed. Automated staging, not human traversal.");

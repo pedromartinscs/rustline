@@ -26,7 +26,11 @@ namespace Rustline.Gameplay.Combat
                     lowest = Mathf.Min(lowest, ground.bounds.min.y);
             if (float.IsPositiveInfinity(lowest))
                 throw new System.InvalidOperationException("Enemy void policy requires nonempty static Ground collision.");
-            return lowest - 1f; // Whole footprint must be one authored tile below all possible landing surfaces.
+            // Presentation clearance: the largest 1072px view has a 33.5u half-height.
+            // Allow the low player/follow position, up to 6u of configured physics
+            // catch-up before failure Update, and sprites' 1.5u hitbox overhang.
+            // This fixed initial envelope is independent of camera visibility.
+            return lowest - 46f;
         }
 
         internal void SetVoidTopHeight(float height) => _voidTopHeight = height;

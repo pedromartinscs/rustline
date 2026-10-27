@@ -69,8 +69,8 @@ namespace Rustline.Tests
                     Debug.Log($"VOID_GROUND_AUDIT {c.name} min={c.bounds.min:F3} max={c.bounds.max:F3}");
                     lowest=Mathf.Min(lowest,c.bounds.min.y);
                 }
-            Assert.That(_director.EnemyVoidTopHeight,Is.EqualTo(lowest-1f));
-            Assert.That(_director.EnemyVoidTopHeight,Is.EqualTo(-5f).Within(.001f));
+            Assert.That(_director.EnemyVoidTopHeight,Is.EqualTo(lowest-46f));
+            Assert.That(_director.EnemyVoidTopHeight,Is.EqualTo(-50f).Within(.001f));
             var policy=typeof(FirstPlayableDirector2D).GetField("failureHeight",System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Instance);
             Debug.Log("VOID_PLAYER_FAILURE_HEIGHT "+policy.GetValue(_director));
             yield return null;
@@ -84,13 +84,45 @@ namespace Rustline.Tests
         public IEnumerator Bombardier_RealVoidDiesOnceAndStops()
         { yield return VerifyVoid(1); }
 
+        [UnityTest]
+        public IEnumerator BothTypes_TerminalDeathOccursBelowLargestVisibleViewport()
+        {
+            // Failure is checked in Update, after physics catch-up. At 18u/s and
+            // maximumDeltaTime=.333s, allow 6u plus half a unit of conservative slack.
+            _director.enabled=false;
+            var config=(PlayerMovementConfig)typeof(PlayerMotor2D).GetField("config",System.Reflection.BindingFlags.Instance|System.Reflection.BindingFlags.NonPublic).GetValue(_director.Player);
+            Assert.That(config.MaxFallSpeed*Time.maximumDeltaTime,Is.LessThanOrEqualTo(6.01f));
+            HoldPlayer(new Vector2(60,-16.5f));
+            var camera=Object.FindAnyObjectByType<NativePixelPresentation>().WorldCamera;
+            yield return new WaitForSeconds(.6f);
+            Assert.That(camera.transform.position.y,Is.EqualTo(-14.5f).Within(.125f));
+            foreach(var actor in _director.Encounters[3].Members)
+            {
+                var visual=actor.TryGetComponent(out Sentry2D _) ? actor.GetComponentInChildren<SentryPresenter2D>().BodyRenderer : actor.GetComponentInChildren<BombardierPresenter2D>().BodyRenderer;
+                Bounds atDeath=default; float deathTime=-1;
+                actor.Died+=_=> { atDeath=visual.bounds; deathTime=Time.fixedTime; };
+                float start=Time.fixedTime;
+                OpenRealVoid(actor);
+                for(int i=0;i<300 && actor.IsAlive;i++) yield return new WaitForFixedUpdate();
+                Assert.That(actor.IsDead,Is.True,"Terminal cleanup must remain bounded.");
+                Debug.Log($"VOID_PRESENTATION {actor.name} rootY={actor.transform.position.y:F3} renderedTop={atDeath.max.y:F3} cameraY={camera.transform.position.y:F3} elapsed={deathTime-start:F3}");
+                foreach(var size in new[] {new Vector2Int(640,480),new Vector2Int(1280,720),new Vector2Int(1920,1080),new Vector2Int(2560,1080)})
+                {
+                    var viewport=NativePixelViewportMath.Calculate(size.x,size.y);
+                    float bottom=camera.transform.position.y-viewport.LogicalHeight/(2f*NativePixelPresentation.PixelsPerUnit);
+                    Assert.That(atDeath.max.y,Is.LessThan(bottom),$"{actor.name} still rendered above {size} bottom {bottom} on death.");
+                }
+                Assert.That(deathTime-start,Is.LessThan(6f));
+            }
+        }
+
         private IEnumerator VerifyVoid(int index)
         {
             var encounter=_director.Encounters[3];
             var actor=encounter.Members[index];
             int died=0; actor.Died+=_=>died++;
             OpenRealVoid(actor);
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Debug.Log($"VOID_REPRO {actor.name} y={actor.transform.position.y:F3} alive={actor.IsAlive} deaths={died} cleared={_director.Progress.ClearedEncounters}");
             Assert.That(actor.IsDead,Is.True,"An enemy below every production floor remained alive and blocked progression.");
             Assert.That(died,Is.EqualTo(1));
@@ -152,7 +184,7 @@ namespace Rustline.Tests
                 Assert.That(actors[i].IsAlive,Is.True);
             }
             FrontendController.Current.Back();
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Assert.That(actors.All(a=>a.IsDead),Is.True);
         }
 
@@ -165,7 +197,7 @@ namespace Rustline.Tests
                 OpenRealVoid(actor);
                 for(int i=0;i<10;i++) yield return new WaitForFixedUpdate();
                 Kill(actor);
-                for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+                for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
                 Assert.That(deaths,Is.EqualTo(1)); Assert.That(actor.IsDead,Is.True);
                 var body=actor.GetComponent<Rigidbody2D>(); Vector2 stopped=body.position;
                 for(int i=0;i<10;i++) yield return new WaitForFixedUpdate();
@@ -182,7 +214,7 @@ namespace Rustline.Tests
             var future=_director.Encounters[3]; int[] deaths=new int[future.Members.Length];
             for(int i=0;i<future.Members.Length;i++)
             { int member=i; future.Members[i].Died+=_=>deaths[member]++; OpenRealVoid(future.Members[i]); }
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Assert.That(future.IsDefeated,Is.True); Assert.That(_director.Progress.ClearedEncounters,Is.Zero);
             for(int i=0;i<2;i++) foreach(var member in _director.Encounters[i].Members) Kill(member);
             yield return null;
@@ -192,7 +224,7 @@ namespace Rustline.Tests
             Assert.That(_director.Progress.ClearedEncounters,Is.EqualTo(2));
             Assert.That(_director.Encounters.Take(2).All(e=>e.IsDefeated),Is.True);
             Assert.That(future.Members.All(a=>a.IsAlive),Is.True);
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Assert.That(future.IsDefeated,Is.True,"Persistent breached terrain must lead to another normal environmental death after retry.");
             Assert.That(_director.Progress.ClearedEncounters,Is.EqualTo(2));
             foreach(var member in _director.Encounters[2].Members) Kill(member);
@@ -209,7 +241,7 @@ namespace Rustline.Tests
             Assert.That(all.All(a=>a.IsAlive),Is.True);
             Assert.That(_director.Progress.ClearedEncounters,Is.Zero);
             Assert.That(_director.Progress.IsComplete,Is.False); Assert.That(_director.Progress.HasCheckpoint,Is.False);
-            for(int i=0;i<200;i++) yield return new WaitForFixedUpdate();
+            for(int i=0;i<250;i++) yield return new WaitForFixedUpdate();
             Assert.That(future.IsDefeated,Is.True); Assert.That(deaths,Is.All.EqualTo(3));
             Assert.That(_director.Progress.ClearedEncounters,Is.Zero);
             Assert.That(Object.FindObjectsByType<BombardierBomb2D>(),Is.Empty);

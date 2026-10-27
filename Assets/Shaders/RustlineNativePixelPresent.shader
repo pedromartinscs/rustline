@@ -7,7 +7,9 @@ Shader "Hidden/Rustline/NativePixelPresent"
         _HudEnabled ("HUD Enabled", Float) = 0
         _SourceScaleBias ("Source Scale Bias", Vector) = (1, 1, 0, 0)
         _OutputRect ("Normalized World Output Rect", Vector) = (0, 0, 1, 1)
-        _DeepSpaceColor ("Deep Space Color", Color) = (0, 0, 0, 1)
+        // C# supplies linear RGB, as for the penumbra uniform and RenderGraph clear.
+        // A ShaderLab Color property decodes it a second time in a Linear project.
+        _DeepSpaceColor ("Linear Deep Space Color", Vector) = (0, 0, 0, 1)
     }
 
     SubShader
