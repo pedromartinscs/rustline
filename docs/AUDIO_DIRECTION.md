@@ -40,12 +40,13 @@ Sound design should favor *few strong samples with variations* over hundreds of 
 | --- | --- | --- |
 | [Kenney — Sci-fi Sounds](https://kenney.nl/assets/sci-fi-sounds) | Energy shots, machinery, sci-fi events | Creator page: CC0, 70 assets |
 | [Kenney — Digital Audio](https://kenney.nl/assets/digital-audio) | Electronic interaction/energy transients | Creator page: CC0, 60 assets |
+| [lentikula — Sci-Fi Weapon Shots](https://lentikula.itch.io/sci-fi-weapon-shots-sfx-freecc0) | 15 higher-detail laser rifle/pistol/beam candidates | Creator page: CC0, 48 kHz/24-bit WAV; audition before selecting |
 | [Kenney — Impact Sounds](https://kenney.nl/assets/impact-sounds) | Hit layers, debris, grounded impacts | Creator page: CC0, 130 assets |
 | [Kenney — Interface Sounds](https://kenney.nl/assets/interface-sounds) | UI, checkpoint, menus | Creator page: CC0, 100 assets |
 | [Freesound](https://freesound.org/help/faq/) | Specific mechanical/industrial ambience | Per-file license; prefer CC0. CC BY requires attribution, CC BY-NC is unsuitable for commercial demo |
 | [Suno](https://suno.com/terms/) | Original music/ambience experimentation | Paid-plan permitted downloads and current conditions required for commercial game use; preserve generation and download evidence |
 
-The Kenney creator's [license FAQ](https://kenney.nl/support) describes its game-asset downloads as CC0, usable commercially without mandatory attribution. Recheck each actual download's included license. A compilation/download mirror is not a substitute for the original creator page.
+The Kenney creator's [license FAQ](https://kenney.nl/support) describes its game-asset downloads as CC0, usable commercially without mandatory attribution. Recheck each actual download's included license. A compilation/download mirror is not a substitute for the original creator page. A seemingly suitable music pack may have a different license: for example, [Ambient Space(s) Vol.1](https://spaw.itch.io/ambient-spaces-vol1) requires separate permission for **commercial** use, so its free CC BY-NC files are **not approved** for Rustline. Do not infer game-use rights from the word “free”.
 
 Suno's policy and download rules changed in September 2026. Avoid creating final commercial tracks on a free tier. For final music, **create and download while subscribed to an eligible paid tier**, archive the download receipt/date, terms snapshot and generation metadata, and check current restrictions before shipping. A platform's grant of commercial use rights is not a guarantee of copyright exclusivity or registration.
 
