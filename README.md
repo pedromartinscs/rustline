@@ -1,17 +1,18 @@
 # Rustline
 
-**Rustline** is a Unity 6 2D single-player extraction-shooter prototype focused on responsive platforming, 360° gunplay, PvE combat, loot, and extraction.
+**Rustline** is a Unity 6 2D single-player industrial sci-fi combat-and-extraction prototype focused on responsive platforming, mouse-aimed gunplay, PvE encounters and a compact playable route. Loot and inventory remain planned, not implemented.
 
 The project is being built as a compact technical showcase: prove that movement and combat feel good first, then build a small, polished extraction loop on top of a clean gameplay architecture.
 
 ## Core loop
 
-**Deploy → Traverse → Fight → Loot → Extract**
+**Current playable loop:** Deploy → Traverse → Fight → Extract  
+**Planned extension:** Loot/pickup and a small inventory/resource layer.
 
 ## Goals
 
 - Responsive 2D platformer movement
-- 360° mouse/gamepad aiming
+- 360° mouse aiming; complete gamepad combat/aim support remains to be verified
 - Satisfying projectile and weapon systems
 - PvE combat and lightweight enemy AI
 - Loot, inventory, and extraction mechanics
@@ -40,7 +41,7 @@ Environment art uses a **16×16 modular tile grid**. The first structural atlas 
 
 All final pixel art uses the fixed **Rustline Canonical 28** palette plus transparency, nearest-neighbor sampling, and binary alpha.
 
-All redistributable game artwork committed to this repository will be created specifically for Rustline or come from dependencies whose licenses explicitly permit repository redistribution. Third-party reference packs are not included.
+All redistributable game artwork committed to this repository will be created specifically for Rustline or come from dependencies whose licenses explicitly permit repository redistribution. Third-party reference packs are not included. The same provenance and licensing standard applies to future audio assets.
 
 See:
 
@@ -50,6 +51,7 @@ See:
 - [`docs/ENVIRONMENT_GAMEPLAY_METRICS.md`](docs/ENVIRONMENT_GAMEPLAY_METRICS.md) — traversal-safe environment/collision measurements
 - [`docs/MOVEMENT.md`](docs/MOVEMENT.md) — controller architecture, controls, and movement tuning
 - [`docs/RELEASE_COLLISION.md`](docs/RELEASE_COLLISION.md) — release-critical Tilemap/Composite startup contract and regression history
+- [`docs/AUDIO_DIRECTION.md`](docs/AUDIO_DIRECTION.md) — planned sound direction, source candidates and asset-license intake checklist
 
 ## Development approach
 
@@ -66,13 +68,16 @@ See [`docs/ROADMAP.md`](docs/ROADMAP.md) for the current milestone plan.
 
 ## Status
 
-Normal builds open the **Main Menu** (build index 0), with Start Game, Options, Credits and Quit. **Salvage Intake** (index 1) remains directly playable in the Editor: a continuous route from x=-20 to x=193, processing galleries, maintenance traversal and rail terminal, seven ordered encounters with sentries/Bombardiers, three checkpoints, retry and final extraction. Escape pauses the run; Options provide independent persistent Music/SFX volume routing. See the [frontend system](docs/frontend-menu-system.md), [launch/controls](docs/FIRST_PLAYABLE.md), [expansion design](docs/salvage-intake-expansion.md), and [validation record](docs/salvage-intake-expansion-validation.md).
+The latest development work lives on `codex/gameplay-ux-polish-phase4` (HEAD `16baaf5`), **six commits ahead of `main`** (HEAD `a8b1649` as checked on 2026-10-30). Changes on that branch must be reviewed and merged before they can be described as released on `main`.
 
-**The current player movement set, first-weapon Longwatch presentation/gunplay slice, and the M3A repeatable combat prototype are implemented.**
+Normal builds start at the **Main Menu**, with Start Game, Options, Credits and Quit. Salvage Intake is a continuous authored route from x=-20 to x=193 with seven ordered Sentry/Bombardier encounters, three checkpoints, retry/death handling, objective HUD and a two-second final extraction. It contains native-pixel industrial environments and parallax, destructible areas, animated enemies and an authored Bombardier explosion. Player movement includes backpedal, crouch, Wall Brace/Wall Kick and LedgeClimb. The equipment set is Unarmed, Latch-9 and Longwatch DMR.
 
-`Assets/Scenes/MovementLab.unity` contains grounded forward/backpedal movement, combat crouch, Wall Brace / Wall Kick, committed six-frame LedgeClimb, the release-hardened Tilemap + Composite collision path, native-pixel presentation, Longwatch DMR continuous-aim hitscan, and a killable patrol enemy that resets in place. The Longwatch has authored aim-capable Idle, Run, Backpedal, Crouch, and Fall presentation plus non-firing three-frame Jump and two-frame Land carry. Wall Brace and LedgeClimb intentionally render no Longwatch carry; their traversal poses use the unarmed overlay and block firing. The accepted M0 pixel-art pipeline and `Assets/Scenes/ArtShowcase.unity` remain intact.
+Phase 4 adds weapon-number bindings, pre-engagement patrols, checkpoint lamps, compact HUD/developer F3 view, enemy floor/void fixes and pixel-accurate deep-space border correction. Its documented final validation records **439/439 EditMode and 143/143 PlayMode tests**, a successful non-development Windows x64 Release and standalone smoke. Those are implementation reports, **not** evidence of human full-run/balance acceptance. See [Phase 4 report](docs/gameplay-ux-polish-phase4.md) and [first playable guide](docs/FIRST_PLAYABLE.md).
 
-Both enemy archetypes have approved original Canonical-28 sprites and state-driven presentation; see the [Sentry art pass](docs/sentry-art-pass.md), [Bombardier art pass](docs/bombardier-art-pass.md) and [combat VFX](docs/combat-vfx-polish.md). Production audio clips remain absent. Human menu acceptance, traversal/balance and standalone performance remain explicit validation gates. The accepted movement/collision foundation remains unchanged.
+**Audio is not finished.** The menus already persist independent Music/SFX volume levels, and the project contains `RustlineAudioSettings` plus `AudioBusSource`, but production SFX/music clips have not been committed. Priorities are licensed asset sourcing, combat/movement/UI SFX, then industrial ambience and a loopable score. See [audio direction](docs/AUDIO_DIRECTION.md).
+
+**Still open for a public demo:** human gameplay/control/audio acceptance, full gamepad combat review if advertised, a decision on loot/inventory scope, packaging, marketing captures and finalized licenses/attributions. The actual playable loop currently ends in combat-driven extraction; **do not promise loot/inventory** until implemented. See [roadmap](docs/ROADMAP.md).
+
 
 ## License
 
