@@ -1,28 +1,26 @@
 # Rustline Prototype Roadmap
 
-Rustline is developed as a sequence of proof points. Each milestone should be playable and evaluable before the next layer is expanded.
+Rustline is a milestone-driven **single-player** Unity 6 game. Multiplayer, networking, matchmaking and backend services are out of scope. Preserve the responsive movement, weapon, native-pixel rendering and Windows Release collision contracts.
 
-Rustline is currently a **single-player project**. Multiplayer, networking, server authority, prediction/reconciliation, matchmaking, network persistence, and multiplayer backend architecture are outside the project scope unless the project direction is explicitly changed in the future.
+## Current vertical-slice status — 2026-10-30
 
-## Current vertical-slice direction — 2026-09-23
+This status describes the latest `codex/gameplay-ux-polish-phase4` branch (`16baaf5`), **not** the older `main` (`a8b1649`). Phase 4 contains six additional commits and has not yet been merged to `main`. Its validation results below are **recorded by the implementation**, not independently rerun during this documentation update.
 
-The player movement/presentation foundation and the first Longwatch DMR pipeline are now sufficiently complete to stop adding movement features and start building a real environment around them.
+- **Playable now:** Main Menu, Options/Credits/Pause, Salvage Intake (x=-20 to x=193), movement and mouse-aimed Longwatch/Latch-9 combat, original Sentry/Bombardier art, visual explosion/death effects, seven authored encounters with fourteen defenders, three checkpoints, retries, two-second final extraction, HUD and industrial background/parallax.
+- **Phase 4 refinements:** numeric weapon selection, pre-engagement patrols, checkpoint status lamps, compact player HUD and F3 diagnostics, enemy support/void cleanup, seamless canonical Deep Space presentation.
+- **Audio state:** independent persistent Music/SFX settings, `AudioBusSource` routing and menu pause behavior exist, but **no production music or SFX clips are committed**.
+- **Evidence:** Phase 4.3 reports **439/439 EditMode**, **143/143 PlayMode**, successful Windows x64 non-development Release, standalone smoke and targeted rendering/void reviews. These automated results do not substitute for human full-route, balance, sound or hardware acceptance.
+- **Incomplete by design:** pickups/loot and inventory are not implemented; full mouse-to-gamepad combat/aim acceptance remains pending. Avoid describing the current build as a complete Deploy → Traverse → Fight → Loot → Extract loop.
 
-The current production order is:
+Next production order:
+1. Review/merge the completed Phase 4 after human acceptance, keeping release regressions clean.
+2. Source and approve properly licensed SFX and music, retaining provenance before importing any files (see [`AUDIO_DIRECTION.md`](AUDIO_DIRECTION.md)).
+3. Implement combat/movement/UI SFX first; then ambient soundbeds and loopable exploration/combat/extraction music.
+4. Add only targeted visual impact polish when verified necessary by playtest.
+5. Decide whether the public demo needs a minimal **loot/pickup** loop or should be positioned honestly as a combat-and-extraction vertical slice.
+6. Finish human playtesting, standalone performance and distributable itch.io release packaging/licensing.
 
-1. keep the accepted player/weapon foundation regression-clean;
-2. implement the first production enemy and its encounter behavior on top of the proven combat-health/hitbox foundation;
-3. build out the first polished production **environment slice** using the accepted movement/collision metrics;
-4. replace remaining programmer-art combat presentation with production enemy/impact/audio work;
-5. complete the small Deploy → Traverse → Fight → Loot → Extract loop.
-
-Current demo weapon direction is **two implemented weapons** plus Unarmed: the Longwatch DMR as the stronger finite-magazine weapon and the compact **Latch-9** as the weaker projectile fallback with effectively unlimited ammunition. Persistent weapon selection, Longwatch magazines/reload, Latch shot-mode switching, and the shared native-pixel weapon HUD are implemented.
-
-Environment collision authoring must follow [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md), including the current **24 source pixel / 1.5 unit Minimum Traversable Gap** rule. Visual cracks may be narrower when hidden gameplay collision bridges them.
-
-The current art-production checklist is tracked in [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md). Native-scale in-engine inspection remains the authority for visual approval.
-
-The first production-area target is now **Salvage Intake**. Its deterministic graybox builder and room contract are implemented; the generated Unity scene still requires native-scale human playtesting before the graybox is locked or environment art production begins. See [`SALVAGE_INTAKE.md`](SALVAGE_INTAKE.md).
+The current demo equipment is Unarmed, Latch-9 (unlimited fallback) and Longwatch DMR (finite ammunition/reload). The native-pixel weapon carousel is implemented. Environment collision remains governed by the **24 source pixel / 1.5 unit Minimum Traversable Gap** rule in [`ENVIRONMENT_GAMEPLAY_METRICS.md`](ENVIRONMENT_GAMEPLAY_METRICS.md). Use [`ASSET_SPRINTS.md`](ASSET_SPRINTS.md) and native-scale in-engine inspection for visual review. [`FIRST_PLAYABLE.md`](FIRST_PLAYABLE.md) describes actual gameplay/controls.
 
 ## M0 — Visual foundation
 
@@ -49,7 +47,7 @@ Current M0 art work:
 
 See [`TILESET_SPEC.md`](TILESET_SPEC.md) for the structural atlas contract and [`ART_DIRECTION.md`](ART_DIRECTION.md) for the visual language.
 
-**Exit criterion:** the current player animation set and structural tiles render in Unity at native pixel-art quality with stable frame alignment and a coherent visual baseline. **Satisfied for the current player; environment production is now the active extension of M0.**
+**Exit criterion:** player and environment art render at accepted native-pixel quality. **Satisfied for the current production slice;** optional modular tile expansion and final art-source licensing remain open. Human visual approval of the newest branch remains separate.
 
 ## M1 — Movement prototype
 
@@ -120,8 +118,9 @@ The first-weapon locomotion presentation package is considered **closed for the 
 - [x] Demo ammunition model
 - [x] Longwatch manual reload / magazine discard contract
 - [x] Latch-9 second-weapon implementation
-- [ ] Production impact FX
-- [ ] Combat audio
+- [x] Bombardier explosion/death production VFX (M5.1)
+- [ ] Additional weapon/terrain impact polish as determined by playtesting
+- [ ] Production combat audio (no committed clips)
 
 The current Longwatch uses mouse-left fire, `1/12 s` shot interval (**12 shots/s**), `80` unit range, and `40` prototype damage. Hitscan direction remains exact continuous aim rather than the quantized visual angle. Muzzle metadata drives presentation only; ballistics and the distal tracer still originate at `AimOriginWorld`. An active muzzle flash is canceled immediately when presentation enters a state that no longer exposes a muzzle-capable Longwatch pose, preventing a flash from bleeding into Jump/Land carry or unarmed traversal.
 
@@ -129,55 +128,64 @@ The current Longwatch uses mouse-left fire, `1/12 s` shot interval (**12 shots/s
 
 ## M3 — Combat slice
 
-**Goal:** create the first repeatable PvE combat encounter.
+**Goal:** readable, repeatable PvE action with original enemies and stable encounter progression.
 
-- [x] Reusable health/damage model
-- [x] First killable ground enemy prototype
-- [x] Enemy hit reaction and death
-- [x] Repeatable MovementLab prototype encounter/reset
-- [x] Bombardier programmer-art enemy attack in MovementLab
-- [x] Player health / PlayerDamageable collision contract
-- [x] Player combat death/restart in MovementLab
-- [ ] Bombardier human gameplay acceptance
-- [ ] Production ground-enemy art
-- [ ] Flying enemy, only if the demo needs it
-- [ ] Advanced enemy AI/pathing, only if required by the level
-- [ ] Broader encounter spawning
-- [ ] First-pass combat audio
+- [x] Reusable health/damage model and player damage/death/retry
+- [x] Original Sentry and Bombardier sprites, telegraphs, death presentation and bomb VFX
+- [x] Two enemy archetypes with patrol, detection/engagement and reset
+- [x] Seven ordered Salvage Intake encounters (fourteen defenders)
+- [x] Checkpoint-preserved encounter progress and extraction-gated completion
+- [x] Terrain-support/void-death corrections covered by automated regression
+- [ ] Human difficulty, timing, audio-feedback and full-route acceptance
+- [ ] First-pass combat SFX
+- [ ] Flying enemy, advanced pathing or additional encounter types **only if** playtesting justifies them
 
-M3A is a narrow combat proof point, not completion of M3. The programmer-art ground enemy has `100` health, deterministic horizontal patrol, a `0.12 s` nonlethal hit pause, explicit child-hitbox routing, and dies after three normal `40`-damage Longwatch hits before resetting in place.
+Sentry uses melee telegraph/hit behavior; Bombardier uses a locked-target thrown explosive with original six-frame VFX. Both retain existing hit/death and reset contracts. See [`BOMBARDIER.md`](BOMBARDIER.md), [`sentry-art-pass.md`](sentry-art-pass.md), [`bombardier-art-pass.md`](bombardier-art-pass.md) and [`combat-vfx-polish.md`](combat-vfx-polish.md).
 
-M3B implements the first production enemy behavior using programmer art: the **Bombardier**. Its loop is patrol -> committed telegraph -> non-bouncing ballistic bomb -> recover, with 100 HP player health and deterministic MovementLab death/reset. The bomb explodes on first Ground/player contact rather than bouncing or using a fuse. Human gameplay acceptance remains open. See [`BOMBARDIER.md`](BOMBARDIER.md) and [`COMBAT.md`](COMBAT.md).
-
-**Exit criterion:** a short room can be traversed and cleared repeatedly without debug intervention. **Satisfied by the MovementLab prototype; production encounter content remains pending.**
+**Exit criterion:** real encounters and progression run without debug intervention. **Technically satisfied for the authored Salvage Intake route;** independent human feel/balance acceptance remains open.
 
 ## M4 — Loot & extraction loop
 
-**Goal:** turn the combat prototype into a tiny single-player game loop.
+**Goal:** turn traversal and PvE combat into a small, satisfying single-player run.
 
-- [ ] Loot drops
+- [ ] Loot drops from defeated enemies or world containers
 - [ ] Pickup interaction
 - [ ] Small inventory/resource model
-- [ ] Extraction terminal/zone
-- [ ] Successful extraction result
-- [ ] Death/loss behavior
-- [ ] Minimal HUD
+- [x] Final extraction zone with two-second uninterrupted hold
+- [x] Successful extraction/result and restart behavior
+- [x] Player death, checkpoint retry and persistent committed progress
+- [x] Minimal objective/health HUD and weapon/ammo carousel
 
-**Exit criterion:** Deploy → Traverse → Fight → Loot → Extract works end-to-end locally inside the demo level.
+**Exit criterion:** the current **Traverse → Fight → Extract** loop is implemented and automatically exercised; the originally envisioned **Loot** stage is **not implemented**. Before marketing the demo as a full extraction-shooter loop, either deliver a small, tested loot mechanic or narrow the description.
+
+## Next production pass — Audio (SFX first)
+
+- [ ] Approve licensing/provenance for every imported SFX/music asset
+- [ ] Weapon fire, reload, hits, enemy alerts/damage/death and Bombardier blast SFX
+- [ ] Traversal, destructible terrain, checkpoint/extraction and UI feedback
+- [ ] Subtle industrial ambient soundbeds and an exploration music loop
+- [ ] Combat and extraction musical layers/transitions, if justified by feel
+- [ ] Audio concurrency, pause/resume, separate bus gains, restart and scene-change regression tests
+- [ ] Human audio listening, mix/readability and loop-seam acceptance
+
+The persistent `RustlineAudioSettings` and `AudioBusSource` are already implemented. Audio asset sourcing must happen before integration; do not mistake existing volume sliders for finished sound design. See [`AUDIO_DIRECTION.md`](AUDIO_DIRECTION.md).
 
 ## M5 — Portfolio / itch.io polish
 
-- [ ] Stable Windows release build of the demo
-- [ ] Production environment pass complete
-- [ ] Production enemy/impact/audio pass complete
-- [ ] Screenshots / short gameplay capture
-- [ ] README screenshots and feature summary
-- [ ] Automated test summary
-- [ ] Known limitations
-- [ ] Build instructions
-- [ ] Final licensing
+- [x] Windows x64 non-development Release builder and automated standalone smoke
+- [x] First playable environment art and enemy presentation integrated
+- [ ] Human approval of Phase 4 and full production route
+- [ ] Final combat SFX, soundtrack/ambience and any essential impact polish
+- [ ] Decide and implement minimum loot scope (or update positioning)
+- [ ] Complete gamepad combat/control review, if supporting gamepad at public release
+- [ ] Stable performance, audio levels and gameplay balance on target hardware
+- [ ] Screenshots / short gameplay capture for publication
+- [ ] README screenshots and end-user feature summary
+- [ ] Publish automated-test summary and honest known limitations
+- [ ] Downloadable package instructions and release test on a clean machine
+- [ ] Final code/art/audio licensing and third-party attributions
 
-**Exit criterion:** a player can download a compact polished demo, while a technical reviewer can understand, run, and evaluate the project without project-specific guidance.
+**Exit criterion:** someone can download a coherent, appropriately described and properly licensed demo and play it from title screen to extraction without project-specific instructions. Successful automated tests are necessary, not sufficient.
 
 ---
 
